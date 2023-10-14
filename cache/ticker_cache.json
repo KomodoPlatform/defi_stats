@@ -1,0 +1,250 @@
+[
+    {
+        "NENG_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0000009000",
+            "quote_volume": "0.0300000000",
+            "base_volume": "33333.3333333333"
+        }
+    },
+    {
+        "RTM_DGB": {
+            "isFrozen": "0",
+            "last_price": "0.1357185899",
+            "quote_volume": "1000.0000000000",
+            "base_volume": "7368.1873701813"
+        }
+    },
+    {
+        "KMD_DGB": {
+            "isFrozen": "0",
+            "last_price": "33.0522408813",
+            "quote_volume": "2622.9398969354",
+            "base_volume": "79.3573998918"
+        }
+    },
+    {
+        "KMD_BCH": {
+            "isFrozen": "0",
+            "last_price": "0.0011073080",
+            "quote_volume": "0.2596342664",
+            "base_volume": "233.3679214881"
+        }
+    },
+    {
+        "KMD_ZEC": {
+            "isFrozen": "0",
+            "last_price": "0.0084383596",
+            "quote_volume": "0.0064570900",
+            "base_volume": "0.7652067826"
+        }
+    },
+    {
+        "BLK_DGB": {
+            "isFrozen": "0",
+            "last_price": "1.9922732007",
+            "quote_volume": "10083.7718841150",
+            "base_volume": "4988.3130713772"
+        }
+    },
+    {
+        "KMD_DASH": {
+            "isFrozen": "0",
+            "last_price": "0.0081762964",
+            "quote_volume": "0.5000000000",
+            "base_volume": "61.1523819024"
+        }
+    },
+    {
+        "KMD_MATIC": {
+            "isFrozen": "0",
+            "last_price": "0.4044509451",
+            "quote_volume": "564.6062753598",
+            "base_volume": "1480.9901071703"
+        }
+    },
+    {
+        "ZEC_BNB": {
+            "isFrozen": "0",
+            "last_price": "0.1117087796",
+            "quote_volume": "0.4407344637",
+            "base_volume": "3.9453878678"
+        }
+    },
+    {
+        "KMD_SYS": {
+            "isFrozen": "0",
+            "last_price": "2.4920410116",
+            "quote_volume": "217.2980151770",
+            "base_volume": "87.1968054151"
+        }
+    },
+    {
+        "MCL_LTC": {
+            "isFrozen": "0",
+            "last_price": "0.0000207971",
+            "quote_volume": "0.0261706951",
+            "base_volume": "1258.3804427506"
+        }
+    },
+    {
+        "WSB_WSBCASH": {
+            "isFrozen": "0",
+            "last_price": "0.8750857707",
+            "quote_volume": "2332.8291998400",
+            "base_volume": "2665.8291998400"
+        }
+    },
+    {
+        "AVN_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0001485201",
+            "quote_volume": "0.0034739751",
+            "base_volume": "23.3906105142"
+        }
+    },
+    {
+        "TKL_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0003626684",
+            "quote_volume": "3.1059988859",
+            "base_volume": "8564.2938737700"
+        }
+    },
+    {
+        "VRSC_DOGE": {
+            "isFrozen": "0",
+            "last_price": "6.3636461451",
+            "quote_volume": "5.8680620595",
+            "base_volume": "0.9318324604"
+        }
+    },
+    {
+        "LBC_DOGE": {
+            "isFrozen": "0",
+            "last_price": "0.1246982043",
+            "quote_volume": "23.8704390758",
+            "base_volume": "191.4256842180"
+        }
+    },
+    {
+        "FJC_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0000347700",
+            "quote_volume": "0.2172002367",
+            "base_volume": "6246.7712601159"
+        }
+    },
+    {
+        "AUR_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.1186712355",
+            "quote_volume": "40.5571543079",
+            "base_volume": "341.7691185180"
+        }
+    },
+    {
+        "LBC_LTC": {
+            "isFrozen": "0",
+            "last_price": "0.0001425000",
+            "quote_volume": "0.4572101540",
+            "base_volume": "3208.4923090200"
+        }
+    },
+    {
+        "LTC_ETH": {
+            "isFrozen": "0",
+            "last_price": "0.0397878778",
+            "quote_volume": "0.2747834843",
+            "base_volume": "7.1514769562"
+        }
+    },
+    {
+        "CHTA_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0000030000",
+            "quote_volume": "1.5527861936",
+            "base_volume": "665921.0000000000"
+        }
+    },
+    {
+        "VRSC_RVN": {
+            "isFrozen": "0",
+            "last_price": "27.0623625733",
+            "quote_volume": "3.7553008944",
+            "base_volume": "0.1387647100"
+        }
+    },
+    {
+        "DASH_DOGE": {
+            "isFrozen": "0",
+            "last_price": "400.1763176856",
+            "quote_volume": "188.1103793670",
+            "base_volume": "0.4700687448"
+        }
+    },
+    {
+        "KMD_ETH": {
+            "isFrozen": "0",
+            "last_price": "0.0001264115",
+            "quote_volume": "0.0002872932",
+            "base_volume": "2.2726819998"
+        }
+    },
+    {
+        "LBC_DGB": {
+            "isFrozen": "0",
+            "last_price": "1.4215850000",
+            "quote_volume": "6378.1122588048",
+            "base_volume": "4505.2493152000"
+        }
+    },
+    {
+        "LBC_BCH": {
+            "isFrozen": "0",
+            "last_price": "0.0000417363",
+            "quote_volume": "0.1951943518",
+            "base_volume": "4681.5293557067"
+        }
+    },
+    {
+        "KMD_DOGE": {
+            "isFrozen": "0",
+            "last_price": "3.3055016063",
+            "quote_volume": "205.0342789464",
+            "base_volume": "61.4130505010"
+        }
+    },
+    {
+        "LBC_KMD": {
+            "isFrozen": "0",
+            "last_price": "0.0444440000",
+            "quote_volume": "574.7678354925",
+            "base_volume": "13556.3069304939"
+        }
+    },
+    {
+        "VRSC_DASH": {
+            "isFrozen": "0",
+            "last_price": "0.0165121815",
+            "quote_volume": "0.0520651923",
+            "base_volume": "3.1531383169"
+        }
+    },
+    {
+        "VRSC_KMD": {
+            "isFrozen": "0",
+            "last_price": "2.0000000000",
+            "quote_volume": "2068.5254696616",
+            "base_volume": "1033.8513172715"
+        }
+    },
+    {
+        "DGB_LTC": {
+            "isFrozen": "0",
+            "last_price": "0.0001057254",
+            "quote_volume": "0.0008958800",
+            "base_volume": "8.4736496622"
+        }
+    }
+]

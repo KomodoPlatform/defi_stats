@@ -1,0 +1,33 @@
+{ 
+  q(func: eq(uuid, "1c96455c-dc93-4c10-b21e-17dc303146c3")) { 
+    name
+    uuid
+    maker {
+			coin {
+				name
+      }      
+      name
+      pubkey {
+				name
+      }
+      version {
+				name
+      }
+    }
+    taker {
+			coin {
+				name
+      }
+      name
+      pubkey {
+				name
+      }
+      gui {
+				name
+      }
+      version {
+				name
+      }
+    }
+  }
+}

@@ -1,0 +1,145 @@
+enum SwapResult {
+	Incomplete
+	AwaitingRefund
+	Refunded
+	Success
+}
+
+enum CoinNetwork {
+	UTXO
+	AVX20
+	BEP20
+	ERC20
+	PLG20
+	FTM20
+	HRC20
+	Tendermint
+	ZHTLC
+}
+
+enum TransactionType {
+	TakerFee
+	TakerPaymentSent
+	TakerPaymentReleased
+	TakerPaymentRefunded
+	MakerPaymentSent
+	MakerPaymentReleased
+	MakerPaymentRefunded
+}
+
+type Coin {
+	name: String! @id @search(by:[exact])
+	usd_price: [SpotPrice!]
+	network: CoinNetwork @search(by:[exact])
+	testnet: Boolean @search
+	swaps: [Swap!]
+	transactions: [Transaction!]
+	makers: [Maker!]
+	takers: [Taker!]
+	fees: [Fee!]
+}
+
+type SpotPrice {
+	id: ID!
+	timestamp: Int! @search
+	price: Float! @search
+}
+
+type Gui {
+	name: String! @id @search(by:[exact])
+	swaps: [Swap!]
+	pubkeys: [Pubkey!]
+	makers: [Maker!]
+	takers: [Taker!]
+}
+
+type Sdk {
+	name: String! @id @search(by:[exact]) 
+	swaps: [Swap!]
+	pubkeys: [Pubkey!]
+	makers: [Maker!]
+	takers: [Taker!]
+}
+
+type Maker {
+	id: ID!
+    payment_lock: Int! @search
+    confs: Int! @search
+    nota: Boolean! @search
+	pubkey: Pubkey! @hasInverse(field:makers)
+	coin: Coin!
+    volume: Float! @search
+    usd_price: SpotPrice!
+    send_fee: Fee!
+    receive_fee: Fee!
+	gui: Gui! 
+	version: Sdk! 
+	swap: Swap! @hasInverse(field:maker)
+}
+
+type Taker {
+	id: ID!
+    payment_lock: Int! @search
+    confs: Int! @search
+    nota: Boolean! @search
+	pubkey: Pubkey! @hasInverse(field:takers)
+	coin: Coin!
+    volume: Float! @search
+    usd_price: SpotPrice!
+    dex_fee: Fee!
+    send_fee: Fee!
+    receive_fee: Fee!
+	gui: Gui! 
+	version: Sdk! 
+	swap: Swap! @hasInverse(field:taker)
+}
+
+type Pubkey {
+	name: String! @id @search(by:[exact])
+	guis: [Gui!]
+	versions: [Sdk!]
+	swaps: [Swap!]
+	makers: [Maker!]
+	takers: [Taker!]
+	coins: [Coin!]
+	fees: [Fee!]
+}
+
+type Swap {
+	uuid: String! @id @search(by:[exact])
+	maker: Maker! 
+	taker: Taker! 
+	events: [SwapEvent!]
+	transactions: [Transaction!]
+	fees: [Fee!]
+	result: SwapResult! @search(by:[exact])
+	started_at: Int! @search
+	ended_at: Int! @search
+}
+
+type SwapEvent {
+	id: ID!
+	name: String!
+	timestamp: Int!
+	swap: Swap! @hasInverse(field: events)
+}
+
+type Transaction {
+	name: String! @search(by:[exact]) @id
+	usd_price: SpotPrice! 
+	amount: Float! @search
+	tx_type: TransactionType! @search(by:[exact])
+	swap: Swap! @hasInverse(field:transactions)
+	coin: Coin! @hasInverse(field:transactions)
+}
+
+type Fee {
+    id: ID!
+	name: String! @search(by:[exact])
+	coin: Coin! @hasInverse(field:fees)
+	pubkey: Pubkey! @hasInverse(field:fees)
+	usd_price: SpotPrice! 
+	amount: Float! @search
+	paid_from_trading_vol: Boolean! @search
+	swap: Swap! @hasInverse(field: fees) 
+}

@@ -1,0 +1,29 @@
+{
+    "days": 14,
+    "swaps_count": 2054,
+    "swaps_value": 235739.59500582,
+    "top_pairs": {
+        "by_value_traded_usd": {
+            "VRSC_KMD": 147372.75904195,
+            "KMD_LTC": 19910.02372316,
+            "XEP_XEP": 17133.65225949,
+            "KMD_BTC": 9172.33440065,
+            "KMD_USDT": 3936.69862342
+        },
+        "by_current_liquidity_usd": {
+            "VRSC_KMD": 98360.46856833,
+            "KMD_BTC": 16457.19823955,
+            "KMD_USDT": 14193.07763393,
+            "KMD_ETH": 11027.48221329,
+            "KMD_USDC": 9945.92353913
+        },
+        "by_swaps_count": {
+            "VRSC_KMD": 195,
+            "KMD_LTC": 123,
+            "LBC_KMD": 110,
+            "KMD_DOGE": 103,
+            "DOC_MARTY": 101
+        }
+    },
+    "current_liquidity": 373386.44162423
+}

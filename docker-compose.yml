@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  fastapi_dexstats:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    hostname: fastapi_dexstats
+    container_name: fastapi_dexstats
+    depends_on:
+      - zero
+      - alpha
+      - ratel
+    ports:
+      - "7766:7766"
+    env_file:
+      - .env
+    volumes:
+      - ./:/home/api
+    networks:
+      - stats-net
+
+  # This Docker Compose file can be used to quickly bootup Dgraph Zero
+  # NOTE: whitelisting is set to private address ranges, this is ONLY for a local setup
+  #       please change it accordingly for your production setup
+  #       more here https://dgraph.io/docs/deploy/dgraph-administration/#whitelisting-admin-operations
+  zero:
+    image: dgraph/dgraph:latest
+    hostname: zero
+    container_name: zeros
+    volumes:
+      - db-zero-data:/dgraph
+    ports:
+      - 5080:5080
+      - 6080:6080
+    restart: on-failure
+    command: dgraph zero --my=172.18.0.4:5080
+    networks:
+      stats-net:
+        ipv4_address: 172.18.0.4
+
+  alpha:
+    image: dgraph/dgraph:latest
+    hostname: alpha
+    container_name: alpha
+    volumes:
+      - db-alpha-data:/dgraph
+    ports:
+      - 8080:8080
+      - 9080:9080
+    depends_on:
+      - zero
+    restart: on-failure
+    command: dgraph alpha --my=172.18.0.3:7080 --zero=172.18.0.4:5080 --security whitelist=172.18.0.1:172.18.0.6,192.168.1.77
+    networks:
+      stats-net:
+        ipv4_address: 172.18.0.3
+
+  ratel:
+    image: dgraph/ratel:latest
+    hostname: ratel
+    container_name: ratel
+    ports:
+      - 8000:8000
+    depends_on:
+      - zero
+      - alpha
+    command: dgraph-ratel
+    networks:
+      stats-net:
+        ipv4_address: 172.18.0.2
+
+volumes:
+  db-zero-data:
+    driver: local
+  db-alpha-data:
+    driver: local
+
+networks:
+  stats-net:
+    external: true
+    ipam:
+        driver: default
+        config:
+            - subnet: "172.18.0.0/16"
+            - gateway: "172.18.0.1"
+  

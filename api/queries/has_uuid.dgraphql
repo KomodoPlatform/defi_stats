@@ -1,0 +1,33 @@
+{ 
+  q(func: has(uuid)) { 
+    name
+    uuid
+    maker {
+			coin {
+				name
+      }      
+      name
+      pubkey {
+				name
+      }
+      version {
+				name
+      }
+    }
+    taker {
+			coin {
+				name
+      }
+      name
+      pubkey {
+				name
+      }
+      gui {
+				name
+      }
+      version {
+				name
+      }
+    }
+  }
+}
