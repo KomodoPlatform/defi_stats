@@ -15,6 +15,7 @@ python-dotenv = "^1.0.0"
 httpx = "^0.24.1"
 requests = "^2.31.0"
 pydgraph = "^23.0.1"
+sysrsync = "^1.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

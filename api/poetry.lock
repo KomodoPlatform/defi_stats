@@ -903,6 +903,31 @@ anyio = ">=3.4.0,<5"
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
 
 [[package]]
+name = "sysrsync"
+version = "1.1.1"
+description = "Simple and safe python wrapper for calling system rsync"
+optional = false
+python-versions = ">=3.6,<4.0"
+files = [
+    {file = "sysrsync-1.1.1-py3-none-any.whl", hash = "sha256:9c8877f162dce9c480804445fca56cd19bf41b998d2172651468ccebfdc60850"},
+    {file = "sysrsync-1.1.1.tar.gz", hash = "sha256:435f9eb620e68ffb18ca5cbad32b113396a432361c7722038eab65c97dd83bd5"},
+]
+
+[package.dependencies]
+toml = ">=0.10.0,<0.11.0"
+
+[[package]]
+name = "toml"
+version = "0.10.2"
+description = "Python Library for Tom's Obvious, Minimal Language"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
+    {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
+]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -963,4 +988,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cd2bf907873d6753bb0996d10aa7faaacc353ee40dad5880b16e50f4fe206d25"
+content-hash = "56f02da2e2ba36465264ede74493a4f567c7ae498fc198dc54d706b440f190dc"

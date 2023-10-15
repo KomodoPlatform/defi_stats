@@ -9,7 +9,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from logger import logger
 import const
-
+from helper import sum_json_key, sum_json_key_10f, format_10f, list_json_key
 
 class Files:
     def __init__(self, testing: bool = False):
@@ -50,8 +50,10 @@ class Cache:
             files=self.files,
             utils=self.utils
         )
+        # Coins repo data
         self.coins = None
         self.coins_config = None
+        # For CoinGecko endpoints
         self.gecko_source = None
         self.gecko_pairs = None
         self.gecko_tickers = None
@@ -59,8 +61,10 @@ class Cache:
         logger.info("Cache initialized...")
 
     def refresh(self):
+        # Coins repo data
         self.coins = self.load.coins()
         self.coins_config = self.load.coins_config()
+        # For CoinGecko endpoints
         self.gecko_source = self.load.gecko_source()
         self.gecko_pairs = self.load.gecko_pairs()
         self.gecko_tickers = self.load.gecko_tickers()
@@ -70,12 +74,14 @@ class Cache:
             self.files = files
             self.utils = utils
 
+        # Coins repo data
         def coins(self):
             return self.utils.load_jsonfile(self.files.coins)
 
         def coins_config(self):
             return self.utils.load_jsonfile(self.files.coins_config)
 
+        # For CoinGecko endpoints
         def gecko_source(self):
             return self.utils.load_jsonfile(self.files.gecko_source)
 
@@ -94,22 +100,27 @@ class Cache:
             self.testing = testing
             self.utils = utils
 
+        # For CoinGecko endpoints
         def gecko_source(self):
-            return Gecko().get_gecko_source()
+            return CoinGeckoAPI().get_gecko_source()
 
-        def gecko_tickers(self, days: int = 1):
+        def gecko_tickers(self, trades_days: int = 1, pairs_days: int = 7):
             try:
                 DB = self.utils.get_db(self.db_path, self.DB)
-                pairs = DB.get_pairs(7)
-                logger.debug(f"Calculating 24hr gecko_tickers cache for {len(pairs)} pairs (traded last {7} days)")
-                data = [Pair(i, self.db_path, self.testing, DB=DB).gecko_tickers(days) for i in pairs]
+                pairs = DB.get_pairs(pairs_days)
+                logger.debug(f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)")
+                data = [
+                    Pair(i, self.db_path, self.testing, DB=DB).gecko_tickers(trades_days)
+                    for i in pairs
+                ]
+                # Remove None values (from coins without price)
                 data = [i for i in data if i is not None]
                 return {
                     "last_update": int(time.time()),
                     "pairs_count": len(data),
-                    "swaps_count": sum([int(i["trades_24hr"]) for i in data]),
-                    "combined_liquidity_usd": "{:.10f}".format(sum([Decimal(i["liquidity_in_usd"]) for i in data])),
-                    "combined_volume_usd": "{:.10f}".format(sum([Decimal(i["volume_usd_24hr"]) for i in data])),
+                    "swaps_count": int(sum_json_key(data, "trades_24hr")),
+                    "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
+                    "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
                     "data": data
                 }
             except Exception as e:
@@ -123,17 +134,7 @@ class Cache:
                 logger.debug(f"Calculating ticker cache for {len(pairs)} pairs ({days} days)")
                 return [Pair(i, self.db_path, self.testing, DB=DB).info for i in pairs]
             except Exception as e:
-                logger.error(f"{type(e)} Error in [Cache.calc.ticker]: {e}")
-                return None
-
-        def gecko_orderbook(self, days: int = 7):
-            try:
-                DB = self.utils.get_db(self.db_path, self.DB)
-                pairs = DB.get_pairs(days)
-                logger.debug(f"Calculating ticker cache for {len(pairs)} pairs ({days} days)")
-                return [Pair(i, self.db_path, self.testing, DB=DB).info for i in pairs]
-            except Exception as e:
-                logger.error(f"{type(e)} Error in [Cache.calc.ticker]: {e}")
+                logger.error(f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}")
                 return None
 
     class Save:
@@ -164,38 +165,34 @@ class Cache:
                 logger.error(f"{type(e)} Error saving {path}: {e}")
             return None
 
-        def coins_config(self, url=const.COINS_CONFIG_URL) -> dict:
+        # Coins repo data
+        def coins_config(self, url=const.COINS_CONFIG_URL):
             data = self.utils.download_json(url)
             if data is not None:
                 return self.save(self.files.coins_config, data)
 
-        def coins(self, url=const.COINS_URL) -> dict:
+        def coins(self, url=const.COINS_URL):
             data = self.utils.download_json(url)
             if data is not None:
                 return self.save(self.files.coins, data)
 
-        def gecko_source(self) -> dict:
+        # For CoinGecko endpoints
+        def gecko_source(self):
             data = self.calc.gecko_source()
             if data is not None:
                 return self.save(self.files.gecko_source, data)
 
-        def gecko_pairs(self) -> dict:
+        def gecko_pairs(self):
             data = self.calc.gecko_pairs()
             if data is not None:
                 return self.save(self.files.gecko_pairs, data)
             
-        def gecko_tickers(self) -> dict:
+        def gecko_tickers(self):
             data = self.calc.gecko_tickers()
             if data is not None:
                 return self.save(self.files.gecko_tickers, data)
 
-        def gecko_orderbook(self) -> dict:
-            data = self.calc.gecko_orderbook()
-            if data is not None:
-                return self.save(self.files.gecko_orderbook, data)
-
-
-class Gecko:
+class CoinGeckoAPI:
     def __init__(self, testing=False):
         self.testing = testing
         self.utils = Utils()
@@ -221,7 +218,7 @@ class Gecko:
         coin_ids.sort()
         return coin_ids
 
-    def get_gecko_info_dict(self) -> dict:
+    def get_gecko_info_dict(self):
         coins_info = {}
         for coin in self.coins_config:
             native_coin = coin.split("-")[0]
@@ -234,7 +231,7 @@ class Gecko:
                     )
         return coins_info
 
-    def get_gecko_coins_dict(self, gecko_info: dict, coin_ids: list) -> dict:
+    def get_gecko_coins_dict(self, gecko_info: dict, coin_ids: list):
         gecko_coins = {}
         for coin_id in coin_ids:
             gecko_coins.update({coin_id: []})
@@ -452,7 +449,6 @@ class Pair:
                     "pool_id": self.as_str,
                     "base": self.base,
                     "target": self.quote
-
                 }
 
         except Exception as e:
@@ -464,7 +460,7 @@ class Pair:
         limit: int = 100,
         start_time: int = 0,
         end_time: int = 0
-    ) -> dict:
+    ):
         """Returns trades for this pair."""
         try:
             if end_time == 0:
@@ -481,23 +477,45 @@ class Pair:
             logger.debug(f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
             for swap in swaps_for_pair:
                 trade_info = OrderedDict()
-                trade_info["trade_id"] = swap["uuid"]
                 price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
-                trade_info["price"] = "{:.10f}".format(price)
-                trade_info["base_volume"] = swap["maker_amount"]
-                trade_info["quote_volume"] = swap["taker_amount"]
+                trade_info["trade_id"] = swap["uuid"]
+                trade_info["base_ticker"] = self.base
+                trade_info["quote_ticker"] = self.quote
+                trade_info["price"] = format_10f(price)
+                trade_info["base_volume"] = format_10f(swap["maker_amount"])
+                trade_info["quote_volume"] = format_10f(swap["taker_amount"])
                 trade_info["timestamp"] = swap["started_at"]
                 trade_info["type"] = swap["trade_type"]
                 trades_info.append(trade_info)
-            return trades_info
         except Exception as e:
             logger.warning(f"{type(e)} Error in [Pair.trades]: {e}")
-            return []
+            trades_info = []
+        
+        average_price = 0
+        if len(trades_info) > 0:
+            average_price = sum_json_key(trades_info, "price") / len(trades_info)
+        average_price = format_10f(average_price)
+        
+        data = {
+            "ticker_id": self.as_str,
+            "start_time": str(start_time),
+            "end_time": str(end_time),
+            "limit": str(limit),
+            "trades_count": str(len(trades_info)),
+            "sum_base_volume": sum_json_key_10f(trades_info, "base_volume"),
+            "sum_quote_volume": sum_json_key_10f(trades_info, "quote_volume"),
+            "average_price": average_price,
+            "buy": list_json_key(trades_info, "type", "buy"),
+            "sell": list_json_key(trades_info, "type", "sell")
+        }
+        logger.info(data)
+        return data
+    
 
     def get_volumes_and_prices(
         self,
         days: int = 1,
-    ) -> dict:
+    ):
         """
         Iterates over list of swaps to get data for CMC summary endpoint
         """
@@ -587,7 +605,7 @@ class Pair:
         }
         
 
-    def gecko_tickers(self, days=1) -> dict:
+    def gecko_tickers(self, days=1):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth, DEX has to provide the formula for +2/-2% depth.
         try:
             DB = self.utils.get_db(self.db_path, self.DB)
@@ -622,7 +640,7 @@ class Pair:
             logger.warning(f"{type(e)} Error in [Pair.ticker]: {e}")
             return {}
 
-    def summary(self, days: int = 1, orderbook: dict = None) -> dict:
+    def summary(self, days: int = 1, orderbook: dict = None):
         """Calculates CMC summary endpoint data for a pair"""
         try:
             base = self.base
@@ -715,7 +733,7 @@ class Pair:
 
         return data
 
-    def ticker(self, days=1) -> dict:
+    def ticker(self, days=1):
         try:
             DB = self.utils.get_db(self.db_path, self.DB)
             DB.conn.row_factory = sqlite3.Row
@@ -969,14 +987,14 @@ class Swaps:
         self.utils = Utils()
         self.templates = Templates()
 
-    def get_swap_prices(self, swaps_for_pair: list) -> dict:
+    def get_swap_prices(self, swaps_for_pair: list):
         swap_prices = {}
         for swap in swaps_for_pair:
             swap_price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
             swap_prices[swap["started_at"]] = swap_price
         return swap_prices
 
-    def get_swaps_volumes(self, swaps_for_pair: list) -> dict:
+    def get_swaps_volumes(self, swaps_for_pair: list):
         try:
             base_volume = 0
             quote_volume = 0
@@ -1000,7 +1018,7 @@ class Templates:
             "coingecko_id": coin_id
         }
 
-    def pair_summary(self, base: str, quote: str) -> dict:
+    def pair_summary(self, base: str, quote: str):
         data = OrderedDict()
         data["trading_pair"] = f"{base}_{quote}"
         data["base_currency"] = base
@@ -1022,7 +1040,7 @@ class Templates:
         data["highest_bid"] = 0
         return data
 
-    def volumes_and_prices(self, suffix) -> dict:
+    def volumes_and_prices(self, suffix):
         return {
             "base_volume": 0,
             "quote_volume": 0,
@@ -1035,7 +1053,7 @@ class Templates:
             f"price_change_{suffix}": 0,
         }
 
-    def orderbook(self, base: str, quote: str, v2=False) -> dict:
+    def orderbook(self, base: str, quote: str, v2=False):
         data = {
             "pair": f"{base}_{quote}",
             "bids": [],
@@ -1066,7 +1084,7 @@ class Utils:
             return DB
         return SqliteDB(db_path)
 
-    def values_to_str(self, data: dict, string_fields: list) -> dict:
+    def values_to_str(self, data: dict, string_fields: list):
         for field in string_fields:
             if field in data:
                 if not isinstance(data[field], str):

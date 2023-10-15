@@ -24,7 +24,7 @@ def setup_time():
 
 @pytest.fixture
 def setup_gecko():
-    yield models.Gecko(testing=True)
+    yield models.CoinGeckoAPI(testing=True)
 
 
 @pytest.fixture
