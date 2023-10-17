@@ -31,6 +31,13 @@ def sum_json_key_10f(data: dict, key: str) -> str:
     return format_10f(sum_json_key(data, key))
 
 
+def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
+    '''
+    Sort a list of dicts by the value of a key.
+    '''
+    return sorted(data, key=lambda k: k[key], reverse=reverse)
+
+
 def validate_ticker(ticker_id: str):
     if len(ticker_id) > 32:
         raise HTTPException(

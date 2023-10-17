@@ -2,6 +2,7 @@
 import pytest
 from fixtures import setup_cache, setup_utils, setup_orderbook_data, \
     setup_swaps_test_data, setup_database, setup_time, logger
+from helper import format_10f
 
 
 # /////////////////////// #
@@ -98,3 +99,34 @@ def test_load_gecko(setup_cache):
         assert i in ["usd_market_cap", "usd_price", "coingecko_id"]
     for i in gecko:
         assert gecko[i]["coingecko_id"] != ""
+
+
+def test_calc_gecko_tickers(setup_cache):
+    calc = setup_cache.calc
+    r = calc.gecko_tickers()
+    logger.debug(r)
+    assert len(r) > 0
+    assert isinstance(r, dict)
+    assert "last_update" in r
+    assert r["swaps_count"] == 7
+    assert r["pairs_count"] == 5
+    assert len(r["data"]) == 5
+    assert "combined_liquidity_usd" in r
+    assert "combined_volume_usd" in r
+    assert isinstance(r["data"], list)
+    assert isinstance(r["data"][1], dict)
+    assert r["data"][1]["ticker_id"] == "DGB_KMD"
+    assert r["data"][1]["base_currency"] == "DGB"
+    assert r["data"][1]["last_price"] == format_10f(0.0018000000)
+    assert r["data"][1]["last_trade"] == "0"
+    assert r["data"][1]["trades_24hr"] == "2"
+    assert r["data"][1]["base_volume"] == format_10f(1500)
+    assert r["data"][1]["target_volume"] == format_10f(1.9)
+    assert r["data"][1]["base_usd_price"] == 0.01
+    assert r["data"][1]["target_usd_price"] == 1
+    assert r["data"][1]["high"] == format_10f(0.0018)
+    assert r["data"][1]["low"] == format_10f(0.001)
+    assert "liquidity_in_usd" in r["data"][1]
+    assert "volume_usd_24hr" in r["data"][1]
+    assert "ask" in r["data"][1]
+    assert "bid" in r["data"][1]

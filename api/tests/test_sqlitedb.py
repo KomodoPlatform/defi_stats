@@ -53,20 +53,20 @@ def test_timespan_swaps(setup_swaps_test_data):
     DB.sql_cursor = DB.conn.cursor()
 
     swaps = DB.get_timespan_swaps()
-    assert len(swaps) == 7
+    assert len(swaps) == 8
 
     swaps = DB.get_timespan_swaps(7)
     logger.info(swaps)
-    assert len(swaps) == 8
+    assert len(swaps) == 9
 
     swaps = DB.get_timespan_swaps(30)
-    assert len(swaps) == 10
-
-    swaps = DB.get_timespan_swaps(60)
     assert len(swaps) == 11
 
-    swaps = DB.get_timespan_swaps(9999)
+    swaps = DB.get_timespan_swaps(60)
     assert len(swaps) == 12
+
+    swaps = DB.get_timespan_swaps(9999)
+    assert len(swaps) == 13
 
 
 def get_actual_db_data(maker_coin: str = "BTC", limit: int = 5):

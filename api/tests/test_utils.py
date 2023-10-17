@@ -98,26 +98,6 @@ def test_get_gecko_source():
     pass
 
 
-def test_get_liquidity():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_get_value():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_atomicdex_fortnight():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_get_top_pairs():
-    # TODO: Needs a fixture
-    pass
-
-
 def test_get_gecko_usd_price(setup_utils, setup_cache):
     utils = setup_utils
     cache = setup_cache
