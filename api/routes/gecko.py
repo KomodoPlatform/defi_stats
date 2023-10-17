@@ -49,6 +49,8 @@ class TickersItem(BaseModel):
     base_currency: str = "KMD"
     target_currency: str = "LTC"
     last_price: str = "0.0034393809"
+    last_trade: str = "1697525818"
+    trades_24hr: str = "52"
     base_volume: str = "845.2425635969204"
     target_volume: str = "2.9121541628874037"
     bid: str = "0.00337853"
@@ -56,6 +58,7 @@ class TickersItem(BaseModel):
     high: str = "0.0034736790"
     low: str = "0.0034116503"
     liquidity_in_usd: str = "46758.1467130070"
+    volume_usd_24hr: str = "649642.1516335415"
 
 
 class TickersSummary(BaseModel):

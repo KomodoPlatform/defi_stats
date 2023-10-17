@@ -2,6 +2,7 @@
 import os
 import sys
 import pytest
+from decimal import Decimal
 api_root_path = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 sys.path.append(api_root_path)
 print(sys.path)
@@ -75,6 +76,11 @@ def setup_kmd_ltc_str_pair_with_db(setup_swaps_test_data):
 
 
 @pytest.fixture
+def setup_kmd_ltc_list_pair_with_db(setup_swaps_test_data):
+    yield models.Pair(["KMD", "LTC"], DB=setup_swaps_test_data)
+
+
+@pytest.fixture
 def setup_kmd_dgb_tuple_pair_with_db(setup_swaps_test_data):
     yield models.Pair(("KMD", "DGB"), DB=setup_swaps_test_data)
 
@@ -82,6 +88,11 @@ def setup_kmd_dgb_tuple_pair_with_db(setup_swaps_test_data):
 @pytest.fixture
 def setup_not_a_real_pair():
     yield models.Pair("NotARealPair")
+
+
+@pytest.fixture
+def setup_three_ticker_pair():
+    yield models.Pair("NOT_GONNA_WORK")
 
 
 @pytest.fixture
@@ -166,7 +177,9 @@ def setup_swaps_test_data(setup_database, setup_time):
         (13, 'DGB-segwit', 'LTC', 'cf3e0387-ac6f-a2fb-b360-4bf25fed4292', time.days_ago(30) - 12,
          time.days_ago(30) + 12, 200000, 1, 1, 'DGB', 'segwit', 'LTC', '', None, None),
         (14, 'LTC', 'DOGE', '50d8e2e4-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 13,
-         time.days_ago(60) + 13, 1, 1, 1, 'LTC', '', 'DOGE', '', None, None),
+         time.days_ago(60) + 13, 10, 1, 1, 'LTC', '', 'DOGE', '', None, None),
+        (15, 'DOGE', 'LTC', '60d8e2e4-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 10,
+         time.days_ago(60) + 10, 1, 10, 1, 'DOGE', '', 'LTC', '', None, None),
     ]
     sql = 'INSERT INTO stats_swaps VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     DB.sql_cursor.executemany(sql, sample_data)
@@ -274,4 +287,15 @@ def historical_data():
                 "type": "sell"
             }
         ]
+    }
+
+
+@pytest.fixture
+def dirty_dict():
+    return {
+        "a": Decimal("1.23456789"),
+        "b": "string",
+        "c": 1,
+        "d": {"foo": "bar"},
+        "e": ["foo", "bar"],
     }

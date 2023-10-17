@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import pytest
+from decimal import Decimal, InvalidOperation
 from fixtures import (
     setup_swaps_test_data,
     setup_database,
@@ -8,6 +10,7 @@ from fixtures import (
     setup_time,
     setup_cache,
     logger,
+    dirty_dict
 )
 
 
@@ -44,34 +47,6 @@ def test_get_suffix(setup_utils):
     assert "USDC-PLG20" in coins
 
 
-def test_get_volumes_and_prices(setup_swaps_test_data):
-    # DB = setup_swaps_test_data
-    # pair = ("DGB", "LTC")
-    # swaps_for_pair = DB.get_swaps_for_pair(pair)
-    # TODO: Needs a fixture
-    pass
-
-
-def test_get_and_parse_orderbook():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_summary_for_pair():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_ticker_for_pair():
-    # TODO: Needs a fixture
-    pass
-
-
-def test_orderbook_for_pair():
-    # TODO: Needs a fixture
-    pass
-
-
 def test_get_chunks(setup_utils):
     utils = setup_utils
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -79,23 +54,6 @@ def test_get_chunks(setup_utils):
     assert len(chunks) == 4
     assert len(chunks[0]) == 3
     assert len(chunks[3]) == 1
-
-
-def test_download_json(setup_utils):
-    utils = setup_utils
-    data = utils.download_json("https://api.coingecko.com/api/v3/coins/list")
-    assert len(data) > 0
-    data = utils.download_json("foo")
-    assert data is None
-
-    # TODO: Needs a fixture
-    pass
-
-
-def test_get_gecko_source():
-    # Not TODO: This queries external api, so not sure how to test yet.
-    # Might break it down a it into smaller functions
-    pass
 
 
 def test_get_gecko_usd_price(setup_utils, setup_cache):
@@ -108,3 +66,42 @@ def test_get_gecko_usd_price(setup_utils, setup_cache):
     price1 = utils.get_gecko_usd_price("LTC-segwit", cache.gecko_source)
     price2 = utils.get_gecko_usd_price("LTC", cache.gecko_source)
     assert price1 == price2
+
+
+def test_round_to_str(setup_utils):
+    utils = setup_utils
+    assert utils.round_to_str(1.23456789, 4) == "1.2346"
+    assert utils.round_to_str("1.23456789", 8) == "1.23456789"
+    assert utils.round_to_str(Decimal(), 2) == "0.00"
+    assert utils.round_to_str("foo", 4) == "0.0000"
+    assert utils.round_to_str({"foo": "bar"}, 1) == "0.0"
+
+
+def test_load_jsonfile(setup_utils):
+    utils = setup_utils
+    assert utils.load_jsonfile("foo", 2) is None
+
+
+def test_download_json(setup_utils):
+    utils = setup_utils
+    data = utils.download_json("https://api.coingecko.com/api/v3/coins/list")
+    assert len(data) > 0
+    data = utils.download_json("foo")
+    assert data is None
+
+
+def test_clean_decimal_dict(setup_utils, dirty_dict):
+    utils = setup_utils
+    assert isinstance(dirty_dict["a"], Decimal)
+    r = utils.clean_decimal_dict(dirty_dict.copy())
+    assert isinstance(r["a"], float)
+    r = utils.clean_decimal_dict(dirty_dict.copy())
+    assert r["a"] == 1.23456789
+    r = utils.clean_decimal_dict(dirty_dict.copy(), to_string=True)
+    logger.info(r)
+    assert isinstance(r["a"], str)
+    r = utils.clean_decimal_dict(dirty_dict.copy(), to_string=True, rounding=2)
+    assert r["a"] == "1.23"
+
+    for i in ["b", "c", "d", "e"]:
+        assert r[i] == dirty_dict[i]

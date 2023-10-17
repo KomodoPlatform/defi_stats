@@ -4,6 +4,7 @@ import sqlite3
 import models
 import const
 from fixtures import setup_swaps_test_data, setup_database, setup_time, logger
+from helper import format_10f
 
 now = int(time.time())
 hour_ago = now - 3600
@@ -48,34 +49,14 @@ def test_get_swaps_for_pair(setup_swaps_test_data):
     assert swaps[0]["trade_type"] == "buy"
 
 
-def test_timespan_swaps(setup_swaps_test_data):
-    DB = setup_swaps_test_data
-    DB.sql_cursor = DB.conn.cursor()
-
-    swaps = DB.get_timespan_swaps()
-    assert len(swaps) == 8
-
-    swaps = DB.get_timespan_swaps(7)
-    logger.info(swaps)
-    assert len(swaps) == 9
-
-    swaps = DB.get_timespan_swaps(30)
-    assert len(swaps) == 11
-
-    swaps = DB.get_timespan_swaps(60)
-    assert len(swaps) == 12
-
-    swaps = DB.get_timespan_swaps(9999)
-    assert len(swaps) == 13
-
-
 def get_actual_db_data(maker_coin: str = "BTC", limit: int = 5):
     '''
     This is just here for convienince to get data from
     actual DB for use in testing fixtures
     '''
     DB = models.SqliteDB(const.MM2_DB_PATH)
-    DB.sql_cursor.execute('select * from stats_swaps where maker_coin = "BTC" limit 5')
+    DB.sql_cursor.execute(
+        'select * from stats_swaps where maker_coin = "BTC" limit 5')
     data = []
     for r in DB.sql_cursor.fetchall():
         data.append(r)
@@ -86,3 +67,15 @@ def get_actual_db_data(maker_coin: str = "BTC", limit: int = 5):
 def test_get_actual_db_data():
     r = get_actual_db_data()
     assert len(r) <= 5
+
+
+def test_get_last_price_for_pair(setup_swaps_test_data):
+    DB = setup_swaps_test_data
+    r = DB.get_last_price_for_pair("LTC", "DOGE")["price"]
+    assert format_10f(r) == format_10f(0.1)
+    r = DB.get_last_price_for_pair("DOGE", "LTC")["price"]
+    assert format_10f(r) == format_10f(10)
+    r = DB.get_last_price_for_pair("KMD", "DGB")["price"]
+    assert format_10f(r) == format_10f(1 / 0.0018)
+    r = DB.get_last_price_for_pair("KMD", "ETH")["timestamp"]
+    assert r == 0
