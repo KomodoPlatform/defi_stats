@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import json
 import sqlite3
@@ -11,18 +12,21 @@ from logger import logger
 import const
 from helper import sum_json_key, sum_json_key_10f, format_10f, list_json_key
 
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+api_root_path = os.path.dirname(os.path.abspath(__file__))
+
+
 class Files:
     def __init__(self, testing: bool = False):
         if testing:
-            folder = "tests/fixtures"
+            folder = f"{api_root_path}/tests/fixtures"
         else:
-            folder = "cache"
+            folder = f"{api_root_path}/cache"
         # Coins repo data
-        self.coins = "../mm2/coins"
+        self.coins = f"{folder}/coins"
         self.coins_config = f"{folder}/coins_config.json"
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source_cache.json"
-        self.gecko_pairs = f"{folder}/gecko/pairs_cache.json"
         self.gecko_tickers = f"{folder}/gecko/ticker_cache.json"
 
 
@@ -55,7 +59,6 @@ class Cache:
         self.coins_config = None
         # For CoinGecko endpoints
         self.gecko_source = None
-        self.gecko_pairs = None
         self.gecko_tickers = None
         self.refresh()
         logger.info("Cache initialized...")
@@ -66,7 +69,6 @@ class Cache:
         self.coins_config = self.load.coins_config()
         # For CoinGecko endpoints
         self.gecko_source = self.load.gecko_source()
-        self.gecko_pairs = self.load.gecko_pairs()
         self.gecko_tickers = self.load.gecko_tickers()
 
     class Load:
@@ -85,12 +87,8 @@ class Cache:
         def gecko_source(self):
             return self.utils.load_jsonfile(self.files.gecko_source)
 
-        def gecko_pairs(self):
-            return self.utils.load_jsonfile(self.files.gecko_pairs)
-
         def gecko_tickers(self):
             return self.utils.load_jsonfile(self.files.gecko_tickers)
-
 
     class Calc:
         def __init__(self, db_path, load, testing, utils, DB=None):
@@ -108,9 +106,11 @@ class Cache:
             try:
                 DB = self.utils.get_db(self.db_path, self.DB)
                 pairs = DB.get_pairs(pairs_days)
-                logger.debug(f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)")
+                logger.debug(
+                    f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)")
                 data = [
-                    Pair(i, self.db_path, self.testing, DB=DB).gecko_tickers(trades_days)
+                    Pair(i, self.db_path, self.testing,
+                         DB=DB).gecko_tickers(trades_days)
                     for i in pairs
                 ]
                 # Remove None values (from coins without price)
@@ -124,23 +124,16 @@ class Cache:
                     "data": data
                 }
             except Exception as e:
-                logger.error(f"{type(e)} Error in [Cache.calc.gecko_tickers]: {e}")
+                logger.error(
+                    f"{type(e)} Error in [Cache.calc.gecko_tickers]: {e}")
                 return None
 
-        def gecko_pairs(self, days: int = 7):
-            try:
-                DB = self.utils.get_db(self.db_path, self.DB)
-                pairs = DB.get_pairs(days)
-                logger.debug(f"Calculating ticker cache for {len(pairs)} pairs ({days} days)")
-                return [Pair(i, self.db_path, self.testing, DB=DB).info for i in pairs]
-            except Exception as e:
-                logger.error(f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}")
-                return None
 
     class Save:
         '''
         Updates cache json files.
         '''
+
         def __init__(self, calc, files, utils, testing=False):
             self.calc = calc
             self.files = files
@@ -149,7 +142,8 @@ class Cache:
 
         def save(self, path, data):
             if not isinstance(data, (dict, list)):
-                raise TypeError(f"Invalid data type: {type(data)}, must be dict or list")
+                raise TypeError(
+                    f"Invalid data type: {type(data)}, must be dict or list")
             elif self.testing:
                 if path in [self.files.gecko_source, self.files.coins_config]:
                     return {"result": f"Validated {path} data"}
@@ -182,15 +176,11 @@ class Cache:
             if data is not None:
                 return self.save(self.files.gecko_source, data)
 
-        def gecko_pairs(self):
-            data = self.calc.gecko_pairs()
-            if data is not None:
-                return self.save(self.files.gecko_pairs, data)
-            
         def gecko_tickers(self):
             data = self.calc.gecko_tickers()
             if data is not None:
                 return self.save(self.files.gecko_tickers, data)
+
 
 class CoinGeckoAPI:
     def __init__(self, testing=False):
@@ -254,7 +244,8 @@ class CoinGeckoAPI:
                 gecko_source = requests.get(url).json()
             except Exception as e:
                 error = {"error": f"{url} is not available"}
-                logger.error(f"{type(e)} Error in [get_gecko_source]: {e} ({error})")
+                logger.error(
+                    f"{type(e)} Error in [get_gecko_source]: {e} ({error})")
                 return error
             try:
                 for coin_id in gecko_source:
@@ -356,7 +347,8 @@ class Orderbook:
 
     def get_and_parse(self, endpoint=False, orderbooks_list=None):
         try:
-            orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
+            orderbook = self.templates.orderbook(
+                self.pair.base, self.pair.quote)
             if orderbooks_list is None:
                 orderbooks_list = self.related_orderbooks_list()
             for i in orderbooks_list:
@@ -378,13 +370,16 @@ class Orderbook:
             asks_converted_list = []
 
         except Exception as e:
-            logger.warning(f'Error for {self.pair.as_str}: {e} {i["total_asks_base_vol"]}')
+            logger.warning(
+                f'Error for {self.pair.as_str}: {e} {i["total_asks_base_vol"]}')
             return self.templates.orderbook(self.pair.base, self.pair.quote)
 
         try:
             for bid in orderbook["bids"]:
-                bid_price = self.utils.round_to_str(bid["price"]["decimal"], 13)
-                bid_vol = self.utils.round_to_str(bid["base_max_volume"]["decimal"], 13)
+                bid_price = self.utils.round_to_str(
+                    bid["price"]["decimal"], 13)
+                bid_vol = self.utils.round_to_str(
+                    bid["base_max_volume"]["decimal"], 13)
                 if endpoint:
                     bids_converted_list.append([bid_price, bid_vol])
                 else:
@@ -393,13 +388,16 @@ class Orderbook:
                         "base_max_volume": bid_vol,
                     })
         except KeyError as e:
-            logger.warning(f"{type(e)} Error in [get_and_parse_orderbook]: {e}")
+            logger.warning(
+                f"{type(e)} Error in [get_and_parse_orderbook]: {e}")
             pass
 
         try:
             for ask in orderbook["asks"]:
-                ask_price = self.utils.round_to_str(ask["price"]["decimal"], 13)
-                ask_vol = self.utils.round_to_str(ask["base_max_volume"]["decimal"], 13)
+                ask_price = self.utils.round_to_str(
+                    ask["price"]["decimal"], 13)
+                ask_vol = self.utils.round_to_str(
+                    ask["base_max_volume"]["decimal"], 13)
                 if endpoint:
                     asks_converted_list.append([ask_price, ask_vol])
                 else:
@@ -408,7 +406,8 @@ class Orderbook:
                         "base_max_volume": ask_vol
                     })
         except KeyError as e:
-            logger.warning(f"{type(e)} Error in [get_and_parse_orderbook]: {e}")
+            logger.warning(
+                f"{type(e)} Error in [get_and_parse_orderbook]: {e}")
             pass
         orderbook["bids"] = bids_converted_list
         orderbook["asks"] = asks_converted_list
@@ -417,6 +416,7 @@ class Orderbook:
 
 class Pair:
     """Allows for referencing pairs as a string or tuple."""
+
     def __init__(self, pair, db_path=const.MM2_DB_PATH, testing=False, DB=None):
         try:
             self.DB = DB
@@ -426,8 +426,10 @@ class Pair:
             self.utils = Utils()
             self.templates = Templates()
             self.orderbook = Orderbook(pair=self, testing=self.testing)
-            self.swaps = Swaps(pair=self, db_path=self.db_path, testing=self.testing)
-            self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source)
+            self.swaps = Swaps(
+                pair=self, db_path=self.db_path, testing=self.testing)
+            self.gecko_source = self.utils.load_jsonfile(
+                self.files.gecko_source)
 
             if isinstance(pair, tuple):
                 self.as_tuple = pair
@@ -474,10 +476,12 @@ class Pair:
                 start_time=start_time,
                 end_time=end_time
             )
-            logger.debug(f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
+            logger.debug(
+                f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
             for swap in swaps_for_pair:
                 trade_info = OrderedDict()
-                price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
+                price = Decimal(swap["taker_amount"]) / \
+                    Decimal(swap["maker_amount"])
                 trade_info["trade_id"] = swap["uuid"]
                 trade_info["base_ticker"] = self.base
                 trade_info["quote_ticker"] = self.quote
@@ -490,12 +494,12 @@ class Pair:
         except Exception as e:
             logger.warning(f"{type(e)} Error in [Pair.trades]: {e}")
             trades_info = []
-        
+
         average_price = 0
         if len(trades_info) > 0:
-            average_price = sum_json_key(trades_info, "price") / len(trades_info)
-        average_price = format_10f(average_price)
-        
+            average_price = sum_json_key(
+                trades_info, "price") / len(trades_info)
+
         data = {
             "ticker_id": self.as_str,
             "start_time": str(start_time),
@@ -504,13 +508,12 @@ class Pair:
             "trades_count": str(len(trades_info)),
             "sum_base_volume": sum_json_key_10f(trades_info, "base_volume"),
             "sum_quote_volume": sum_json_key_10f(trades_info, "quote_volume"),
-            "average_price": average_price,
+            "average_price": format_10f(average_price),
             "buy": list_json_key(trades_info, "type", "buy"),
             "sell": list_json_key(trades_info, "type", "sell")
         }
-        logger.info(data)
+
         return data
-    
 
     def get_volumes_and_prices(
         self,
@@ -522,24 +525,31 @@ class Pair:
         suffix = self.utils.get_suffix(days)
         data = self.templates.volumes_and_prices(suffix)
         try:
-            base_price = self.utils.get_gecko_usd_price(self.base, self.gecko_source)
-            quote_price = self.utils.get_gecko_usd_price(self.quote, self.gecko_source)
+            base_price = self.utils.get_gecko_usd_price(
+                self.base, self.gecko_source)
+            quote_price = self.utils.get_gecko_usd_price(
+                self.quote, self.gecko_source)
             timestamp = int((datetime.now() - timedelta(days)).strftime("%s"))
             swaps_for_pair = self.DB.get_swaps_for_pair(
                 self.as_tuple,
                 start_time=timestamp
             )
-            # logger.info(f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
+            num_swaps = len(swaps_for_pair)
+            # logger.info(f"{num_swaps} swaps_for_pair: {self.as_str}")
             swap_prices = self.swaps.get_swap_prices(swaps_for_pair)
             swaps_volumes = self.swaps.get_swaps_volumes(swaps_for_pair)
-            data["trades_24hr"] = len(swaps_for_pair)
+            data["trades_24hr"] = num_swaps
             data["base_volume"] = swaps_volumes[0]
             data["quote_volume"] = swaps_volumes[1]
-            data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(base_price)
-            data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(quote_price)
-            data["combined_volume_usd"] = data["base_volume_usd"] + data["quote_volume_usd"]
+            data["base_volume_usd"] = Decimal(
+                swaps_volumes[0]) * Decimal(base_price)
+            data["quote_volume_usd"] = Decimal(
+                swaps_volumes[1]) * Decimal(quote_price)
+            data["combined_volume_usd"] = data["base_volume_usd"] + \
+                data["quote_volume_usd"]
         except Exception as e:
-            logger.error(f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
+            logger.error(
+                f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
 
         try:
             if len(swap_prices) > 0:
@@ -567,30 +577,36 @@ class Pair:
                     data["last_price"] = last_swap["price"]
                     data["last_trade"] = last_swap["timestamp"]
         except Exception as e:
-            logger.error(f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
+            logger.error(
+                f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
         return data
-
 
     def get_liquidity(self, orderbook):
         try:
-            base_price = self.utils.get_gecko_usd_price(self.base, self.gecko_source)
-            quote_price = self.utils.get_gecko_usd_price(self.quote, self.gecko_source)
+            base_price = self.utils.get_gecko_usd_price(
+                self.base, self.gecko_source)
+            quote_price = self.utils.get_gecko_usd_price(
+                self.quote, self.gecko_source)
             base_liquidity_coins = orderbook["total_asks_base_vol"]
             rel_liquidity_coins = orderbook["total_bids_rel_vol"]
         except Exception as e:
-            logger.error(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.error(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
             pass
-        
+
         try:
-            base_liquidity_usd = Decimal(base_price) * Decimal(base_liquidity_coins)
+            base_liquidity_usd = Decimal(
+                base_price) * Decimal(base_liquidity_coins)
         except KeyError:
             pass
 
         try:
             rel_liquidity_coins = rel_liquidity_coins
-            rel_liquidity_usd = Decimal(quote_price) * Decimal(rel_liquidity_coins)
+            rel_liquidity_usd = Decimal(
+                quote_price) * Decimal(rel_liquidity_coins)
         except KeyError as e:
-            logger.warning(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.warning(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
             pass
         rel_liquidity_usd = Decimal(rel_liquidity_usd)
         base_liquidity_usd = Decimal(base_liquidity_usd)
@@ -603,10 +619,10 @@ class Pair:
             "base_liquidity_usd": base_liquidity_usd,
             "liquidity_usd": base_liquidity_usd + rel_liquidity_usd
         }
-        
 
     def gecko_tickers(self, days=1):
-        # TODO: ps: in order for CoinGecko to show +2/-2% depth, DEX has to provide the formula for +2/-2% depth.
+        # TODO: ps: in order for CoinGecko to show +2/-2% depth,
+        # DEX has to provide the formula for +2/-2% depth.
         try:
             DB = self.utils.get_db(self.db_path, self.DB)
             DB.conn.row_factory = sqlite3.Row
@@ -626,9 +642,9 @@ class Pair:
                     "last_trade": f'{data["last_trade"]}',
                     "trades_24hr": f'{data["trades_24hr"]}',
                     "base_volume": data["base_volume"],
-                    "target_volume": data["quote_volume"], 
+                    "target_volume": data["quote_volume"],
                     "base_usd_price": liquidity["base_usd_price"],
-                    "target_usd_price": liquidity["rel_usd_price"], 
+                    "target_usd_price": liquidity["rel_usd_price"],
                     "bid": self.utils.find_highest_bid(orderbook),
                     "ask": self.utils.find_lowest_ask(orderbook),
                     "high": "{:.10f}".format(data[f"highest_price_{suffix}"]),
@@ -648,7 +664,8 @@ class Pair:
             suffix = self.utils.get_suffix(days)
             data = self.templates.pair_summary(base, quote)
             timestamp = int((datetime.now() - timedelta(days)).strftime("%s"))
-            swaps_for_pair = self.DB.get_swaps_for_pair(self.as_tuple, start_time=timestamp)
+            swaps_for_pair = self.DB.get_swaps_for_pair(
+                self.as_tuple, start_time=timestamp)
             data["pair_swaps_count"] = len(swaps_for_pair)
             volumes_and_prices = self.get_volumes_and_prices(days)
             for i in ["last_price", "base_volume", "quote_volume"]:
@@ -665,13 +682,16 @@ class Pair:
                 data[f"{i}_{suffix}"] = value
 
         except Exception as e:
-            logger.error(f"{type(e)} Error while getting summary for pair {self.as_str}: {e}")
+            logger.error(
+                f"{type(e)} Error while getting summary for pair {self.as_str}: {e}")
 
         try:
             # Liquidity
-            base_price = self.utils.get_gecko_usd_price(base, self.gecko_source)
+            base_price = self.utils.get_gecko_usd_price(
+                base, self.gecko_source)
             base_volume = volumes_and_prices["base_volume"]
-            quote_price = self.utils.get_gecko_usd_price(quote, self.gecko_source)
+            quote_price = self.utils.get_gecko_usd_price(
+                quote, self.gecko_source)
             quote_volume = volumes_and_prices["quote_volume"]
 
             data["base_price_usd"] = base_price
@@ -679,7 +699,8 @@ class Pair:
             data["base_volume"] = base_volume
             data["rel_volume"] = quote_volume
         except Exception as e:
-            logger.error(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.error(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
 
         try:
             if not orderbook:
@@ -690,19 +711,23 @@ class Pair:
             data["base_liquidity_coins"] = base_liquidity_coins
             data["rel_liquidity_coins"] = orderbook["total_bids_rel_vol"]
         except Exception as e:
-            logger.error(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.error(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
             pass
 
         try:
-            data["base_liquidity_usd"] = Decimal(base_price) * Decimal(base_liquidity_coins)
+            data["base_liquidity_usd"] = Decimal(
+                base_price) * Decimal(base_liquidity_coins)
         except KeyError:
             pass
 
         try:
             rel_liquidity_coins = data["rel_liquidity_coins"]
-            data["rel_liquidity_usd"] = Decimal(quote_price) * Decimal(rel_liquidity_coins)
+            data["rel_liquidity_usd"] = Decimal(
+                quote_price) * Decimal(rel_liquidity_coins)
         except KeyError as e:
-            logger.warning(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.warning(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
             pass
         rel_liquidity_usd = Decimal(data["rel_liquidity_usd"])
         base_liquidity_usd = Decimal(data["base_liquidity_usd"])
@@ -711,13 +736,16 @@ class Pair:
 
         # Value traded in USD
         try:
-            data["base_trade_value_usd"] = Decimal(base_price) * Decimal(base_volume)
+            data["base_trade_value_usd"] = Decimal(
+                base_price) * Decimal(base_volume)
         except KeyError:
             pass
         try:
-            data["rel_trade_value_usd"] = Decimal(quote_price) * Decimal(quote_volume)
+            data["rel_trade_value_usd"] = Decimal(
+                quote_price) * Decimal(quote_volume)
         except KeyError as e:
-            logger.warning(f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
+            logger.warning(
+                f"{type(e)} Error in [Pair.summary] for {self.as_str}: {e}")
             pass
         base_trade_value_usd = Decimal(data["base_trade_value_usd"])
         rel_trade_value_usd = Decimal(data["rel_trade_value_usd"])
@@ -795,13 +823,13 @@ class SqliteDB:
         return adjusted
 
     def get_swaps_for_pair(
-            self,
-            pair: tuple,
-            trade_type: const.TradeType = const.TradeType.ALL,
-            limit: int = 0,
-            start_time: int = 0,
-            end_time: int = 0            
-        ) -> list:
+        self,
+        pair: tuple,
+        trade_type: const.TradeType = const.TradeType.ALL,
+        limit: int = 0,
+        start_time: int = 0,
+        end_time: int = 0
+    ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
         If no timestamp is given, returns all swaps for the pair.
@@ -840,7 +868,7 @@ class SqliteDB:
                         AND is_success=1 \
                         ORDER BY started_at DESC \
                         LIMIT ?;"
-                
+
             self.conn.row_factory = sqlite3.Row
             self.sql_cursor = self.conn.cursor()
             self.sql_cursor.execute(
@@ -926,7 +954,8 @@ class SqliteDB:
                 )
                 swap_time = resp["started_at"]
         except Exception as e:
-            logger.warning(f"{type(e)} Error getting swap_price for {base}/{quote}: {e}")
+            logger.warning(
+                f"{type(e)} Error getting swap_price for {base}/{quote}: {e}")
 
         try:
             swap_price2 = None
@@ -942,7 +971,8 @@ class SqliteDB:
                 )
                 swap_time2 = resp2["started_at"]
         except Exception as e:
-            logger.warning(f"{type(e)} Error getting swap_price2 for {base}/{quote}: {e}")
+            logger.warning(
+                f"{type(e)} Error getting swap_price2 for {base}/{quote}: {e}")
 
         if swap_price and swap_price2:
             if swap_time > swap_time2:
@@ -990,7 +1020,8 @@ class Swaps:
     def get_swap_prices(self, swaps_for_pair: list):
         swap_prices = {}
         for swap in swaps_for_pair:
-            swap_price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
+            swap_price = Decimal(swap["taker_amount"]) / \
+                Decimal(swap["maker_amount"])
             swap_prices[swap["started_at"]] = swap_price
         return swap_prices
 
@@ -1168,7 +1199,8 @@ class Utils:
                 if (i["coin"] == coin or i["coin"].startswith(f"{coin}-"))
             ]
         except Exception as e:
-            logger.error(f"{type(e)} Error getting related coins for {coin}: {e}")
+            logger.error(
+                f"{type(e)} Error getting related coins for {coin}: {e}")
             return []
 
     def get_liquidity(self, summary_data: dict) -> float:
@@ -1177,7 +1209,8 @@ class Utils:
             pairs_liquidity = [i["pair_liquidity_usd"] for i in summary_data]
             return sum(pairs_liquidity)
         except Exception as e:
-            logger.warning(f"{type(e)} Error getting liquidity for {summary_data}: {e}")
+            logger.warning(
+                f"{type(e)} Error getting liquidity for {summary_data}: {e}")
             return 0
 
     def get_value(self, summary_data: dict) -> float:
@@ -1186,7 +1219,8 @@ class Utils:
             pairs_value = [i["pair_trade_value_usd"] for i in summary_data]
             return sum(pairs_value)
         except Exception as e:
-            logger.warning(f"{type(e)} Error getting total value for {summary_data}: {e}")
+            logger.warning(
+                f"{type(e)} Error getting total value for {summary_data}: {e}")
             return 0
 
     def get_chunks(self, data, chunk_length):
@@ -1201,7 +1235,8 @@ class Utils:
 
     def get_top_pairs(self, pairs_data: list):
         try:
-            pairs_data.sort(key=lambda x: x["pair_trade_value_usd"], reverse=True)
+            pairs_data.sort(
+                key=lambda x: x["pair_trade_value_usd"], reverse=True)
             value_data = pairs_data[:5]
             top_pairs_by_value = {}
             [
@@ -1210,7 +1245,8 @@ class Utils:
                 )
                 for i in value_data
             ]
-            pairs_data.sort(key=lambda x: x["pair_liquidity_usd"], reverse=True)
+            pairs_data.sort(
+                key=lambda x: x["pair_liquidity_usd"], reverse=True)
             liquidity_data = pairs_data[:5]
             top_pairs_by_liquidity = {}
             [
@@ -1223,7 +1259,8 @@ class Utils:
             swaps_data = pairs_data[:5]
             top_pairs_by_swaps = {}
             [
-                top_pairs_by_swaps.update({i["trading_pair"]: i["pair_swaps_count"]})
+                top_pairs_by_swaps.update(
+                    {i["trading_pair"]: i["pair_swaps_count"]})
                 for i in swaps_data
             ]
 
@@ -1302,7 +1339,8 @@ class DexAPI:
             if self.coins_config[base]["wallet_only"] or self.coins_config[quote]["wallet_only"]:
                 return self.templates.orderbook(base, quote, v2=True)
         except Exception as e:
-            logger.error(f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {e}")
+            logger.error(
+                f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {e}")
             return self.templates.orderbook(base, quote, v2=True)
 
         try:
@@ -1321,25 +1359,35 @@ class DexAPI:
                 return json.loads(r.text)["result"]
             if "error_type" in json.loads(r.text):
                 error = json.loads(r.text)['error_type']
-                logger.debug(f"Error in [DexAPI.orderbook] for {pair}: {error}")
+                logger.debug(
+                    f"Error in [DexAPI.orderbook] for {pair}: {error}")
             else:
-                logger.info(f"Error in [DexAPI.orderbook] for {pair}: {r.text}")
+                logger.info(
+                    f"Error in [DexAPI.orderbook] for {pair}: {r.text}")
             return self.templates.orderbook(base, quote, v2=True)
         except Exception as e:
-            logger.error(f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {e}")
-            logger.info(f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {r.text}")
+            logger.error(
+                f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {e}")
+            logger.info(
+                f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {r.text}")
 
 
 class Endpoints:
-    def __init__(self):
+    def __init__(self, testing: bool = False, db_path=const.MM2_DB_PATH, DB=None):
+        self.db_path = db_path
+        self.DB = DB
+        self.testing = testing
         self.utils = Utils()
-        self.calc = Cache().Calc()
-    
-    def gecko_pairs(self, days: int=7) -> list:
-        return self.calc.pairs(days)
-        
-    def gecko_tickerss(self) -> list:
-        pass
-        
-    
-    
+        self.files = Files(self.testing)
+
+    def gecko_pairs(self, days: int = 7) -> list:
+        try:
+            DB = self.utils.get_db(self.db_path, self.DB)
+            pairs = DB.get_pairs(days)
+            logger.debug(
+                f"Calculating ticker cache for {len(pairs)} pairs ({days} days)")
+            return [Pair(i, self.db_path, self.testing, DB=DB).info for i in pairs]
+        except Exception as e:
+            logger.error(
+                f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}")
+            return None

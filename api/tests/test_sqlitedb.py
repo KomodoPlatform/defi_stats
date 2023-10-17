@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-import sys
 import time
 import sqlite3
-import pytest
-from decimal import Decimal
-from logger import logger
 import models
 import const
 from fixtures import setup_swaps_test_data, setup_database, setup_time, logger
@@ -50,27 +46,6 @@ def test_get_swaps_for_pair(setup_swaps_test_data):
     swaps = DB.get_swaps_for_pair(("DGB", "LTC"), two_months_ago)
     assert len(swaps) == 2
     assert swaps[0]["trade_type"] == "buy"
-
-
-def test_last_price_for_pair(setup_swaps_test_data):
-    DB = setup_swaps_test_data
-    DB.conn.row_factory = sqlite3.Row
-    DB.sql_cursor = DB.conn.cursor()
-
-    last_price = DB.get_last_price_for_pair("DGB", "LTC")
-    assert last_price == Decimal('0.00001')
-
-    last_price = DB.get_last_price_for_pair("LTC", "DGB")
-    assert last_price == 100000
-
-    last_price = DB.get_last_price_for_pair("KMD", "BTC")
-    assert last_price == Decimal('0.000001')
-
-    last_price = DB.get_last_price_for_pair("BTC", "KMD")
-    assert last_price == 1000000
-
-    last_price = DB.get_last_price_for_pair("x", "y")
-    assert last_price == 0
 
 
 def test_timespan_swaps(setup_swaps_test_data):

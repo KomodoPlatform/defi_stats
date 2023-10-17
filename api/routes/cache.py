@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import uvicorn
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from logger import logger
@@ -10,11 +9,13 @@ import sysrsync
 router = APIRouter()
 cache = models.Cache()
 
+
 @router.on_event("startup")
 @repeat_every(seconds=60)
 def update_seednode_db():  # pragma: no cover
     '''
-    This will update the MM2.db files from stats-api.atomicdex.io (a well populated seed node).
+    This will update the MM2.db files
+    from a well populated seed node).
     '''
     try:
         sysrsync.run(

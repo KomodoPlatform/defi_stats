@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import os
 import sys
 import pytest
-sys.path.append('../dexstats_sqlite_py')
+api_root_path = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
+sys.path.append(api_root_path)
+print(sys.path)
+
 import models
 from logger import logger
 
@@ -96,6 +100,11 @@ def setup_utils():
 
 
 @pytest.fixture
+def setup_endpoints():
+    yield models.Endpoints(testing=True)
+
+
+@pytest.fixture
 def setup_orderbook_data(setup_utils):
     utils = setup_utils
     orderbook = utils.load_jsonfile("tests/fixtures/orderbook_BTC_DOGE.json")
@@ -164,3 +173,107 @@ def setup_swaps_test_data(setup_database, setup_time):
     sql = 'INSERT INTO stats_swaps VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     DB.sql_cursor.executemany(sql, sample_data)
     yield DB
+
+
+@pytest.fixture
+def historical_trades():
+    return [
+        {
+            "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
+            "price": "0.8000000000",
+            "base_volume": "20",
+            "target_volume": "16",
+            "timestamp": "1697471102",
+            "type": "buy"
+        },
+        {
+            "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
+            "price": "1.0000000000",
+            "base_volume": "20",
+            "target_volume": "20",
+            "timestamp": "1697471080",
+            "type": "buy"
+        },
+        {
+            "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
+            "price": "1.2000000000",
+            "base_volume": "20",
+            "target_volume": "24",
+            "timestamp": "1697469503",
+            "type": "buy"
+        },
+        {
+            "trade_id": "c80e9b57-406f-4f9c-8b41-79ff2623cc7a",
+            "price": "1.0000000000",
+            "base_volume": "10",
+            "target_volume": "10",
+            "timestamp": "1697475729",
+            "type": "sell"
+        },
+        {
+            "trade_id": "09d72ac9-3e55-4e84-9f32-cf22b5b442ad",
+            "price": "1.0000000000",
+            "base_volume": "20",
+            "target_volume": "20",
+            "timestamp": "1697448297",
+            "type": "sell"
+        }
+    ]
+
+
+@pytest.fixture
+def historical_data():
+    return {
+        "ticker_id": "KMD_LTC",
+        "start_time": "1697394564",
+        "end_time": "1697480964",
+        "limit": "100",
+        "trades_count": "5",
+        "sum_base_volume": "90",
+        "sum_target_volume": "90",
+        "average_price": "1",
+        "buy": [
+            {
+                "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
+                "price": "0.8000000000",
+                "base_volume": "20",
+                "target_volume": "16",
+                "timestamp": "1697471102",
+                "type": "buy"
+            },
+            {
+                "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
+                "price": "1.0000000000",
+                "base_volume": "20",
+                "target_volume": "20",
+                "timestamp": "1697471080",
+                "type": "buy"
+            },
+            {
+                "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
+                "price": "1.2000000000",
+                "base_volume": "20",
+                "target_volume": "24",
+                "timestamp": "1697469503",
+                "type": "buy"
+            }
+        ],
+        "sell": [
+            {
+                "trade_id": "c80e9b57-406f-4f9c-8b41-79ff2623cc7a",
+                "price": "1.0000000000",
+                "base_volume": "10",
+                "target_volume": "10",
+                "timestamp": "1697475729",
+                "type": "sell"
+            },
+            {
+                "trade_id": "09d72ac9-3e55-4e84-9f32-cf22b5b442ad",
+                "price": "1.0000000000",
+                "base_volume": "20",
+                "target_volume": "20",
+                "timestamp": "1697448297",
+                "type": "sell"
+            }
+        ]
+    }

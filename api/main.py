@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import const
 from routes import gecko, cache

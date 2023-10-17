@@ -2,89 +2,58 @@
 from fastapi.testclient import TestClient
 from decimal import Decimal
 import pytest
+from fixtures import setup_endpoints
 from main import app
 
 client = TestClient(app)
 
 
-def test_atomicdex_fortnight_endpoint():
-    r = client.get("/api/v1/atomicdex_fortnight")
-    assert r.status_code == 200
-    data = r.json()
-    assert isinstance(data, dict)
-    assert data["days"] == 14
-    assert data["swaps_count"] > 0
-    assert data["swaps_value"] > 0
-    assert data["current_liquidity"] > 0
-    assert len(data["top_pairs"]) == 3
-    for i in data["top_pairs"]:
-        assert len(data["top_pairs"][i]) == 5
-        assert i in ["by_value_traded_usd", "by_current_liquidity_usd", "by_swaps_count"]
-        for j in data["top_pairs"][i]:
-            assert isinstance(data["top_pairs"][i][j], (float, int))
-    with pytest.raises(Exception):
-        data = r.json()
-        assert "error" in data
-
-
-def test_summary_endpoint():
-    r = client.get("/api/v1/summary")
-    assert r.status_code == 200
-    data = r.json()
-    for i in data:
-        if i["trading_pair"] == "KMD_LTC":
-            for j in i:
-                if j.endswith("_usd") or j.endswith("_count"):
-                    assert i[j] > 0
-                    assert isinstance(i[j], (float, int))
-                elif j in ["trading_pair", "base_currency", "quote_currency"]:
-                    assert isinstance(i[j], (str))
-                    assert i["base_currency"] == "KMD"
-                    assert i["quote_currency"] == "LTC"
-                else:
-                    assert isinstance(i[j], (str))
-                    assert Decimal(i[j]) != 0
-            dp = Decimal("0.00000001")
-            base_val = Decimal(i["base_liquidity_coins"]) * Decimal(i["base_price_usd"])
-            assert base_val.quantize(dp) == Decimal(i["base_liquidity_usd"]).quantize(dp)
-            rel_val = Decimal(i["rel_liquidity_coins"]) * Decimal(i["rel_price_usd"])
-            assert rel_val.quantize(dp) == Decimal(i["rel_liquidity_usd"]).quantize(dp)
-            val = rel_val + base_val
-            assert val.quantize(dp) == Decimal(i["pair_liquidity_usd"]).quantize(dp)
-    with pytest.raises(Exception):
-        data = r.json()
-        assert "error" in data
-
-
-def test_ticker_endpoint():
-    r = client.get("/api/v1/ticker")
+def test_gecko_pairs_endpoint():
+    r = client.get("/api/v3/gecko/pairs")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list)
     assert isinstance(data[0], dict)
+    assert "ticker_id" in data[0]
+    assert "pool_id" in data[0]
+    assert "base" in data[0]
+    assert "target" in data[0]
+    split = data[0]["ticker_id"].split("_")
+    assert split[0] == data[0]["base"]
+    assert split[1] == data[0]["target"]
+    assert data[0]["ticker_id"] == data[0]["pool_id"]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
 
 
-def test_ticker_v2_endpoint():
-    r = client.get("/api/v2/ticker")
+def test_gecko_tickers_endpoint():
+    r = client.get("/api/v3/gecko/tickers")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
-    assert "KMD_LTC" in data
-    assert "isFrozen" in data["KMD_LTC"]
-    assert data["KMD_LTC"]["isFrozen"] == "0"
-    assert data["KMD_LTC"]["last_price"] != "0"
-    assert data["KMD_LTC"]["quote_volume"] != "0"
-    assert data["KMD_LTC"]["base_volume"] != "0"
+    assert "last_update" in data
+    assert "pairs_count" in data
+    assert "swaps_count" in data
+    assert "combined_liquidity_usd" in data
+    assert "combined_volume_usd" in data
+    assert "ticker_id" in data["data"][0]
+    assert "base_currency" in data["data"][0]
+    assert "target_currency" in data["data"][0]
+    assert "last_price" in data["data"][0]
+    assert "base_volume" in data["data"][0]
+    assert "bid" in data["data"][0]
+    assert "ask" in data["data"][0]
+    assert "high" in data["data"][0]
+    assert "low" in data["data"][0]
+    assert "liquidity_in_usd" in data["data"][0]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
 
 
 def test_orderbook_endpoint():
-    r = client.get("/api/v1/orderbook/KMD_LTC")
+    r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
     assert data != {}
@@ -104,27 +73,39 @@ def test_orderbook_endpoint():
         assert "error" in data
 
 
-def test_trades_endpoint():
-    r = client.get("/api/v1/trades/KMD_LTC")
+def test_historical_trades_endpoint():
+    r = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
-    assert isinstance(data, list)
-    assert isinstance(data[0], dict)
-    assert data[0]["type"] in ["buy", "sell"]
-    assert isinstance(data[0]["price"], str)
-    assert isinstance(data[0]["trade_id"], str)
-    assert isinstance(data[0]["timestamp"], int)
-    assert isinstance(data[0]["base_volume"], (float, int))
-    assert isinstance(data[0]["quote_volume"], (float, int))
+    assert isinstance(data, dict)
+    assert isinstance(data["buy"], list)
+    assert isinstance(data["buy"][0]["price"], str)
+    assert isinstance(data["buy"][0]["trade_id"], str)
+    assert isinstance(data["buy"][0]["timestamp"], str)
+    assert isinstance(data["buy"][0]["base_volume"], str)
+    assert isinstance(data["buy"][0]["target_volume"], str)
+    assert isinstance(data["sell"], list)
+    assert isinstance(data["sell"][0]["price"], str)
+    assert isinstance(data["sell"][0]["trade_id"], str)
+    assert isinstance(data["sell"][0]["timestamp"], str)
+    assert isinstance(data["sell"][0]["base_volume"], str)
+    assert isinstance(data["sell"][0]["target_volume"], str)
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
 
 
-def test_last_price_endpoint():
-    r = client.get("/api/v1/last_price/KMD_LTC")
-    assert r.status_code == 200
-    assert Decimal(r.text) > 0
-    with pytest.raises(Exception):
-        data = r.json()
-        assert "error" in data
+def test_gecko_pairs(setup_endpoints):
+    endpoints = setup_endpoints
+    result = endpoints.gecko_pairs()
+    assert isinstance(result, list)
+    assert isinstance(result[0], dict)
+    assert "ticker_id" in result[0]
+    assert "pool_id" in result[0]
+    assert "base" in result[0]
+    assert "target" in result[0]
+    split = result[0]["ticker_id"].split("_")
+    assert split[0] == result[0]["base"]
+    assert split[1] == result[0]["target"]
+    assert result[0]["ticker_id"] == result[0]["pool_id"]
+    assert len(result) == len(set(i["ticker_id"] for i in result))

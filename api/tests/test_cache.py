@@ -15,23 +15,6 @@ def test_calc_gecko_source(setup_cache):
     assert len(r) > 0
 
 
-def test_calc_pair_summaries(setup_cache):
-    calc = setup_cache.calc
-    r = calc.pair_summaries()
-    assert len(r) > 0
-    r = calc.pair_summaries("foo")
-    assert r is None
-
-
-def test_calc_ticker(setup_cache):
-    calc = setup_cache.calc
-    r = calc.ticker()
-    assert len(r) > 0
-    r = calc.ticker("foo")
-    assert r is None
-
-
-
 # /////////////////////// #
 # Cache.save class tests  #
 # /////////////////////// #
@@ -39,18 +22,9 @@ def test_save_gecko(setup_cache):
     save = setup_cache.save
     path = "tests/fixtures/test_save.json"
 
+    data = "foo bar"
     with pytest.raises(TypeError):
-        data = "foo bar"
         r = save.save(path, data)
-        assert r is None
-
-    with pytest.raises(TypeError):
-        r = save.save(path, None)
-        assert r is None
-
-    with pytest.raises(TypeError):
-        r = save.save(None, None)
-        assert r is None
 
     data = {"foo": "bar"}
     with pytest.raises(Exception):
@@ -62,6 +36,12 @@ def test_save_gecko(setup_cache):
     assert "result" in r
     assert r["result"].startswith("Updated")
 
+    with pytest.raises(TypeError):
+        r = save.save(None, None)
+
+    with pytest.raises(TypeError):
+        r = save.save(None, None)
+
     data = {"foo bar": "foo bar"}
     r = save.save(setup_cache.files.coins_config, data)
     assert r["result"].startswith("Validated")
@@ -69,29 +49,6 @@ def test_save_gecko(setup_cache):
     data = {"foo bar": "foo bar"}
     r = save.save(setup_cache.files.gecko_source, data)
     assert r["result"].startswith("Validated")
-
-
-def test_save_summary(setup_cache):
-    save = setup_cache.save
-    r = save.summary()
-    assert "result" in r
-    r = save.summary("foo")
-    assert r is None
-
-
-def test_save_ticker(setup_cache):
-    save = setup_cache.save
-    assert "result" in save.ticker()
-    r = save.ticker("foo")
-    assert r is None
-
-
-
-def test_save_atomicdex_fortnight(setup_cache):
-    save = setup_cache.save
-    assert "result" in save.atomicdex_fortnight()
-    r = save.atomicdex_fortnight("foo")
-    assert r is None
 
 
 def test_save_coins(setup_cache):
@@ -111,30 +68,6 @@ def test_save_coins_config(setup_cache):
 # /////////////////////// #
 # Cache.load class tests  #
 # /////////////////////// #
-
-
-def test_load_atomicdex_fortnight(setup_cache):
-    load = setup_cache.load
-    r = load.atomicdex_fortnight()
-    for i in r:
-        if i != "top_pairs":
-            assert r[i] > 0
-            assert r[i] is not None
-            assert isinstance(r[i], (float, int))
-        else:
-            for j in r[i]:
-                assert j in [
-                    "by_value_traded_usd",
-                    "by_current_liquidity_usd",
-                    "by_swaps_count"
-                ]
-                for k in r[i][j]:
-                    logger.info(i)
-                    logger.info(j)
-                    logger.info(k)
-                    assert "_" in k
-                    assert r[i][j][k] > 0
-                    assert isinstance(r[i][j][k], (float, int))
 
 
 def test_load_coins_config(setup_cache):
@@ -165,59 +98,3 @@ def test_load_gecko(setup_cache):
         assert i in ["usd_market_cap", "usd_price", "coingecko_id"]
     for i in gecko:
         assert gecko[i]["coingecko_id"] != ""
-
-
-def test_load_summary(setup_cache):
-    load = setup_cache.load
-    data = load.summary()
-    for i in data:
-        if i["trading_pair"] == "MORTY_KMD":
-            assert i["base_currency"] == "MORTY"
-            assert i["quote_currency"] == "KMD"
-            assert i["pair_swaps_count"] == 1
-            assert i["base_price_usd"] == 0
-            assert i["rel_price_usd"] == 1
-            assert i["price_change_percent_24h"] == '0.0000000000'
-            assert i["base_liquidity_usd"] == 0
-            assert i["base_trade_value_usd"] == 0
-            assert i["rel_liquidity_usd"] == 0
-            assert i["rel_trade_value_usd"] == 1
-
-
-def test_load_summary2(setup_cache):
-    load = setup_cache.load
-    data = load.summary()
-    for i in data:
-        if i["trading_pair"] == "KMD_LTC":
-            assert i["base_currency"] == "KMD"
-            assert i["quote_currency"] == "LTC"
-            assert i["base_price_usd"] > 0
-            assert i["rel_price_usd"] > 0
-            assert i["pair_swaps_count"] > 1
-            assert float(i["price_change_percent_24h"]) == 0.0009
-            assert float(i["highest_price_24h"]) > 0
-            assert float(i["lowest_price_24h"]) > 0
-            assert float(i["highest_price_24h"]) != float(i["lowest_price_24h"])
-            assert float(i["last_price"]) == float(i["highest_price_24h"])
-            assert float(i["highest_price_24h"]) > float(i["lowest_price_24h"])
-            assert isinstance(i["base_liquidity_coins"], str)
-            assert isinstance(i["rel_liquidity_coins"], str)
-            assert isinstance(i["base_volume"], str)
-            assert isinstance(i["quote_volume"], str)
-            assert i["base_liquidity_usd"] > 0
-            assert i["base_trade_value_usd"] > 0
-            assert i["rel_liquidity_usd"] > 0
-            assert i["rel_trade_value_usd"] > 0
-
-
-def test_load_ticker(setup_cache):
-    load = setup_cache.load
-    ticker = load.ticker()
-    for i in ticker:
-        for j in i:
-            assert "_" in j
-            assert float(i[j]["last_price"]) > 0
-            assert float(i[j]["isFrozen"]) == 0
-            if j == "DGB_KMD":
-                assert float(i[j]["quote_volume"]) > 0
-                assert float(i[j]["base_volume"]) > 0

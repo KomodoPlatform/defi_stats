@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from fixtures import (
     setup_swaps_test_data,
     setup_database,
@@ -120,7 +121,8 @@ def test_get_top_pairs():
 def test_get_gecko_usd_price(setup_utils, setup_cache):
     utils = setup_utils
     cache = setup_cache
-    assert cache.files.gecko_source == "tests/fixtures/gecko_cache.json"
+    api_root_path = os.path.dirname(os.path.abspath(__file__))
+    assert cache.files.gecko_source == f"{api_root_path}/fixtures/gecko/source_cache.json"
     assert utils.get_gecko_usd_price("KMD", cache.gecko_source) == 1
     assert utils.get_gecko_usd_price("BTC", cache.gecko_source) == 1000000
     price1 = utils.get_gecko_usd_price("LTC-segwit", cache.gecko_source)
