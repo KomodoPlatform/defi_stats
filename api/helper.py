@@ -49,3 +49,28 @@ def validate_ticker(ticker_id: str):
             status_code=400,
             detail="Pair should be in format BASE_TARGET"
         )
+
+
+def set_pair_as_tuple(pair):
+    if isinstance(pair, list):
+        pair = tuple(pair)
+    if isinstance(pair, str):
+        pair = tuple(map(str, pair.split("_")))
+    if not isinstance(pair, tuple):
+        raise TypeError("Pair should be a string, tuple or list")
+    if len(pair) != 2:
+        raise ValueError("Pair tuple should have two values only")
+    return pair
+
+
+def order_pair_by_market_cap(pair, gecko_source):
+    if pair[0] in gecko_source:
+        if pair[1] in gecko_source:
+            if (
+                gecko_source[pair[1]]["usd_market_cap"]
+                < gecko_source[pair[0]]["usd_market_cap"]
+            ):
+                pair = (pair[1], pair[0])
+        else:
+            pair = (pair[1], pair[0])
+    return pair

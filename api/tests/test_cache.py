@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 import pytest
-from fixtures import setup_cache, setup_utils, setup_orderbook_data, \
+from fixtures import setup_cache, setup_utils, setup_kmd_btc_orderbook_data, \
     setup_swaps_test_data, setup_database, setup_time, logger
 from helper import format_10f
 
@@ -112,10 +112,11 @@ def test_calc_gecko_tickers(setup_cache):
     assert len(r) > 0
     assert isinstance(r, dict)
     assert "last_update" in r
-    assert r["swaps_count"] == 7
-    assert r["pairs_count"] == 5
-    assert len(r["data"]) == 5
-    assert "combined_liquidity_usd" in r
+    assert r["swaps_count"] == 8
+    for i in r["data"]:
+        logger.info(i)
+    assert r["pairs_count"] == 6
+    assert len(r["data"]) == 6
     assert "combined_volume_usd" in r
     assert isinstance(r["data"], list)
     assert isinstance(r["data"][1], dict)
@@ -130,7 +131,6 @@ def test_calc_gecko_tickers(setup_cache):
     assert r["data"][1]["target_usd_price"] == format_10f(1)
     assert r["data"][1]["high"] == format_10f(0.0018)
     assert r["data"][1]["low"] == format_10f(0.001)
-    assert "liquidity_in_usd" in r["data"][1]
     assert "volume_usd_24hr" in r["data"][1]
     assert "ask" in r["data"][1]
     assert "bid" in r["data"][1]

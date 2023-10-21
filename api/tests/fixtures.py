@@ -6,20 +6,13 @@ from decimal import Decimal
 api_root_path = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 sys.path.append(api_root_path)
 print(sys.path)
-
-import models
 from logger import logger
-
-
-@pytest.fixture
-def setup_orderbook(setup_swaps_test_data, setup_kmd_ltc_str_pair_with_db):
-    pair = setup_kmd_ltc_str_pair_with_db
-    yield models.Orderbook(pair=pair, testing=True)
+import models
 
 
 @pytest.fixture
 def setup_dexapi():
-    yield models.DexAPI()
+    yield models.DexAPI(testing=True)
 
 
 @pytest.fixture
@@ -57,52 +50,81 @@ def setup_templates():
 
 @pytest.fixture
 def setup_rick_morty_tuple_pair():
-    yield models.Pair(("RICK", "MORTY"))
+    yield models.Pair(("RICK", "MORTY"), testing=True)
 
 
 @pytest.fixture
 def setup_rick_morty_str_pair():
-    yield models.Pair("RICK_MORTY")
+    yield models.Pair("RICK_MORTY", testing=True)
 
 
 @pytest.fixture
 def setup_dgb_kmd_str_pair_with_db(setup_swaps_test_data):
-    yield models.Pair("DGB_KMD", DB=setup_swaps_test_data)
+    yield models.Pair("DGB_KMD", testing=True, DB=setup_swaps_test_data)
 
 
 @pytest.fixture
-def setup_kmd_ltc_str_pair_with_db(setup_swaps_test_data):
-    yield models.Pair("KMD_LTC", DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_kmd_ltc_list_pair_with_db(setup_swaps_test_data):
-    yield models.Pair(["KMD", "LTC"], DB=setup_swaps_test_data)
+def setup_dgb_kmd_orderbook(setup_dgb_kmd_str_pair_with_db):
+    pair = setup_dgb_kmd_str_pair_with_db
+    yield models.Orderbook(pair=pair, testing=True)
 
 
 @pytest.fixture
 def setup_kmd_dgb_tuple_pair_with_db(setup_swaps_test_data):
-    yield models.Pair(("KMD", "DGB"), DB=setup_swaps_test_data)
+    yield models.Pair(("KMD", "DGB"), testing=True, DB=setup_swaps_test_data)
+
+
+@pytest.fixture
+def setup_kmd_dgb_orderbook(setup_kmd_dgb_tuple_pair_with_db):
+    pair = setup_kmd_dgb_tuple_pair_with_db
+    yield models.Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_kmd_ltc_str_pair_with_db(setup_swaps_test_data):
+    yield models.Pair("KMD_LTC", testing=True, DB=setup_swaps_test_data)
+
+
+@pytest.fixture
+def setup_kmd_ltc_list_pair_with_db(setup_swaps_test_data):
+    yield models.Pair(["KMD", "LTC"], testing=True, DB=setup_swaps_test_data)
+
+
+@pytest.fixture
+def setup_kmd_ltc_orderbook(setup_kmd_ltc_str_pair_with_db):
+    pair = setup_kmd_ltc_str_pair_with_db
+    yield models.Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_kmd_btc_list_pair_with_db(setup_swaps_test_data):
+    yield models.Pair(["KMD", "BTC"], testing=True, DB=setup_swaps_test_data)
+
+
+@pytest.fixture
+def setup_kmd_btc_orderbook(setup_swaps_test_data, setup_kmd_btc_str_pair_with_db):
+    pair = setup_kmd_btc_str_pair_with_db
+    yield models.Orderbook(pair=pair, testing=True)
 
 
 @pytest.fixture
 def setup_not_a_real_pair():
-    yield models.Pair("NotARealPair")
+    yield models.Pair("NotARealPair", testing=True)
 
 
 @pytest.fixture
 def setup_three_ticker_pair():
-    yield models.Pair("NOT_GONNA_WORK")
+    yield models.Pair("NOT_GONNA_WORK", testing=True)
 
 
 @pytest.fixture
 def setup_not_existing_pair():
-    yield models.Pair("XYZ_123")
+    yield models.Pair("XYZ_123", testing=True)
 
 
 @pytest.fixture
 def setup_utils():
-    yield models.Utils()
+    yield models.Utils(testing=True)
 
 
 @pytest.fixture
@@ -111,9 +133,23 @@ def setup_endpoints():
 
 
 @pytest.fixture
-def setup_orderbook_data(setup_utils):
+def setup_kmd_btc_segwit_orderbook_data(setup_utils):
     utils = setup_utils
-    orderbook = utils.load_jsonfile("tests/fixtures/orderbook_BTC_DOGE.json")
+    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC-segwit.json")
+    yield orderbook
+
+
+@pytest.fixture
+def setup_kmd_btc_bep20_orderbook_data(setup_utils):
+    utils = setup_utils
+    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC-BEP20.json")
+    yield orderbook
+
+
+@pytest.fixture
+def setup_kmd_btc_orderbook_data(setup_utils):
+    utils = setup_utils
+    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC.json")
     yield orderbook
 
 
@@ -164,7 +200,7 @@ def setup_swaps_test_data(setup_database, setup_time):
          time.hours_ago(1) + 5, 1, 10, 1, 'LTC', '', 'KMD', '', None, None),
         (7, 'BTC', 'DOGE', '8724d1dc-2762-4633-8add-6ad2e9b1a4e7', time.hours_ago(1) - 6,
          time.hours_ago(1) + 6, 1, 1, 1, 'BTC', '', 'DOGE', '', None, None),
-        (8, 'KMD', 'BTC', '24d1dc87-7622-6334-add8-9b1a4e76ad2e', time.hours_ago(1) - 7,
+        (8, 'KMD', 'DGB', '24d1dc87-7622-6334-add8-9b1a4e76ad2e', time.hours_ago(1) - 7,
          time.hours_ago(1) + 7, 1000000, 1, 1, 'KMD', '', 'BTC', '', None, None),
         (9, 'LTC', 'KMD', 'c871dc72-73a2-d46d-900d-aad5e9b162ef', time.hours_ago(2) - 8,
          time.hours_ago(2) + 8, 1, 100, 1, 'LTC', '', 'KMD', '', None, None),
@@ -299,3 +335,38 @@ def dirty_dict():
         "d": {"foo": "bar"},
         "e": ["foo", "bar"],
     }
+
+
+@pytest.fixture
+def no_trades_info():
+    return []
+
+
+@pytest.fixture
+def trades_info():
+    return [
+        {
+            "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
+            "price": "0.8000000000",
+            "base_volume": "20",
+            "target_volume": "16",
+            "timestamp": "1697471102",
+            "type": "buy"
+        },
+        {
+            "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
+            "price": "1.0000000000",
+            "base_volume": "20",
+            "target_volume": "20",
+            "timestamp": "1697471080",
+            "type": "buy"
+        },
+        {
+            "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
+            "price": "1.2000000000",
+            "base_volume": "20",
+            "target_volume": "24",
+            "timestamp": "1697469503",
+            "type": "buy"
+        }
+    ]

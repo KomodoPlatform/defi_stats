@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 from fixtures import setup_endpoints
 from main import app
+from logger import logger
 
 client = TestClient(app)
 
@@ -46,7 +47,6 @@ def test_gecko_tickers_endpoint():
     assert "ask" in data["data"][0]
     assert "high" in data["data"][0]
     assert "low" in data["data"][0]
-    assert "liquidity_in_usd" in data["data"][0]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
@@ -74,11 +74,19 @@ def test_orderbook_endpoint():
 
 
 def test_historical_trades_endpoint():
-    r = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
+    '''
+    Uses actual live data, so values
+    are not known before tests are run
+    '''
+    r = client.get("/api/v3/gecko/historical_trades/DOC_MARTY")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
     assert isinstance(data["buy"], list)
+    for i in data["buy"]:
+        logger.info(i)
+    for i in data["sell"]:
+        logger.info(i)
     assert isinstance(data["buy"][0]["price"], str)
     assert isinstance(data["buy"][0]["trade_id"], str)
     assert isinstance(data["buy"][0]["timestamp"], str)

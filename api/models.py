@@ -10,7 +10,11 @@ from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 from logger import logger
 import const
-from helper import sum_json_key, sum_json_key_10f, format_10f, list_json_key, sort_dict_list
+from helper import (
+    sum_json_key, sum_json_key_10f, format_10f,
+    list_json_key, sort_dict_list, order_pair_by_market_cap,
+    set_pair_as_tuple
+)
 
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 api_root_path = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +39,7 @@ class Cache:
         self.db_path = db_path
         self.DB = DB
         self.testing = testing
-        self.utils = Utils()
+        self.utils = Utils(self.testing)
         self.files = Files(self.testing)
         self.load = self.Load(
             files=self.files,
@@ -100,7 +104,7 @@ class Cache:
 
         # For CoinGecko endpoints
         def gecko_source(self):
-            return CoinGeckoAPI().get_gecko_source()
+            return CoinGeckoAPI(self.testing).get_gecko_source()
 
         def gecko_tickers(self, trades_days: int = 1, pairs_days: int = 7):
             DB = self.utils.get_db(self.db_path, self.DB)
@@ -121,7 +125,6 @@ class Cache:
                 "last_update": int(time.time()),
                 "pairs_count": len(data),
                 "swaps_count": int(sum_json_key(data, "trades_24hr")),
-                "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
                 "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
                 "data": data
             }
@@ -174,7 +177,7 @@ class Cache:
 
 
 class CoinGeckoAPI:
-    def __init__(self, testing=False):
+    def __init__(self, testing: bool = False):
         self.testing = testing
         self.utils = Utils()
         self.templates = Templates()
@@ -267,8 +270,8 @@ class CoinGeckoAPI:
 
 
 class Time:
-    def __init__(self, testing=False):
-        pass
+    def __init__(self, testing: bool = False):
+        self.testing = testing
 
     def now(self):  # pragma: no cover
         return int(time.time())
@@ -281,12 +284,12 @@ class Time:
 
 
 class Orderbook:
-    def __init__(self, pair, testing=False):
+    def __init__(self, pair, testing: bool = False):
         self.pair = pair
         self.testing = testing
-        self.utils = Utils()
+        self.utils = Utils(testing)
         self.templates = Templates()
-        self.dexapi = DexAPI()
+        self.dexapi = DexAPI(testing)
         pass
 
     def for_pair(self, endpoint=False):
@@ -300,6 +303,8 @@ class Orderbook:
             orderbook_data["bids"] = data["bids"]
             orderbook_data["asks"] = data["asks"]
             orderbook_data["total_asks_base_vol"] = data["total_asks_base_vol"]
+            orderbook_data["total_asks_rel_vol"] = data["total_asks_rel_vol"]
+            orderbook_data["total_bids_base_vol"] = data["total_bids_base_vol"]
             orderbook_data["total_bids_rel_vol"] = data["total_bids_rel_vol"]
             return orderbook_data
         except Exception as e:  # pragma: no cover
@@ -321,7 +326,11 @@ class Orderbook:
         return orderbooks_list
 
     def merge_orders(self, orders_list, order_type):
-        return [i[order_type][0] for i in orders_list if i[order_type] != []]
+        return [
+            i[order_type][j] for i in orders_list
+            if i[order_type] != []
+            for j in range(len(i[order_type]))
+        ]
 
     def merge_order_vols(self, orders_list, vol_type):
         return sum(
@@ -335,11 +344,13 @@ class Orderbook:
     def get_and_parse(self, endpoint=False):
         orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
         orderbooks_list = self.related_orderbooks_list()
-
         for i in ["asks", "bids"]:
             orderbook[i] = self.merge_orders(orderbooks_list, i)
 
-        for i in ["total_asks_base_vol", "total_bids_rel_vol"]:
+        for i in [
+            "total_asks_base_vol", "total_asks_rel_vol",
+            "total_bids_base_vol", "total_bids_rel_vol"
+        ]:
             orderbook[i] = format_10f(
                 self.merge_order_vols(orderbooks_list, i))
 
@@ -376,9 +387,13 @@ class Orderbook:
 
 
 class Pair:
-    """Allows for referencing pairs as a string or tuple."""
+    """
+    Allows for referencing pairs as a string or tuple.
+    To standardise like CEX pairs, the higher Mcap coin is always second.
+    e.g. DOGE_BTC, not BTC_DOGE
+    """
 
-    def __init__(self, pair, db_path=const.MM2_DB_PATH, testing=False, DB=None):
+    def __init__(self, pair, db_path=const.MM2_DB_PATH, testing: bool = False, DB=None):
         self.DB = DB
         self.testing = testing
         self.db_path = db_path
@@ -388,28 +403,17 @@ class Pair:
         self.orderbook = Orderbook(pair=self, testing=self.testing)
         self.gecko_source = self.utils.load_jsonfile(
             self.files.gecko_source)
-
-        if isinstance(pair, tuple):
-            self.as_tuple = pair
-        if isinstance(pair, list):
-            self.as_tuple = tuple(pair)
-        if isinstance(pair, str):
-            self.as_tuple = tuple(map(str, pair.split("_")))
-
-        if len(self.as_tuple) != 2:
-            self.as_str = {"error": "not valid pair"}
-            self.base = {"error": "not valid pair"}
-            self.quote = {"error": "not valid pair"}
-        else:
-            self.as_str = self.as_tuple[0] + "_" + self.as_tuple[1]
-            self.base = self.as_tuple[0]
-            self.quote = self.as_tuple[1]
-            self.info = {
-                "ticker_id": self.as_str,
-                "pool_id": self.as_str,
-                "base": self.base,
-                "target": self.quote
-            }
+        self.as_tuple = order_pair_by_market_cap(
+            set_pair_as_tuple(pair), self.gecko_source)
+        self.as_str = self.as_tuple[0] + "_" + self.as_tuple[1]
+        self.base = self.as_tuple[0]
+        self.quote = self.as_tuple[1]
+        self.info = {
+            "ticker_id": self.as_str,
+            "pool_id": self.as_str,
+            "base": self.base,
+            "target": self.quote
+        }
 
     def historical_trades(
         self,
@@ -450,11 +454,7 @@ class Pair:
             logger.warning(f"{type(e)} Error in [Pair.trades]: {e}")
             trades_info = []
 
-        average_price = 0
-        if len(trades_info) > 0:
-            average_price = sum_json_key(
-                trades_info, "price") / len(trades_info)
-
+        average_price = self.get_average_price(trades_info)
         buys = list_json_key(trades_info, "type", "buy")
         sells = list_json_key(trades_info, "type", "sell")
         buys = sort_dict_list(buys, "timestamp", reverse=True)
@@ -474,6 +474,12 @@ class Pair:
         }
 
         return data
+
+    def get_average_price(self, trades_info):
+        if len(trades_info) > 0:
+            return sum_json_key(
+                trades_info, "price") / len(trades_info)
+        return 0
 
     def get_volumes_and_prices(
         self,
@@ -499,11 +505,14 @@ class Pair:
             self.base, self.gecko_source)
         quote_price = self.utils.get_gecko_usd_price(
             self.quote, self.gecko_source)
+        data["base"] = "KMD"
+        data["quote"] = "LTC"
+        data["base_price"] = base_price
+        data["quote_price"] = quote_price
         num_swaps = len(swaps_for_pair)
-        # logger.info(f"{num_swaps} swaps_for_pair: {self.as_str}")
+        data["trades_24hr"] = num_swaps
         swap_prices = self.get_swap_prices(swaps_for_pair)
         swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
-        data["trades_24hr"] = num_swaps
         data["base_volume"] = swaps_volumes[0]
         data["quote_volume"] = swaps_volumes[1]
         data["base_volume_usd"] = Decimal(
@@ -535,35 +544,6 @@ class Pair:
             data[f"price_change_{suffix}"] = price_change
         return data
 
-    def get_liquidity(self):
-        base_price = Decimal(
-            self.utils.get_gecko_usd_price(
-                self.base, self.gecko_source)
-        )
-        quote_price = Decimal(
-            self.utils.get_gecko_usd_price(
-                self.quote, self.gecko_source)
-        )
-        orderbook = self.orderbook.for_pair(endpoint=False)
-        base_liquidity_coins = Decimal(orderbook["total_asks_base_vol"])
-        rel_liquidity_coins = Decimal(orderbook["total_bids_rel_vol"])
-        base_liquidity_usd = Decimal(
-            base_price) * Decimal(base_liquidity_coins)
-        rel_liquidity_coins = Decimal(rel_liquidity_coins)
-        rel_liquidity_usd = Decimal(
-            quote_price) * Decimal(rel_liquidity_coins)
-        rel_liquidity_usd = Decimal(rel_liquidity_usd)
-        base_liquidity_usd = Decimal(base_liquidity_usd)
-        return {
-            "rel_usd_price": quote_price,
-            "rel_liquidity_coins": rel_liquidity_coins,
-            "rel_liquidity_usd": rel_liquidity_usd,
-            "base_usd_price": base_price,
-            "base_liquidity_coins": base_liquidity_coins,
-            "base_liquidity_usd": base_liquidity_usd,
-            "liquidity_usd": base_liquidity_usd + rel_liquidity_usd
-        }
-
     def gecko_tickers(self, days=1):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
@@ -574,28 +554,32 @@ class Pair:
             data = self.get_volumes_and_prices(days)
             orderbook = self.orderbook.for_pair(endpoint=False)
             suffix = self.utils.get_suffix(days)
-            liquidity = self.get_liquidity()
-            # logger.info(f"Liquidity for {self.as_str}: {liquidity}")
-            if float(liquidity["liquidity_usd"]) > 0:
-                return {
-                    "ticker_id": self.as_str,
-                    "pool_id": self.as_str,
-                    "base_currency": self.base,
-                    "target_currency": self.quote,
-                    "last_price": format_10f(data["last_price"]),
-                    "last_trade": f'{data["last_trade"]}',
-                    "trades_24hr": f'{data["trades_24hr"]}',
-                    "base_volume": data["base_volume"],
-                    "target_volume": data["quote_volume"],
-                    "base_usd_price": liquidity["base_usd_price"],
-                    "target_usd_price": liquidity["rel_usd_price"],
-                    "bid": self.utils.find_highest_bid(orderbook),
-                    "ask": self.utils.find_lowest_ask(orderbook),
-                    "high": format_10f(data[f"highest_price_{suffix}"]),
-                    "low": format_10f(data[f"lowest_price_{suffix}"]),
-                    "liquidity_in_usd": format_10f(liquidity["liquidity_usd"]),
-                    "volume_usd_24hr": format_10f(data["combined_volume_usd"])
-                }
+            base_price = Decimal(
+                self.utils.get_gecko_usd_price(
+                    self.base, self.gecko_source)
+            )
+            quote_price = Decimal(
+                self.utils.get_gecko_usd_price(
+                    self.quote, self.gecko_source)
+            )
+            return {
+                "ticker_id": self.as_str,
+                "pool_id": self.as_str,
+                "base_currency": self.base,
+                "target_currency": self.quote,
+                "last_price": format_10f(data["last_price"]),
+                "last_trade": f'{data["last_trade"]}',
+                "trades_24hr": f'{data["trades_24hr"]}',
+                "base_volume": data["base_volume"],
+                "target_volume": data["quote_volume"],
+                "base_usd_price": base_price,
+                "target_usd_price": quote_price,
+                "bid": self.utils.find_highest_bid(orderbook),
+                "ask": self.utils.find_lowest_ask(orderbook),
+                "high": format_10f(data[f"highest_price_{suffix}"]),
+                "low": format_10f(data[f"lowest_price_{suffix}"]),
+                "volume_usd_24hr": format_10f(data["combined_volume_usd"])
+            }
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [Pair.ticker]: {e}")
             return {}
@@ -621,7 +605,7 @@ class Pair:
 
 
 class SqliteDB:
-    def __init__(self, path_to_db, dict_format=False, testing=False):
+    def __init__(self, path_to_db, dict_format=False, testing: bool = False):
         self.utils = Utils()
         self.files = Files(testing)
         self.testing = testing
@@ -646,19 +630,7 @@ class SqliteDB:
         pairs = self.sql_cursor.fetchall()
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
         pairs = list(set(sorted_pairs))
-        adjusted = []
-        for pair in pairs:
-            if pair[0] in self.gecko_source:
-                if pair[1] in self.gecko_source:
-                    if (
-                        self.gecko_source[pair[1]]["usd_market_cap"]
-                        < self.gecko_source[pair[0]]["usd_market_cap"]
-                    ):
-                        pair = (pair[1], pair[0])
-                else:
-                    pair = (pair[1], pair[0])
-            adjusted.append(pair)
-        return adjusted
+        return [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
 
     def get_swaps_for_pair(
         self,
@@ -826,8 +798,8 @@ class SqliteDB:
 
 
 class Templates:
-    def __init__(self):
-        pass
+    def __init__(self, testing: bool = False):
+        self.testing = testing
 
     def gecko_info(self, coin_id):
         return {
@@ -877,11 +849,23 @@ class Templates:
             "bids": [],
             "asks": [],
             "total_asks_base_vol": 0,
-            "total_bids_rel_vol": 0,
+            "total_asks_rel_vol": 0,
+            "total_bids_base_vol": 0,
+            "total_bids_rel_vol": 0
         }
-        if v2:
+        if v2:  # pragma: no cover
             data.update({
                 "total_asks_base_vol": {
+                    "decimal": 0
+                }
+            })
+            data.update({
+                "total_asks_rel_vol": {
+                    "decimal": 0
+                }
+            })
+            data.update({
+                "total_bids_base_vol": {
                     "decimal": 0
                 }
             })
@@ -894,7 +878,8 @@ class Templates:
 
 
 class Utils:
-    def __init__(self):
+    def __init__(self, testing: bool = False):
+        self.testing = testing
         self.files = Files()
 
     def get_db(self, db_path=const.MM2_DB_PATH, DB=None):
@@ -968,14 +953,18 @@ class Utils:
         else:
             return f"{days}d"
 
-    def get_related_coins(self, coin):
+    def get_related_coins(self, coin, exclude_segwit=True):
         try:
             coin = coin.split("-")[0]
             coins = self.load_jsonfile(self.files.coins)
-            return [
+            data = [
                 i["coin"] for i in coins
-                if (i["coin"] == coin or i["coin"].startswith(f"{coin}-"))
+                if i["coin"] == coin
+                or i["coin"].startswith(f"{coin}-")
             ]
+            if exclude_segwit:
+                data = [i for i in data if "-segwit" not in i]
+            return data
         except Exception as e:  # pragma: no cover
             logger.error(
                 f"{type(e)} Error getting related coins for {coin}: {e}")
@@ -984,14 +973,12 @@ class Utils:
     def get_related_pairs(self, pair: tuple):
         coin_a = pair.as_tuple[0]
         coin_b = pair.as_tuple[1]
-        coins_a = self.get_related_coins(coin_a)
-        coins_b = self.get_related_coins(coin_b)
+        coins_a = self.get_related_coins(coin_a, exclude_segwit=True)
+        coins_b = self.get_related_coins(coin_b, exclude_segwit=True)
         return [
             (i, j) for i in coins_a
             for j in coins_b
             if i != j
-            and '-segwit' not in coin_a
-            and '-segwit' not in coin_b
         ]
 
     def get_chunks(self, data, chunk_length):
@@ -1000,7 +987,7 @@ class Utils:
 
     def get_gecko_usd_price(self, coin: str, gecko_source) -> float:
         try:
-            return gecko_source[coin]["usd_price"]
+            return Decimal(gecko_source[coin]["usd_price"])
         except KeyError:  # pragma: no cover
             return 0
 
@@ -1021,7 +1008,7 @@ class Utils:
                     lowest = price
         except KeyError as e:  # pragma: no cover
             logger.error(e)
-        return "{:.8f}".format(Decimal(lowest))
+        return format_10f(Decimal(lowest))
 
     def find_highest_bid(self, orderbook: list) -> str:
         """Returns highest bid from provided orderbook"""
@@ -1040,11 +1027,11 @@ class Utils:
                     highest = price
         except KeyError as e:  # pragma: no cover
             logger.error(e)
-        return "{:.8f}".format(Decimal(highest))
+        return format_10f(Decimal(highest))
 
 
 class DexAPI:
-    def __init__(self, testing=False):
+    def __init__(self, testing: bool = False):
         self.testing = testing
         self.utils = Utils()
         self.files = Files(self.testing)
@@ -1059,6 +1046,9 @@ class DexAPI:
                 pair = pair.split("_")
             base = pair[0]
             quote = pair[1]
+            if self.testing:
+                orderbook = f"tests/fixtures/orderbook/{base}_{quote}.json"
+                return self.utils.load_jsonfile(orderbook)
             if base not in self.coins_config or quote not in self.coins_config:
                 return self.templates.orderbook(base, quote, v2=True)
             if self.coins_config[base]["wallet_only"] or self.coins_config[quote]["wallet_only"]:

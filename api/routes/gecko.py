@@ -57,7 +57,6 @@ class TickersItem(BaseModel):
     ask: str = "0.00344367"
     high: str = "0.0034736790"
     low: str = "0.0034116503"
-    liquidity_in_usd: str = "46758.1467130070"
     volume_usd_24hr: str = "649642.1516335415"
 
 
