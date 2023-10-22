@@ -16,20 +16,23 @@ two_months_ago = now - 5184000
 
 
 def test_get_pairs(setup_swaps_test_data):
-    # Confirm pairs response is correct
     DB = setup_swaps_test_data
     pairs = DB.get_pairs()
-    assert ("MCL", "KMD") not in pairs
-    assert ("DGB", "LTC") not in pairs
     assert ("KMD", "BTC") in pairs
-    assert ("BTC", "KMD") not in pairs
+    assert ("DGB", "LTC") not in pairs
+    assert ("DOGE", "LTC") not in pairs
     assert len(pairs) == 6
     pairs = DB.get_pairs(45)
-    assert ("MCL", "KMD") not in pairs
+    assert ("KMD", "BTC") in pairs
     assert ("DGB", "LTC") in pairs
     assert ("DOGE", "LTC") not in pairs
+    assert len(pairs) == 8
     pairs = DB.get_pairs(90)
+    assert ("KMD", "BTC") in pairs
+    assert ("DGB", "LTC") in pairs
     assert ("DOGE", "LTC") in pairs
+    assert ("LTC", "DOGE") not in pairs
+    assert len(pairs) == 9
 
 
 def test_get_swaps_for_pair(setup_swaps_test_data):

@@ -128,28 +128,26 @@ def setup_utils():
 
 
 @pytest.fixture
-def setup_endpoints():
-    yield models.Endpoints(testing=True)
-
-
-@pytest.fixture
 def setup_kmd_btc_segwit_orderbook_data(setup_utils):
     utils = setup_utils
-    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC-segwit.json")
+    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC-segwit.json"
+    orderbook = utils.load_jsonfile(file)
     yield orderbook
 
 
 @pytest.fixture
 def setup_kmd_btc_bep20_orderbook_data(setup_utils):
     utils = setup_utils
-    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC-BEP20.json")
+    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC-BEP20.json"
+    orderbook = utils.load_jsonfile(file)
     yield orderbook
 
 
 @pytest.fixture
 def setup_kmd_btc_orderbook_data(setup_utils):
     utils = setup_utils
-    orderbook = utils.load_jsonfile("tests/fixtures/orderbook/KMD_BTC.json")
+    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC.json"
+    orderbook = utils.load_jsonfile(file)
     yield orderbook
 
 

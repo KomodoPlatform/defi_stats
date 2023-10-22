@@ -11,16 +11,24 @@ from helper import validate_ticker
 
 router = APIRouter()
 cache = models.Cache()
-endpoints = models.Endpoints()
 
 # Gecko caching functions
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 def cache_gecko_data():  # pragma: no cover
     try:
         cache.save.gecko_source()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=90)
+def cache_gecko_pairs():  # pragma: no cover
+    try:
+        cache.save.gecko_pairs()
     except Exception as e:
         logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
 
@@ -48,63 +56,66 @@ class TickersItem(BaseModel):
     ticker_id: str = "KMD_LTC"
     base_currency: str = "KMD"
     target_currency: str = "LTC"
-    last_price: str = "0.0034393809"
-    last_trade: str = "1697525818"
-    trades_24hr: str = "52"
-    base_volume: str = "845.2425635969204"
-    target_volume: str = "2.9121541628874037"
-    bid: str = "0.00337853"
-    ask: str = "0.00344367"
-    high: str = "0.0034736790"
-    low: str = "0.0034116503"
-    volume_usd_24hr: str = "649642.1516335415"
+    last_price: str = "123.456789"
+    last_trade: str = "1700050000"
+    trades_24hr: str = "123"
+    base_volume: str = "123.456789"
+    target_volume: str = "123.456789"
+    bid: str = "123.456789"
+    ask: str = "123.456789"
+    high: str = "123.456789"
+    low: str = "123.456789"
+    volume_usd_24hr: str = "123.456789"
+    liquidity_in_usd: str = "123.456789"
 
 
 class TickersSummary(BaseModel):
     last_update: int = 1697383557
     pairs_count: int = 173
     swaps_count: int = 120
-    combined_liquidity_usd: str = "212249.7466552301"
-    combined_volume_usd: str = "2901.4732791150"
+    combined_volume_usd: str = "123.456789"
+    combined_liquidity_usd: str = "123.456789"
     data: List[TickersItem]
 
 
 class OrderbookItem(BaseModel):
     ticker_id: str = "KMD_DGB"
     timestamp: str = "1700050000"
-    bids: List[List] = [["0.00337853", "11.00000000"]]
-    asks: List[List] = [["0.00344367", "53.00000000"]]
-    total_asks_base_vol: str = "55408.7479581332120"
-    total_bids_rel_vol: str = "570.3474962785280"
+    bids: List[List] = [["123.456789", "123.456789"]]
+    asks: List[List] = [["123.456789", "123.456789"]]
+    total_asks_base_vol: str = "123.456789"
+    total_bids_base_vol: str = "123.456789"
 
 
 class BuyItem(BaseModel):
-    trade_id: str = "724a6418-c3a3-4510-8fd8-edf73933d219"
-    price: str = "0.0034619483"
-    base_volume: str = "200"
-    target_volume: str = "0.69238966"
+    trade_id: str = "77777777-c3a3-4510-8fd8-edf73933d219"
+    price: str = "123.456789"
+    base_volume: str = "1"
+    target_volume: str = "123.456789"
     timestamp: str = "1700050000"
     type: str = "buy"
 
 
 class SellItem(BaseModel):
-    trade_id: str = "990f3e78-e436-4405-808f-44832e97c65c"
-    price: str = "50.1"
-    base_volume: str = "195.9088880675"
-    target_volume: str = "0.67380529"
-    timestamp: str = "1697377776"
+    trade_id: str = "77777777-e436-4405-808f-44832e97c65c"
+    price: str = "123.456789"
+    base_volume: str = "123.456789"
+    target_volume: str = "123.456789"
+    timestamp: str = "1700050000"
     type: str = "sell"
 
 
 class HistoricalTradesItem(BaseModel):
     ticker_id: str = "KMD_LTC"
     start_time: str = "1697298233"
-    end_time: str = "1697384633"
+    end_time: str = "1700050000"
     limit: str = "100"
     trades_count: str = "5"
-    sum_base_volume: str = "845.2425635969204"
-    sum_target_volume: str = "2.912154162887404"
-    average_price: str = "0.00344162344"
+    sum_base_volume_buys: str = "123.456789"
+    sum_target_volume_buys: str = "123.456789"
+    sum_base_volume_sells: str = "123.456789"
+    sum_target_volume_sells: str = "123.456789"
+    average_price: str = "123.456789"
     buy: List[BuyItem]
     sell: List[SellItem]
 
@@ -113,11 +124,11 @@ class HistoricalTradesItem(BaseModel):
 @router.get(
     '/pairs',
     response_model=List[PairsItem],
-    description="Returns a list of all pairs traded within the last 'x' days."
+    description="Returns a list of all pairs with price data traded within the last 'x' days."
 )
 async def gecko_pairs():
     try:
-        return endpoints.gecko_pairs()
+        return cache.load.gecko_pairs()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -143,7 +154,7 @@ def gecko_tickers():
 )
 def gecko_orderbook(ticker_id: str = "KMD_LTC", depth: int = 100):
     try:
-        return models.Orderbook(models.Pair(ticker_id)).for_pair(True)
+        return models.Orderbook(models.Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
     except Exception as e:  # pragma: no cover
         err = f"{type(e)} Error in /api/v3/gecko/orderbook [{ticker_id}] [depth: {depth}]]: {e}"
         logger.warning(err)

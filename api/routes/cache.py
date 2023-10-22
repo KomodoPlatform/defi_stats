@@ -22,9 +22,12 @@ def update_seednode_db():  # pragma: no cover
             source=const.MM2_DB_HOST_PATH,
             source_ssh=const.MM2_DB_HOST,
             destination=const.MM2_DB_PATH,
-            options=['-avzP'],
-            sync_source_contents=False
-            )
+            options=[
+                '-avzP'
+            ],
+            sync_source_contents=False,
+            verbose=True
+        )
         logger.info(f"Updated MM2.db from {const.MM2_DB_HOST}")
     except Exception as e:
         logger.warning(f"{type(e)} Error in [cache_ticker_data]: {e}")

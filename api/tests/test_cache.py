@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+import os
 import time
 import pytest
 from fixtures import setup_cache, setup_utils, setup_kmd_btc_orderbook_data, \
     setup_swaps_test_data, setup_database, setup_time, logger
 from helper import format_10f
+
+api_root_path = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
 
 
 # /////////////////////// #
@@ -22,7 +29,7 @@ def test_calc_gecko_source(setup_cache):
 # /////////////////////// #
 def test_save_gecko(setup_cache):
     save = setup_cache.save
-    path = "tests/fixtures/test_save.json"
+    path = f"{api_root_path}/tests/fixtures/test_save.json"
 
     data = "foo bar"
     with pytest.raises(TypeError):
@@ -134,3 +141,14 @@ def test_calc_gecko_tickers(setup_cache):
     assert "volume_usd_24hr" in r["data"][1]
     assert "ask" in r["data"][1]
     assert "bid" in r["data"][1]
+
+
+def test_gecko_pairs(setup_cache):
+    cache = setup_cache
+    r = cache.calc.gecko_pairs(days=7, exclude_unpriced=False)
+    r2 = cache.calc.gecko_pairs()
+    assert len(r) > 0
+    assert len(r2) > 0
+    assert len(r) > len(r2)
+    assert isinstance(r, list)
+    assert isinstance(r[0], dict)

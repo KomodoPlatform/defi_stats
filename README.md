@@ -13,8 +13,8 @@ Data is sourced from the [AtomicDEX-API SQLite database](https://developers.komo
 - Python 3.7+
 - Install pip packages with `pip3 install -r requirements.txt`
 - An active [AtomicDEX-API](https://github.com/KomodoPlatform/atomicDEX-API) session (to query orderbooks)
-- A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included.
-- A `.env` file containing the following variables:
+- A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync, and requires you to create the `api/ache/ssh_key` file containing the ssh private key for the rsync server.
+- A `api/.env` file containing the following variables:
 
 ```
 # FastAPI
@@ -22,11 +22,18 @@ API_PORT=8088
 API_HOST='0.0.0.0'
 
 # AtomicDEX API
-MM2_USERPASS=Ent3r_Y@ur_Us3rP@ssw0rd_H3r3
 MM2_DB_PATH='Path/To/MM2.db'
-COINS_CONFIG_URL=https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json
-COINS_URL=https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins
+MM2_DB_HOST='atomic@stats-api.atomicdex.io'
+MM2_DB_HOST_PATH='/DB/43ec929fe30ee72be42c9162c56dde910a05e50d/MM2.db'
+API_PORT=7068
+API_HOST='127.0.0.1'
+POETRY_VERSION='1.6.1'
+COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
+COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
+
 ```
+
+Run `./setup.sh` to generate `mm2/.env`
 
 ## Testing
 

@@ -2,7 +2,6 @@
 from fastapi.testclient import TestClient
 from decimal import Decimal
 import pytest
-from fixtures import setup_endpoints
 from main import app
 from logger import logger
 
@@ -13,16 +12,16 @@ def test_gecko_pairs_endpoint():
     r = client.get("/api/v3/gecko/pairs")
     assert r.status_code == 200
     data = r.json()
+    ticker_list = [i["ticker_id"] for i in data]
+    assert "KMD_BTC" in ticker_list
+    assert "BTC_KMD" not in ticker_list
     assert isinstance(data, list)
-    assert isinstance(data[0], dict)
-    assert "ticker_id" in data[0]
-    assert "pool_id" in data[0]
-    assert "base" in data[0]
-    assert "target" in data[0]
-    split = data[0]["ticker_id"].split("_")
-    assert split[0] == data[0]["base"]
-    assert split[1] == data[0]["target"]
-    assert data[0]["ticker_id"] == data[0]["pool_id"]
+    for i in data:
+        assert isinstance(i, dict)
+        assert i["ticker_id"] == i["pool_id"]
+        split = i["ticker_id"].split("_")
+        assert split[0] == i["base"]
+        assert split[1] == i["target"]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
@@ -78,7 +77,7 @@ def test_historical_trades_endpoint():
     Uses actual live data, so values
     are not known before tests are run
     '''
-    r = client.get("/api/v3/gecko/historical_trades/DOC_MARTY")
+    r = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
@@ -101,19 +100,3 @@ def test_historical_trades_endpoint():
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
-
-
-def test_gecko_pairs(setup_endpoints):
-    endpoints = setup_endpoints
-    result = endpoints.gecko_pairs()
-    assert isinstance(result, list)
-    assert isinstance(result[0], dict)
-    assert "ticker_id" in result[0]
-    assert "pool_id" in result[0]
-    assert "base" in result[0]
-    assert "target" in result[0]
-    split = result[0]["ticker_id"].split("_")
-    assert split[0] == result[0]["base"]
-    assert split[1] == result[0]["target"]
-    assert result[0]["ticker_id"] == result[0]["pool_id"]
-    assert len(result) == len(set(i["ticker_id"] for i in result))

@@ -32,6 +32,7 @@ class Files:
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source_cache.json"
         self.gecko_tickers = f"{folder}/gecko/ticker_cache.json"
+        self.gecko_pairs = f"{folder}/gecko/pairs_cache.json"
 
 
 class Cache:
@@ -73,6 +74,7 @@ class Cache:
         self.coins_config = self.load.coins_config()
         # For CoinGecko endpoints
         self.gecko_source = self.load.gecko_source()
+        self.gecko_pairs = self.load.gecko_pairs()
         self.gecko_tickers = self.load.gecko_tickers()
 
     class Load:
@@ -94,6 +96,9 @@ class Cache:
         def gecko_tickers(self):
             return self.utils.load_jsonfile(self.files.gecko_tickers)
 
+        def gecko_pairs(self):
+            return self.utils.load_jsonfile(self.files.gecko_pairs)
+
     class Calc:
         def __init__(self, db_path, load, testing, utils, DB=None):
             self.DB = DB
@@ -101,10 +106,32 @@ class Cache:
             self.load = load
             self.testing = testing
             self.utils = utils
+            self.gecko = CoinGeckoAPI(self.testing)
 
         # For CoinGecko endpoints
         def gecko_source(self):
-            return CoinGeckoAPI(self.testing).get_gecko_source()
+            return self.gecko.get_gecko_source()
+
+        def gecko_pairs(self, days: int = 7, exclude_unpriced: bool = True) -> list:
+            try:
+                DB = self.utils.get_db(self.db_path, self.DB)
+                pairs = DB.get_pairs(days)
+                logger.debug(f"{len(pairs)} pairs ({days} days)")
+                data = [
+                    Pair(i, self.db_path, self.testing, DB=DB).info
+                    for i in pairs
+                    if len(set(i).intersection(self.gecko.priced_coins)) == 2
+                    or not exclude_unpriced
+                ]
+                data = sorted(data, key=lambda d: d['ticker_id'])
+                logger.debug(f"{len(data)} priced pairs ({days} days)")
+                return data
+            except Exception as e:  # pragma: no cover
+                logger.error(
+                    f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}")
+                return {
+                    "error": f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}"
+                }  # pragma: no cover
 
         def gecko_tickers(self, trades_days: int = 1, pairs_days: int = 7):
             DB = self.utils.get_db(self.db_path, self.DB)
@@ -169,7 +196,14 @@ class Cache:
         # For CoinGecko endpoints
         def gecko_source(self):  # pragma: no cover
             data = self.calc.gecko_source()
-            return self.save(self.files.gecko_source, data)
+            if "error" in data:
+                logger.warning(data["error"])
+            else:
+                self.save(self.files.gecko_source, data)
+
+        def gecko_pairs(self):  # pragma: no cover
+            data = self.calc.gecko_pairs()
+            return self.save(self.files.gecko_pairs, data)
 
         def gecko_tickers(self):  # pragma: no cover
             data = self.calc.gecko_tickers()
@@ -184,6 +218,7 @@ class CoinGeckoAPI:
         self.files = Files(self.testing)
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config)
         self.gecko_source = self.load_gecko_source()
+        self.priced_coins = sorted(list(self.gecko_source.keys()))
 
     def load_gecko_source(self):
         return self.utils.load_jsonfile(self.files.gecko_source)
@@ -235,11 +270,15 @@ class CoinGeckoAPI:
             try:
                 params = f"ids={chunk_ids}&vs_currencies=usd&include_market_cap=true"
                 url = f"https://api.coingecko.com/api/v3/simple/price?{params}"
-                gecko_source = requests.get(url).json()
+                r = requests.get(url)
+                if r.status_code != 200:  # pragma: no cover
+                    raise Exception(f"Invalid response: {r.status_code}")
+                gecko_source = r.json()
+
             except Exception as e:  # pragma: no cover
-                error = {"error": f"{url} is not available"}
-                logger.error(
-                    f"{type(e)} Error in [get_gecko_source]: {e} ({error})")
+                error = {
+                    "error": f"{type(e)} Error in [get_gecko_source]: {e}"}
+                logger.error(error)
                 return error
             try:
                 for coin_id in gecko_source:
@@ -265,7 +304,10 @@ class CoinGeckoAPI:
                         logger.warning(error)
 
             except Exception as e:  # pragma: no cover
-                logger.error(f"{type(e)} Error in [get_gecko_source]: {e}")
+                error = {
+                    "error": f"{type(e)} Error in [get_gecko_source]: {e}"}
+                logger.error(error)
+                return error
         return coins_info
 
 
@@ -292,7 +334,7 @@ class Orderbook:
         self.dexapi = DexAPI(testing)
         pass
 
-    def for_pair(self, endpoint=False):
+    def for_pair(self, endpoint=False, depth=100):
         try:
             orderbook_data = OrderedDict()
             orderbook_data["ticker_id"] = self.pair.as_str
@@ -300,12 +342,41 @@ class Orderbook:
                 int(datetime.now().strftime("%s"))
             )
             data = self.get_and_parse(endpoint)
-            orderbook_data["bids"] = data["bids"]
-            orderbook_data["asks"] = data["asks"]
-            orderbook_data["total_asks_base_vol"] = data["total_asks_base_vol"]
-            orderbook_data["total_asks_rel_vol"] = data["total_asks_rel_vol"]
-            orderbook_data["total_bids_base_vol"] = data["total_bids_base_vol"]
-            orderbook_data["total_bids_rel_vol"] = data["total_bids_rel_vol"]
+            orderbook_data["bids"] = data["bids"][:depth][::-1]
+            orderbook_data["asks"] = data["asks"][::-1][:depth]
+            if endpoint:
+                total_bids_base_vol = sum(
+                    [
+                        Decimal(i[1])
+                        for i in orderbook_data["bids"]
+                    ]
+                )
+                logger.debug(f"Total bids: {total_bids_base_vol}")
+                total_asks_base_vol = sum(
+                    [
+                        Decimal(i[1])
+                        for i in orderbook_data["asks"]
+                    ]
+                )
+                logger.debug(f"Total asks: {total_asks_base_vol}")
+            else:
+                #logger.debug(f"Total bids: {orderbook_data['bids']}")
+                total_bids_base_vol = sum(
+                    [
+                        Decimal(i["base_max_volume"])
+                        for i in orderbook_data["bids"]
+                    ]
+                )
+                logger.debug(f"Total bids: {total_bids_base_vol}")
+                total_asks_base_vol = sum(
+                    [
+                        Decimal(i["base_max_volume"])
+                        for i in orderbook_data["asks"]
+                    ]
+                )
+                logger.debug(f"Total asks: {total_asks_base_vol}")
+            orderbook_data["total_asks_base_vol"] = total_asks_base_vol
+            orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             return orderbook_data
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [Orderbook.for_pair]: {e}")
@@ -443,10 +514,10 @@ class Pair:
                     Decimal(swap["maker_amount"])
                 trade_info["trade_id"] = swap["uuid"]
                 trade_info["base_ticker"] = self.base
-                trade_info["quote_ticker"] = self.quote
+                trade_info["target_ticker"] = self.quote
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
-                trade_info["quote_volume"] = format_10f(swap["taker_amount"])
+                trade_info["target_volume"] = format_10f(swap["taker_amount"])
                 trade_info["timestamp"] = swap["started_at"]
                 trade_info["type"] = swap["trade_type"]
                 trades_info.append(trade_info)
@@ -466,8 +537,10 @@ class Pair:
             "end_time": str(end_time),
             "limit": str(limit),
             "trades_count": str(len(trades_info)),
-            "sum_base_volume": sum_json_key_10f(trades_info, "base_volume"),
-            "sum_quote_volume": sum_json_key_10f(trades_info, "quote_volume"),
+            "sum_base_volume_buys": sum_json_key_10f(buys, "base_volume"),
+            "sum_base_volume_sells": sum_json_key_10f(sells, "base_volume"),
+            "sum_target_volume_buys": sum_json_key_10f(buys, "target_volume"),
+            "sum_target_volume_sells": sum_json_key_10f(sells, "target_volume"),
             "average_price": format_10f(average_price),
             "buy": buys,
             "sell": sells
@@ -620,8 +693,10 @@ class SqliteDB:
 
     def get_pairs(self, days: int = 7) -> list:
         """
-        Returns a list of pairs (as a list of tuples) with at least one
-        successful swap in the last 'x' days.
+        Returns an alphabetically sorted list of pairs
+        (as a list of tuples) with at least one successful
+        swap in the last 'x' days. ('BASE', 'REL') tuples
+        are sorted by market cap to conform to CEX standards.
         """
         timestamp = int((datetime.now() - timedelta(days)).strftime("%s"))
         sql = f"SELECT DISTINCT maker_coin_ticker, taker_coin_ticker FROM stats_swaps \
@@ -630,7 +705,9 @@ class SqliteDB:
         pairs = self.sql_cursor.fetchall()
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
         pairs = list(set(sorted_pairs))
-        return [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
+        data = sorted([order_pair_by_market_cap(
+            pair, self.gecko_source) for pair in pairs])
+        return data
 
     def get_swaps_for_pair(
         self,
@@ -798,8 +875,8 @@ class SqliteDB:
 
 
 class Templates:
-    def __init__(self, testing: bool = False):
-        self.testing = testing
+    def __init__(self):
+        pass
 
     def gecko_info(self, coin_id):
         return {
@@ -1047,7 +1124,7 @@ class DexAPI:
             base = pair[0]
             quote = pair[1]
             if self.testing:
-                orderbook = f"tests/fixtures/orderbook/{base}_{quote}.json"
+                orderbook = f"{api_root_path}/tests/fixtures/orderbook/{base}_{quote}.json"
                 return self.utils.load_jsonfile(orderbook)
             if base not in self.coins_config or quote not in self.coins_config:
                 return self.templates.orderbook(base, quote, v2=True)
@@ -1072,24 +1149,3 @@ class DexAPI:
                 f"{type(e)} Error in [DexAPI.orderbook] for {pair}: {e}")
             logger.info(r.text)
         return self.templates.orderbook(base, quote, v2=True)
-
-
-class Endpoints:
-    def __init__(self, testing: bool = False, db_path=const.MM2_DB_PATH, DB=None):
-        self.db_path = db_path
-        self.DB = DB
-        self.testing = testing
-        self.utils = Utils()
-        self.files = Files(self.testing)
-
-    def gecko_pairs(self, days: int = 7) -> list:
-        try:
-            DB = self.utils.get_db(self.db_path, self.DB)
-            pairs = DB.get_pairs(days)
-            logger.debug(
-                f"Calculating ticker cache for {len(pairs)} pairs ({days} days)")
-            return [Pair(i, self.db_path, self.testing, DB=DB).info for i in pairs]
-        except Exception as e:  # pragma: no cover
-            logger.error(
-                f"{type(e)} Error in [Cache.calc.gecko_pairs]: {e}")
-            return None

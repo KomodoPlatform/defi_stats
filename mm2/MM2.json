@@ -1,0 +1,10 @@
+{
+    "gui": "MM2CLI",
+    "netid": 7777,
+    "rpc_password": "RPC_CONTRoL_USERP@SSW0RD",
+    "passphrase": "insecure seed for orderbook only",
+    "userhome": "/${HOME#\"/\"}",
+    "local_only": false,
+    "rpcip": "0.0.0.0"
+}
+
