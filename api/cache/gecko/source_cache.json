@@ -1,0 +1,3902 @@
+{
+    "1INCH-AVX20": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "1INCH": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "1INCH-BEP20": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "1INCH-ERC20": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "1INCH-KRC20": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "1INCH-PLG20": {
+        "usd_market_cap": 279128301.2857505,
+        "usd_price": 0.267004,
+        "coingecko_id": "1inch"
+    },
+    "PGX-PLG20": {
+        "usd_market_cap": 863814.6617820101,
+        "usd_price": 0.0047477,
+        "coingecko_id": "pegaxy-stone"
+    },
+    "PGX": {
+        "usd_market_cap": 863814.6617820101,
+        "usd_price": 0.0047477,
+        "coingecko_id": "pegaxy-stone"
+    },
+    "AAVE-AVX20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-BEP20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-ERC20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-FTM20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-HCO20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-KRC20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "AAVE-PLG20": {
+        "usd_market_cap": 1226222667.1228008,
+        "usd_price": 84.35,
+        "coingecko_id": "aave"
+    },
+    "ABY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00059666,
+        "coingecko_id": "artbyte"
+    },
+    "ADA-BEP20": {
+        "usd_market_cap": 9232568328.985006,
+        "usd_price": 0.264505,
+        "coingecko_id": "cardano"
+    },
+    "ADA": {
+        "usd_market_cap": 9232568328.985006,
+        "usd_price": 0.264505,
+        "coingecko_id": "cardano"
+    },
+    "ADX-BEP20": {
+        "usd_market_cap": 19780918.183587387,
+        "usd_price": 0.13876,
+        "coingecko_id": "adex"
+    },
+    "ADX": {
+        "usd_market_cap": 19780918.183587387,
+        "usd_price": 0.13876,
+        "coingecko_id": "adex"
+    },
+    "ADX-ERC20": {
+        "usd_market_cap": 19780918.183587387,
+        "usd_price": 0.13876,
+        "coingecko_id": "adex"
+    },
+    "AGEUR-ERC20": {
+        "usd_market_cap": 17963276.116679218,
+        "usd_price": 1.059,
+        "coingecko_id": "ageur"
+    },
+    "AGEUR": {
+        "usd_market_cap": 17963276.116679218,
+        "usd_price": 1.059,
+        "coingecko_id": "ageur"
+    },
+    "AGIX-ERC20": {
+        "usd_market_cap": 225325081.3087874,
+        "usd_price": 0.180395,
+        "coingecko_id": "singularitynet"
+    },
+    "AGIX": {
+        "usd_market_cap": 225325081.3087874,
+        "usd_price": 0.180395,
+        "coingecko_id": "singularitynet"
+    },
+    "AGIX-PLG20": {
+        "usd_market_cap": 225325081.3087874,
+        "usd_price": 0.180395,
+        "coingecko_id": "singularitynet"
+    },
+    "ANKR-BEP20": {
+        "usd_market_cap": 211335178.4559093,
+        "usd_price": 0.02112019,
+        "coingecko_id": "ankr"
+    },
+    "ANKR": {
+        "usd_market_cap": 211335178.4559093,
+        "usd_price": 0.02112019,
+        "coingecko_id": "ankr"
+    },
+    "ANKR-ERC20": {
+        "usd_market_cap": 211335178.4559093,
+        "usd_price": 0.02112019,
+        "coingecko_id": "ankr"
+    },
+    "ANKR-PLG20": {
+        "usd_market_cap": 211335178.4559093,
+        "usd_price": 0.02112019,
+        "coingecko_id": "ankr"
+    },
+    "APE-ERC20": {
+        "usd_market_cap": 415982052.9127243,
+        "usd_price": 1.13,
+        "coingecko_id": "apecoin"
+    },
+    "APE": {
+        "usd_market_cap": 415982052.9127243,
+        "usd_price": 1.13,
+        "coingecko_id": "apecoin"
+    },
+    "APE-BEP20": {
+        "usd_market_cap": 415982052.9127243,
+        "usd_price": 1.13,
+        "coingecko_id": "apecoin"
+    },
+    "APE-FTM20": {
+        "usd_market_cap": 415982052.9127243,
+        "usd_price": 1.13,
+        "coingecko_id": "apecoin"
+    },
+    "APE-PLG20": {
+        "usd_market_cap": 415982052.9127243,
+        "usd_price": 1.13,
+        "coingecko_id": "apecoin"
+    },
+    "ARPA-BEP20": {
+        "usd_market_cap": 41764525.75001729,
+        "usd_price": 0.04251376,
+        "coingecko_id": "arpa"
+    },
+    "ARPA": {
+        "usd_market_cap": 41764525.75001729,
+        "usd_price": 0.04251376,
+        "coingecko_id": "arpa"
+    },
+    "ARPA-ERC20": {
+        "usd_market_cap": 41764525.75001729,
+        "usd_price": 0.04251376,
+        "coingecko_id": "arpa"
+    },
+    "ARRR": {
+        "usd_market_cap": 31050975.179276057,
+        "usd_price": 0.157449,
+        "coingecko_id": "pirate-chain"
+    },
+    "ARRR-BEP20": {
+        "usd_market_cap": 31050975.179276057,
+        "usd_price": 0.157449,
+        "coingecko_id": "pirate-chain"
+    },
+    "ATOM-BEP20": {
+        "usd_market_cap": 1962246886.1051412,
+        "usd_price": 6.7,
+        "coingecko_id": "cosmos"
+    },
+    "ATOM": {
+        "usd_market_cap": 1962246886.1051412,
+        "usd_price": 6.7,
+        "coingecko_id": "cosmos"
+    },
+    "ATOM-PLG20": {
+        "usd_market_cap": 1962246886.1051412,
+        "usd_price": 6.7,
+        "coingecko_id": "cosmos"
+    },
+    "AUR": {
+        "usd_market_cap": 537396.2843224913,
+        "usd_price": 0.02718333,
+        "coingecko_id": "auroracoin"
+    },
+    "AVA-ERC20": {
+        "usd_market_cap": 23560249.37462816,
+        "usd_price": 0.453596,
+        "coingecko_id": "concierge-io"
+    },
+    "AVA": {
+        "usd_market_cap": 23560249.37462816,
+        "usd_price": 0.453596,
+        "coingecko_id": "concierge-io"
+    },
+    "AVAX": {
+        "usd_market_cap": 3581448251.914851,
+        "usd_price": 10.05,
+        "coingecko_id": "avalanche-2"
+    },
+    "AVAX-BEP20": {
+        "usd_market_cap": 3581448251.914851,
+        "usd_price": 10.05,
+        "coingecko_id": "avalanche-2"
+    },
+    "AVN": {
+        "usd_market_cap": 0.0,
+        "usd_price": 3.333e-05,
+        "coingecko_id": "avian-network"
+    },
+    "AVN-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 3.333e-05,
+        "coingecko_id": "avian-network"
+    },
+    "AWC-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.076843,
+        "coingecko_id": "atomic-wallet-coin"
+    },
+    "AWC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.076843,
+        "coingecko_id": "atomic-wallet-coin"
+    },
+    "AXE": {
+        "usd_market_cap": 22458.929154424444,
+        "usd_price": 0.00307634,
+        "coingecko_id": "axe"
+    },
+    "AXS-BEP20": {
+        "usd_market_cap": 589093497.5752378,
+        "usd_price": 4.47,
+        "coingecko_id": "axie-infinity"
+    },
+    "AXS": {
+        "usd_market_cap": 589093497.5752378,
+        "usd_price": 4.47,
+        "coingecko_id": "axie-infinity"
+    },
+    "AXS-ERC20": {
+        "usd_market_cap": 589093497.5752378,
+        "usd_price": 4.47,
+        "coingecko_id": "axie-infinity"
+    },
+    "AYA": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00057295,
+        "coingecko_id": "aryacoin"
+    },
+    "BABYDOGE-BEP20": {
+        "usd_market_cap": 164904426.40131366,
+        "usd_price": 1.129e-09,
+        "coingecko_id": "baby-doge-coin"
+    },
+    "BABYDOGE": {
+        "usd_market_cap": 164904426.40131366,
+        "usd_price": 1.129e-09,
+        "coingecko_id": "baby-doge-coin"
+    },
+    "BAL-BEP20": {
+        "usd_market_cap": 138898305.0124182,
+        "usd_price": 3.17,
+        "coingecko_id": "balancer"
+    },
+    "BAL": {
+        "usd_market_cap": 138898305.0124182,
+        "usd_price": 3.17,
+        "coingecko_id": "balancer"
+    },
+    "BAL-ERC20": {
+        "usd_market_cap": 138898305.0124182,
+        "usd_price": 3.17,
+        "coingecko_id": "balancer"
+    },
+    "BAL-KRC20": {
+        "usd_market_cap": 138898305.0124182,
+        "usd_price": 3.17,
+        "coingecko_id": "balancer"
+    },
+    "BAL-PLG20": {
+        "usd_market_cap": 138898305.0124182,
+        "usd_price": 3.17,
+        "coingecko_id": "balancer"
+    },
+    "BANANO-BEP20": {
+        "usd_market_cap": 6040306.912131475,
+        "usd_price": 0.00391771,
+        "coingecko_id": "banano"
+    },
+    "BANANO": {
+        "usd_market_cap": 6040306.912131475,
+        "usd_price": 0.00391771,
+        "coingecko_id": "banano"
+    },
+    "BAND-BEP20": {
+        "usd_market_cap": 182246571.48146847,
+        "usd_price": 1.34,
+        "coingecko_id": "band-protocol"
+    },
+    "BAND": {
+        "usd_market_cap": 182246571.48146847,
+        "usd_price": 1.34,
+        "coingecko_id": "band-protocol"
+    },
+    "BAND-ERC20": {
+        "usd_market_cap": 182246571.48146847,
+        "usd_price": 1.34,
+        "coingecko_id": "band-protocol"
+    },
+    "BAND-FTM20": {
+        "usd_market_cap": 182246571.48146847,
+        "usd_price": 1.34,
+        "coingecko_id": "band-protocol"
+    },
+    "BAND-PLG20": {
+        "usd_market_cap": 182246571.48146847,
+        "usd_price": 1.34,
+        "coingecko_id": "band-protocol"
+    },
+    "BAT-AVX20": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BAT": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BAT-ERC20": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BAT-BEP20": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BAT-KRC20": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BAT-PLG20": {
+        "usd_market_cap": 290601535.64602256,
+        "usd_price": 0.19458,
+        "coingecko_id": "basic-attention-token"
+    },
+    "BCH": {
+        "usd_market_cap": 4802240357.234909,
+        "usd_price": 245.55,
+        "coingecko_id": "bitcoin-cash"
+    },
+    "USDT-SLP": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "SPICE-SLP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.316e-05,
+        "coingecko_id": "spice"
+    },
+    "SPICE": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.316e-05,
+        "coingecko_id": "spice"
+    },
+    "FLEXUSD-ERC20": {
+        "usd_market_cap": 24054856.783871226,
+        "usd_price": 0.144289,
+        "coingecko_id": "flex-usd"
+    },
+    "FLEXUSD": {
+        "usd_market_cap": 24054856.783871226,
+        "usd_price": 0.144289,
+        "coingecko_id": "flex-usd"
+    },
+    "FLEXUSD-SLP": {
+        "usd_market_cap": 24054856.783871226,
+        "usd_price": 0.144289,
+        "coingecko_id": "flex-usd"
+    },
+    "JOY-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00296572,
+        "coingecko_id": "joystick-club"
+    },
+    "JOY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00296572,
+        "coingecko_id": "joystick-club"
+    },
+    "BCH-ERC20": {
+        "usd_market_cap": 4802240357.234909,
+        "usd_price": 245.55,
+        "coingecko_id": "bitcoin-cash"
+    },
+    "BCH-BEP20": {
+        "usd_market_cap": 4802240357.234909,
+        "usd_price": 245.55,
+        "coingecko_id": "bitcoin-cash"
+    },
+    "BCH-HCO20": {
+        "usd_market_cap": 4802240357.234909,
+        "usd_price": 245.55,
+        "coingecko_id": "bitcoin-cash"
+    },
+    "BIDR-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 6.279e-05,
+        "coingecko_id": "binanceidr"
+    },
+    "BIDR": {
+        "usd_market_cap": 0.0,
+        "usd_price": 6.279e-05,
+        "coingecko_id": "binanceidr"
+    },
+    "BLK": {
+        "usd_market_cap": 1366696.6025747696,
+        "usd_price": 0.02190812,
+        "coingecko_id": "blackcoin"
+    },
+    "BLK-BEP20": {
+        "usd_market_cap": 1366696.6025747696,
+        "usd_price": 0.02190812,
+        "coingecko_id": "blackcoin"
+    },
+    "BNB": {
+        "usd_market_cap": 33928504017.71302,
+        "usd_price": 220.25,
+        "coingecko_id": "binancecoin"
+    },
+    "BOLI": {
+        "usd_market_cap": 38391.868216179595,
+        "usd_price": 0.00201988,
+        "coingecko_id": "bolivarcoin"
+    },
+    "BONE-ERC20": {
+        "usd_market_cap": 184529411.0086911,
+        "usd_price": 0.7381,
+        "coingecko_id": "bone-shibaswap"
+    },
+    "BONE": {
+        "usd_market_cap": 184529411.0086911,
+        "usd_price": 0.7381,
+        "coingecko_id": "bone-shibaswap"
+    },
+    "RBTC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 30490,
+        "coingecko_id": "rootstock"
+    },
+    "BNT-BEP20": {
+        "usd_market_cap": 79500431.36812645,
+        "usd_price": 0.560183,
+        "coingecko_id": "bancor"
+    },
+    "BNT": {
+        "usd_market_cap": 79500431.36812645,
+        "usd_price": 0.560183,
+        "coingecko_id": "bancor"
+    },
+    "BNT-ERC20": {
+        "usd_market_cap": 79500431.36812645,
+        "usd_price": 0.560183,
+        "coingecko_id": "bancor"
+    },
+    "BNT-PLG20": {
+        "usd_market_cap": 79500431.36812645,
+        "usd_price": 0.560183,
+        "coingecko_id": "bancor"
+    },
+    "BRZ-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.204579,
+        "coingecko_id": "brz"
+    },
+    "BRZ": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.204579,
+        "coingecko_id": "brz"
+    },
+    "BRZ-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.204579,
+        "coingecko_id": "brz"
+    },
+    "BRZ-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.204579,
+        "coingecko_id": "brz"
+    },
+    "BRZ-AVX20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.204579,
+        "coingecko_id": "brz"
+    },
+    "BSTY": {
+        "usd_market_cap": 655599.0806859911,
+        "usd_price": 0.02906468,
+        "coingecko_id": "globalboost"
+    },
+    "BSTY-segwit": {
+        "usd_market_cap": 655599.0806859911,
+        "usd_price": 0.02906468,
+        "coingecko_id": "globalboost"
+    },
+    "BTC": {
+        "usd_market_cap": 597395786798.7334,
+        "usd_price": 30583,
+        "coingecko_id": "bitcoin"
+    },
+    "BTC-segwit": {
+        "usd_market_cap": 597395786798.7334,
+        "usd_price": 30583,
+        "coingecko_id": "bitcoin"
+    },
+    "BTC-BEP20": {
+        "usd_market_cap": 597395786798.7334,
+        "usd_price": 30583,
+        "coingecko_id": "bitcoin"
+    },
+    "BTCZ": {
+        "usd_market_cap": 733551.5791467843,
+        "usd_price": 5.815e-05,
+        "coingecko_id": "bitcoinz"
+    },
+    "BTCZ-BEP20": {
+        "usd_market_cap": 733551.5791467843,
+        "usd_price": 5.815e-05,
+        "coingecko_id": "bitcoinz"
+    },
+    "BTT-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 3.85481e-07,
+        "coingecko_id": "bittorrent-old"
+    },
+    "BTT": {
+        "usd_market_cap": 0.0,
+        "usd_price": 3.85481e-07,
+        "coingecko_id": "bittorrent-old"
+    },
+    "BTTC-BEP20": {
+        "usd_market_cap": 366769105.7800822,
+        "usd_price": 3.85649e-07,
+        "coingecko_id": "bittorrent"
+    },
+    "BTTC": {
+        "usd_market_cap": 366769105.7800822,
+        "usd_price": 3.85649e-07,
+        "coingecko_id": "bittorrent"
+    },
+    "BTU-ERC20": {
+        "usd_market_cap": 14678209.309815329,
+        "usd_price": 0.18332,
+        "coingecko_id": "btu-protocol"
+    },
+    "BTU": {
+        "usd_market_cap": 14678209.309815329,
+        "usd_price": 0.18332,
+        "coingecko_id": "btu-protocol"
+    },
+    "BTU-PLG20": {
+        "usd_market_cap": 14678209.309815329,
+        "usd_price": 0.18332,
+        "coingecko_id": "btu-protocol"
+    },
+    "BTX": {
+        "usd_market_cap": 587092.8768261753,
+        "usd_price": 0.03026762,
+        "coingecko_id": "bitcore"
+    },
+    "BTX-segwit": {
+        "usd_market_cap": 587092.8768261753,
+        "usd_price": 0.03026762,
+        "coingecko_id": "bitcore"
+    },
+    "BTX-BEP20": {
+        "usd_market_cap": 587092.8768261753,
+        "usd_price": 0.03026762,
+        "coingecko_id": "bitcore"
+    },
+    "BUSD-AVX20": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "BUSD": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "BUSD-MVR20": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "BUSD-ERC20": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "BUSD-BEP20": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "BUSD-PLG20": {
+        "usd_market_cap": 2090528996.617542,
+        "usd_price": 1.0,
+        "coingecko_id": "binance-usd"
+    },
+    "CADC-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.741944,
+        "coingecko_id": "cad-coin"
+    },
+    "CADC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.741944,
+        "coingecko_id": "cad-coin"
+    },
+    "CADC-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.741944,
+        "coingecko_id": "cad-coin"
+    },
+    "CAKE-BEP20": {
+        "usd_market_cap": 265855767.29700467,
+        "usd_price": 1.15,
+        "coingecko_id": "pancakeswap-token"
+    },
+    "CAKE": {
+        "usd_market_cap": 265855767.29700467,
+        "usd_price": 1.15,
+        "coingecko_id": "pancakeswap-token"
+    },
+    "CEL-ERC20": {
+        "usd_market_cap": 73414354.81990683,
+        "usd_price": 0.172541,
+        "coingecko_id": "celsius-degree-token"
+    },
+    "CEL": {
+        "usd_market_cap": 73414354.81990683,
+        "usd_price": 0.172541,
+        "coingecko_id": "celsius-degree-token"
+    },
+    "CEL-PLG20": {
+        "usd_market_cap": 73414354.81990683,
+        "usd_price": 0.172541,
+        "coingecko_id": "celsius-degree-token"
+    },
+    "CELR-ERC20": {
+        "usd_market_cap": 71161652.99986029,
+        "usd_price": 0.01259084,
+        "coingecko_id": "celer-network"
+    },
+    "CELR": {
+        "usd_market_cap": 71161652.99986029,
+        "usd_price": 0.01259084,
+        "coingecko_id": "celer-network"
+    },
+    "CELR-BEP20": {
+        "usd_market_cap": 71161652.99986029,
+        "usd_price": 0.01259084,
+        "coingecko_id": "celer-network"
+    },
+    "CELR-ARB20": {
+        "usd_market_cap": 71161652.99986029,
+        "usd_price": 0.01259084,
+        "coingecko_id": "celer-network"
+    },
+    "CFX-BEP20": {
+        "usd_market_cap": 378696947.07900727,
+        "usd_price": 0.112517,
+        "coingecko_id": "conflux-token"
+    },
+    "CFX": {
+        "usd_market_cap": 378696947.07900727,
+        "usd_price": 0.112517,
+        "coingecko_id": "conflux-token"
+    },
+    "CHSB-ERC20": {
+        "usd_market_cap": 196093100.5047395,
+        "usd_price": 0.20336,
+        "coingecko_id": "swissborg"
+    },
+    "CHSB": {
+        "usd_market_cap": 196093100.5047395,
+        "usd_price": 0.20336,
+        "coingecko_id": "swissborg"
+    },
+    "CHSB-PLG20": {
+        "usd_market_cap": 196093100.5047395,
+        "usd_price": 0.20336,
+        "coingecko_id": "swissborg"
+    },
+    "CHZ-ERC20": {
+        "usd_market_cap": 434165480.5697012,
+        "usd_price": 0.062252,
+        "coingecko_id": "chiliz"
+    },
+    "CHZ": {
+        "usd_market_cap": 434165480.5697012,
+        "usd_price": 0.062252,
+        "coingecko_id": "chiliz"
+    },
+    "CHZ-KRC20": {
+        "usd_market_cap": 434165480.5697012,
+        "usd_price": 0.062252,
+        "coingecko_id": "chiliz"
+    },
+    "CHZ-PLG20": {
+        "usd_market_cap": 434165480.5697012,
+        "usd_price": 0.062252,
+        "coingecko_id": "chiliz"
+    },
+    "COMP-AVX20": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "COMP": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "COMP-BEP20": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "COMP-ERC20": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "COMP-KRC20": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "COMP-PLG20": {
+        "usd_market_cap": 305967653.6259338,
+        "usd_price": 44.52,
+        "coingecko_id": "compound-governance-token"
+    },
+    "CRO-ERC20": {
+        "usd_market_cap": 1430947626.3929574,
+        "usd_price": 0.054425,
+        "coingecko_id": "crypto-com-chain"
+    },
+    "CRO": {
+        "usd_market_cap": 1430947626.3929574,
+        "usd_price": 0.054425,
+        "coingecko_id": "crypto-com-chain"
+    },
+    "CRO-KRC20": {
+        "usd_market_cap": 1430947626.3929574,
+        "usd_price": 0.054425,
+        "coingecko_id": "crypto-com-chain"
+    },
+    "CRO-PLG20": {
+        "usd_market_cap": 1430947626.3929574,
+        "usd_price": 0.054425,
+        "coingecko_id": "crypto-com-chain"
+    },
+    "CRV-ERC20": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CRV": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CRV-AVX20": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CRV-FTM20": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CRV-KRC20": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CRV-PLG20": {
+        "usd_market_cap": 412317943.6466384,
+        "usd_price": 0.457776,
+        "coingecko_id": "curve-dao-token"
+    },
+    "CUMMIES-BEP20": {
+        "usd_market_cap": 2198763.1051177764,
+        "usd_price": 0.0017551,
+        "coingecko_id": "cumrocket"
+    },
+    "CUMMIES": {
+        "usd_market_cap": 2198763.1051177764,
+        "usd_price": 0.0017551,
+        "coingecko_id": "cumrocket"
+    },
+    "CVX-ERC20": {
+        "usd_market_cap": 217947466.49929777,
+        "usd_price": 2.68,
+        "coingecko_id": "convex-finance"
+    },
+    "CVX": {
+        "usd_market_cap": 217947466.49929777,
+        "usd_price": 2.68,
+        "coingecko_id": "convex-finance"
+    },
+    "CY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.18918e-07,
+        "coingecko_id": "cyberyen"
+    },
+    "CY-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.18918e-07,
+        "coingecko_id": "cyberyen"
+    },
+    "DAI-AVX20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-ERC20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-BEP20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-FTM20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-HCO20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-MVR20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DAI-PLG20": {
+        "usd_market_cap": 3807999014.8422713,
+        "usd_price": 0.999289,
+        "coingecko_id": "dai"
+    },
+    "DASH": {
+        "usd_market_cap": 305484185.5992779,
+        "usd_price": 26.47,
+        "coingecko_id": "dash"
+    },
+    "DDD-ERC20": {
+        "usd_market_cap": 285349.39991708007,
+        "usd_price": 0.00064407,
+        "coingecko_id": "scry-info"
+    },
+    "DDD": {
+        "usd_market_cap": 285349.39991708007,
+        "usd_price": 0.00064407,
+        "coingecko_id": "scry-info"
+    },
+    "DENT-ERC20": {
+        "usd_market_cap": 62726752.0585367,
+        "usd_price": 0.00065373,
+        "coingecko_id": "dent"
+    },
+    "DENT": {
+        "usd_market_cap": 62726752.0585367,
+        "usd_price": 0.00065373,
+        "coingecko_id": "dent"
+    },
+    "DFX-ERC20": {
+        "usd_market_cap": 1776972.2699710606,
+        "usd_price": 0.04073264,
+        "coingecko_id": "dfx-finance"
+    },
+    "DFX": {
+        "usd_market_cap": 1776972.2699710606,
+        "usd_price": 0.04073264,
+        "coingecko_id": "dfx-finance"
+    },
+    "DGB": {
+        "usd_market_cap": 108689680.36581591,
+        "usd_price": 0.00654525,
+        "coingecko_id": "digibyte"
+    },
+    "DGB-segwit": {
+        "usd_market_cap": 108689680.36581591,
+        "usd_price": 0.00654525,
+        "coingecko_id": "digibyte"
+    },
+    "DGC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00122417,
+        "coingecko_id": "digitalcoin"
+    },
+    "DIA-ERC20": {
+        "usd_market_cap": 27176521.84828084,
+        "usd_price": 0.244464,
+        "coingecko_id": "dia-data"
+    },
+    "DIA": {
+        "usd_market_cap": 27176521.84828084,
+        "usd_price": 0.244464,
+        "coingecko_id": "dia-data"
+    },
+    "DIA-BEP20": {
+        "usd_market_cap": 27176521.84828084,
+        "usd_price": 0.244464,
+        "coingecko_id": "dia-data"
+    },
+    "DIMI-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.911395,
+        "coingecko_id": "diminutive-coin"
+    },
+    "DIMI": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.911395,
+        "coingecko_id": "diminutive-coin"
+    },
+    "DIMI-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.911395,
+        "coingecko_id": "diminutive-coin"
+    },
+    "DODO-BEP20": {
+        "usd_market_cap": 61852992.606862664,
+        "usd_price": 0.100145,
+        "coingecko_id": "dodo"
+    },
+    "DODO": {
+        "usd_market_cap": 61852992.606862664,
+        "usd_price": 0.100145,
+        "coingecko_id": "dodo"
+    },
+    "DODO-ERC20": {
+        "usd_market_cap": 61852992.606862664,
+        "usd_price": 0.100145,
+        "coingecko_id": "dodo"
+    },
+    "DODO-KRC20": {
+        "usd_market_cap": 61852992.606862664,
+        "usd_price": 0.100145,
+        "coingecko_id": "dodo"
+    },
+    "DOGE": {
+        "usd_market_cap": 9136336563.47198,
+        "usd_price": 0.063675,
+        "coingecko_id": "dogecoin"
+    },
+    "DOGE-BEP20": {
+        "usd_market_cap": 9136336563.47198,
+        "usd_price": 0.063675,
+        "coingecko_id": "dogecoin"
+    },
+    "DOGEDASH-BEP20": {
+        "usd_market_cap": 6752920.94210547,
+        "usd_price": 0.00012543,
+        "coingecko_id": "doge-dash"
+    },
+    "DOGEDASH": {
+        "usd_market_cap": 6752920.94210547,
+        "usd_price": 0.00012543,
+        "coingecko_id": "doge-dash"
+    },
+    "DOGGY-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00027331,
+        "coingecko_id": "doggy"
+    },
+    "DOGGY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00027331,
+        "coingecko_id": "doggy"
+    },
+    "DOT-BEP20": {
+        "usd_market_cap": 5138661925.425448,
+        "usd_price": 3.98,
+        "coingecko_id": "polkadot"
+    },
+    "DOT": {
+        "usd_market_cap": 5138661925.425448,
+        "usd_price": 3.98,
+        "coingecko_id": "polkadot"
+    },
+    "DOT-HCO20": {
+        "usd_market_cap": 5138661925.425448,
+        "usd_price": 3.98,
+        "coingecko_id": "polkadot"
+    },
+    "DP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.043292,
+        "coingecko_id": "digitalprice"
+    },
+    "DOI": {
+        "usd_market_cap": 0.0,
+        "usd_price": 5.46,
+        "coingecko_id": "doichain"
+    },
+    "ECA": {
+        "usd_market_cap": 0.0,
+        "usd_price": 8.43e-06,
+        "coingecko_id": "electra"
+    },
+    "EFL": {
+        "usd_market_cap": 4195894.500615961,
+        "usd_price": 0.19954,
+        "coingecko_id": "electronicgulden"
+    },
+    "EGLD-BEP20": {
+        "usd_market_cap": 720213217.4295032,
+        "usd_price": 27.51,
+        "coingecko_id": "elrond-erd-2"
+    },
+    "EGLD": {
+        "usd_market_cap": 720213217.4295032,
+        "usd_price": 27.51,
+        "coingecko_id": "elrond-erd-2"
+    },
+    "ELF-BEP20": {
+        "usd_market_cap": 160108255.62136307,
+        "usd_price": 0.346724,
+        "coingecko_id": "aelf"
+    },
+    "ELF": {
+        "usd_market_cap": 160108255.62136307,
+        "usd_price": 0.346724,
+        "coingecko_id": "aelf"
+    },
+    "ELF-ERC20": {
+        "usd_market_cap": 160108255.62136307,
+        "usd_price": 0.346724,
+        "coingecko_id": "aelf"
+    },
+    "EMC2": {
+        "usd_market_cap": 1225003.6375988673,
+        "usd_price": 0.00547204,
+        "coingecko_id": "einsteinium"
+    },
+    "ENJ-ERC20": {
+        "usd_market_cap": 221121664.7751559,
+        "usd_price": 0.220825,
+        "coingecko_id": "enjincoin"
+    },
+    "ENJ": {
+        "usd_market_cap": 221121664.7751559,
+        "usd_price": 0.220825,
+        "coingecko_id": "enjincoin"
+    },
+    "ENJ-KRC20": {
+        "usd_market_cap": 221121664.7751559,
+        "usd_price": 0.220825,
+        "coingecko_id": "enjincoin"
+    },
+    "ENJ-PLG20": {
+        "usd_market_cap": 221121664.7751559,
+        "usd_price": 0.220825,
+        "coingecko_id": "enjincoin"
+    },
+    "EOS-BEP20": {
+        "usd_market_cap": 641879482.8760213,
+        "usd_price": 0.567392,
+        "coingecko_id": "eos"
+    },
+    "EOS": {
+        "usd_market_cap": 641879482.8760213,
+        "usd_price": 0.567392,
+        "coingecko_id": "eos"
+    },
+    "ETC": {
+        "usd_market_cap": 2289308659.6767592,
+        "usd_price": 15.96,
+        "coingecko_id": "ethereum-classic"
+    },
+    "ETC-BEP20": {
+        "usd_market_cap": 2289308659.6767592,
+        "usd_price": 15.96,
+        "coingecko_id": "ethereum-classic"
+    },
+    "ETH": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-AVX20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-ARB20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-BEP20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-FTM20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-HCO20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-KRC20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "ETH-PLG20": {
+        "usd_market_cap": 202596585916.4577,
+        "usd_price": 1677.17,
+        "coingecko_id": "ethereum"
+    },
+    "EUROE-ERC20": {
+        "usd_market_cap": 2440551.835333534,
+        "usd_price": 1.054,
+        "coingecko_id": "euroe-stablecoin"
+    },
+    "EUROE": {
+        "usd_market_cap": 2440551.835333534,
+        "usd_price": 1.054,
+        "coingecko_id": "euroe-stablecoin"
+    },
+    "EURS-ERC20": {
+        "usd_market_cap": 144681063.21628213,
+        "usd_price": 1.16,
+        "coingecko_id": "stasis-eurs"
+    },
+    "EURS": {
+        "usd_market_cap": 144681063.21628213,
+        "usd_price": 1.16,
+        "coingecko_id": "stasis-eurs"
+    },
+    "EURS-PLG20": {
+        "usd_market_cap": 144681063.21628213,
+        "usd_price": 1.16,
+        "coingecko_id": "stasis-eurs"
+    },
+    "EWT": {
+        "usd_market_cap": 82480852.4595732,
+        "usd_price": 1.7,
+        "coingecko_id": "energy-web-token"
+    },
+    "FEI-ERC20": {
+        "usd_market_cap": 11814923.049811173,
+        "usd_price": 1.01,
+        "coingecko_id": "fei-usd"
+    },
+    "FEI": {
+        "usd_market_cap": 11814923.049811173,
+        "usd_price": 1.01,
+        "coingecko_id": "fei-usd"
+    },
+    "FET-ERC20": {
+        "usd_market_cap": 243113218.15634534,
+        "usd_price": 0.231549,
+        "coingecko_id": "fetch-ai"
+    },
+    "FET": {
+        "usd_market_cap": 243113218.15634534,
+        "usd_price": 0.231549,
+        "coingecko_id": "fetch-ai"
+    },
+    "FET-BEP20": {
+        "usd_market_cap": 243113218.15634534,
+        "usd_price": 0.231549,
+        "coingecko_id": "fetch-ai"
+    },
+    "FET-PLG20": {
+        "usd_market_cap": 243113218.15634534,
+        "usd_price": 0.231549,
+        "coingecko_id": "fetch-ai"
+    },
+    "FIL-BEP20": {
+        "usd_market_cap": 1611455484.8014307,
+        "usd_price": 3.49,
+        "coingecko_id": "filecoin"
+    },
+    "FIL": {
+        "usd_market_cap": 1611455484.8014307,
+        "usd_price": 3.49,
+        "coingecko_id": "filecoin"
+    },
+    "FIL-HCO20": {
+        "usd_market_cap": 1611455484.8014307,
+        "usd_price": 3.49,
+        "coingecko_id": "filecoin"
+    },
+    "FIRO": {
+        "usd_market_cap": 19679690.612826478,
+        "usd_price": 1.52,
+        "coingecko_id": "zcoin"
+    },
+    "FIRO-BEP20": {
+        "usd_market_cap": 19679690.612826478,
+        "usd_price": 1.52,
+        "coingecko_id": "zcoin"
+    },
+    "FJC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00021076,
+        "coingecko_id": "fujicoin"
+    },
+    "FJC-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00021076,
+        "coingecko_id": "fujicoin"
+    },
+    "FJC-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00021076,
+        "coingecko_id": "fujicoin"
+    },
+    "FLOKI-BEP20": {
+        "usd_market_cap": 254498408.63939878,
+        "usd_price": 2.523e-05,
+        "coingecko_id": "floki"
+    },
+    "FLOKI": {
+        "usd_market_cap": 254498408.63939878,
+        "usd_price": 2.523e-05,
+        "coingecko_id": "floki"
+    },
+    "STFIRO-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.79,
+        "coingecko_id": "stakehound"
+    },
+    "STFIRO": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.79,
+        "coingecko_id": "stakehound"
+    },
+    "FLOW-BEP20": {
+        "usd_market_cap": 478988158.83270085,
+        "usd_price": 0.459555,
+        "coingecko_id": "flow"
+    },
+    "FLOW": {
+        "usd_market_cap": 478988158.83270085,
+        "usd_price": 0.459555,
+        "coingecko_id": "flow"
+    },
+    "FTC": {
+        "usd_market_cap": 562024.5519067255,
+        "usd_price": 0.00209228,
+        "coingecko_id": "feathercoin"
+    },
+    "FTC-segwit": {
+        "usd_market_cap": 562024.5519067255,
+        "usd_price": 0.00209228,
+        "coingecko_id": "feathercoin"
+    },
+    "FTM": {
+        "usd_market_cap": 632760088.3671383,
+        "usd_price": 0.22644,
+        "coingecko_id": "fantom"
+    },
+    "FTM-BEP20": {
+        "usd_market_cap": 632760088.3671383,
+        "usd_price": 0.22644,
+        "coingecko_id": "fantom"
+    },
+    "FTM-ERC20": {
+        "usd_market_cap": 632760088.3671383,
+        "usd_price": 0.22644,
+        "coingecko_id": "fantom"
+    },
+    "FXS-BEP20": {
+        "usd_market_cap": 417313211.2071019,
+        "usd_price": 5.59,
+        "coingecko_id": "frax-share"
+    },
+    "FXS": {
+        "usd_market_cap": 417313211.2071019,
+        "usd_price": 5.59,
+        "coingecko_id": "frax-share"
+    },
+    "GALA-ERC20": {
+        "usd_market_cap": 385180702.20375013,
+        "usd_price": 0.01413311,
+        "coingecko_id": "gala"
+    },
+    "GALA": {
+        "usd_market_cap": 385180702.20375013,
+        "usd_price": 0.01413311,
+        "coingecko_id": "gala"
+    },
+    "GAME-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00980548,
+        "coingecko_id": "gamecredits"
+    },
+    "GAME": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00980548,
+        "coingecko_id": "gamecredits"
+    },
+    "GBX": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00090199,
+        "coingecko_id": "gobyte"
+    },
+    "GFT-BEP20": {
+        "usd_market_cap": 16562324.36613735,
+        "usd_price": 0.01662284,
+        "coingecko_id": "gifto"
+    },
+    "GFT": {
+        "usd_market_cap": 16562324.36613735,
+        "usd_price": 0.01662284,
+        "coingecko_id": "gifto"
+    },
+    "GLEEC": {
+        "usd_market_cap": 1724419.3494186234,
+        "usd_price": 0.0093134,
+        "coingecko_id": "gleec-coin"
+    },
+    "GLM-ERC20": {
+        "usd_market_cap": 201702260.3493536,
+        "usd_price": 0.20097,
+        "coingecko_id": "golem"
+    },
+    "GLM": {
+        "usd_market_cap": 201702260.3493536,
+        "usd_price": 0.20097,
+        "coingecko_id": "golem"
+    },
+    "GLM-PLG20": {
+        "usd_market_cap": 201702260.3493536,
+        "usd_price": 0.20097,
+        "coingecko_id": "golem"
+    },
+    "GM-BEP20": {
+        "usd_market_cap": 1106850.3816178204,
+        "usd_price": 2.35e-06,
+        "coingecko_id": "gm"
+    },
+    "GM": {
+        "usd_market_cap": 1106850.3816178204,
+        "usd_price": 2.35e-06,
+        "coingecko_id": "gm"
+    },
+    "GMT-BEP20": {
+        "usd_market_cap": 198281917.4195505,
+        "usd_price": 0.153772,
+        "coingecko_id": "stepn"
+    },
+    "GMT": {
+        "usd_market_cap": 198281917.4195505,
+        "usd_price": 0.153772,
+        "coingecko_id": "stepn"
+    },
+    "GMX-AVX20": {
+        "usd_market_cap": 355405308.26393265,
+        "usd_price": 38.79,
+        "coingecko_id": "gmx"
+    },
+    "GMX": {
+        "usd_market_cap": 355405308.26393265,
+        "usd_price": 38.79,
+        "coingecko_id": "gmx"
+    },
+    "GNO-ERC20": {
+        "usd_market_cap": 265395747.78287914,
+        "usd_price": 102.39,
+        "coingecko_id": "gnosis"
+    },
+    "GNO": {
+        "usd_market_cap": 265395747.78287914,
+        "usd_price": 102.39,
+        "coingecko_id": "gnosis"
+    },
+    "GNO-PLG20": {
+        "usd_market_cap": 265395747.78287914,
+        "usd_price": 102.39,
+        "coingecko_id": "gnosis"
+    },
+    "GNS-PLG20": {
+        "usd_market_cap": 123102795.83394876,
+        "usd_price": 3.64,
+        "coingecko_id": "gains-network"
+    },
+    "GNS": {
+        "usd_market_cap": 123102795.83394876,
+        "usd_price": 3.64,
+        "coingecko_id": "gains-network"
+    },
+    "GRLC": {
+        "usd_market_cap": 1544085.253478393,
+        "usd_price": 0.022629,
+        "coingecko_id": "garlicoin"
+    },
+    "GRS": {
+        "usd_market_cap": 37813317.44249422,
+        "usd_price": 0.451812,
+        "coingecko_id": "groestlcoin"
+    },
+    "GRS-segwit": {
+        "usd_market_cap": 37813317.44249422,
+        "usd_price": 0.451812,
+        "coingecko_id": "groestlcoin"
+    },
+    "GRT-AVX20": {
+        "usd_market_cap": 804477789.8692371,
+        "usd_price": 0.086431,
+        "coingecko_id": "the-graph"
+    },
+    "GRT": {
+        "usd_market_cap": 804477789.8692371,
+        "usd_price": 0.086431,
+        "coingecko_id": "the-graph"
+    },
+    "GRT-ERC20": {
+        "usd_market_cap": 804477789.8692371,
+        "usd_price": 0.086431,
+        "coingecko_id": "the-graph"
+    },
+    "GRT-KRC20": {
+        "usd_market_cap": 804477789.8692371,
+        "usd_price": 0.086431,
+        "coingecko_id": "the-graph"
+    },
+    "GRT-PLG20": {
+        "usd_market_cap": 804477789.8692371,
+        "usd_price": 0.086431,
+        "coingecko_id": "the-graph"
+    },
+    "GST-BEP20": {
+        "usd_market_cap": 6834343.5329763265,
+        "usd_price": 0.00795544,
+        "coingecko_id": "green-satoshi-token"
+    },
+    "GST": {
+        "usd_market_cap": 6834343.5329763265,
+        "usd_price": 0.00795544,
+        "coingecko_id": "green-satoshi-token"
+    },
+    "GT-ERC20": {
+        "usd_market_cap": 512591374.8550504,
+        "usd_price": 3.76,
+        "coingecko_id": "gatechain-token"
+    },
+    "GT": {
+        "usd_market_cap": 512591374.8550504,
+        "usd_price": 3.76,
+        "coingecko_id": "gatechain-token"
+    },
+    "GUSD-ERC20": {
+        "usd_market_cap": 165055654.88822454,
+        "usd_price": 0.997791,
+        "coingecko_id": "gemini-dollar"
+    },
+    "GUSD": {
+        "usd_market_cap": 165055654.88822454,
+        "usd_price": 0.997791,
+        "coingecko_id": "gemini-dollar"
+    },
+    "HEX-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00768656,
+        "coingecko_id": "hex"
+    },
+    "HEX": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00768656,
+        "coingecko_id": "hex"
+    },
+    "HEX-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00768656,
+        "coingecko_id": "hex"
+    },
+    "HOT-ERC20": {
+        "usd_market_cap": 218726455.7014734,
+        "usd_price": 0.00122552,
+        "coingecko_id": "holotoken"
+    },
+    "HOT": {
+        "usd_market_cap": 218726455.7014734,
+        "usd_price": 0.00122552,
+        "coingecko_id": "holotoken"
+    },
+    "HOT-PLG20": {
+        "usd_market_cap": 218726455.7014734,
+        "usd_price": 0.00122552,
+        "coingecko_id": "holotoken"
+    },
+    "HT": {
+        "usd_market_cap": 367016329.52709156,
+        "usd_price": 2.31,
+        "coingecko_id": "huobi-token"
+    },
+    "HT-ERC20": {
+        "usd_market_cap": 367016329.52709156,
+        "usd_price": 2.31,
+        "coingecko_id": "huobi-token"
+    },
+    "HUSD-ERC20": {
+        "usd_market_cap": 8867245.272613993,
+        "usd_price": 0.04721215,
+        "coingecko_id": "husd"
+    },
+    "HUSD": {
+        "usd_market_cap": 8867245.272613993,
+        "usd_price": 0.04721215,
+        "coingecko_id": "husd"
+    },
+    "HUSD-HCO20": {
+        "usd_market_cap": 8867245.272613993,
+        "usd_price": 0.04721215,
+        "coingecko_id": "husd"
+    },
+    "HUSD-KRC20": {
+        "usd_market_cap": 8867245.272613993,
+        "usd_price": 0.04721215,
+        "coingecko_id": "husd"
+    },
+    "HUSD-PLG20": {
+        "usd_market_cap": 8867245.272613993,
+        "usd_price": 0.04721215,
+        "coingecko_id": "husd"
+    },
+    "ILV-ERC20": {
+        "usd_market_cap": 243393612.52711406,
+        "usd_price": 40.8,
+        "coingecko_id": "illuvium"
+    },
+    "ILV": {
+        "usd_market_cap": 243393612.52711406,
+        "usd_price": 40.8,
+        "coingecko_id": "illuvium"
+    },
+    "IMX-ERC20": {
+        "usd_market_cap": 720177653.6294234,
+        "usd_price": 0.602261,
+        "coingecko_id": "immutable-x"
+    },
+    "IMX": {
+        "usd_market_cap": 720177653.6294234,
+        "usd_price": 0.602261,
+        "coingecko_id": "immutable-x"
+    },
+    "INJ-BEP20": {
+        "usd_market_cap": 820010976.2864305,
+        "usd_price": 9.78,
+        "coingecko_id": "injective-protocol"
+    },
+    "INJ": {
+        "usd_market_cap": 820010976.2864305,
+        "usd_price": 9.78,
+        "coingecko_id": "injective-protocol"
+    },
+    "INJ-ERC20": {
+        "usd_market_cap": 820010976.2864305,
+        "usd_price": 9.78,
+        "coingecko_id": "injective-protocol"
+    },
+    "IOTA-BEP20": {
+        "usd_market_cap": 429389575.0857852,
+        "usd_price": 0.150525,
+        "coingecko_id": "iota"
+    },
+    "IOTA": {
+        "usd_market_cap": 429389575.0857852,
+        "usd_price": 0.150525,
+        "coingecko_id": "iota"
+    },
+    "IOTX-BEP20": {
+        "usd_market_cap": 181359387.43323284,
+        "usd_price": 0.01919348,
+        "coingecko_id": "iotex"
+    },
+    "IOTX": {
+        "usd_market_cap": 181359387.43323284,
+        "usd_price": 0.01919348,
+        "coingecko_id": "iotex"
+    },
+    "IOTX-PLG20": {
+        "usd_market_cap": 181359387.43323284,
+        "usd_price": 0.01919348,
+        "coingecko_id": "iotex"
+    },
+    "JDB-BEP20": {
+        "usd_market_cap": 1598832.903667708,
+        "usd_price": 0.01597213,
+        "coingecko_id": "jeet-detector-bot"
+    },
+    "JDB": {
+        "usd_market_cap": 1598832.903667708,
+        "usd_price": 0.01597213,
+        "coingecko_id": "jeet-detector-bot"
+    },
+    "JBRL-PLG20": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "jarvis-brazilian-real"
+    },
+    "JBRL": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "jarvis-brazilian-real"
+    },
+    "JCHF-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.12,
+        "coingecko_id": "jarvis-synthetic-swiss-franc"
+    },
+    "JCHF": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.12,
+        "coingecko_id": "jarvis-synthetic-swiss-franc"
+    },
+    "JCHF-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.12,
+        "coingecko_id": "jarvis-synthetic-swiss-franc"
+    },
+    "JEUR-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.059,
+        "coingecko_id": "jarvis-synthetic-euro"
+    },
+    "JEUR": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.059,
+        "coingecko_id": "jarvis-synthetic-euro"
+    },
+    "JEUR-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.059,
+        "coingecko_id": "jarvis-synthetic-euro"
+    },
+    "JGBP-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.21,
+        "coingecko_id": "jarvis-synthetic-british-pound"
+    },
+    "JGBP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.21,
+        "coingecko_id": "jarvis-synthetic-british-pound"
+    },
+    "JGBP-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.21,
+        "coingecko_id": "jarvis-synthetic-british-pound"
+    },
+    "JJPY-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0067176,
+        "coingecko_id": "jarvis-synthetic-japanese-yen"
+    },
+    "JJPY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0067176,
+        "coingecko_id": "jarvis-synthetic-japanese-yen"
+    },
+    "JPYC-AVX20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00660252,
+        "coingecko_id": "jpy-coin"
+    },
+    "JPYC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00660252,
+        "coingecko_id": "jpy-coin"
+    },
+    "JPYC-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00660252,
+        "coingecko_id": "jpy-coin"
+    },
+    "JRT-ERC20": {
+        "usd_market_cap": 2538109.0847366406,
+        "usd_price": 0.00639063,
+        "coingecko_id": "jarvis-reward-token"
+    },
+    "JRT": {
+        "usd_market_cap": 2538109.0847366406,
+        "usd_price": 0.00639063,
+        "coingecko_id": "jarvis-reward-token"
+    },
+    "JRT-PLG20": {
+        "usd_market_cap": 2538109.0847366406,
+        "usd_price": 0.00639063,
+        "coingecko_id": "jarvis-reward-token"
+    },
+    "JST-BEP20": {
+        "usd_market_cap": 223277776.95275176,
+        "usd_price": 0.02511418,
+        "coingecko_id": "just"
+    },
+    "JST": {
+        "usd_market_cap": 223277776.95275176,
+        "usd_price": 0.02511418,
+        "coingecko_id": "just"
+    },
+    "KCS": {
+        "usd_market_cap": 447509408.0855649,
+        "usd_price": 4.62,
+        "coingecko_id": "kucoin-shares"
+    },
+    "KMD": {
+        "usd_market_cap": 30442312.80826145,
+        "usd_price": 0.218846,
+        "coingecko_id": "komodo"
+    },
+    "KMD-BEP20": {
+        "usd_market_cap": 30442312.80826145,
+        "usd_price": 0.218846,
+        "coingecko_id": "komodo"
+    },
+    "KNC-BEP20": {
+        "usd_market_cap": 113274003.87339656,
+        "usd_price": 0.663876,
+        "coingecko_id": "kyber-network-crystal"
+    },
+    "KNC": {
+        "usd_market_cap": 113274003.87339656,
+        "usd_price": 0.663876,
+        "coingecko_id": "kyber-network-crystal"
+    },
+    "KNC-ERC20": {
+        "usd_market_cap": 113274003.87339656,
+        "usd_price": 0.663876,
+        "coingecko_id": "kyber-network-crystal"
+    },
+    "KNC-PLG20": {
+        "usd_market_cap": 113274003.87339656,
+        "usd_price": 0.663876,
+        "coingecko_id": "kyber-network-crystal"
+    },
+    "KNC-AVX20": {
+        "usd_market_cap": 113274003.87339656,
+        "usd_price": 0.663876,
+        "coingecko_id": "kyber-network-crystal"
+    },
+    "KOIN": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.978309,
+        "coingecko_id": "koinon"
+    },
+    "KSM-BEP20": {
+        "usd_market_cap": 162286229.96528834,
+        "usd_price": 18.07,
+        "coingecko_id": "kusama"
+    },
+    "KSM": {
+        "usd_market_cap": 162286229.96528834,
+        "usd_price": 18.07,
+        "coingecko_id": "kusama"
+    },
+    "LBC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0050117,
+        "coingecko_id": "lbry-credits"
+    },
+    "LBC-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0050117,
+        "coingecko_id": "lbry-credits"
+    },
+    "LCC": {
+        "usd_market_cap": 3103259.0551525913,
+        "usd_price": 0.00357858,
+        "coingecko_id": "litecoin-cash"
+    },
+    "LCC-segwit": {
+        "usd_market_cap": 3103259.0551525913,
+        "usd_price": 0.00357858,
+        "coingecko_id": "litecoin-cash"
+    },
+    "LDO-ERC20": {
+        "usd_market_cap": 1565452525.1096509,
+        "usd_price": 1.77,
+        "coingecko_id": "lido-dao"
+    },
+    "LDO": {
+        "usd_market_cap": 1565452525.1096509,
+        "usd_price": 1.77,
+        "coingecko_id": "lido-dao"
+    },
+    "LDO-PLG20": {
+        "usd_market_cap": 1565452525.1096509,
+        "usd_price": 1.77,
+        "coingecko_id": "lido-dao"
+    },
+    "LEO-ERC20": {
+        "usd_market_cap": 3598417694.443548,
+        "usd_price": 3.87,
+        "coingecko_id": "leo-token"
+    },
+    "LEO": {
+        "usd_market_cap": 3598417694.443548,
+        "usd_price": 3.87,
+        "coingecko_id": "leo-token"
+    },
+    "LEO-PLG20": {
+        "usd_market_cap": 3598417694.443548,
+        "usd_price": 3.87,
+        "coingecko_id": "leo-token"
+    },
+    "LINK-ERC20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-AVX20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-BEP20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-FTM20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-HCO20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-KRC20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LINK-PLG20": {
+        "usd_market_cap": 5798165927.579367,
+        "usd_price": 10.31,
+        "coingecko_id": "chainlink"
+    },
+    "LOOP-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.057688,
+        "coingecko_id": "loopnetwork"
+    },
+    "LOOP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.057688,
+        "coingecko_id": "loopnetwork"
+    },
+    "LRC-ERC20": {
+        "usd_market_cap": 218316106.65029085,
+        "usd_price": 0.174639,
+        "coingecko_id": "loopring"
+    },
+    "LRC": {
+        "usd_market_cap": 218316106.65029085,
+        "usd_price": 0.174639,
+        "coingecko_id": "loopring"
+    },
+    "LRC-BEP20": {
+        "usd_market_cap": 218316106.65029085,
+        "usd_price": 0.174639,
+        "coingecko_id": "loopring"
+    },
+    "LRC-PLG20": {
+        "usd_market_cap": 218316106.65029085,
+        "usd_price": 0.174639,
+        "coingecko_id": "loopring"
+    },
+    "WCN": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00046374,
+        "coingecko_id": "widecoin"
+    },
+    "WCN-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00046374,
+        "coingecko_id": "widecoin"
+    },
+    "LEASH-ERC20": {
+        "usd_market_cap": 31517692.105568543,
+        "usd_price": 292.89,
+        "coingecko_id": "leash"
+    },
+    "LEASH": {
+        "usd_market_cap": 31517692.105568543,
+        "usd_price": 292.89,
+        "coingecko_id": "leash"
+    },
+    "LOOM-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.102469,
+        "coingecko_id": "loom-network-new"
+    },
+    "LOOM": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.102469,
+        "coingecko_id": "loom-network-new"
+    },
+    "LOOM-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.102469,
+        "coingecko_id": "loom-network-new"
+    },
+    "LSWAP-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00120971,
+        "coingecko_id": "loopswap"
+    },
+    "LSWAP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00120971,
+        "coingecko_id": "loopswap"
+    },
+    "LTC": {
+        "usd_market_cap": 4925906936.348512,
+        "usd_price": 66.48,
+        "coingecko_id": "litecoin"
+    },
+    "LTC-segwit": {
+        "usd_market_cap": 4925906936.348512,
+        "usd_price": 66.48,
+        "coingecko_id": "litecoin"
+    },
+    "LYNX": {
+        "usd_market_cap": 0.0,
+        "usd_price": 9.315e-05,
+        "coingecko_id": "lynx"
+    },
+    "MANA-ERC20": {
+        "usd_market_cap": 569676070.3580971,
+        "usd_price": 0.30791,
+        "coingecko_id": "decentraland"
+    },
+    "MANA": {
+        "usd_market_cap": 569676070.3580971,
+        "usd_price": 0.30791,
+        "coingecko_id": "decentraland"
+    },
+    "MANA-BEP20": {
+        "usd_market_cap": 569676070.3580971,
+        "usd_price": 0.30791,
+        "coingecko_id": "decentraland"
+    },
+    "MANA-KRC20": {
+        "usd_market_cap": 569676070.3580971,
+        "usd_price": 0.30791,
+        "coingecko_id": "decentraland"
+    },
+    "MANA-PLG20": {
+        "usd_market_cap": 569676070.3580971,
+        "usd_price": 0.30791,
+        "coingecko_id": "decentraland"
+    },
+    "MASK-ERC20": {
+        "usd_market_cap": 224243950.1147926,
+        "usd_price": 2.72,
+        "coingecko_id": "mask-network"
+    },
+    "MASK": {
+        "usd_market_cap": 224243950.1147926,
+        "usd_price": 2.72,
+        "coingecko_id": "mask-network"
+    },
+    "MATIC": {
+        "usd_market_cap": 5762912021.103481,
+        "usd_price": 0.616907,
+        "coingecko_id": "matic-network"
+    },
+    "MATIC-BEP20": {
+        "usd_market_cap": 5762912021.103481,
+        "usd_price": 0.616907,
+        "coingecko_id": "matic-network"
+    },
+    "MATIC-ERC20": {
+        "usd_market_cap": 5762912021.103481,
+        "usd_price": 0.616907,
+        "coingecko_id": "matic-network"
+    },
+    "MATIC-HCO20": {
+        "usd_market_cap": 5762912021.103481,
+        "usd_price": 0.616907,
+        "coingecko_id": "matic-network"
+    },
+    "MATIC-KRC20": {
+        "usd_market_cap": 5762912021.103481,
+        "usd_price": 0.616907,
+        "coingecko_id": "matic-network"
+    },
+    "MC-ERC20": {
+        "usd_market_cap": 223225870.83467826,
+        "usd_price": 0.476603,
+        "coingecko_id": "merit-circle"
+    },
+    "MC": {
+        "usd_market_cap": 223225870.83467826,
+        "usd_price": 0.476603,
+        "coingecko_id": "merit-circle"
+    },
+    "MC-BEP20": {
+        "usd_market_cap": 223225870.83467826,
+        "usd_price": 0.476603,
+        "coingecko_id": "merit-circle"
+    },
+    "MINDS-ERC20": {
+        "usd_market_cap": 422920.82955452334,
+        "usd_price": 0.053189,
+        "coingecko_id": "minds"
+    },
+    "MINDS": {
+        "usd_market_cap": 422920.82955452334,
+        "usd_price": 0.053189,
+        "coingecko_id": "minds"
+    },
+    "MIR-ERC20": {
+        "usd_market_cap": 1926834.8974289463,
+        "usd_price": 0.01235232,
+        "coingecko_id": "mirror-protocol"
+    },
+    "MIR": {
+        "usd_market_cap": 1926834.8974289463,
+        "usd_price": 0.01235232,
+        "coingecko_id": "mirror-protocol"
+    },
+    "MIR-BEP20": {
+        "usd_market_cap": 1926834.8974289463,
+        "usd_price": 0.01235232,
+        "coingecko_id": "mirror-protocol"
+    },
+    "MKR-AVX20": {
+        "usd_market_cap": 1367391837.4266734,
+        "usd_price": 1513.1,
+        "coingecko_id": "maker"
+    },
+    "MKR": {
+        "usd_market_cap": 1367391837.4266734,
+        "usd_price": 1513.1,
+        "coingecko_id": "maker"
+    },
+    "MKR-BEP20": {
+        "usd_market_cap": 1367391837.4266734,
+        "usd_price": 1513.1,
+        "coingecko_id": "maker"
+    },
+    "MKR-ERC20": {
+        "usd_market_cap": 1367391837.4266734,
+        "usd_price": 1513.1,
+        "coingecko_id": "maker"
+    },
+    "MKR-KRC20": {
+        "usd_market_cap": 1367391837.4266734,
+        "usd_price": 1513.1,
+        "coingecko_id": "maker"
+    },
+    "MM-ERC20": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MM": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MM-AVX20": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MM-BEP20": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MM-MVR20": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MM-PLG20": {
+        "usd_market_cap": 1987239.881293424,
+        "usd_price": 1.98,
+        "coingecko_id": "million"
+    },
+    "MONA": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.393517,
+        "coingecko_id": "monacoin"
+    },
+    "MONA-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.393517,
+        "coingecko_id": "monacoin"
+    },
+    "MOVR": {
+        "usd_market_cap": 32473513.038325485,
+        "usd_price": 3.92,
+        "coingecko_id": "moonriver"
+    },
+    "GLMR": {
+        "usd_market_cap": 139359808.32911035,
+        "usd_price": 0.18088,
+        "coingecko_id": "moonbeam"
+    },
+    "NAV": {
+        "usd_market_cap": 3457403.0691936556,
+        "usd_price": 0.0449094,
+        "coingecko_id": "nav-coin"
+    },
+    "NAV-BEP20": {
+        "usd_market_cap": 3457403.0691936556,
+        "usd_price": 0.0449094,
+        "coingecko_id": "nav-coin"
+    },
+    "NEAR-BEP20": {
+        "usd_market_cap": 1055827165.1350145,
+        "usd_price": 1.07,
+        "coingecko_id": "near"
+    },
+    "NEAR": {
+        "usd_market_cap": 1055827165.1350145,
+        "usd_price": 1.07,
+        "coingecko_id": "near"
+    },
+    "NEXO-ERC20": {
+        "usd_market_cap": 322637031.69859415,
+        "usd_price": 0.576801,
+        "coingecko_id": "nexo"
+    },
+    "NEXO": {
+        "usd_market_cap": 322637031.69859415,
+        "usd_price": 0.576801,
+        "coingecko_id": "nexo"
+    },
+    "NEXO-KRC20": {
+        "usd_market_cap": 322637031.69859415,
+        "usd_price": 0.576801,
+        "coingecko_id": "nexo"
+    },
+    "NEXO-PLG20": {
+        "usd_market_cap": 322637031.69859415,
+        "usd_price": 0.576801,
+        "coingecko_id": "nexo"
+    },
+    "NMC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.31,
+        "coingecko_id": "namecoin"
+    },
+    "NMC-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.31,
+        "coingecko_id": "namecoin"
+    },
+    "NVC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.03204053,
+        "coingecko_id": "novacoin"
+    },
+    "NVC-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.03204053,
+        "coingecko_id": "novacoin"
+    },
+    "NVC-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.03204053,
+        "coingecko_id": "novacoin"
+    },
+    "NZDS-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.571082,
+        "coingecko_id": "nzd-stablecoin"
+    },
+    "NZDS": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.571082,
+        "coingecko_id": "nzd-stablecoin"
+    },
+    "NZDS-PLG20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.571082,
+        "coingecko_id": "nzd-stablecoin"
+    },
+    "OCEAN-BEP20": {
+        "usd_market_cap": 128760542.85811679,
+        "usd_price": 0.297027,
+        "coingecko_id": "ocean-protocol"
+    },
+    "OCEAN": {
+        "usd_market_cap": 128760542.85811679,
+        "usd_price": 0.297027,
+        "coingecko_id": "ocean-protocol"
+    },
+    "OCEAN-ERC20": {
+        "usd_market_cap": 128760542.85811679,
+        "usd_price": 0.297027,
+        "coingecko_id": "ocean-protocol"
+    },
+    "OCEAN-PLG20": {
+        "usd_market_cap": 128760542.85811679,
+        "usd_price": 0.297027,
+        "coingecko_id": "ocean-protocol"
+    },
+    "OMG-ERC20": {
+        "usd_market_cap": 66846421.14572397,
+        "usd_price": 0.475866,
+        "coingecko_id": "omisego"
+    },
+    "OMG": {
+        "usd_market_cap": 66846421.14572397,
+        "usd_price": 0.475866,
+        "coingecko_id": "omisego"
+    },
+    "OMG-PLG20": {
+        "usd_market_cap": 66846421.14572397,
+        "usd_price": 0.475866,
+        "coingecko_id": "omisego"
+    },
+    "ONE": {
+        "usd_market_cap": 120461993.82146025,
+        "usd_price": 0.00979082,
+        "coingecko_id": "harmony"
+    },
+    "ONT-BEP20": {
+        "usd_market_cap": 159534522.15667453,
+        "usd_price": 0.178923,
+        "coingecko_id": "ontology"
+    },
+    "ONT": {
+        "usd_market_cap": 159534522.15667453,
+        "usd_price": 0.178923,
+        "coingecko_id": "ontology"
+    },
+    "PAX-ERC20": {
+        "usd_market_cap": 485760398.8343291,
+        "usd_price": 0.999735,
+        "coingecko_id": "paxos-standard"
+    },
+    "PAX": {
+        "usd_market_cap": 485760398.8343291,
+        "usd_price": 0.999735,
+        "coingecko_id": "paxos-standard"
+    },
+    "PAX-BEP20": {
+        "usd_market_cap": 485760398.8343291,
+        "usd_price": 0.999735,
+        "coingecko_id": "paxos-standard"
+    },
+    "PAX-KRC20": {
+        "usd_market_cap": 485760398.8343291,
+        "usd_price": 0.999735,
+        "coingecko_id": "paxos-standard"
+    },
+    "PAX-PLG20": {
+        "usd_market_cap": 485760398.8343291,
+        "usd_price": 0.999735,
+        "coingecko_id": "paxos-standard"
+    },
+    "PAXG-BEP20": {
+        "usd_market_cap": 488327268.7749979,
+        "usd_price": 1964.79,
+        "coingecko_id": "pax-gold"
+    },
+    "PAXG": {
+        "usd_market_cap": 488327268.7749979,
+        "usd_price": 1964.79,
+        "coingecko_id": "pax-gold"
+    },
+    "PAXG-ERC20": {
+        "usd_market_cap": 488327268.7749979,
+        "usd_price": 1964.79,
+        "coingecko_id": "pax-gold"
+    },
+    "PAXG-PLG20": {
+        "usd_market_cap": 488327268.7749979,
+        "usd_price": 1964.79,
+        "coingecko_id": "pax-gold"
+    },
+    "PINK": {
+        "usd_market_cap": 100634.10778705406,
+        "usd_price": 0.00021432,
+        "coingecko_id": "pinkcoin"
+    },
+    "PIVX": {
+        "usd_market_cap": 15162163.814264052,
+        "usd_price": 0.195197,
+        "coingecko_id": "pivx"
+    },
+    "PND": {
+        "usd_market_cap": 3508740.185104511,
+        "usd_price": 9.997e-05,
+        "coingecko_id": "pandacoin"
+    },
+    "POT": {
+        "usd_market_cap": 1672511.8173470048,
+        "usd_price": 0.00732355,
+        "coingecko_id": "potcoin"
+    },
+    "POWR-ERC20": {
+        "usd_market_cap": 97456951.17593615,
+        "usd_price": 0.226284,
+        "coingecko_id": "power-ledger"
+    },
+    "POWR": {
+        "usd_market_cap": 97456951.17593615,
+        "usd_price": 0.226284,
+        "coingecko_id": "power-ledger"
+    },
+    "POWR-PLG20": {
+        "usd_market_cap": 97456951.17593615,
+        "usd_price": 0.226284,
+        "coingecko_id": "power-ledger"
+    },
+    "PPC": {
+        "usd_market_cap": 9981025.871416384,
+        "usd_price": 0.343092,
+        "coingecko_id": "peercoin"
+    },
+    "PPC-ERC20": {
+        "usd_market_cap": 9981025.871416384,
+        "usd_price": 0.343092,
+        "coingecko_id": "peercoin"
+    },
+    "PPC-PLG20": {
+        "usd_market_cap": 9981025.871416384,
+        "usd_price": 0.343092,
+        "coingecko_id": "peercoin"
+    },
+    "PRCY-BEP20": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "privacy-coin"
+    },
+    "PRCY": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "privacy-coin"
+    },
+    "PRCY-ERC20": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "privacy-coin"
+    },
+    "PRCY-PLG20": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "privacy-coin"
+    },
+    "PYR-ERC20": {
+        "usd_market_cap": 75149504.35613745,
+        "usd_price": 3.14,
+        "coingecko_id": "vulcan-forged"
+    },
+    "PYR": {
+        "usd_market_cap": 75149504.35613745,
+        "usd_price": 3.14,
+        "coingecko_id": "vulcan-forged"
+    },
+    "SHIB-BEP20": {
+        "usd_market_cap": 4267744702.767991,
+        "usd_price": 7.23e-06,
+        "coingecko_id": "shiba-inu"
+    },
+    "SHIB": {
+        "usd_market_cap": 4267744702.767991,
+        "usd_price": 7.23e-06,
+        "coingecko_id": "shiba-inu"
+    },
+    "SHIB-ERC20": {
+        "usd_market_cap": 4267744702.767991,
+        "usd_price": 7.23e-06,
+        "coingecko_id": "shiba-inu"
+    },
+    "SHIB-KRC20": {
+        "usd_market_cap": 4267744702.767991,
+        "usd_price": 7.23e-06,
+        "coingecko_id": "shiba-inu"
+    },
+    "QC-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0864,
+        "coingecko_id": "qcash"
+    },
+    "QC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0864,
+        "coingecko_id": "qcash"
+    },
+    "QI-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.01002264,
+        "coingecko_id": "qiswap"
+    },
+    "QI": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.01002264,
+        "coingecko_id": "qiswap"
+    },
+    "QKC-BEP20": {
+        "usd_market_cap": 61295767.1168226,
+        "usd_price": 0.00887789,
+        "coingecko_id": "quark-chain"
+    },
+    "QKC": {
+        "usd_market_cap": 61295767.1168226,
+        "usd_price": 0.00887789,
+        "coingecko_id": "quark-chain"
+    },
+    "QKC-ERC20": {
+        "usd_market_cap": 61295767.1168226,
+        "usd_price": 0.00887789,
+        "coingecko_id": "quark-chain"
+    },
+    "QNT-ERC20": {
+        "usd_market_cap": 1383056105.156065,
+        "usd_price": 94.78,
+        "coingecko_id": "quant-network"
+    },
+    "QNT": {
+        "usd_market_cap": 1383056105.156065,
+        "usd_price": 94.78,
+        "coingecko_id": "quant-network"
+    },
+    "QNT-KRC20": {
+        "usd_market_cap": 1383056105.156065,
+        "usd_price": 94.78,
+        "coingecko_id": "quant-network"
+    },
+    "QTUM": {
+        "usd_market_cap": 250185286.04412276,
+        "usd_price": 2.37,
+        "coingecko_id": "qtum"
+    },
+    "QTUM-segwit": {
+        "usd_market_cap": 250185286.04412276,
+        "usd_price": 2.37,
+        "coingecko_id": "qtum"
+    },
+    "QTUM-ERC20": {
+        "usd_market_cap": 250185286.04412276,
+        "usd_price": 2.37,
+        "coingecko_id": "qtum"
+    },
+    "RDD": {
+        "usd_market_cap": 2452794.428616817,
+        "usd_price": 7.932e-05,
+        "coingecko_id": "reddcoin"
+    },
+    "REN-ERC20": {
+        "usd_market_cap": 44502967.38220489,
+        "usd_price": 0.04433633,
+        "coingecko_id": "republic-protocol"
+    },
+    "REN": {
+        "usd_market_cap": 44502967.38220489,
+        "usd_price": 0.04433633,
+        "coingecko_id": "republic-protocol"
+    },
+    "REN-HCO20": {
+        "usd_market_cap": 44502967.38220489,
+        "usd_price": 0.04433633,
+        "coingecko_id": "republic-protocol"
+    },
+    "REP-ERC20": {
+        "usd_market_cap": 4050934.4519584933,
+        "usd_price": 0.505548,
+        "coingecko_id": "augur"
+    },
+    "REP": {
+        "usd_market_cap": 4050934.4519584933,
+        "usd_price": 0.505548,
+        "coingecko_id": "augur"
+    },
+    "REQ-ERC20": {
+        "usd_market_cap": 54624960.25798314,
+        "usd_price": 0.071139,
+        "coingecko_id": "request-network"
+    },
+    "REQ": {
+        "usd_market_cap": 54624960.25798314,
+        "usd_price": 0.071139,
+        "coingecko_id": "request-network"
+    },
+    "RLC-ERC20": {
+        "usd_market_cap": 74093267.88891982,
+        "usd_price": 1.019,
+        "coingecko_id": "iexec-rlc"
+    },
+    "RLC": {
+        "usd_market_cap": 74093267.88891982,
+        "usd_price": 1.019,
+        "coingecko_id": "iexec-rlc"
+    },
+    "RLC-PLG20": {
+        "usd_market_cap": 74093267.88891982,
+        "usd_price": 1.019,
+        "coingecko_id": "iexec-rlc"
+    },
+    "RNDR-ERC20": {
+        "usd_market_cap": 740325368.0998092,
+        "usd_price": 1.99,
+        "coingecko_id": "render-token"
+    },
+    "RNDR": {
+        "usd_market_cap": 740325368.0998092,
+        "usd_price": 1.99,
+        "coingecko_id": "render-token"
+    },
+    "RPL-ERC20": {
+        "usd_market_cap": 397393643.4690261,
+        "usd_price": 20.08,
+        "coingecko_id": "rocket-pool"
+    },
+    "RPL": {
+        "usd_market_cap": 397393643.4690261,
+        "usd_price": 20.08,
+        "coingecko_id": "rocket-pool"
+    },
+    "RSR-ERC20": {
+        "usd_market_cap": 93137393.20257151,
+        "usd_price": 0.00183536,
+        "coingecko_id": "reserve-rights-token"
+    },
+    "RSR": {
+        "usd_market_cap": 93137393.20257151,
+        "usd_price": 0.00183536,
+        "coingecko_id": "reserve-rights-token"
+    },
+    "RTM": {
+        "usd_market_cap": 3001161.2160425484,
+        "usd_price": 0.00087846,
+        "coingecko_id": "raptoreum"
+    },
+    "RTM-BEP20": {
+        "usd_market_cap": 3001161.2160425484,
+        "usd_price": 0.00087846,
+        "coingecko_id": "raptoreum"
+    },
+    "RVN": {
+        "usd_market_cap": 175831921.97600925,
+        "usd_price": 0.01472288,
+        "coingecko_id": "ravencoin"
+    },
+    "SAND-ERC20": {
+        "usd_market_cap": 640808167.265527,
+        "usd_price": 0.309108,
+        "coingecko_id": "the-sandbox"
+    },
+    "SAND": {
+        "usd_market_cap": 640808167.265527,
+        "usd_price": 0.309108,
+        "coingecko_id": "the-sandbox"
+    },
+    "SAND-BEP20": {
+        "usd_market_cap": 640808167.265527,
+        "usd_price": 0.309108,
+        "coingecko_id": "the-sandbox"
+    },
+    "SAND-PLG20": {
+        "usd_market_cap": 640808167.265527,
+        "usd_price": 0.309108,
+        "coingecko_id": "the-sandbox"
+    },
+    "SCRT-BEP20": {
+        "usd_market_cap": 56300453.79137661,
+        "usd_price": 0.26524,
+        "coingecko_id": "secret"
+    },
+    "SCRT": {
+        "usd_market_cap": 56300453.79137661,
+        "usd_price": 0.26524,
+        "coingecko_id": "secret"
+    },
+    "SIGNA-BEP20": {
+        "usd_market_cap": 2599310.1551851383,
+        "usd_price": 0.00120243,
+        "coingecko_id": "signum"
+    },
+    "SIGNA": {
+        "usd_market_cap": 2599310.1551851383,
+        "usd_price": 0.00120243,
+        "coingecko_id": "signum"
+    },
+    "SNX-AVX20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX-BEP20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX-ERC20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX-FTM20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX-KRC20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SNX-PLG20": {
+        "usd_market_cap": 705924419.4925908,
+        "usd_price": 2.18,
+        "coingecko_id": "havven"
+    },
+    "SOL-BEP20": {
+        "usd_market_cap": 12593783923.987738,
+        "usd_price": 29.98,
+        "coingecko_id": "solana"
+    },
+    "SOL": {
+        "usd_market_cap": 12593783923.987738,
+        "usd_price": 29.98,
+        "coingecko_id": "solana"
+    },
+    "SOL-PLG20": {
+        "usd_market_cap": 12593783923.987738,
+        "usd_price": 29.98,
+        "coingecko_id": "solana"
+    },
+    "SOLVE-ERC20": {
+        "usd_market_cap": 14273228.828181528,
+        "usd_price": 0.02184147,
+        "coingecko_id": "solve-care"
+    },
+    "SOLVE": {
+        "usd_market_cap": 14273228.828181528,
+        "usd_price": 0.02184147,
+        "coingecko_id": "solve-care"
+    },
+    "SRM-ERC20": {
+        "usd_market_cap": 12400964.612324473,
+        "usd_price": 0.03330168,
+        "coingecko_id": "serum"
+    },
+    "SRM": {
+        "usd_market_cap": 12400964.612324473,
+        "usd_price": 0.03330168,
+        "coingecko_id": "serum"
+    },
+    "SRM-PLG20": {
+        "usd_market_cap": 12400964.612324473,
+        "usd_price": 0.03330168,
+        "coingecko_id": "serum"
+    },
+    "SUSHI-AVX20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-BEP20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-ERC20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-FTM20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-KRC20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-MVR20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SUSHI-PLG20": {
+        "usd_market_cap": 111954846.17714429,
+        "usd_price": 0.578725,
+        "coingecko_id": "sushi"
+    },
+    "SWAP-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.063615,
+        "coingecko_id": "safeswap-online"
+    },
+    "SWAP": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.063615,
+        "coingecko_id": "safeswap-online"
+    },
+    "SXP-BEP20": {
+        "usd_market_cap": 164530023.7691044,
+        "usd_price": 0.281957,
+        "coingecko_id": "swipe"
+    },
+    "SXP": {
+        "usd_market_cap": 164530023.7691044,
+        "usd_price": 0.281957,
+        "coingecko_id": "swipe"
+    },
+    "SXP-ERC20": {
+        "usd_market_cap": 164530023.7691044,
+        "usd_price": 0.281957,
+        "coingecko_id": "swipe"
+    },
+    "SBCH": {
+        "usd_market_cap": 4802240357.234909,
+        "usd_price": 245.55,
+        "coingecko_id": "bitcoin-cash"
+    },
+    "SYS": {
+        "usd_market_cap": 59529518.72311747,
+        "usd_price": 0.082367,
+        "coingecko_id": "syscoin"
+    },
+    "SYS-segwit": {
+        "usd_market_cap": 59529518.72311747,
+        "usd_price": 0.082367,
+        "coingecko_id": "syscoin"
+    },
+    "TEL-ERC20": {
+        "usd_market_cap": 85468214.68962462,
+        "usd_price": 0.00120031,
+        "coingecko_id": "telcoin"
+    },
+    "TEL": {
+        "usd_market_cap": 85468214.68962462,
+        "usd_price": 0.00120031,
+        "coingecko_id": "telcoin"
+    },
+    "TEL-KRC20": {
+        "usd_market_cap": 85468214.68962462,
+        "usd_price": 0.00120031,
+        "coingecko_id": "telcoin"
+    },
+    "TEL-PLG20": {
+        "usd_market_cap": 85468214.68962462,
+        "usd_price": 0.00120031,
+        "coingecko_id": "telcoin"
+    },
+    "TFT-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00584512,
+        "coingecko_id": "threefold-token"
+    },
+    "TFT": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00584512,
+        "coingecko_id": "threefold-token"
+    },
+    "THC": {
+        "usd_market_cap": 533327.2526775554,
+        "usd_price": 0.00209333,
+        "coingecko_id": "hempcoin-thc"
+    },
+    "THC-BEP20": {
+        "usd_market_cap": 533327.2526775554,
+        "usd_price": 0.00209333,
+        "coingecko_id": "hempcoin-thc"
+    },
+    "TKL": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "tokel"
+    },
+    "TON-ERC20": {
+        "usd_market_cap": 7411901784.745442,
+        "usd_price": 2.16,
+        "coingecko_id": "the-open-network"
+    },
+    "TON": {
+        "usd_market_cap": 7411901784.745442,
+        "usd_price": 2.16,
+        "coingecko_id": "the-open-network"
+    },
+    "TON-BEP20": {
+        "usd_market_cap": 7411901784.745442,
+        "usd_price": 2.16,
+        "coingecko_id": "the-open-network"
+    },
+    "TRC": {
+        "usd_market_cap": 263285.4699223364,
+        "usd_price": 0.01142539,
+        "coingecko_id": "terracoin"
+    },
+    "TRX-BEP20": {
+        "usd_market_cap": 8059710263.197714,
+        "usd_price": 0.090587,
+        "coingecko_id": "tron"
+    },
+    "TRX": {
+        "usd_market_cap": 8059710263.197714,
+        "usd_price": 0.090587,
+        "coingecko_id": "tron"
+    },
+    "TRYB-AVX20": {
+        "usd_market_cap": 26680961.468664706,
+        "usd_price": 0.03545519,
+        "coingecko_id": "bilira"
+    },
+    "TRYB": {
+        "usd_market_cap": 26680961.468664706,
+        "usd_price": 0.03545519,
+        "coingecko_id": "bilira"
+    },
+    "TRYB-BEP20": {
+        "usd_market_cap": 26680961.468664706,
+        "usd_price": 0.03545519,
+        "coingecko_id": "bilira"
+    },
+    "TRYB-PLG20": {
+        "usd_market_cap": 26680961.468664706,
+        "usd_price": 0.03545519,
+        "coingecko_id": "bilira"
+    },
+    "TRYB-ERC20": {
+        "usd_market_cap": 26680961.468664706,
+        "usd_price": 0.03545519,
+        "coingecko_id": "bilira"
+    },
+    "TUSD-BEP20": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TUSD": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TUSD-ERC20": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TUSD-HCO20": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TUSD-KRC20": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TUSD-PLG20": {
+        "usd_market_cap": 3363561840.229486,
+        "usd_price": 0.996152,
+        "coingecko_id": "true-usd"
+    },
+    "TWT-BEP20": {
+        "usd_market_cap": 430188985.38828105,
+        "usd_price": 1.029,
+        "coingecko_id": "trust-wallet-token"
+    },
+    "TWT": {
+        "usd_market_cap": 430188985.38828105,
+        "usd_price": 1.029,
+        "coingecko_id": "trust-wallet-token"
+    },
+    "UBT-ERC20": {
+        "usd_market_cap": 9775963.095742958,
+        "usd_price": 0.070468,
+        "coingecko_id": "unibright"
+    },
+    "UBT": {
+        "usd_market_cap": 9775963.095742958,
+        "usd_price": 0.070468,
+        "coingecko_id": "unibright"
+    },
+    "UBT-PLG20": {
+        "usd_market_cap": 9775963.095742958,
+        "usd_price": 0.070468,
+        "coingecko_id": "unibright"
+    },
+    "UIS": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00061098,
+        "coingecko_id": "unitus"
+    },
+    "UMA-AVX20": {
+        "usd_market_cap": 103295363.20408262,
+        "usd_price": 1.39,
+        "coingecko_id": "uma"
+    },
+    "UMA": {
+        "usd_market_cap": 103295363.20408262,
+        "usd_price": 1.39,
+        "coingecko_id": "uma"
+    },
+    "UMA-ERC20": {
+        "usd_market_cap": 103295363.20408262,
+        "usd_price": 1.39,
+        "coingecko_id": "uma"
+    },
+    "UMA-PLG20": {
+        "usd_market_cap": 103295363.20408262,
+        "usd_price": 1.39,
+        "coingecko_id": "uma"
+    },
+    "UNI-AVX20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI-ERC20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI-BEP20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI-HCO20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI-KRC20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNI-PLG20": {
+        "usd_market_cap": 3233015174.8191085,
+        "usd_price": 4.27,
+        "coingecko_id": "uniswap"
+    },
+    "UNO": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.44,
+        "coingecko_id": "unobtanium"
+    },
+    "USDC-AVX20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-ERC20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-BEP20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-FTM20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-HCO20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-KRC20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-MVR20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-PLG20": {
+        "usd_market_cap": 25478966766.020508,
+        "usd_price": 0.998979,
+        "coingecko_id": "usd-coin"
+    },
+    "USDD-ERC20": {
+        "usd_market_cap": 725697374.4072948,
+        "usd_price": 0.99949,
+        "coingecko_id": "usdd"
+    },
+    "USDD": {
+        "usd_market_cap": 725697374.4072948,
+        "usd_price": 0.99949,
+        "coingecko_id": "usdd"
+    },
+    "USDT-MVR20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-FTM20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-HCO20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-KRC20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-PLG20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-ARB20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-AVX20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-BEP20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "USDT-ERC20": {
+        "usd_market_cap": 84216182215.60173,
+        "usd_price": 1.0,
+        "coingecko_id": "tether"
+    },
+    "WWCN-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.68,
+        "coingecko_id": "wrapped-widecoin"
+    },
+    "WWCN": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.68,
+        "coingecko_id": "wrapped-widecoin"
+    },
+    "VAL": {
+        "usd_market_cap": 9435820.832074448,
+        "usd_price": 1.9,
+        "coingecko_id": "radium"
+    },
+    "VET-BEP20": {
+        "usd_market_cap": 1301777157.4148438,
+        "usd_price": 0.0178743,
+        "coingecko_id": "vechain"
+    },
+    "VET": {
+        "usd_market_cap": 1301777157.4148438,
+        "usd_price": 0.0178743,
+        "coingecko_id": "vechain"
+    },
+    "VRA-ERC20": {
+        "usd_market_cap": 51791060.552046254,
+        "usd_price": 0.00502703,
+        "coingecko_id": "verasity"
+    },
+    "VRA": {
+        "usd_market_cap": 51791060.552046254,
+        "usd_price": 0.00502703,
+        "coingecko_id": "verasity"
+    },
+    "VGX-ERC20": {
+        "usd_market_cap": 34321817.02878253,
+        "usd_price": 0.116326,
+        "coingecko_id": "ethos"
+    },
+    "VGX": {
+        "usd_market_cap": 34321817.02878253,
+        "usd_price": 0.116326,
+        "coingecko_id": "ethos"
+    },
+    "VGX-PLG20": {
+        "usd_market_cap": 34321817.02878253,
+        "usd_price": 0.116326,
+        "coingecko_id": "ethos"
+    },
+    "VIA": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.01924725,
+        "coingecko_id": "viacoin"
+    },
+    "VIA-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.01924725,
+        "coingecko_id": "viacoin"
+    },
+    "VITE-BEP20": {
+        "usd_market_cap": 13061386.722749686,
+        "usd_price": 0.01264369,
+        "coingecko_id": "vite"
+    },
+    "VITE": {
+        "usd_market_cap": 13061386.722749686,
+        "usd_price": 0.01264369,
+        "coingecko_id": "vite"
+    },
+    "VRSC": {
+        "usd_market_cap": 45321680.53110716,
+        "usd_price": 0.65042,
+        "coingecko_id": "verus-coin"
+    },
+    "VPRM": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00037007,
+        "coingecko_id": "vaporum-coin"
+    },
+    "VTC": {
+        "usd_market_cap": 3534155.9428715077,
+        "usd_price": 0.051835,
+        "coingecko_id": "vertcoin"
+    },
+    "VTC-segwit": {
+        "usd_market_cap": 3534155.9428715077,
+        "usd_price": 0.051835,
+        "coingecko_id": "vertcoin"
+    },
+    "WAVES-BEP20": {
+        "usd_market_cap": 155280378.6252353,
+        "usd_price": 1.55,
+        "coingecko_id": "waves"
+    },
+    "WAVES": {
+        "usd_market_cap": 155280378.6252353,
+        "usd_price": 1.55,
+        "coingecko_id": "waves"
+    },
+    "WBTC-ERC20": {
+        "usd_market_cap": 5001979440.800923,
+        "usd_price": 30588,
+        "coingecko_id": "wrapped-bitcoin"
+    },
+    "WBTC": {
+        "usd_market_cap": 5001979440.800923,
+        "usd_price": 30588,
+        "coingecko_id": "wrapped-bitcoin"
+    },
+    "WLD-ERC20": {
+        "usd_market_cap": 207520072.02926013,
+        "usd_price": 1.54,
+        "coingecko_id": "worldcoin-wld"
+    },
+    "WLD": {
+        "usd_market_cap": 207520072.02926013,
+        "usd_price": 1.54,
+        "coingecko_id": "worldcoin-wld"
+    },
+    "WOO-ERC20": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "WOO": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "WOO-AVX20": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "WOO-BEP20": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "WOO-FTM20": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "WOO-PLG20": {
+        "usd_market_cap": 329231236.26446164,
+        "usd_price": 0.186587,
+        "coingecko_id": "woo-network"
+    },
+    "XCN-ERC20": {
+        "usd_market_cap": 19093951.818540756,
+        "usd_price": 0.00073225,
+        "coingecko_id": "chain-2"
+    },
+    "XCN": {
+        "usd_market_cap": 19093951.818540756,
+        "usd_price": 0.00073225,
+        "coingecko_id": "chain-2"
+    },
+    "XEP-BEP20": {
+        "usd_market_cap": 3250288.304411648,
+        "usd_price": 0.00018003,
+        "coingecko_id": "electra-protocol"
+    },
+    "XEP": {
+        "usd_market_cap": 3250288.304411648,
+        "usd_price": 0.00018003,
+        "coingecko_id": "electra-protocol"
+    },
+    "XIDR-ERC20": {
+        "usd_market_cap": 4208912.798326397,
+        "usd_price": 6.272e-05,
+        "coingecko_id": "straitsx-indonesia-rupiah"
+    },
+    "XIDR": {
+        "usd_market_cap": 4208912.798326397,
+        "usd_price": 6.272e-05,
+        "coingecko_id": "straitsx-indonesia-rupiah"
+    },
+    "XLM-BEP20": {
+        "usd_market_cap": 3126458909.4296846,
+        "usd_price": 0.112314,
+        "coingecko_id": "stellar"
+    },
+    "XLM": {
+        "usd_market_cap": 3126458909.4296846,
+        "usd_price": 0.112314,
+        "coingecko_id": "stellar"
+    },
+    "XMY": {
+        "usd_market_cap": 136399.19233601488,
+        "usd_price": 7.339e-05,
+        "coingecko_id": "myriadcoin"
+    },
+    "XMY-segwit": {
+        "usd_market_cap": 136399.19233601488,
+        "usd_price": 7.339e-05,
+        "coingecko_id": "myriadcoin"
+    },
+    "XNA": {
+        "usd_market_cap": 6391031.682439022,
+        "usd_price": 0.00072074,
+        "coingecko_id": "neurai"
+    },
+    "XPM": {
+        "usd_market_cap": 679328.0828261496,
+        "usd_price": 0.02709878,
+        "coingecko_id": "primecoin"
+    },
+    "XRP-BEP20": {
+        "usd_market_cap": 28386229302.16655,
+        "usd_price": 0.530175,
+        "coingecko_id": "ripple"
+    },
+    "XRP": {
+        "usd_market_cap": 28386229302.16655,
+        "usd_price": 0.530175,
+        "coingecko_id": "ripple"
+    },
+    "XSGD-ERC20": {
+        "usd_market_cap": 21164519.52868159,
+        "usd_price": 0.727066,
+        "coingecko_id": "xsgd"
+    },
+    "XSGD": {
+        "usd_market_cap": 21164519.52868159,
+        "usd_price": 0.727066,
+        "coingecko_id": "xsgd"
+    },
+    "XSGD-PLG20": {
+        "usd_market_cap": 21164519.52868159,
+        "usd_price": 0.727066,
+        "coingecko_id": "xsgd"
+    },
+    "XTZ-BEP20": {
+        "usd_market_cap": 640709427.8772721,
+        "usd_price": 0.674953,
+        "coingecko_id": "tezos"
+    },
+    "XTZ": {
+        "usd_market_cap": 640709427.8772721,
+        "usd_price": 0.674953,
+        "coingecko_id": "tezos"
+    },
+    "XVC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.030795,
+        "coingecko_id": "vcash"
+    },
+    "XVC-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.030795,
+        "coingecko_id": "vcash"
+    },
+    "XVC-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.030795,
+        "coingecko_id": "vcash"
+    },
+    "XVG": {
+        "usd_market_cap": 57487037.807281606,
+        "usd_price": 0.00347501,
+        "coingecko_id": "verge"
+    },
+    "XVS-BEP20": {
+        "usd_market_cap": 73028419.71682467,
+        "usd_price": 4.76,
+        "coingecko_id": "venus"
+    },
+    "XVS": {
+        "usd_market_cap": 73028419.71682467,
+        "usd_price": 4.76,
+        "coingecko_id": "venus"
+    },
+    "YFI-AVX20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI-BEP20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI-ERC20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI-FTM20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI-KRC20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFI-PLG20": {
+        "usd_market_cap": 184228716.03071845,
+        "usd_price": 5523.26,
+        "coingecko_id": "yearn-finance"
+    },
+    "YFII-BEP20": {
+        "usd_market_cap": 20557852.28216861,
+        "usd_price": 515.36,
+        "coingecko_id": "yfii-finance"
+    },
+    "YFII": {
+        "usd_market_cap": 20557852.28216861,
+        "usd_price": 515.36,
+        "coingecko_id": "yfii-finance"
+    },
+    "YFII-ERC20": {
+        "usd_market_cap": 20557852.28216861,
+        "usd_price": 515.36,
+        "coingecko_id": "yfii-finance"
+    },
+    "ZEC": {
+        "usd_market_cap": 207128806.9291776,
+        "usd_price": 26.22,
+        "coingecko_id": "zcash"
+    },
+    "ZER": {
+        "usd_market_cap": 168148.38337974422,
+        "usd_price": 0.01283065,
+        "coingecko_id": "zero"
+    },
+    "ZER-BEP20": {
+        "usd_market_cap": 168148.38337974422,
+        "usd_price": 0.01283065,
+        "coingecko_id": "zero"
+    },
+    "ZET": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00146254,
+        "coingecko_id": "zetacoin"
+    },
+    "ZIL-BEP20": {
+        "usd_market_cap": 301499611.8069596,
+        "usd_price": 0.01750714,
+        "coingecko_id": "zilliqa"
+    },
+    "ZIL": {
+        "usd_market_cap": 301499611.8069596,
+        "usd_price": 0.01750714,
+        "coingecko_id": "zilliqa"
+    },
+    "ZRX-AVX20": {
+        "usd_market_cap": 20143609.633030687,
+        "usd_price": 0.217094,
+        "coingecko_id": "0x"
+    },
+    "ZRX": {
+        "usd_market_cap": 20143609.633030687,
+        "usd_price": 0.217094,
+        "coingecko_id": "0x"
+    },
+    "ZRX-ERC20": {
+        "usd_market_cap": 20143609.633030687,
+        "usd_price": 0.217094,
+        "coingecko_id": "0x"
+    },
+    "ZRX-PLG20": {
+        "usd_market_cap": 20143609.633030687,
+        "usd_price": 0.217094,
+        "coingecko_id": "0x"
+    },
+    "INK-QRC20": {
+        "usd_market_cap": 156993.96016326413,
+        "usd_price": 0.00033926,
+        "coingecko_id": "ink"
+    },
+    "INK": {
+        "usd_market_cap": 156993.96016326413,
+        "usd_price": 0.00033926,
+        "coingecko_id": "ink"
+    },
+    "FLUX": {
+        "usd_market_cap": 106830076.10044914,
+        "usd_price": 0.333307,
+        "coingecko_id": "zelcash"
+    },
+    "FLUX-ERC20": {
+        "usd_market_cap": 106830076.10044914,
+        "usd_price": 0.333307,
+        "coingecko_id": "zelcash"
+    },
+    "FLUX-BEP20": {
+        "usd_market_cap": 106830076.10044914,
+        "usd_price": 0.333307,
+        "coingecko_id": "zelcash"
+    },
+    "HPY-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00060189,
+        "coingecko_id": "hyper-pay"
+    },
+    "HPY": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00060189,
+        "coingecko_id": "hyper-pay"
+    },
+    "HLC-QRC20": {
+        "usd_market_cap": 889120.1007264613,
+        "usd_price": 0.00290522,
+        "coingecko_id": "halalchain"
+    },
+    "HLC": {
+        "usd_market_cap": 889120.1007264613,
+        "usd_price": 0.00290522,
+        "coingecko_id": "halalchain"
+    },
+    "MED-QRC20": {
+        "usd_market_cap": 75118201.87784031,
+        "usd_price": 0.00961875,
+        "coingecko_id": "medibloc"
+    },
+    "MED": {
+        "usd_market_cap": 75118201.87784031,
+        "usd_price": 0.00961875,
+        "coingecko_id": "medibloc"
+    },
+    "LSTR-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.63825e-07,
+        "coingecko_id": "meetluna"
+    },
+    "LSTR": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.63825e-07,
+        "coingecko_id": "meetluna"
+    },
+    "QBT-QRC20": {
+        "usd_market_cap": 121032.34200285115,
+        "usd_price": 0.00179012,
+        "coingecko_id": "qbao"
+    },
+    "QBT": {
+        "usd_market_cap": 121032.34200285115,
+        "usd_price": 0.00179012,
+        "coingecko_id": "qbao"
+    },
+    "TSL-QRC20": {
+        "usd_market_cap": 76497.07482131156,
+        "usd_price": 0.00013154,
+        "coingecko_id": "energo"
+    },
+    "TSL": {
+        "usd_market_cap": 76497.07482131156,
+        "usd_price": 0.00013154,
+        "coingecko_id": "energo"
+    },
+    "OC-QRC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00026386,
+        "coingecko_id": "oceanchain"
+    },
+    "OC": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00026386,
+        "coingecko_id": "oceanchain"
+    },
+    "PUT-QRC20": {
+        "usd_market_cap": 189396.3904495175,
+        "usd_price": 0.0001154,
+        "coingecko_id": "profile-utility-token"
+    },
+    "PUT": {
+        "usd_market_cap": 189396.3904495175,
+        "usd_price": 0.0001154,
+        "coingecko_id": "profile-utility-token"
+    },
+    "OKB-ERC20": {
+        "usd_market_cap": 2655496400.808279,
+        "usd_price": 44.33,
+        "coingecko_id": "okb"
+    },
+    "OKB": {
+        "usd_market_cap": 2655496400.808279,
+        "usd_price": 44.33,
+        "coingecko_id": "okb"
+    },
+    "SEELE-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.232e-05,
+        "coingecko_id": "seele"
+    },
+    "SEELE": {
+        "usd_market_cap": 0.0,
+        "usd_price": 2.232e-05,
+        "coingecko_id": "seele"
+    },
+    "REV-ERC20": {
+        "usd_market_cap": 9749827.711555667,
+        "usd_price": 0.00011429,
+        "coingecko_id": "revain"
+    },
+    "REV": {
+        "usd_market_cap": 9749827.711555667,
+        "usd_price": 0.00011429,
+        "coingecko_id": "revain"
+    },
+    "SNT-ERC20": {
+        "usd_market_cap": 103444957.88895988,
+        "usd_price": 0.02594519,
+        "coingecko_id": "status"
+    },
+    "SNT": {
+        "usd_market_cap": 103444957.88895988,
+        "usd_price": 0.02594519,
+        "coingecko_id": "status"
+    },
+    "ANT-ERC20": {
+        "usd_market_cap": 198108524.5940322,
+        "usd_price": 4.94,
+        "coingecko_id": "aragon"
+    },
+    "ANT": {
+        "usd_market_cap": 198108524.5940322,
+        "usd_price": 4.94,
+        "coingecko_id": "aragon"
+    },
+    "BEST-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.318051,
+        "coingecko_id": "bitpanda-ecosystem-token"
+    },
+    "BEST": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.318051,
+        "coingecko_id": "bitpanda-ecosystem-token"
+    },
+    "CVT-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0002302,
+        "coingecko_id": "cybervein"
+    },
+    "CVT": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.0002302,
+        "coingecko_id": "cybervein"
+    },
+    "DX-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00010365,
+        "coingecko_id": "dxchain"
+    },
+    "DX": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00010365,
+        "coingecko_id": "dxchain"
+    },
+    "STORJ-ERC20": {
+        "usd_market_cap": 54104429.61028018,
+        "usd_price": 0.374451,
+        "coingecko_id": "storj"
+    },
+    "STORJ": {
+        "usd_market_cap": 54104429.61028018,
+        "usd_price": 0.374451,
+        "coingecko_id": "storj"
+    },
+    "TRAC-ERC20": {
+        "usd_market_cap": 93051135.18404672,
+        "usd_price": 0.244791,
+        "coingecko_id": "origintrail"
+    },
+    "TRAC": {
+        "usd_market_cap": 93051135.18404672,
+        "usd_price": 0.244791,
+        "coingecko_id": "origintrail"
+    },
+    "UBQ": {
+        "usd_market_cap": 530514.8259324469,
+        "usd_price": 0.0109977,
+        "coingecko_id": "ubiq"
+    },
+    "PNK-ERC20": {
+        "usd_market_cap": 10123771.887331458,
+        "usd_price": 0.01406575,
+        "coingecko_id": "kleros"
+    },
+    "PNK": {
+        "usd_market_cap": 10123771.887331458,
+        "usd_price": 0.01406575,
+        "coingecko_id": "kleros"
+    },
+    "SKL-ERC20": {
+        "usd_market_cap": 109242225.66271819,
+        "usd_price": 0.02187333,
+        "coingecko_id": "skale"
+    },
+    "SKL": {
+        "usd_market_cap": 109242225.66271819,
+        "usd_price": 0.02187333,
+        "coingecko_id": "skale"
+    },
+    "CVC-ERC20": {
+        "usd_market_cap": 70200120.37514375,
+        "usd_price": 0.08751,
+        "coingecko_id": "civic"
+    },
+    "CVC": {
+        "usd_market_cap": 70200120.37514375,
+        "usd_price": 0.08751,
+        "coingecko_id": "civic"
+    },
+    "UTK-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.054017,
+        "coingecko_id": "utrust"
+    },
+    "UTK": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.054017,
+        "coingecko_id": "utrust"
+    },
+    "MLN-ERC20": {
+        "usd_market_cap": 22126391.036406845,
+        "usd_price": 15.19,
+        "coingecko_id": "melon"
+    },
+    "MLN": {
+        "usd_market_cap": 22126391.036406845,
+        "usd_price": 15.19,
+        "coingecko_id": "melon"
+    },
+    "XOR-ERC20": {
+        "usd_market_cap": 1355069.0508139112,
+        "usd_price": 0.00461953,
+        "coingecko_id": "sora"
+    },
+    "XOR": {
+        "usd_market_cap": 1355069.0508139112,
+        "usd_price": 0.00461953,
+        "coingecko_id": "sora"
+    },
+    "UQC-ERC20": {
+        "usd_market_cap": 32767225.80521517,
+        "usd_price": 3.26,
+        "coingecko_id": "uquid-coin"
+    },
+    "UQC": {
+        "usd_market_cap": 32767225.80521517,
+        "usd_price": 3.26,
+        "coingecko_id": "uquid-coin"
+    },
+    "UOS-ERC20": {
+        "usd_market_cap": 51509587.76188305,
+        "usd_price": 0.146379,
+        "coingecko_id": "ultra"
+    },
+    "UOS": {
+        "usd_market_cap": 51509587.76188305,
+        "usd_price": 0.146379,
+        "coingecko_id": "ultra"
+    },
+    "SHR-ERC20": {
+        "usd_market_cap": 69453170.57377395,
+        "usd_price": 0.00129022,
+        "coingecko_id": "sharering"
+    },
+    "SHR": {
+        "usd_market_cap": 69453170.57377395,
+        "usd_price": 0.00129022,
+        "coingecko_id": "sharering"
+    },
+    "SHR-BEP20": {
+        "usd_market_cap": 69453170.57377395,
+        "usd_price": 0.00129022,
+        "coingecko_id": "sharering"
+    },
+    "S4F-ERC20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 6.233e-05,
+        "coingecko_id": "s4fe"
+    },
+    "S4F": {
+        "usd_market_cap": 0.0,
+        "usd_price": 6.233e-05,
+        "coingecko_id": "s4fe"
+    },
+    "S4F-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 6.233e-05,
+        "coingecko_id": "s4fe"
+    },
+    "WHIVE": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.0024e-08,
+        "coingecko_id": "whive"
+    },
+    "WHIVE-segwit": {
+        "usd_market_cap": 0.0,
+        "usd_price": 1.0024e-08,
+        "coingecko_id": "whive"
+    },
+    "XEC": {
+        "usd_market_cap": 530104684.2997,
+        "usd_price": 2.698e-05,
+        "coingecko_id": "ecash"
+    },
+    "ZINU-BEP20": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "zinu-zombie-inu"
+    },
+    "ZINU": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "zinu-zombie-inu"
+    },
+    "RUNES": {
+        "usd_market_cap": 0.0,
+        "usd_price": 9.238e-05,
+        "coingecko_id": "runebase"
+    },
+    "ACTN": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00015,
+        "coingecko_id": "action-coin"
+    },
+    "ACTN-BEP20": {
+        "usd_market_cap": 0.0,
+        "usd_price": 0.00015,
+        "coingecko_id": "action-coin"
+    },
+    "IRIS": {
+        "usd_market_cap": 28736181.464680165,
+        "usd_price": 0.01848165,
+        "coingecko_id": "iris-network"
+    },
+    "OSMO": {
+        "usd_market_cap": 150645882.42867264,
+        "usd_price": 0.241683,
+        "coingecko_id": "osmosis"
+    },
+    "ATOM-IBC_IRIS": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "cosmos-hub"
+    },
+    "MAZA": {
+        "usd_market_cap": 957772.9527751479,
+        "usd_price": 0.00043114,
+        "coingecko_id": "maza"
+    },
+    "CRNC": {
+        "usd_market_cap": 0,
+        "usd_price": 0,
+        "coingecko_id": "crionic"
+    }
+}
