@@ -222,7 +222,10 @@ class CoinGeckoAPI:
         self.priced_coins = sorted(list(self.gecko_source.keys()))
 
     def load_gecko_source(self):
-        return self.utils.load_jsonfile(self.files.gecko_source)
+        try:
+            return self.utils.load_jsonfile(self.files.gecko_source)
+        except:
+            return {}
 
     def get_gecko_coin_ids_list(self) -> list:
         coin_ids = list(
