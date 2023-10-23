@@ -134,7 +134,8 @@ class ErrorMessage(BaseModel):
 
 def validate_ticker_id(ticker_id):
     tickers = cache.load.gecko_tickers()
-    if ticker_id not in tickers:
+    ticker_list = [ticker['ticker_id'] for ticker in tickers['data']]
+    if ticker_id not in ticker_list:
         raise ValueError(f"ticker_id '{ticker_id}' not in available pairs. Check the /api/v3/gecko/pairs endpoint for valid values.")
 
     
