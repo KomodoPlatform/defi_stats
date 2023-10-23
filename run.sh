@@ -10,5 +10,5 @@ docker compose up -d
 echo "Starting DeFi API"
 cd api
 source .env
+export PATH="$HOME/.local/bin:$PATH"
 poetry run uvicorn main:app --host ${API_HOST} --port ${API_PORT} --reload
-

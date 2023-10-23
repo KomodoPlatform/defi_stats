@@ -1165,6 +1165,7 @@ class DexAPI:
         self.files = Files(self.testing)
         self.templates = Templates()
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config)
+        self.mm2_host = "http://127.0.0.1:7783"
 
     # tuple, string, string -> list
     # returning orderbook for given trading pair
@@ -1182,7 +1183,6 @@ class DexAPI:
             if self.coins_config[base]["wallet_only"] or self.coins_config[quote]["wallet_only"]:
                 return self.templates.orderbook(base, quote, v2=True)
 
-            mm2_host = "http://127.0.0.1:7783"
             params = {
                 "mmrpc": "2.0",
                 "method": "orderbook",
@@ -1192,7 +1192,7 @@ class DexAPI:
                 },
                 "id": 42
             }
-            r = requests.post(mm2_host, json=params)
+            r = requests.post(self.mm2_host, json=params)
             if "result" in json.loads(r.text):
                 return json.loads(r.text)["result"]
         except Exception as e:  # pragma: no cover
