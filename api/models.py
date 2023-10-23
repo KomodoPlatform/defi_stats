@@ -76,6 +76,14 @@ class Cache:
         self.gecko_pairs = self.load.gecko_pairs()
         self.gecko_tickers = self.load.gecko_tickers()
 
+    def validate_ticker_id(self, ticker_id):
+        tickers = self.load.gecko_tickers()
+        ticker_list = [ticker['ticker_id'] for ticker in tickers['data']]
+        if ticker_id not in ticker_list:
+            msg = f"ticker_id '{ticker_id}' not in available pairs."
+            msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
+            raise ValueError(msg)
+
     class Load:
         def __init__(self, files, utils):
             self.files = files
@@ -224,7 +232,9 @@ class CoinGeckoAPI:
     def load_gecko_source(self):
         try:
             return self.utils.load_jsonfile(self.files.gecko_source)
-        except:
+        except Exception as e:  # pragma: no cover
+            logger.error(
+                f"{type(e)} Error in [CoinGeckoAPI.load_gecko_source]: {e}")
             return {}
 
     def get_gecko_coin_ids_list(self) -> list:

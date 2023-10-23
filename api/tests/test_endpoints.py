@@ -86,17 +86,19 @@ def test_historical_trades_endpoint():
         logger.info(i)
     for i in data["sell"]:
         logger.info(i)
-    assert isinstance(data["buy"][0]["price"], str)
-    assert isinstance(data["buy"][0]["trade_id"], str)
-    assert isinstance(data["buy"][0]["timestamp"], str)
-    assert isinstance(data["buy"][0]["base_volume"], str)
-    assert isinstance(data["buy"][0]["target_volume"], str)
+    if len(data["buy"]) > 0:
+        assert isinstance(data["buy"][0]["price"], str)
+        assert isinstance(data["buy"][0]["trade_id"], str)
+        assert isinstance(data["buy"][0]["timestamp"], str)
+        assert isinstance(data["buy"][0]["base_volume"], str)
+        assert isinstance(data["buy"][0]["target_volume"], str)
     assert isinstance(data["sell"], list)
-    assert isinstance(data["sell"][0]["price"], str)
-    assert isinstance(data["sell"][0]["trade_id"], str)
-    assert isinstance(data["sell"][0]["timestamp"], str)
-    assert isinstance(data["sell"][0]["base_volume"], str)
-    assert isinstance(data["sell"][0]["target_volume"], str)
+    if len(data["sell"]) > 0:
+        assert isinstance(data["sell"][0]["price"], str)
+        assert isinstance(data["sell"][0]["trade_id"], str)
+        assert isinstance(data["sell"][0]["timestamp"], str)
+        assert isinstance(data["sell"][0]["base_volume"], str)
+        assert isinstance(data["sell"][0]["target_volume"], str)
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data

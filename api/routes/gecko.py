@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Response
 from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
 
@@ -9,7 +9,6 @@ from logger import logger
 import models
 import const
 import time
-from helper import validate_ticker
 
 router = APIRouter()
 cache = models.Cache()
@@ -132,18 +131,12 @@ class HistoricalTradesItem(BaseModel):
 class ErrorMessage(BaseModel):
     error: str = ""
 
-def validate_ticker_id(ticker_id):
-    tickers = cache.load.gecko_tickers()
-    ticker_list = [ticker['ticker_id'] for ticker in tickers['data']]
-    if ticker_id not in ticker_list:
-        raise ValueError(f"ticker_id '{ticker_id}' not in available pairs. Check the /api/v3/gecko/pairs endpoint for valid values.")
 
-    
 # Gecko Format Endpoints
 @router.get(
     '/pairs',
     response_model=List[PairsItem],
-    description="Returns a list of all pairs with price data traded within the last 'x' days."
+    description="a list pairs with price data traded within the week."
 )
 async def gecko_pairs():
     try:
@@ -175,7 +168,7 @@ def gecko_tickers():
 )
 def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int = 100):
     try:
-        validate_ticker_id(ticker_id)
+        cache.validate_ticker_id(ticker_id)
         return models.Orderbook(models.Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -191,7 +184,7 @@ def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int =
     status_code=200
 )
 def gecko_historical_trades(
-        response: Response, 
+        response: Response,
         trade_type: const.TradeType = 'all',
         ticker_id: str = "KMD_LTC",
         limit: int = 100,
@@ -199,7 +192,7 @@ def gecko_historical_trades(
         end_time: int = int(time.time())
 ):
     try:
-        validate_ticker_id(ticker_id)
+        cache.validate_ticker_id(ticker_id)
         pair = models.Pair(ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,

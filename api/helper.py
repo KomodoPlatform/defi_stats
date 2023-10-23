@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from fastapi import HTTPException
 
 
 def format_10f(number: float) -> str:
@@ -36,19 +35,6 @@ def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
     Sort a list of dicts by the value of a key.
     '''
     return sorted(data, key=lambda k: k[key], reverse=reverse)
-
-
-def validate_ticker(ticker_id: str):
-    if len(ticker_id) > 32:
-        raise HTTPException(
-            status_code=400,
-            detail="Pair cant be longer than 32 symbols"
-        )
-    elif len(ticker_id.split("_")) != 2:
-        raise HTTPException(
-            status_code=400,
-            detail="Pair should be in format BASE_TARGET"
-        )
 
 
 def set_pair_as_tuple(pair):

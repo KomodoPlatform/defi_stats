@@ -3,11 +3,10 @@ from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from logger import logger
 import models
-import const
-import sysrsync
 
 router = APIRouter()
 cache = models.Cache()
+
 
 @router.on_event("startup")
 @repeat_every(seconds=86400)

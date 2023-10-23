@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 from fixtures import historical_data, historical_trades
-from helper import list_json_key, sum_json_key, sum_json_key_10f, validate_ticker
+from helper import list_json_key, sum_json_key, sum_json_key_10f
 
 
 def test_list_json_key(historical_data, historical_trades):
@@ -21,15 +21,3 @@ def test_sum_json_key(historical_data):
 def test_sum_json_key_10f(historical_data, historical_trades):
     assert sum_json_key_10f(
         historical_data["buy"], "target_volume") == "60.0000000000"
-
-
-def test_validate_ticker():
-    with pytest.raises(Exception):
-        validate_ticker("BTCBTCBTCBTCBCBTCBTC_USDETHUSSDETHUSDETHUSDETH")
-    with pytest.raises(Exception):
-        validate_ticker("BTC_USD_ETH")
-    with pytest.raises(Exception):
-        validate_ticker("BTCUSD")
-    with pytest.raises(Exception):
-        validate_ticker("")
-    assert validate_ticker("BTC_USD") is None

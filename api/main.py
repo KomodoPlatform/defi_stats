@@ -1,20 +1,10 @@
 #!/usr/bin/env python3
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import const
 from routes import gecko, cache
 
 app = FastAPI()
-
-# Handled by NGINX
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=["*"],
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"],
-#)
 
 app.include_router(
     gecko.router,
