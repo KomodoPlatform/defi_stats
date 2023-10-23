@@ -71,8 +71,8 @@ class TickersItem(BaseModel):
 
 class TickersSummary(BaseModel):
     last_update: int = 1697383557
-    pairs_count: int = 173
-    swaps_count: int = 120
+    pairs_count: int = 9999999999
+    swaps_count: int = 9999999999
     combined_volume_usd: str = "123.456789"
     combined_liquidity_usd: str = "123.456789"
     data: List[TickersItem]
@@ -107,7 +107,7 @@ class SellItem(BaseModel):
 
 class HistoricalTradesItem(BaseModel):
     ticker_id: str = "KMD_LTC"
-    start_time: str = "1697298233"
+    start_time: str = "1600050000"
     end_time: str = "1700050000"
     limit: str = "100"
     trades_count: str = "5"
