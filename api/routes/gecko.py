@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, status
 from fastapi_utils.tasks import repeat_every
+from fastapi.responses import JSONResponse
+
 from pydantic import BaseModel
 from typing import List
 from logger import logger
@@ -127,6 +129,10 @@ class HistoricalTradesItem(BaseModel):
     sell: List[SellItem]
 
 
+class ErrorMessage(BaseModel):
+    error: str = ""
+
+    
 # Gecko Format Endpoints
 @router.get(
     '/pairs',
@@ -157,15 +163,20 @@ def gecko_tickers():
 @router.get(
     '/orderbook/{ticker_id}',
     description="Provides current order book information for the given market pair.",
-    response_model=OrderbookItem
+    response_model=OrderbookItem,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200
 )
-def gecko_orderbook(ticker_id: str = "KMD_LTC", depth: int = 100):
+def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int = 100):
     try:
+        if len(ticker_id.split("_")) != 2:
+            raise ValueError(f"Invalid ticker_id: {ticker_id}")
         return models.Orderbook(models.Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
     except Exception as e:  # pragma: no cover
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
         err = {"error": f"{type(e)} Error in /api/v3/gecko/orderbook [{ticker_id}] [depth: {depth}]]: {e}"}
         logger.warning(err)
-        return err
+        return JSONResponse(status_code=406, content=err)
 
 
 @router.get(
