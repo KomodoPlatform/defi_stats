@@ -161,8 +161,6 @@ def gecko_tickers():
 )
 def gecko_orderbook(ticker_id: str = "KMD_LTC", depth: int = 100):
     try:
-        if ticker_id.split("_") != 2:
-            return {"error": f"Invalid ticker_id: {ticker_id}"}
         return models.Orderbook(models.Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)} Error in /api/v3/gecko/orderbook [{ticker_id}] [depth: {depth}]]: {e}"}
