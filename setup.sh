@@ -12,5 +12,5 @@ echo "USERPASS=${userpass}" >> mm2/.env
 echo "USER_ID=${USER_ID}" >> mm2/.env
 echo "GROUP_ID=${GROUP_ID}" >> mm2/.env
 
-
-ln -s $(pwd)/api/cache/coins $(pwd)/mm2/coins
+echo "Installing poetry..."
+pip install poetry
