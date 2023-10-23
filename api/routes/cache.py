@@ -9,30 +9,6 @@ import sysrsync
 router = APIRouter()
 cache = models.Cache()
 
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def update_seednode_db():  # pragma: no cover
-    '''
-    This will update the MM2.db files
-    from a well populated seed node).
-    '''
-    try:
-        sysrsync.run(
-            source=const.MM2_DB_HOST_PATH,
-            source_ssh=const.MM2_DB_HOST,
-            destination=const.MM2_DB_PATH,
-            options=[
-                '-avzP'
-            ],
-            sync_source_contents=False,
-            verbose=True
-        )
-        logger.info(f"Updated MM2.db from {const.MM2_DB_HOST}")
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [cache_ticker_data]: {e}")
-
-
 @router.on_event("startup")
 @repeat_every(seconds=86400)
 def update_coins_config():  # pragma: no cover

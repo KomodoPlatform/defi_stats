@@ -20,16 +20,13 @@ API_PORT=8088
 API_HOST='0.0.0.0'
 
 # AtomicDEX API
-MM2_DB_PATH='Path/To/MM2.db'
-MM2_DB_HOST='atomic@stats-api.atomicdex.io'
-MM2_DB_HOST_PATH='/DB/43ec929fe30ee72be42c9162c56dde910a05e50d/MM2.db'
 API_PORT=7068
 API_HOST='127.0.0.1'
 POETRY_VERSION='1.6.1'
 COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
 COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 ```
-- A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync from `MM2_DB_HOST` (assuming ssh key access).
+- A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
 
 
 ### Running the API

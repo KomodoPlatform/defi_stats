@@ -16,8 +16,6 @@ API_PORT = int(os.getenv('API_PORT')) or 7068
 COINS_URL = os.getenv('COINS_URL') or coins_repo_url
 COINS_CONFIG_URL = os.getenv('COINS_CONFIG_URL') or coins__config_repo_url
 MM2_DB_PATH = f"{api_root_path}/cache/MM2.db"
-MM2_DB_HOST = os.getenv('MM2_DB_HOST')
-MM2_DB_HOST_PATH = os.getenv('MM2_DB_HOST_PATH')
 SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 
