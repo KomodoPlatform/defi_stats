@@ -328,6 +328,8 @@ class Time:
 class Orderbook:
     def __init__(self, pair, testing: bool = False):
         self.pair = pair
+        self.base = pair.base
+        self.quote = pair.quote
         self.testing = testing
         self.utils = Utils(testing)
         self.templates = Templates()
@@ -371,6 +373,8 @@ class Orderbook:
                         for i in orderbook_data["asks"]
                     ]
                 )
+            orderbook_data["total_asks_base_vol"] = total_asks_base_vol
+            orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol
             orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             return orderbook_data
@@ -469,7 +473,6 @@ class Pair:
         self.files = Files(testing=self.testing)
         self.utils = Utils()
         self.templates = Templates()
-        self.orderbook = Orderbook(pair=self, testing=self.testing)
         self.gecko_source = self.utils.load_jsonfile(
             self.files.gecko_source)
         self.as_tuple = order_pair_by_market_cap(
@@ -477,6 +480,15 @@ class Pair:
         self.as_str = self.as_tuple[0] + "_" + self.as_tuple[1]
         self.base = self.as_tuple[0]
         self.quote = self.as_tuple[1]
+        self.base_price = self.utils.get_gecko_usd_price(
+            self.base,
+            self.gecko_source
+        )
+        self.quote_price = self.utils.get_gecko_usd_price(
+            self.quote,
+            self.gecko_source
+        )
+        self.orderbook = Orderbook(pair=self, testing=self.testing)
         self.info = {
             "ticker_id": self.as_str,
             "pool_id": self.as_str,
@@ -572,14 +584,10 @@ class Pair:
             logger.warning(
                 f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
             return data
-        base_price = self.utils.get_gecko_usd_price(
-            self.base, self.gecko_source)
-        quote_price = self.utils.get_gecko_usd_price(
-            self.quote, self.gecko_source)
-        data["base"] = "KMD"
-        data["quote"] = "LTC"
-        data["base_price"] = base_price
-        data["quote_price"] = quote_price
+        data["base"] = self.base
+        data["quote"] = self.quote
+        data["base_price"] = self.base_price
+        data["quote_price"] = self.quote_price
         num_swaps = len(swaps_for_pair)
         data["trades_24hr"] = num_swaps
         swap_prices = self.get_swap_prices(swaps_for_pair)
@@ -587,9 +595,9 @@ class Pair:
         data["base_volume"] = swaps_volumes[0]
         data["quote_volume"] = swaps_volumes[1]
         data["base_volume_usd"] = Decimal(
-            swaps_volumes[0]) * Decimal(base_price)
+            swaps_volumes[0]) * Decimal(self.base_price)
         data["quote_volume_usd"] = Decimal(
-            swaps_volumes[1]) * Decimal(quote_price)
+            swaps_volumes[1]) * Decimal(self.quote_price)
         data["combined_volume_usd"] = data["base_volume_usd"] + \
             data["quote_volume_usd"]
 
@@ -625,14 +633,6 @@ class Pair:
             data = self.get_volumes_and_prices(days)
             orderbook = self.orderbook.for_pair(endpoint=False)
             suffix = self.utils.get_suffix(days)
-            base_price = Decimal(
-                self.utils.get_gecko_usd_price(
-                    self.base, self.gecko_source)
-            )
-            quote_price = Decimal(
-                self.utils.get_gecko_usd_price(
-                    self.quote, self.gecko_source)
-            )
             return {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
@@ -643,8 +643,8 @@ class Pair:
                 "trades_24hr": f'{data["trades_24hr"]}',
                 "base_volume": data["base_volume"],
                 "target_volume": data["quote_volume"],
-                "base_usd_price": base_price,
-                "target_usd_price": quote_price,
+                "base_usd_price": self.base_price,
+                "target_usd_price": self.quote_price,
                 "bid": self.utils.find_highest_bid(orderbook),
                 "ask": self.utils.find_lowest_ask(orderbook),
                 "high": format_10f(data[f"highest_price_{suffix}"]),
@@ -1064,7 +1064,7 @@ class Utils:
         try:
             return Decimal(gecko_source[coin]["usd_price"])
         except KeyError:  # pragma: no cover
-            return 0
+            return Decimal(0)
 
     def find_lowest_ask(self, orderbook: dict) -> str:
         """Returns lowest ask from provided orderbook"""
