@@ -154,6 +154,7 @@ class Cache:
                 "pairs_count": len(data),
                 "swaps_count": int(sum_json_key(data, "trades_24hr")),
                 "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
+                "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
                 "data": data
             }
 
