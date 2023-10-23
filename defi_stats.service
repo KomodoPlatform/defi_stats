@@ -7,8 +7,9 @@ StartLimitIntervalSec=60
 StartLimitBurst=5
 
 [Service]
+Environment=PATH=/home/admin/.local/bin:$PATH
 WorkingDirectory=/home/admin/defi_stats
-ExecStart=/usr/bin/python3 /home/admin/defi_stats/run.sh
+ExecStart=/home/admin/defi_stats/run_api.sh
 
 # Logs path
 StandardOutput=append:/home/admin/logs/defi-stats.log
