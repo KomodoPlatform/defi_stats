@@ -132,6 +132,11 @@ class HistoricalTradesItem(BaseModel):
 class ErrorMessage(BaseModel):
     error: str = ""
 
+def validate_ticker_id(ticker_id):
+    tickers = cache.load.gecko_tickers()
+    if ticker_id not in tickers:
+        raise ValueError(f"ticker_id '{ticker_id}' not in available pairs. Check the /api/v3/gecko/pairs endpoint for valid values.")
+
     
 # Gecko Format Endpoints
 @router.get(
@@ -169,12 +174,10 @@ def gecko_tickers():
 )
 def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int = 100):
     try:
-        if len(ticker_id.split("_")) != 2:
-            raise ValueError(f"Invalid ticker_id: {ticker_id}")
+        validate_ticker_id(ticker_id)
         return models.Orderbook(models.Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
     except Exception as e:  # pragma: no cover
-        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
-        err = {"error": f"{type(e)} Error in /api/v3/gecko/orderbook [{ticker_id}] [depth: {depth}]]: {e}"}
+        err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=406, content=err)
 
@@ -182,9 +185,12 @@ def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int =
 @router.get(
     '/historical_trades/{ticker_id}',
     description="Used to return data on historical completed trades for a given market pair.",
-    response_model=HistoricalTradesItem
+    response_model=HistoricalTradesItem,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200
 )
 def gecko_historical_trades(
+        response: Response, 
         trade_type: const.TradeType = 'all',
         ticker_id: str = "KMD_LTC",
         limit: int = 100,
@@ -192,7 +198,7 @@ def gecko_historical_trades(
         end_time: int = int(time.time())
 ):
     try:
-        validate_ticker(ticker_id)
+        validate_ticker_id(ticker_id)
         pair = models.Pair(ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,
@@ -201,6 +207,6 @@ def gecko_historical_trades(
             end_time=end_time
         )
     except Exception as e:  # pragma: no cover
-        logger.warning(
-            f"{type(e)} Error in /api/v3/gecko/historical_trades [{ticker_id}]: {e}")
-        return {"error": f"{type(e)} Error in /api/v3/gecko/historical_trades [{ticker_id}]: {e}"}
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=406, content=err)
