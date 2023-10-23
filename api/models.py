@@ -7,7 +7,6 @@ import requests
 from typing import Any
 from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
-from datetime import datetime, timedelta
 from logger import logger
 import const
 from helper import (
@@ -350,9 +349,7 @@ class Orderbook:
             orderbook_data["ticker_id"] = self.pair.as_str
             orderbook_data["base"] = self.pair.base
             orderbook_data["quote"] = self.pair.quote
-            orderbook_data["timestamp"] = "{}".format(
-                int(datetime.now().strftime("%s"))
-            )
+            orderbook_data["timestamp"] = f"{int(time.time())}"
             data = self.get_and_parse(endpoint)
             orderbook_data["bids"] = data["bids"][:depth][::-1]
             orderbook_data["asks"] = data["asks"][::-1][:depth]
@@ -620,7 +617,7 @@ class Pair:
         suffix = self.utils.get_suffix(days)
         data = self.templates.volumes_and_prices(suffix)
 
-        timestamp = int((datetime.now() - timedelta(days)).strftime("%s"))
+        timestamp = int(time.time() - 86400 * days)
         try:
             swaps_for_pair = self.DB.get_swaps_for_pair(
                 self.as_tuple,
@@ -773,7 +770,7 @@ class SqliteDB:
         swap in the last 'x' days. ('BASE', 'REL') tuples
         are sorted by market cap to conform to CEX standards.
         """
-        timestamp = int((datetime.now() - timedelta(days)).strftime("%s"))
+        timestamp = int(time.time() - 86400 * days)
         sql = f"SELECT DISTINCT maker_coin_ticker, taker_coin_ticker FROM stats_swaps \
                 WHERE started_at > {timestamp} AND is_success=1;"
         self.sql_cursor.execute(sql)
