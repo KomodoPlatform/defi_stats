@@ -40,7 +40,7 @@ def test_trades_for_pair(
     assert r[0]["type"] == "buy"
     assert r[0]["timestamp"] > r[1]["timestamp"]
     assert r[0]["base_volume"] == "500.0000000000"
-    assert r[0]["quote_volume"] == "0.9000000000"
+    assert r[0]["target_volume"] == "0.9000000000"
     assert r[0]["price"] == format_10f(0.0018)
 
     pair = setup_kmd_dgb_tuple_pair_with_db
@@ -50,7 +50,7 @@ def test_trades_for_pair(
     assert len(r) == 2
     assert r[0]["type"] == "buy"
     assert r[0]["base_volume"] == "500.0000000000"
-    assert r[0]["quote_volume"] == "0.9000000000"
+    assert r[0]["target_volume"] == "0.9000000000"
     assert r[0]["price"] == format_10f(0.0018)
 
 

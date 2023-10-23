@@ -48,9 +48,9 @@ def test_for_pair(
     assert len(r["asks"]) == 6
     assert len(r["bids"]) == 6
     assert Decimal(r["total_asks_base_vol"]) == Decimal(111 * 2)
-    assert Decimal(r["total_asks_rel_vol"]) == Decimal(3126 * 2)
+    assert Decimal(r["total_asks_quote_vol"]) == Decimal(3126 * 2)
     assert Decimal(r["total_bids_base_vol"]) == Decimal(222 * 2)
-    assert Decimal(r["total_bids_rel_vol"]) == Decimal(4848 * 2)
+    assert Decimal(r["total_bids_quote_vol"]) == Decimal(4848 * 2)
 
     orderbook = setup_kmd_dgb_orderbook
     r = orderbook.for_pair(endpoint=False)
@@ -59,9 +59,9 @@ def test_for_pair(
     assert len(r["asks"]) == 6
     assert len(r["bids"]) == 6
     assert Decimal(r["total_asks_base_vol"]) == Decimal(111 * 2)
-    assert Decimal(r["total_asks_rel_vol"]) == Decimal(3126 * 2)
+    assert Decimal(r["total_asks_quote_vol"]) == Decimal(3126 * 2)
     assert Decimal(r["total_bids_base_vol"]) == Decimal(222 * 2)
-    assert Decimal(r["total_bids_rel_vol"]) == Decimal(4848 * 2)
+    assert Decimal(r["total_bids_quote_vol"]) == Decimal(4848 * 2)
 
 
 def test_related_orderbooks_list():

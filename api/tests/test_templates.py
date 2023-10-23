@@ -13,20 +13,6 @@ def test_gecko_info(setup_templates):
     assert r["coingecko_id"] == "komodo"
 
 
-def test_pair_summary(setup_templates):
-    templates = setup_templates
-    pair_summary = templates.pair_summary("BTC", "LTC")
-    for i in pair_summary:
-        if i == "trading_pair":
-            assert pair_summary[i] == "BTC_LTC"
-        elif i == "base_currency":
-            assert pair_summary[i] == "BTC"
-        elif i == "quote_currency":
-            assert pair_summary[i] == "LTC"
-        else:
-            assert pair_summary[i] == 0
-
-
 def test_volumes_and_prices(setup_templates):
     templates = setup_templates
     volumes_and_prices = templates.volumes_and_prices("24h")

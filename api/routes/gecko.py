@@ -79,16 +79,23 @@ class TickersSummary(BaseModel):
 
 
 class OrderbookItem(BaseModel):
-    ticker_id: str = "KMD_DGB"
+    ticker_id: str = "XXX_YYY"
+    # base: str = "XXX"
+    # quote: str = "YYY"
     timestamp: str = "1700050000"
     bids: List[List] = [["123.456789", "123.456789"]]
     asks: List[List] = [["123.456789", "123.456789"]]
-    total_asks_base_vol: str = "123.456789"
-    total_bids_base_vol: str = "123.456789"
+    # total_asks_base_vol: str = "123.456789"
+    # total_bids_base_vol: str = "123.456789"
+    # total_asks_quote_vol: str = "123.456789"
+    # total_bids_quote_vol: str = "123.456789"
+    # total_asks_base_usd: str = "123.456789"
+    # total_bids_quote_usd: str = "123.456789"
+    # liquidity_usd: str = "123.456789"
 
 
 class BuyItem(BaseModel):
-    trade_id: str = "77777777-c3a3-4510-8fd8-edf73933d219"
+    trade_id: str = "77777777-7777-7777-7777-777777777777"
     price: str = "123.456789"
     base_volume: str = "1"
     target_volume: str = "123.456789"
@@ -97,7 +104,7 @@ class BuyItem(BaseModel):
 
 
 class SellItem(BaseModel):
-    trade_id: str = "77777777-e436-4405-808f-44832e97c65c"
+    trade_id: str = "77777777-7777-7777-7777-777777777777"
     price: str = "123.456789"
     base_volume: str = "123.456789"
     target_volume: str = "123.456789"

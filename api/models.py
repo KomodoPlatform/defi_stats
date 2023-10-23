@@ -139,8 +139,9 @@ class Cache:
             logger.debug(
                 f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)")
             data = [
-                Pair(i, self.db_path, self.testing,
-                     DB=DB).gecko_tickers(trades_days)
+                Pair(
+                    i, self.db_path, self.testing, DB=DB
+                ).gecko_ticker_info(trades_days)
                 for i in pairs
             ]
             # Remove None values (from coins without price)
@@ -213,7 +214,7 @@ class Cache:
 class CoinGeckoAPI:
     def __init__(self, testing: bool = False):
         self.testing = testing
-        self.utils = Utils()
+        self.utils = Utils(testing=self.testing)
         self.templates = Templates()
         self.files = Files(self.testing)
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config)
@@ -331,15 +332,20 @@ class Orderbook:
         self.base = pair.base
         self.quote = pair.quote
         self.testing = testing
-        self.utils = Utils(testing)
+        self.files = Files(testing=self.testing)
+        self.utils = Utils(testing=self.testing)
         self.templates = Templates()
-        self.dexapi = DexAPI(testing)
+        self.dexapi = DexAPI(testing=self.testing)
+        self.gecko_source = self.utils.load_jsonfile(
+            self.files.gecko_source)
         pass
 
-    def for_pair(self, endpoint=False, depth=100):
+    def for_pair(self, endpoint=False, depth=10000000):
         try:
             orderbook_data = OrderedDict()
             orderbook_data["ticker_id"] = self.pair.as_str
+            orderbook_data["base"] = self.pair.base
+            orderbook_data["quote"] = self.pair.quote
             orderbook_data["timestamp"] = "{}".format(
                 int(datetime.now().strftime("%s"))
             )
@@ -359,8 +365,20 @@ class Orderbook:
                         for i in orderbook_data["asks"]
                     ]
                 )
+                total_bids_quote_vol = sum(
+                    [
+                        Decimal(i[0]) * Decimal(i[1])
+                        for i in orderbook_data["bids"]
+                    ]
+                )
+                total_asks_quote_vol = sum(
+                    [
+                        Decimal(i[0]) * Decimal(i[1])
+                        for i in orderbook_data["asks"]
+                    ]
+                )
             else:
-                #logger.debug(f"Total bids: {orderbook_data['bids']}")
+                # logger.debug(f"Total bids: {orderbook_data['bids']}")
                 total_bids_base_vol = sum(
                     [
                         Decimal(i["base_max_volume"])
@@ -373,10 +391,38 @@ class Orderbook:
                         for i in orderbook_data["asks"]
                     ]
                 )
+                total_bids_quote_vol = sum(
+                    [
+                        Decimal(i["base_max_volume"]) * Decimal(i["price"])
+                        for i in orderbook_data["bids"]
+                    ]
+                )
+                total_asks_quote_vol = sum(
+                    [
+                        Decimal(i["base_max_volume"]) * Decimal(i["price"])
+                        for i in orderbook_data["asks"]
+                    ]
+                )
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol
             orderbook_data["total_bids_base_vol"] = total_bids_base_vol
-            orderbook_data["total_asks_base_vol"] = total_asks_base_vol
-            orderbook_data["total_bids_base_vol"] = total_bids_base_vol
+            orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
+            orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
+            self.base_price = self.utils.get_gecko_usd_price(
+                self.base,
+                self.gecko_source
+            )
+            self.quote_price = self.utils.get_gecko_usd_price(
+                self.quote,
+                self.gecko_source
+            )
+            total_bids_quote_vol
+            orderbook_data["total_asks_base_usd"] = total_asks_base_vol * \
+                self.base_price
+            orderbook_data["total_bids_quote_usd"] = total_bids_quote_vol * \
+                self.quote_price
+            orderbook_data["liquidity_usd"] = orderbook_data["total_asks_base_usd"] + \
+                orderbook_data["total_bids_quote_usd"]
+
             return orderbook_data
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [Orderbook.for_pair]: {e}")
@@ -418,15 +464,10 @@ class Orderbook:
         for i in ["asks", "bids"]:
             orderbook[i] = self.merge_orders(orderbooks_list, i)
 
-
         bids_converted_list = []
         asks_converted_list = []
         for bid in orderbook["bids"]:
             if Decimal(bid["price"]["decimal"]) != Decimal(0):
-                bid_price = self.utils.round_to_str(
-                    bid["price"]["decimal"], 13)
-                bid_vol = self.utils.round_to_str(
-                    bid["base_max_volume"]["decimal"], 13)
                 if endpoint:
                     bids_converted_list.append(
                         [
@@ -471,7 +512,7 @@ class Pair:
         self.testing = testing
         self.db_path = db_path
         self.files = Files(testing=self.testing)
-        self.utils = Utils()
+        self.utils = Utils(testing=self.testing)
         self.templates = Templates()
         self.gecko_source = self.utils.load_jsonfile(
             self.files.gecko_source)
@@ -489,6 +530,7 @@ class Pair:
             self.gecko_source
         )
         self.orderbook = Orderbook(pair=self, testing=self.testing)
+        self.orderbook_data = self.orderbook.for_pair(endpoint=False)
         self.info = {
             "ticker_id": self.as_str,
             "pool_id": self.as_str,
@@ -623,7 +665,37 @@ class Pair:
             data[f"price_change_{suffix}"] = price_change
         return data
 
-    def gecko_tickers(self, days=1):
+    def get_liquidity(self):
+        base_price = Decimal(
+            self.utils.get_gecko_usd_price(
+                self.base, self.gecko_source)
+        )
+        quote_price = Decimal(
+            self.utils.get_gecko_usd_price(
+                self.quote, self.gecko_source)
+        )
+        base_liquidity_coins = Decimal(
+            self.orderbook_data["total_asks_base_vol"])
+        rel_liquidity_coins = Decimal(
+            self.orderbook_data["total_bids_quote_vol"])
+        base_liquidity_usd = Decimal(
+            base_price) * Decimal(base_liquidity_coins)
+        rel_liquidity_coins = Decimal(rel_liquidity_coins)
+        rel_liquidity_usd = Decimal(
+            quote_price) * Decimal(rel_liquidity_coins)
+        rel_liquidity_usd = Decimal(rel_liquidity_usd)
+        base_liquidity_usd = Decimal(base_liquidity_usd)
+        return {
+            "rel_usd_price": quote_price,
+            "rel_liquidity_coins": rel_liquidity_coins,
+            "rel_liquidity_usd": rel_liquidity_usd,
+            "base_usd_price": base_price,
+            "base_liquidity_coins": base_liquidity_coins,
+            "base_liquidity_usd": base_liquidity_usd,
+            "liquidity_usd": base_liquidity_usd + rel_liquidity_usd
+        }
+
+    def gecko_ticker_info(self, days=1):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
         try:
@@ -631,7 +703,7 @@ class Pair:
             DB.conn.row_factory = sqlite3.Row
             DB.sql_cursor = DB.conn.cursor()
             data = self.get_volumes_and_prices(days)
-            orderbook = self.orderbook.for_pair(endpoint=False)
+            liquidity = self.get_liquidity()
             suffix = self.utils.get_suffix(days)
             return {
                 "ticker_id": self.as_str,
@@ -645,11 +717,12 @@ class Pair:
                 "target_volume": data["quote_volume"],
                 "base_usd_price": self.base_price,
                 "target_usd_price": self.quote_price,
-                "bid": self.utils.find_highest_bid(orderbook),
-                "ask": self.utils.find_lowest_ask(orderbook),
+                "bid": self.utils.find_highest_bid(self.orderbook_data),
+                "ask": self.utils.find_lowest_ask(self.orderbook_data),
                 "high": format_10f(data[f"highest_price_{suffix}"]),
                 "low": format_10f(data[f"lowest_price_{suffix}"]),
-                "volume_usd_24hr": format_10f(data["combined_volume_usd"])
+                "volume_usd_24hr": format_10f(data["combined_volume_usd"]),
+                "liquidity_in_usd": format_10f(liquidity["liquidity_usd"])
             }
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [Pair.ticker]: {e}")
@@ -677,9 +750,9 @@ class Pair:
 
 class SqliteDB:
     def __init__(self, path_to_db, dict_format=False, testing: bool = False):
-        self.utils = Utils()
-        self.files = Files(testing)
         self.testing = testing
+        self.utils = Utils(testing=self.testing)
+        self.files = Files(testing=self.testing)
         self.conn = sqlite3.connect(path_to_db)
         if dict_format:
             self.conn.row_factory = sqlite3.Row
@@ -883,28 +956,6 @@ class Templates:
             "coingecko_id": coin_id
         }
 
-    def pair_summary(self, base: str, quote: str):
-        data = OrderedDict()
-        data["trading_pair"] = f"{base}_{quote}"
-        data["base_currency"] = base
-        data["quote_currency"] = quote
-        data["pair_swaps_count"] = 0
-        data["base_price_usd"] = 0
-        data["rel_price_usd"] = 0
-        data["base_volume"] = 0
-        data["rel_volume"] = 0
-        data["base_liquidity_coins"] = 0
-        data["base_liquidity_usd"] = 0
-        data["base_trade_value_usd"] = 0
-        data["rel_liquidity_coins"] = 0
-        data["rel_liquidity_usd"] = 0
-        data["rel_trade_value_usd"] = 0
-        data["pair_liquidity_usd"] = 0
-        data["pair_trade_value_usd"] = 0
-        data["lowest_ask"] = 0
-        data["highest_bid"] = 0
-        return data
-
     def volumes_and_prices(self, suffix):
         return {
             "base_volume": 0,
@@ -921,12 +972,14 @@ class Templates:
     def orderbook(self, base: str, quote: str, v2=False):
         data = {
             "pair": f"{base}_{quote}",
+            "base": base,
+            "quote": quote,
             "bids": [],
             "asks": [],
             "total_asks_base_vol": 0,
-            "total_asks_rel_vol": 0,
+            "total_asks_quote_vol": 0,
             "total_bids_base_vol": 0,
-            "total_bids_rel_vol": 0
+            "total_bids_quote_vol": 0
         }
         if v2:  # pragma: no cover
             data.update({
@@ -935,7 +988,7 @@ class Templates:
                 }
             })
             data.update({
-                "total_asks_rel_vol": {
+                "total_asks_quote_vol": {
                     "decimal": 0
                 }
             })
@@ -945,7 +998,7 @@ class Templates:
                 }
             })
             data.update({
-                "total_bids_rel_vol": {
+                "total_bids_quote_vol": {
                     "decimal": 0
                 }
             })
@@ -955,12 +1008,12 @@ class Templates:
 class Utils:
     def __init__(self, testing: bool = False):
         self.testing = testing
-        self.files = Files()
+        self.files = Files(testing=self.testing)
 
     def get_db(self, db_path=const.MM2_DB_PATH, DB=None):
         if DB is not None:
             return DB
-        return SqliteDB(db_path)
+        return SqliteDB(path_to_db=db_path, testing=self.testing)
 
     def load_jsonfile(self, path, attempts=5):
         i = 0
@@ -1108,7 +1161,7 @@ class Utils:
 class DexAPI:
     def __init__(self, testing: bool = False):
         self.testing = testing
-        self.utils = Utils()
+        self.utils = Utils(testing=self.testing)
         self.files = Files(self.testing)
         self.templates = Templates()
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config)
