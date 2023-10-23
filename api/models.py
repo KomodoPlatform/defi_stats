@@ -351,14 +351,12 @@ class Orderbook:
                         for i in orderbook_data["bids"]
                     ]
                 )
-                logger.debug(f"Total bids: {total_bids_base_vol}")
                 total_asks_base_vol = sum(
                     [
                         Decimal(i[1])
                         for i in orderbook_data["asks"]
                     ]
                 )
-                logger.debug(f"Total asks: {total_asks_base_vol}")
             else:
                 #logger.debug(f"Total bids: {orderbook_data['bids']}")
                 total_bids_base_vol = sum(
@@ -367,14 +365,12 @@ class Orderbook:
                         for i in orderbook_data["bids"]
                     ]
                 )
-                logger.debug(f"Total bids: {total_bids_base_vol}")
                 total_asks_base_vol = sum(
                     [
                         Decimal(i["base_max_volume"])
                         for i in orderbook_data["asks"]
                     ]
                 )
-                logger.debug(f"Total asks: {total_asks_base_vol}")
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol
             orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             return orderbook_data
@@ -418,40 +414,42 @@ class Orderbook:
         for i in ["asks", "bids"]:
             orderbook[i] = self.merge_orders(orderbooks_list, i)
 
-        for i in [
-            "total_asks_base_vol", "total_asks_rel_vol",
-            "total_bids_base_vol", "total_bids_rel_vol"
-        ]:
-            orderbook[i] = format_10f(
-                self.merge_order_vols(orderbooks_list, i))
 
         bids_converted_list = []
         asks_converted_list = []
         for bid in orderbook["bids"]:
-            bid_price = self.utils.round_to_str(
-                bid["price"]["decimal"], 13)
-            bid_vol = self.utils.round_to_str(
-                bid["base_max_volume"]["decimal"], 13)
-            if endpoint:
-                bids_converted_list.append([bid_price, bid_vol])
-            else:
-                bids_converted_list.append({
-                    "price": bid_price,
-                    "base_max_volume": bid_vol,
-                })
+            if Decimal(bid["price"]["decimal"]) != Decimal(0):
+                bid_price = self.utils.round_to_str(
+                    bid["price"]["decimal"], 13)
+                bid_vol = self.utils.round_to_str(
+                    bid["base_max_volume"]["decimal"], 13)
+                if endpoint:
+                    bids_converted_list.append(
+                        [
+                            bid["price"]["decimal"],
+                            bid["base_max_volume"]["decimal"]
+                        ]
+                    )
+                else:
+                    bids_converted_list.append({
+                        "price": bid["price"]["decimal"],
+                        "base_max_volume": bid["base_max_volume"]["decimal"]
+                    })
 
         for ask in orderbook["asks"]:
-            ask_price = self.utils.round_to_str(
-                ask["price"]["decimal"], 13)
-            ask_vol = self.utils.round_to_str(
-                ask["base_max_volume"]["decimal"], 13)
-            if endpoint:
-                asks_converted_list.append([ask_price, ask_vol])
-            else:
-                asks_converted_list.append({
-                    "price": ask_price,
-                    "base_max_volume": ask_vol
-                })
+            if Decimal(ask["price"]["decimal"]) != Decimal(0):
+                if endpoint:
+                    asks_converted_list.append(
+                        [
+                            ask["price"]["decimal"],
+                            ask["base_max_volume"]["decimal"]
+                        ]
+                    )
+                else:
+                    asks_converted_list.append({
+                        "price": ask["price"]["decimal"],
+                        "base_max_volume": ask["base_max_volume"]["decimal"]
+                    })
         orderbook["bids"] = bids_converted_list
         orderbook["asks"] = asks_converted_list
         return orderbook
