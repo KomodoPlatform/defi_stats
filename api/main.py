@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import uvicorn
 from fastapi import FastAPI
-import const
-from routes import gecko, cache
+from const import API_HOST, API_PORT
+from routes import gecko, cache, swaps
 
 app = FastAPI()
 
@@ -14,8 +14,16 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
+app.include_router(
+    swaps.router,
+    prefix="/api/v3/swaps",
+    tags=["Swaps"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
 app.include_router(cache.router)
 
 
 if __name__ == '__main__':  # pragma: no cover
-    uvicorn.run("main:app", host=const.API_HOST, port=const.API_PORT)
+    uvicorn.run("main:app", host=API_HOST, port=API_PORT)

@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
-import os
 import time
 import pytest
-from fixtures import setup_cache, setup_utils, setup_kmd_btc_orderbook_data, \
-    setup_swaps_test_data, setup_database, setup_time, logger
-from helper import format_10f
-
-api_root_path = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
+from fixtures import (
+    setup_cache, setup_helper,
+    setup_time,
+    setup_fake_db,
+    setup_swaps_db_data,
+    API_ROOT_PATH, logger
 )
-
 
 # /////////////////////// #
 # Cache.calc class tests  #
@@ -20,7 +16,7 @@ api_root_path = os.path.dirname(
 
 def test_calc_gecko_source(setup_cache):
     calc = setup_cache.calc
-    r = calc.gecko_source()
+    r = calc.calc_gecko_source()
     assert len(r) > 0
 
 
@@ -29,7 +25,7 @@ def test_calc_gecko_source(setup_cache):
 # /////////////////////// #
 def test_save_gecko(setup_cache):
     save = setup_cache.save
-    path = f"{api_root_path}/tests/fixtures/test_save.json"
+    path = f"{API_ROOT_PATH}/tests/fixtures/test_save.json"
 
     data = "foo bar"
     with pytest.raises(TypeError):
@@ -53,28 +49,28 @@ def test_save_gecko(setup_cache):
     with pytest.raises(TypeError):
         r = save.save(None, path)
 
-    r = save.save(setup_cache.files.coins_config, data)
+    r = save.save(setup_cache.files.coins_config_file, data)
     assert "result" in r
     assert r["result"].startswith("Validated")
-    assert r["result"] == f"Validated {setup_cache.files.coins_config} data"
+    assert r["result"] == f"Validated {setup_cache.files.coins_config_file} data"
 
-    r = save.save(setup_cache.files.gecko_source, data)
+    r = save.save(setup_cache.files.gecko_source_file, data)
     assert "result" in r
     assert r["result"].startswith("Validated")
-    assert r["result"] == f"Validated {setup_cache.files.gecko_source} data"
+    assert r["result"] == f"Validated {setup_cache.files.gecko_source_file} data"
 
 
 def test_save_coins(setup_cache):
     save = setup_cache.save
-    assert "result" in save.coins()
-    r = save.coins("foo")
+    assert "result" in save.save_coins()
+    r = save.save_coins("foo")
     assert r is None
 
 
 def test_save_coins_config(setup_cache):
     save = setup_cache.save
-    assert "result" in save.coins_config()
-    r = save.coins_config("foo")
+    assert "result" in save.save_coins_config()
+    r = save.save_coins_config("foo")
     assert r is None
 
 
@@ -85,7 +81,7 @@ def test_save_coins_config(setup_cache):
 
 def test_load_coins_config(setup_cache):
     load = setup_cache.load
-    data = load.coins_config()
+    data = load.load_coins_config()
     assert "KMD" in data
     assert "KMD-BEP20" in data
     assert "LTC-segwit" in data
@@ -97,12 +93,12 @@ def test_load_coins_config(setup_cache):
 
 def test_load_coins(setup_cache):
     load = setup_cache.load
-    assert len(load.coins()) > 0
+    assert len(load.load_coins()) > 0
 
 
 def test_load_gecko(setup_cache):
     load = setup_cache.load
-    gecko = load.gecko_source()
+    gecko = load.load_gecko_source()
     assert "KMD" in gecko
     assert gecko["KMD"]["usd_market_cap"] == gecko["KMD-BEP20"]["usd_market_cap"]
     assert gecko["KMD"]["usd_price"] == gecko["KMD-BEP20"]["usd_price"]
@@ -113,42 +109,50 @@ def test_load_gecko(setup_cache):
         assert gecko[i]["coingecko_id"] != ""
 
 
-def test_calc_gecko_tickers(setup_cache):
+def test_calc_gecko_tickers(
+    setup_cache, setup_helper,
+    setup_swaps_db_data
+):
+    helper = setup_helper
     calc = setup_cache.calc
-    r = calc.gecko_tickers()
+    r = calc.calc_gecko_tickers(DB=setup_swaps_db_data)
     assert len(r) > 0
     assert isinstance(r, dict)
     assert "last_update" in r
-    assert r["swaps_count"] == 8
     for i in r["data"]:
-        logger.info(i)
-    assert r["pairs_count"] == 6
-    assert len(r["data"]) == 6
+        logger.info(
+            f"{i['ticker_id']}: [{i['trades_24hr']}] [{i['volume_usd_24hr']}]")
+    assert r["swaps_count"] == 6
+    assert r["pairs_count"] == 4
+    assert len(r["data"]) == 4
     assert "combined_volume_usd" in r
     assert isinstance(r["data"], list)
-    assert isinstance(r["data"][1], dict)
-    assert r["data"][1]["ticker_id"] == "DGB_KMD"
-    assert r["data"][1]["base_currency"] == "DGB"
-    assert r["data"][1]["last_price"] == format_10f(0.0018000000)
-    assert int(r["data"][1]["last_trade"]) > int(time.time() - 86400)
-    assert r["data"][1]["trades_24hr"] == "2"
-    assert r["data"][1]["base_volume"] == format_10f(1500)
-    assert r["data"][1]["target_volume"] == format_10f(1.9)
-    assert r["data"][1]["base_usd_price"] == format_10f(0.01)
-    assert r["data"][1]["target_usd_price"] == format_10f(1)
-    assert r["data"][1]["high"] == format_10f(0.0018)
-    assert r["data"][1]["low"] == format_10f(0.001)
-    assert "volume_usd_24hr" in r["data"][1]
-    assert "ask" in r["data"][1]
-    assert "bid" in r["data"][1]
+    assert isinstance(r["data"][0], dict)
+    assert r["data"][0]["ticker_id"] == "DGB_KMD-BEP20"
+    assert r["data"][0]["base_currency"] == "DGB"
+    assert r["data"][0]["last_price"] == helper.format_10f(0.0018000000)
+    assert int(r["data"][0]["last_trade"]) > int(time.time() - 86400)
+    assert r["data"][0]["trades_24hr"] == "2"
+    assert r["data"][0]["base_volume"] == helper.format_10f(1500)
+    assert r["data"][0]["target_volume"] == helper.format_10f(1.9)
+    assert r["data"][0]["base_usd_price"] == helper.format_10f(0.01)
+    assert r["data"][0]["target_usd_price"] == helper.format_10f(1)
+    assert r["data"][0]["high"] == helper.format_10f(0.0018)
+    assert r["data"][0]["low"] == helper.format_10f(0.001)
+    assert "volume_usd_24hr" in r["data"][0]
+    assert "ask" in r["data"][0]
+    assert "bid" in r["data"][0]
 
 
-def test_gecko_pairs(setup_cache):
+def test_calc_gecko_pairs(setup_cache, setup_swaps_db_data):
     cache = setup_cache
-    r = cache.calc.gecko_pairs(days=7, exclude_unpriced=False)
-    r2 = cache.calc.gecko_pairs()
-    assert len(r) > 0
-    assert len(r2) > 0
+    r = cache.calc.calc_gecko_pairs(
+        days=7, exclude_unpriced=False, DB=setup_swaps_db_data)
+    r2 = cache.calc.calc_gecko_pairs(DB=setup_swaps_db_data)
+    logger.info(r)
+    logger.info(r2)
+    assert len(r) == 6
+    assert len(r2) == 5
     assert len(r) > len(r2)
     assert isinstance(r, list)
     assert isinstance(r[0], dict)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from fastapi.testclient import TestClient
-from decimal import Decimal
 import pytest
 from main import app
 from logger import logger
@@ -99,6 +98,25 @@ def test_historical_trades_endpoint():
         assert isinstance(data["sell"][0]["timestamp"], str)
         assert isinstance(data["sell"][0]["base_volume"], str)
         assert isinstance(data["sell"][0]["target_volume"], str)
+    with pytest.raises(Exception):
+        data = r.json()
+        assert "error" in data
+
+
+def test_get_swap():
+    '''
+    Returns a single swap from the database
+    '''
+    r = client.get("/api/v3/swaps/swap/39236a1b-f163-4d4f-aa8e-5fe039064e8d")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, dict)
+    assert data["uuid"] == "39236a1b-f163-4d4f-aa8e-5fe039064e8d"
+    assert data["maker_amount"] == 0.012370568057616637
+    assert data["taker_amount"] == 0.4216075605269923
+    assert data["taker_coin_ticker"] == "DGB"
+    assert data["started_at"] == 1698006396
+
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
