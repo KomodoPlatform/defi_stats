@@ -120,7 +120,7 @@ class SqliteDB:
                     sql += f" AND maker_coin_platform='{base_platform}'"
                     sql += f" AND taker_coin_platform='{quote_platform}'"
                     sql += " AND is_success=1 ORDER BY started_at DESC"
-                    if limit != 0:
+                    if limit < 1:
                         sql += f" LIMIT {limit}"
                     sql += ";"
 
@@ -139,7 +139,7 @@ class SqliteDB:
                     sql += f" AND taker_coin_platform='{base_platform}'"
                     sql += f" AND maker_coin_platform='{quote_platform}'"
                     sql += " AND is_success=1 ORDER BY started_at DESC"
-                    if limit != 0:
+                    if limit < 1:
                         sql += f" LIMIT {limit}"
                     sql += ";"
                     self.sql_cursor.execute(sql)
@@ -154,7 +154,19 @@ class SqliteDB:
                         swap["trade_type"] = "sell"
 
                     swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
-            return swaps_for_pair
+            # Sort swaps by timestamp
+            swaps_for_pair = sorted(
+                swaps_for_pair, key=lambda k: k["started_at"], reverse=True
+            )
+            if trade_type == TradeType.BUY:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
+                ]
+            elif trade_type == TradeType.SELL:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
+                ]
+            return swaps_for_pair[:limit]
 
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
