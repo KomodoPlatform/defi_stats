@@ -31,11 +31,12 @@ def validate_ticker_id(ticker_id, valid_tickers):
 
 def validate_positive_numeric(value, name, is_int=False):
     try:
-        if Decimal(value) <= 0:
+        if Decimal(value) < 0:
             raise ValueError(f"{name} can not be negative!")
         if is_int and Decimal(value) % 1 != 0:
             raise ValueError(f"{name} must be an integer!")
-    except:
+    except Exception as e:
+        logger.warning(f"{type(e)} Error validating {name}: {e}")
         raise ValueError(f"{name} must be numeric!")
 
 # Gecko Caching

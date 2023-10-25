@@ -29,9 +29,9 @@ class TickersItem(BaseModel):
 
 
 class TickersSummary(BaseModel):
-    last_update: int = 1697383557
-    pairs_count: int = 9999999999
-    swaps_count: int = 9999999999
+    last_update: str = "1697383557"
+    pairs_count: str = "9999999999"
+    swaps_count: str = "9999999999"
     combined_volume_usd: str = "123.456789"
     combined_liquidity_usd: str = "123.456789"
     data: List[TickersItem]
@@ -90,17 +90,17 @@ class SwapItem(BaseModel):
     maker_coin: str = "XXX"
     taker_coin: str = "YYY"
     uuid: str = "77777777-db0e-4229-9143-f05cd0faa7e1"
-    started_at: int = 1700000000
-    finished_at: int = 1700000000
-    maker_amount: float = 123.456789
-    taker_amount: float = 123.456789
-    is_success: int = 1
+    started_at: str = "1700000000"
+    finished_at: str = "1700000000"
+    maker_amount: str = "123.456789"
+    taker_amount: str = "123.456789"
+    is_success: str = 1
     maker_coin_ticker: str = "XXX"
     maker_coin_platform: str = "segwit"
     taker_coin_ticker: str = "YYY"
     taker_coin_platform: str = "BEP20"
-    maker_coin_usd_price: float = 123.456789
-    taker_coin_usd_price: float = 123.456789
+    maker_coin_usd_price: str = "123.456789"
+    taker_coin_usd_price: str = "123.456789"
 
 
 # Generic Base Models
