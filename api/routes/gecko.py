@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Response
 from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
+from decimal import Decimal
 from typing import List
 from logger import logger
 from models import (
@@ -28,6 +29,12 @@ def validate_ticker_id(ticker_id, valid_tickers):
         msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
         raise ValueError(msg)
 
+def validate_positive_numeric(value, name):
+    try:
+        if Decimal(value) <= 0:
+            raise ValueError(f"{name} can not be negative!")
+    except:
+        raise ValueError(f"{name} must be numeric!")
 
 # Gecko Caching
 
@@ -123,6 +130,16 @@ def gecko_historical_trades(
         gecko_pairs = cache.load.load_gecko_pairs()
         valid_tickers = [ticker['ticker_id'] for ticker in gecko_pairs]
         validate_ticker_id(ticker_id, valid_tickers)
+        for value, name in [
+            (limit, 'limit'),
+            (start_time, 'start_time'),
+            (end_time, 'end_time')
+        ]:
+            validate_positive_numeric(value, name)
+        if start_time > end_time:
+            raise ValueError("start_time must be less than end_time")
+        if trade_type not in ['all', 'buy', 'sell']:
+            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         pair = Pair(ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,
