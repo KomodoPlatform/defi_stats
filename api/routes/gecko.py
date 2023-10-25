@@ -29,10 +29,12 @@ def validate_ticker_id(ticker_id, valid_tickers):
         msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
         raise ValueError(msg)
 
-def validate_positive_numeric(value, name):
+def validate_positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) <= 0:
             raise ValueError(f"{name} can not be negative!")
+        if is_int and Decimal(value) % 1 != 0:
+            raise ValueError(f"{name} must be an integer!")
     except:
         raise ValueError(f"{name} must be numeric!")
 

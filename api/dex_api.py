@@ -22,11 +22,18 @@ class DexAPI:
             r = requests.post(self.mm2_host, json=params)
             return json.loads(r.text)["result"]
         except Exception as e:  # pragma: no cover
+            if "CoinConfigNotFound" in r.text:
+                resp = json.loads(r.text)
+                err = {
+                    "error": f"CoinConfigNotFound",
+                    "message": r.text
+                }
+                logger.error(f"CoinConfigNotFound for {params['params']}")
             err = {
                 "error": f"{e}",
                 "message": r.text
             }
-            logger.error(err)
+            # logger.error(err)
             return err
 
     # tuple, string, string -> list
@@ -35,6 +42,18 @@ class DexAPI:
         try:
             base = pair[0]
             quote = pair[1]
+            # Check if pair is in coins config
+            if len(set(pair).intersection(set(self.coins_config.keys()))) != 2:
+                if base not in self.coins_config.keys():
+                    err = {
+                        "error": f"CoinConfigNotFound for {base}"
+                    }
+                else:
+                    err = {
+                        "error": f"CoinConfigNotFound for {quote}"
+                    }
+                logger.warning(err)
+                return err
             if self.testing:
                 orderbook = f"{API_ROOT_PATH}/tests/fixtures/orderbook/{base}_{quote}.json"
                 return self.utils.load_jsonfile(orderbook)

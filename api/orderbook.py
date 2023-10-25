@@ -98,9 +98,12 @@ class Orderbook:
 
             return orderbook_data
         except Exception as e:  # pragma: no cover
-            logger.error(
-                f"{type(e)} Error in [Orderbook.for_pair] {self.pair.as_str}: {e}")
-            return []
+            logger.warning(f"Error getting orderbook for {self.pair.as_str}")
+            if "bids" not in orderbook_data:
+                orderbook_data["bids"] = []
+            if "asks" not in orderbook_data:
+                orderbook_data["asks"] = []
+            return orderbook_data
 
     def get_and_parse(self, endpoint=False):
         orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)

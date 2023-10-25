@@ -199,8 +199,16 @@ class Pair:
 
     def get_liquidity(self):
         '''Liquidity for pair from current orderbook & usd price.'''
-        base_liq_coins = Decimal(self.orderbook_data["total_asks_base_vol"])
-        rel_liq_coins = Decimal(self.orderbook_data["total_bids_quote_vol"])
+        x = isinstance(self.orderbook_data, dict)
+        if not x:
+            logger.warning(f"{self.as_str} {x}")
+            logger.warning(type(self.orderbook_data))
+        if "total_asks_base_vol" in self.orderbook_data:
+            base_liq_coins = Decimal(self.orderbook_data["total_asks_base_vol"])
+            rel_liq_coins = Decimal(self.orderbook_data["total_bids_quote_vol"])
+        else:
+            base_liq_coins = Decimal(0)
+            rel_liq_coins = Decimal(0)
         base_liq_usd = Decimal(self.base_price) * Decimal(base_liq_coins)
         rel_liq_coins = Decimal(rel_liq_coins)
         rel_liq_usd = Decimal(self.quote_price) * Decimal(rel_liq_coins)
@@ -232,6 +240,7 @@ class Pair:
             data = self.get_volumes_and_prices(days, DB=DB)
             liquidity = self.get_liquidity()
             suffix = self.utils.get_suffix(days)
+                
             return {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
