@@ -2,7 +2,7 @@
 import uvicorn
 from fastapi import FastAPI
 from const import API_HOST, API_PORT
-from routes import gecko, cache, swaps
+from routes import gecko, cache, swaps, tickers
 
 app = FastAPI()
 
@@ -23,6 +23,13 @@ app.include_router(
 )
 
 app.include_router(cache.router)
+app.include_router(
+    tickers.router,
+    prefix="/api/v3/tickers",
+    tags=["Tickers"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
 
 
 if __name__ == '__main__':  # pragma: no cover

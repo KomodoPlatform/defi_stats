@@ -6,10 +6,10 @@ from decimal import Decimal
 from typing import List
 from logger import logger
 from models import (
-    PairsItem,
-    TickersSummary,
-    OrderbookItem,
-    HistoricalTradesItem,
+    GeckoPairsItem,
+    GeckoTickersSummary,
+    GeckoOrderbookItem,
+    GeckoHistoricalTradesItem,
     ErrorMessage
 )
 from cache import Cache
@@ -71,7 +71,7 @@ def cache_gecko_tickers():  # pragma: no cover
 # Gecko Endpoints
 @router.get(
     '/pairs',
-    response_model=List[PairsItem],
+    response_model=List[GeckoPairsItem],
     description="a list pairs with price data traded within the week."
 )
 async def gecko_pairs():
@@ -84,7 +84,7 @@ async def gecko_pairs():
 
 @router.get(
     '/tickers',
-    response_model=TickersSummary,
+    response_model=GeckoTickersSummary,
     description="24-hour price & volume for each market pair traded in last 7 days."
 )
 def gecko_tickers():
@@ -98,7 +98,7 @@ def gecko_tickers():
 @router.get(
     '/orderbook/{ticker_id}',
     description="Provides current order book information for the given market pair.",
-    response_model=OrderbookItem,
+    response_model=GeckoOrderbookItem,
     responses={406: {"model": ErrorMessage}},
     status_code=200
 )
@@ -117,7 +117,7 @@ def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int =
 @router.get(
     '/historical_trades/{ticker_id}',
     description="Data for completed trades for a given market pair.",
-    response_model=HistoricalTradesItem,
+    response_model=GeckoHistoricalTradesItem,
     responses={406: {"model": ErrorMessage}},
     status_code=200
 )

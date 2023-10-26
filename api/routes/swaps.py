@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from const import MM2_DB_PATH
 from logger import logger
-from models import ErrorMessage, SwapItem
+from models import ErrorMessage, GeckoSwapItem
 from db import SqliteDB
 
 router = APIRouter()
@@ -13,7 +13,7 @@ router = APIRouter()
     '/swap/{uuid}',
     description="Get swap info from a uuid.",
     responses={406: {"model": ErrorMessage}},
-    response_model=SwapItem,
+    response_model=GeckoSwapItem,
     status_code=200
 )
 def get_swap(uuid: str):
