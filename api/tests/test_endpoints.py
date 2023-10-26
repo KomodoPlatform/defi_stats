@@ -12,8 +12,8 @@ def test_gecko_pairs_endpoint():
     assert r.status_code == 200
     data = r.json()
     ticker_list = [i["ticker_id"] for i in data]
-    assert "KMD_BTC" in ticker_list
-    assert "BTC_KMD" not in ticker_list
+    assert "KMD_LTC" in ticker_list
+    assert "LTC_KMD" not in ticker_list
     assert isinstance(data, list)
     for i in data:
         assert isinstance(i, dict)
@@ -112,10 +112,10 @@ def test_get_swap():
     data = r.json()
     assert isinstance(data, dict)
     assert data["uuid"] == "39236a1b-f163-4d4f-aa8e-5fe039064e8d"
-    assert data["maker_amount"] == 0.012370568057616637
-    assert data["taker_amount"] == 0.4216075605269923
+    assert data["maker_amount"] == "0.012370568057616637"
+    assert data["taker_amount"] == "0.4216075605269923"
     assert data["taker_coin_ticker"] == "DGB"
-    assert data["started_at"] == 1698006396
+    assert data["started_at"] == "1698006396"
 
     with pytest.raises(Exception):
         data = r.json()

@@ -27,7 +27,6 @@ class Orderbook:
         try:
             orderbook_data = OrderedDict()
             orderbook_data["ticker_id"] = self.pair.as_str
-            # logger.warning(f"Orderbook for {self.pair.as_str}")
             orderbook_data["base"] = self.pair.base
             orderbook_data["quote"] = self.pair.quote
             orderbook_data["timestamp"] = f"{int(time.time())}"
@@ -98,7 +97,7 @@ class Orderbook:
 
             return orderbook_data
         except Exception as e:  # pragma: no cover
-            logger.warning(f"Error getting orderbook for {self.pair.as_str}")
+            logger.warning(f"Error getting orderbook for {self.pair.as_str}: {e}")
             if "bids" not in orderbook_data:
                 orderbook_data["bids"] = []
             if "asks" not in orderbook_data:
@@ -108,7 +107,8 @@ class Orderbook:
     def get_and_parse(self, endpoint=False):
         orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
         for i in ["asks", "bids"]:
-            orderbook[i] = self.dexapi.orderbook(self.pair.as_tuple)[i]
+            x = self.dexapi.orderbook(self.pair.as_tuple)[i]
+            orderbook[i] = x
 
         bids_converted_list = []
         asks_converted_list = []

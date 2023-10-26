@@ -52,10 +52,15 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     for i in swaps1:
         logger.info(i)
     assert len(swaps1) == 3
-    assert swaps1[0]["trade_type"] == "sell"
-    assert swaps2[0]["trade_type"] == "sell"
+    assert swaps1[2]["trade_type"] == "sell"
+    for i in swaps2:
+        logger.info(i)
+    assert len(swaps2) == 3
+    assert swaps2[0]["trade_type"] == "buy"
 
     swaps = DB.get_swaps_for_pair(("DGB", "LTC"), two_months_ago)
+    for i in swaps:
+        logger.info(i)
     assert len(swaps) == 3
     assert swaps[0]["trade_type"] == "buy"
 

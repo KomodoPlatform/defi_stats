@@ -122,9 +122,9 @@ def test_calc_gecko_tickers(
     for i in r["data"]:
         logger.info(
             f"{i['ticker_id']}: [{i['trades_24hr']}] [{i['volume_usd_24hr']}]")
-    assert r["swaps_count"] == 6
-    assert r["pairs_count"] == 4
-    assert len(r["data"]) == 4
+    assert r["swaps_count"] == 7
+    assert r["pairs_count"] == 5
+    assert len(r["data"]) == 5
     assert "combined_volume_usd" in r
     assert isinstance(r["data"], list)
     assert isinstance(r["data"][0], dict)
