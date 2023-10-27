@@ -90,3 +90,8 @@ class Templates:
                 }
             })
         return data
+
+
+class UuidNotFoundException(Exception):
+    "Raised when a UUID is not found in the database"
+    pass

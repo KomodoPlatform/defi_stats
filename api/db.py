@@ -182,9 +182,11 @@ class SqliteDB:
         self.sql_cursor = self.conn.cursor()
         self.sql_cursor.execute(sql)
         data = self.sql_cursor.fetchall()
-        data = [dict(row) for row in data][0]
+        data = [dict(row) for row in data]
         logger.info(data)
-        return data
+        if len(data) == 0:
+            return {"error": f"swap uuid {uuid} not found"}
+        return data[0]
 
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
         """
