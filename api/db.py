@@ -186,7 +186,13 @@ class SqliteDB:
         logger.info(data)
         if len(data) == 0:
             return {"error": f"swap uuid {uuid} not found"}
-        return data[0]
+        else:
+            data = data[0]
+        for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
+            if data[i] is None:
+                data[i] = "0"
+        return data
+            
 
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
         """
