@@ -50,11 +50,11 @@ def set_pair_as_tuple(pair):
 
 
 def order_pair_by_market_cap(pair, gecko_source):
-    if pair[0] in gecko_source:
-        if pair[1] in gecko_source:
+    if pair[0].split("-")[0] in gecko_source:
+        if pair[1].split("-")[0] in gecko_source:
             if (
-                gecko_source[pair[1]]["usd_market_cap"]
-                < gecko_source[pair[0]]["usd_market_cap"]
+                gecko_source[pair[1].split("-")[0]]["usd_market_cap"]
+                < gecko_source[pair[0].split("-")[0]]["usd_market_cap"]
             ):
                 pair = (pair[1], pair[0])
         else:

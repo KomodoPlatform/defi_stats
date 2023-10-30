@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-import sys
-import pytest
-import models
-from fixtures import setup_templates, logger
+from fixtures import setup_templates
 
 
 def test_gecko_info(setup_templates):

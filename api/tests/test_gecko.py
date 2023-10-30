@@ -5,8 +5,7 @@ import sqlite3
 import pytest
 from decimal import Decimal
 from fixtures import (
-    setup_swaps_test_data,
-    setup_database,
+    setup_swaps_db_data,
     setup_gecko,
     setup_gecko_info,
     setup_gecko_coin_ids,

@@ -3,158 +3,28 @@ import os
 import sys
 import pytest
 from decimal import Decimal
-api_root_path = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
-sys.path.append(api_root_path)
-print(sys.path)
+API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(API_ROOT_PATH)
+from generics import Templates, Time
+from external import CoinGeckoAPI
+from dex_api import DexAPI
+from utils import Utils
+from cache import Cache
+from pair import Pair
+from db import SqliteDB, get_db
+from orderbook import Orderbook
+import helper
 from logger import logger
-import models
 
 
 @pytest.fixture
-def setup_dexapi():
-    yield models.DexAPI(testing=True)
-
-
-@pytest.fixture
-def setup_time():
-    yield models.Time()
-
-
-@pytest.fixture
-def setup_gecko():
-    yield models.CoinGeckoAPI(testing=True)
-
-
-@pytest.fixture
-def setup_gecko_coin_ids(setup_gecko):
-    gecko = setup_gecko
-    return gecko.get_gecko_coin_ids_list()
-
-
-@pytest.fixture
-def setup_gecko_info(setup_gecko):
-    gecko = setup_gecko
-    return gecko.get_gecko_info_dict()
-
-
-@pytest.fixture
-def setup_cache(setup_swaps_test_data):
-    yield models.Cache(testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_templates():
-    templates = models.Templates()
-    yield templates
-
-
-@pytest.fixture
-def setup_rick_morty_tuple_pair():
-    yield models.Pair(("RICK", "MORTY"), testing=True)
-
-
-@pytest.fixture
-def setup_rick_morty_str_pair():
-    yield models.Pair("RICK_MORTY", testing=True)
-
-
-@pytest.fixture
-def setup_dgb_kmd_str_pair_with_db(setup_swaps_test_data):
-    yield models.Pair("DGB_KMD", testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_dgb_kmd_orderbook(setup_dgb_kmd_str_pair_with_db):
-    pair = setup_dgb_kmd_str_pair_with_db
-    yield models.Orderbook(pair=pair, testing=True)
-
-
-@pytest.fixture
-def setup_kmd_dgb_tuple_pair_with_db(setup_swaps_test_data):
-    yield models.Pair(("KMD", "DGB"), testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_kmd_dgb_orderbook(setup_kmd_dgb_tuple_pair_with_db):
-    pair = setup_kmd_dgb_tuple_pair_with_db
-    yield models.Orderbook(pair=pair, testing=True)
-
-
-@pytest.fixture
-def setup_kmd_ltc_str_pair_with_db(setup_swaps_test_data):
-    yield models.Pair("KMD_LTC", testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_kmd_ltc_list_pair_with_db(setup_swaps_test_data):
-    yield models.Pair(["KMD", "LTC"], testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_kmd_ltc_orderbook(setup_kmd_ltc_str_pair_with_db):
-    pair = setup_kmd_ltc_str_pair_with_db
-    yield models.Orderbook(pair=pair, testing=True)
-
-
-@pytest.fixture
-def setup_kmd_btc_list_pair_with_db(setup_swaps_test_data):
-    yield models.Pair(["KMD", "BTC"], testing=True, DB=setup_swaps_test_data)
-
-
-@pytest.fixture
-def setup_kmd_btc_orderbook(setup_swaps_test_data, setup_kmd_btc_str_pair_with_db):
-    pair = setup_kmd_btc_str_pair_with_db
-    yield models.Orderbook(pair=pair, testing=True)
-
-
-@pytest.fixture
-def setup_not_a_real_pair():
-    yield models.Pair("NotARealPair", testing=True)
-
-
-@pytest.fixture
-def setup_three_ticker_pair():
-    yield models.Pair("NOT_GONNA_WORK", testing=True)
-
-
-@pytest.fixture
-def setup_not_existing_pair():
-    yield models.Pair("XYZ_123", testing=True)
-
-
-@pytest.fixture
-def setup_utils():
-    yield models.Utils(testing=True)
-
-
-@pytest.fixture
-def setup_kmd_btc_segwit_orderbook_data(setup_utils):
-    utils = setup_utils
-    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC-segwit.json"
-    orderbook = utils.load_jsonfile(file)
-    yield orderbook
-
-
-@pytest.fixture
-def setup_kmd_btc_bep20_orderbook_data(setup_utils):
-    utils = setup_utils
-    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC-BEP20.json"
-    orderbook = utils.load_jsonfile(file)
-    yield orderbook
-
-
-@pytest.fixture
-def setup_kmd_btc_orderbook_data(setup_utils):
-    utils = setup_utils
-    file = f"{api_root_path}/tests/fixtures/orderbook/KMD_BTC.json"
-    orderbook = utils.load_jsonfile(file)
-    yield orderbook
-
-
-@pytest.fixture
-def setup_database():
+def setup_fake_db():
     """ Fixture to set up the in-memory database with test data """
-    DB = models.SqliteDB(':memory:', False, True)
+    DB = SqliteDB(
+        path_to_db=':memory:',
+        testing=True,
+        dict_format=False
+    )
     DB.sql_cursor.execute('''
         CREATE TABLE stats_swaps (
             id INTEGER NOT NULL PRIMARY KEY,
@@ -178,44 +48,195 @@ def setup_database():
 
 
 @pytest.fixture
-def setup_swaps_test_data(setup_database, setup_time):
-    DB = setup_database
+def setup_actual_db():
+    yield get_db()
+
+
+@pytest.fixture
+def setup_dexapi():
+    yield DexAPI(testing=True)
+
+
+@pytest.fixture
+def setup_time():
+    yield Time()
+
+
+@pytest.fixture
+def setup_gecko():
+    yield CoinGeckoAPI(testing=True)
+
+
+@pytest.fixture
+def setup_gecko_coin_ids(setup_gecko):
+    gecko = setup_gecko
+    yield gecko.get_gecko_coin_ids_list()
+
+
+@pytest.fixture
+def setup_gecko_info(setup_gecko):
+    gecko = setup_gecko
+    yield gecko.get_gecko_info_dict()
+
+
+@pytest.fixture
+def setup_cache():
+    yield Cache(testing=True)
+
+
+@pytest.fixture
+def setup_helper():
+    yield helper
+
+
+@pytest.fixture
+def setup_templates():
+    templates = Templates()
+    yield templates
+
+
+@pytest.fixture
+def setup_rick_morty_tuple_pair():
+    yield Pair(("RICK", "MORTY"), testing=True)
+
+
+@pytest.fixture
+def setup_rick_morty_str_pair():
+    yield Pair("RICK_MORTY", testing=True)
+
+
+@pytest.fixture
+def setup_dgb_kmd_str_pair(setup_swaps_db_data):
+    yield Pair("DGB_KMD", testing=True)
+
+
+@pytest.fixture
+def setup_dgb_kmd_orderbook(setup_dgb_kmd_str_pair):
+    pair = setup_dgb_kmd_str_pair
+    yield Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_kmd_dgb_tuple_pair(setup_swaps_db_data):
+    yield Pair(("KMD", "DGB"), testing=True)
+
+
+@pytest.fixture
+def setup_kmd_dgb_orderbook(setup_kmd_dgb_tuple_pair):
+    pair = setup_kmd_dgb_tuple_pair
+    yield Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_kmd_ltc_str_pair(setup_swaps_db_data):
+    yield Pair("KMD_LTC", testing=True)
+
+
+@pytest.fixture
+def setup_ltc_kmd_list_pair(setup_swaps_db_data):
+    yield Pair(["LTC", "KMD"], testing=True)
+
+
+@pytest.fixture
+def setup_kmd_ltc_orderbook(setup_kmd_ltc_str_pair):
+    pair = setup_kmd_ltc_str_pair
+    yield Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_kmd_btc_list_pair(setup_swaps_db_data):
+    yield Pair(["KMD", "BTC"], testing=True)
+
+
+@pytest.fixture
+def setup_kmd_btc_orderbook(setup_swaps_db_data, setup_kmd_btc_str_pair):
+    pair = setup_kmd_btc_str_pair
+    yield Orderbook(pair=pair, testing=True)
+
+
+@pytest.fixture
+def setup_not_a_real_pair():
+    yield Pair("NotARealPair", testing=True)
+
+
+@pytest.fixture
+def setup_three_ticker_pair():
+    yield Pair("NOT_GONNA_WORK", testing=True)
+
+
+@pytest.fixture
+def setup_not_existing_pair():
+    yield Pair("XYZ_123", testing=True)
+
+
+@pytest.fixture
+def setup_utils():
+    yield Utils(testing=True)
+
+
+@pytest.fixture
+def setup_kmd_btc_segwit_orderbook_data(setup_utils):
+    utils = setup_utils
+    file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC-segwit.json"
+    orderbook = utils.load_jsonfile(file)
+    yield orderbook
+
+
+@pytest.fixture
+def setup_kmd_btc_bep20_orderbook_data(setup_utils):
+    utils = setup_utils
+    file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC-BEP20.json"
+    orderbook = utils.load_jsonfile(file)
+    yield orderbook
+
+
+@pytest.fixture
+def setup_kmd_btc_orderbook_data(setup_utils):
+    utils = setup_utils
+    file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC.json"
+    orderbook = utils.load_jsonfile(file)
+    yield orderbook
+
+
+@pytest.fixture
+def setup_swaps_db_data(setup_fake_db, setup_time):
     time = setup_time
     sample_data = [
-        (1, 'KMD', 'MORTY', '01fe4251-ffe1-4c7a-ad7f-04b1df6323b6', time.hours_ago(1) - 1,
+        (4, 'MCL', 'KMD', '44444444-FAIL-FAIL-FAIL-44444444', time.hours_ago(1) - 3,
+         time.hours_ago(1) + 3, 1, 1, 0, 'MCL', '', 'KMD', '', None, None),
+        (1, 'KMD', 'MORTY', '11111111-ffe1-4c7a-ad7f-04b1df6323b6', time.hours_ago(1) - 1,
          time.hours_ago(1) + 1, 1, 1, 1, 'KMD', '', 'MORTY', '', None, None),
-        (2, 'DGB-segwit', 'KMD-BEP20', '50fe4211-fd33-4dc4-2a7f-f6320b1d3b64',
+        (2, 'DGB-segwit', 'KMD-BEP20', '22222222-fd33-4dc4-2a7f-f6320b1d3b64',
          time.hours_ago(1) - 2, time.hours_ago(1) + 2, 1000, 1, 1, 'DGB', 'segwit',
          'KMD', 'BEP20', None, None),
-        (3, 'DGB-segwit', 'KMD-BEP20', '50fe4216-fd33-4dc4-2a7f-f6320b1d3b64',
+        (3, 'DGB-segwit', 'KMD-BEP20', '33333333-fd33-4dc4-2a7f-f6320b1d3b64',
          time.hours_ago(1) + 5, time.hours_ago(1) + 60, 500, 0.9, 1, 'DGB', 'segwit',
          'KMD', 'BEP20', None, None),
-        (4, 'MCL', 'KMD', '4d1dc872-7262-46b7-840d-5e9b1aad243f', time.hours_ago(1) - 3,
-         time.hours_ago(1) + 3, 1, 1, 0, 'MCL', '', 'KMD', '', None, None),
-        (5, 'DGB', 'DOGE', '0d232e54-ee4b-494f-a2fb-48467614b613', time.hours_ago(1) - 4,
-         time.hours_ago(1) + 4, 1, 1, 1, 'DGB', '', 'DOGE', '', None, None),
-        (6, 'LTC', 'KMD', '71dcc872-75a2-d4ef-009d-5e9baad162ef', time.hours_ago(1) - 5,
-         time.hours_ago(1) + 5, 1, 10, 1, 'LTC', '', 'KMD', '', None, None),
-        (7, 'BTC', 'DOGE', '8724d1dc-2762-4633-8add-6ad2e9b1a4e7', time.hours_ago(1) - 6,
-         time.hours_ago(1) + 6, 1, 1, 1, 'BTC', '', 'DOGE', '', None, None),
-        (8, 'KMD', 'DGB', '24d1dc87-7622-6334-add8-9b1a4e76ad2e', time.hours_ago(1) - 7,
-         time.hours_ago(1) + 7, 1000000, 1, 1, 'KMD', '', 'BTC', '', None, None),
-        (9, 'LTC', 'KMD', 'c871dc72-73a2-d46d-900d-aad5e9b162ef', time.hours_ago(2) - 8,
-         time.hours_ago(2) + 8, 1, 100, 1, 'LTC', '', 'KMD', '', None, None),
-        (10, 'KMD-BEP20', 'BTC', '03d3afc2-273f-40a5-bcd4-31efdb6bcc8b', time.days_ago(1) - 9,
-         time.days_ago(1) + 9, 2000000, 1, 1, 'KMD', 'BEP20', 'BTC', '', None, None),
-        (11, 'BTC', 'LTC', 'acf3e087-ac6f-4649-b420-5eb8e2924bf2', time.days_ago(7) - 10,
+        (5, 'DGB', 'LTC', '55555555-ee4b-494f-a2fb-48467614b613', time.hours_ago(1),
+         time.hours_ago(1) + 4, 1, 1, 1, 'DGB', '', 'LTC', '', None, None),
+        (6, 'KMD', 'LTC-segwit', '666666666-75a2-d4ef-009d-5e9baad162ef', time.hours_ago(1),
+         time.hours_ago(1) + 5, 1, 5, 1, 'KMD', '', 'LTC', 'segwit', None, None),
+        (7, 'LTC-segwit', 'KMD', '77777777-2762-4633-8add-6ad2e9b1a4e7', time.hours_ago(2),
+         time.hours_ago(2) + 6, 10, 1, 1, 'LTC', 'segwit', 'KMD', '', None, None),
+        (8, 'KMD', 'BTC', '888888888-7622-6334-add8-9b1a4e76ad2e', time.hours_ago(3),
+         time.hours_ago(3) + 7, 1000000, 1, 1, 'KMD', '', 'BTC', '', None, None),
+        (9, 'LTC', 'KMD', '999999999-73a2-d46d-900d-aad5e9b162ef', time.hours_ago(4),
+         time.hours_ago(4) + 8, 20, 1, 1, 'LTC', '', 'KMD', '', None, None),
+        (10, 'KMD-BEP20', 'BTC', 'AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b', time.days_ago(1) - 900,
+         time.days_ago(1) - 300, 2000000, 1, 1, 'KMD', 'BEP20', 'BTC', '', None, None),
+        (11, 'BTC', 'LTC', 'BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2', time.days_ago(7) - 900,
          time.days_ago(7) + 10, 5, 1, 1, 'BTC', '', 'LTC', '', None, None),
-        (12, 'DGB', 'LTC-segwit', 'f3e0ac87-40a5-4649-b420-5eb8e2924bf2', time.days_ago(7) - 11,
+        (12, 'DGB', 'LTC-segwit', 'CCCCCCCC-40a5-4649-b420-5eb8e2924bf2', time.days_ago(7) - 900,
          time.days_ago(7) + 11, 100000, 1, 1, 'DGB', '', 'LTC', 'segwit', None, None),
-        (13, 'DGB-segwit', 'LTC', 'cf3e0387-ac6f-a2fb-b360-4bf25fed4292', time.days_ago(30) - 12,
+        (13, 'DGB-segwit', 'LTC', 'DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292', time.days_ago(30) - 900,
          time.days_ago(30) + 12, 200000, 1, 1, 'DGB', 'segwit', 'LTC', '', None, None),
-        (14, 'LTC', 'DOGE', '50d8e2e4-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 13,
+        (14, 'LTC', 'DOGE', 'EEEEEEEE-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 900,
          time.days_ago(60) + 13, 10, 1, 1, 'LTC', '', 'DOGE', '', None, None),
-        (15, 'DOGE', 'LTC', '60d8e2e4-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 10,
+        (15, 'DOGE', 'LTC', 'FFFFFFFF-ee4b-494f-a2fb-48467614b613', time.days_ago(60) - 900,
          time.days_ago(60) + 10, 1, 10, 1, 'DOGE', '', 'LTC', '', None, None),
     ]
     sql = 'INSERT INTO stats_swaps VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    DB = setup_fake_db
     DB.sql_cursor.executemany(sql, sample_data)
     yield DB
 
@@ -274,8 +295,10 @@ def historical_data():
         "end_time": "1697480964",
         "limit": "100",
         "trades_count": "5",
-        "sum_base_volume": "90",
-        "sum_target_volume": "90",
+        "sum_base_volume_buys": "60",
+        "sum_base_volume_sells": "30",
+        "sum_target_volume_buys": "60",
+        "sum_target_volume_sells": "30",
         "average_price": "1",
         "buy": [
             {
@@ -326,23 +349,24 @@ def historical_data():
 
 @pytest.fixture
 def dirty_dict():
-    return {
+    yield {
         "a": Decimal("1.23456789"),
         "b": "string",
         "c": 1,
-        "d": {"foo": "bar"},
+        "d": False,
         "e": ["foo", "bar"],
+        "f": {"foo": "bar"}
     }
 
 
 @pytest.fixture
 def no_trades_info():
-    return []
+    yield []
 
 
 @pytest.fixture
 def trades_info():
-    return [
+    yield [
         {
             "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
             "price": "0.8000000000",
