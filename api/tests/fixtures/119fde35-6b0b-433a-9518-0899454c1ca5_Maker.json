@@ -1,0 +1,129 @@
+{
+	"type": "Maker",
+	"uuid": "119fde35-6b0b-433a-9518-0899454c1ca5",
+	"my_order_uuid": "14c8d2bc-3e28-4436-b271-eebfa6dac04d",
+	"events": [{
+		"timestamp": 1671028826451,
+		"event": {
+			"type": "Started",
+			"data": {
+				"taker_coin": "KMD",
+				"maker_coin": "CRV-PLG20",
+				"taker": "dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2",
+				"secret": "0000000000000000000000000000000000000000000000000000000000000000",
+				"secret_hash": "b68d007566b10563bb01dbdbae5a12424bcd144a",
+				"my_persistent_pub": "0315d9c51c657ab1be4ae9d3ab6e76a619d3bccfe830d5363fa168424c0d044732",
+				"lock_duration": 7800,
+				"maker_amount": "0.691555176499475",
+				"taker_amount": "2.1882427358927014028467925",
+				"maker_payment_confirmations": 3,
+				"maker_payment_requires_nota": false,
+				"taker_payment_confirmations": 4,
+				"taker_payment_requires_nota": false,
+				"maker_payment_lock": 1671044426,
+				"uuid": "119fde35-6b0b-433a-9518-0899454c1ca5",
+				"started_at": 1671028826,
+				"maker_coin_start_block": 36824161,
+				"taker_coin_start_block": 3206751,
+				"maker_payment_trade_fee": {
+					"coin": "MATIC",
+					"amount": "0.086079675",
+					"paid_from_trading_vol": false
+				},
+				"taker_payment_spend_trade_fee": {
+					"coin": "KMD",
+					"amount": "0.00001",
+					"paid_from_trading_vol": true
+				},
+				"maker_coin_swap_contract_address": "9130b257d37a52e52f21054c4da3450c72f595ce",
+				"maker_coin_htlc_pubkey": "0315d9c51c657ab1be4ae9d3ab6e76a619d3bccfe830d5363fa168424c0d044732",
+				"taker_coin_htlc_pubkey": "0315d9c51c657ab1be4ae9d3ab6e76a619d3bccfe830d5363fa168424c0d044732",
+				"p2p_privkey": null
+			}
+		}
+	}, {
+		"timestamp": 1671028833464,
+		"event": {
+			"type": "Negotiated",
+			"data": {
+				"taker_payment_locktime": 1671036631,
+				"taker_pubkey": "000000000000000000000000000000000000000000000000000000000000000000",
+				"maker_coin_swap_contract_addr": "9130b257d37a52e52f21054c4da3450c72f595ce",
+				"taker_coin_swap_contract_addr": null,
+				"maker_coin_htlc_pubkey": "03dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2",
+				"taker_coin_htlc_pubkey": "03dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2"
+			}
+		}
+	}, {
+		"timestamp": 1671028836499,
+		"event": {
+			"type": "TakerFeeValidated",
+			"data": {
+				"tx_hex": "0400008085202f89017be2e583bea42e3fb7964b41867d23b6024fc661ccfce9ec174f13cf9a5e872b000000006b483045022100edaf561607909e0fd86eab46fc9356229a0d5ebe08e43187dc7d30ea52aa137d022034484e594f1aad2811830515576179e0dc603dfc404cb70bf97ededf6b06f030012103dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2ffffffff0218de0300000000001976a914ca1e04745e8ca0c60d8c5881531d51bec470743f88ace6e7c112000000001976a91494d879bd20c0a59976870bf7b29888ffb9f1065088ac65d89963000000000000000000000000000000",
+				"tx_hash": "f025007a1f43898efc0922245a35f0120f3b7a3ca0f1814902ffca0b964e8057"
+			}
+		}
+	}, {
+		"timestamp": 1671028838582,
+		"event": {
+			"type": "MakerPaymentSent",
+			"data": {
+				"tx_hex": "f9012e8203d485375f2d3700830249f0949130b257d37a52e52f21054c4da3450c72f595ce80b8c49b415b2a02b32199cb1ce4acb02d29e6c6388bd8eecb77ec5eb8e47b35c7f62940dae5de0000000000000000000000000000000000000000000000000998e5c4ddd57238000000000000000000000000172370d5cd63279efa6d502dab29171933a610af0000000000000000000000006a69c39f89d447f9c4d0e8f25d0512d29e471737b68d007566b10563bb01dbdbae5a12424bcd144a00000000000000000000000000000000000000000000000000000000000000000000000000000000639a1d4a820135a0b7e4ff4987938111c5df707a27608f333797594041e651a4f5fe286613683dcea016e8481007d59960f735bb30e76b4a0089194c053e3df934350ae646e1751164",
+				"tx_hash": "63e17bae792e19ecd78b2ca35932f710b951b93574648bfc931ec6296f6656ac"
+			}
+		}
+	}, {
+		"timestamp": 1671028859383,
+		"event": {
+			"type": "TakerPaymentReceived",
+			"data": {
+				"tx_hex": "0400008085202f890157804e960bcaff024981f1a03c7a3b0f12f0355a242209fc8e89431f7a0025f0010000006a47304402205686829570b13f4e2a36c000542e7d9828d6f36dba8ff7a1505c884485de96350220176a8d211f80a8ef960583d8d7f1da4a2fe1838d710ae6464b7b20ba79a3c524012103dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2ffffffff0351fe0a0d0000000017a914a50630887ee52c386e03df885ff9b9a188f27fa7870000000000000000166a14b68d007566b10563bb01dbdbae5a12424bcd144aade5b605000000001976a91494d879bd20c0a59976870bf7b29888ffb9f1065088ac7cd89963000000000000000000000000000000",
+				"tx_hash": "253170ac988539ea895dc9e9ee41354d2757dbaaa8a949f28b996b7093839ae8"
+			}
+		}
+	}, {
+		"timestamp": 1671028859389,
+		"event": {
+			"type": "TakerPaymentWaitConfirmStarted"
+		}
+	}, {
+		"timestamp": 1671029174879,
+		"event": {
+			"type": "TakerPaymentValidatedAndConfirmed"
+		}
+	}, {
+		"timestamp": 1671029174898,
+		"event": {
+			"type": "TakerPaymentSpent",
+			"data": {
+				"tx_hex": "0400008085202f8901e89a8393706b998bf249a9a8aadb57274d3541eee9c95d89ea398598ac70312500000000d747304402204462d2a2a4d9842e879c03611da9d6275bc64b75237f32bb77519883989e59140220190bfe8c0109aa28ae3b4c48b9f7b03b0b044e9956decc37a4ac531c97230d9b0120f7cfe474adf6b3825c35a7024b9292535eb522c52d4f6969ae8862cdd2ca494a004c6b6304d7fe9963b1752103dad02944ba1f9b07797d4ec165bfcf086e71264efd8efa53ae6b2e5256aa84a2ac6782012088a914b68d007566b10563bb01dbdbae5a12424bcd144a88210315d9c51c657ab1be4ae9d3ab6e76a619d3bccfe830d5363fa168424c0d044732ac68ffffffff0169fa0a0d000000001976a9141462c3dd3f936d595c9af55978003b27c250441f88acd7fe9963000000000000000000000000000000",
+				"tx_hash": "43b8e671c4e23b046f8baf5c714f2107756bca4da162365746c240043ced41a5"
+			}
+		}
+	}, {
+		"timestamp": 1671029174908,
+		"event": {
+			"type": "TakerPaymentSpendConfirmStarted"
+		}
+	}, {
+		"timestamp": 1671029295078,
+		"event": {
+			"type": "TakerPaymentSpendConfirmed"
+		}
+	}, {
+		"timestamp": 1671029295084,
+		"event": {
+			"type": "Finished"
+		}
+	}],
+	"maker_amount": "0.691555176499475",
+	"maker_coin": "CRV-PLG20",
+	"maker_coin_usd_price": "0.658",
+	"taker_amount": "2.1882427358927014028467925",
+	"taker_coin": "KMD",
+	"taker_coin_usd_price": "0.2079",
+	"gui": "mpm",
+	"mm_version": "2.1.9233_get-rid-of-cpupool_9e566b812_Linux_CI",
+	"success_events": ["Started", "Negotiated", "TakerFeeValidated", "MakerPaymentSent", "TakerPaymentReceived", "TakerPaymentWaitConfirmStarted", "TakerPaymentValidatedAndConfirmed", "TakerPaymentSpent", "TakerPaymentSpendConfirmStarted", "TakerPaymentSpendConfirmed", "Finished"],
+	"error_events": ["StartFailed", "NegotiateFailed", "TakerFeeValidateFailed", "MakerPaymentTransactionFailed", "MakerPaymentDataSendFailed", "MakerPaymentWaitConfirmFailed", "TakerPaymentValidateFailed", "TakerPaymentWaitConfirmFailed", "TakerPaymentSpendFailed", "TakerPaymentSpendConfirmFailed", "MakerPaymentWaitRefundStarted", "MakerPaymentRefunded", "MakerPaymentRefundFailed"]
+}

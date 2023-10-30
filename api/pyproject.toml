@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "dexstats-sqlite-py"
+version = "0.2.0"
+description = "An API for various DEX statistics via the Komodo DeFi SDK"
+authors = ["smk <smk@komodoplatform.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+uvicorn = "^0.23.2"
+fastapi = "^0.101.1"
+fastapi-utils = "^0.2.1"
+python-dotenv = "^1.0.0"
+httpx = "^0.24.1"
+requests = "^2.31.0"
+pydgraph = "^23.0.1"
+sysrsync = "^1.1.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pytest-flake8 = "^1.1.1"
+flake8 = "^6.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  komodefi:
+    container_name: mm2
+    env_file:
+      - ./mm2/.env
+    build:
+      context: ./mm2
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=${USER_ID:-1000}
+        - GROUP_ID=${GROUP_ID:-1000}
+    volumes:
+      - ./:/mm2
+    ports:
+      - 127.0.0.1:7783:7783
+      - 127.0.0.1:42845:42845
+      - 127.0.0.1:42855:42855
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "10"
+    restart: always
