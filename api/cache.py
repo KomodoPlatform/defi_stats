@@ -6,7 +6,7 @@ from helper import sum_json_key, sum_json_key_10f, sort_dict_list
 from pair import Pair
 from generics import Files
 from utils import Utils
-from external import CoinGeckoAPI
+from external import CoinGeckoAPI, FixerAPI
 from db import get_db
 from const import COINS_CONFIG_URL, COINS_URL, MM2_DB_PATH
 
@@ -51,6 +51,9 @@ class Cache:
         self.gecko_source_cache = self.load.load_gecko_source()
         self.gecko_pairs_cache = self.load.load_gecko_pairs()
         self.gecko_tickers_cache = self.load.load_gecko_tickers()
+        # For Rates endpoints
+        self.fixer_rates_cache = self.load.load_fixer_rates()
+
 
     class Load:
         def __init__(self, files, utils):
@@ -74,6 +77,10 @@ class Cache:
         def load_gecko_pairs(self):
             return self.utils.load_jsonfile(self.files.gecko_pairs_file)
 
+        # For Rates endpoints
+        def load_fixer_rates(self):
+            return self.utils.load_jsonfile(self.files.fixer_rates_file)
+
     class Calc:
         def __init__(self, path_to_db, load, testing, utils):
             self.path_to_db = path_to_db
@@ -81,6 +88,11 @@ class Cache:
             self.testing = testing
             self.utils = utils
             self.gecko = CoinGeckoAPI(self.testing)
+            self.fixer = FixerAPI(self.testing)
+
+        # For Rates endpoints
+        def calc_fixer_rates_source(self):
+            return self.fixer.get_fixer_rates_source()
 
         # For CoinGecko endpoints
         def calc_gecko_source(self):
@@ -163,6 +175,8 @@ class Cache:
             if not isinstance(data, (dict, list)):
                 raise TypeError(
                     f"Invalid data type: {type(data)}, must be dict or list")
+            elif "error" in data:
+                raise Exception(data["error"])
             elif self.testing:  # pragma: no cover
                 if path in [self.files.gecko_source_file, self.files.coins_config_file]:
                     logger.info(f"Validated {path} data")
@@ -204,3 +218,8 @@ class Cache:
                         testing=self.testing, DB=DB)
             data = self.calc.calc_gecko_tickers(DB=DB)
             return self.save(self.files.gecko_tickers_file, data)
+
+        def save_fixer_rates_source(self):  # pragma: no cover
+            data = self.calc.calc_fixer_rates_source()
+            return self.save(self.files.fixer_rates_file, data)
+

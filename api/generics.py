@@ -16,6 +16,8 @@ class Files:
         self.gecko_source_file = f"{folder}/gecko/source_cache.json"
         self.gecko_tickers_file = f"{folder}/gecko/ticker_cache.json"
         self.gecko_pairs_file = f"{folder}/gecko/pairs_cache.json"
+        # For Rates endpoints
+        self.fixer_rates_file = f"{folder}/gecko/fixer_rates_cache.json"
 
 
 class Time:
@@ -94,4 +96,8 @@ class Templates:
 
 class UuidNotFoundException(Exception):
     "Raised when a UUID is not found in the database"
+    pass
+
+class ApiKeyNotFoundException(Exception):
+    "Raised when a required API key is not found in the .env file"
     pass

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import requests
+from datetime import datetime
 from logger import logger
 from generics import Files, Templates
 from utils import Utils
+from generics import ApiKeyNotFoundException
+from const import FIXER_API_KEY
 
 
 class CoinGeckoAPI:
@@ -110,3 +113,31 @@ class CoinGeckoAPI:
                 logger.error(error)
                 return error
         return coins_info
+
+
+class FixerAPI:
+    def __init__(self, testing: bool = False):
+        self.testing = testing
+        self.files = Files(self.testing)
+
+    def get_fixer_rates_source(self):
+        try:
+            if FIXER_API_KEY == "":
+                raise ApiKeyNotFoundException("FIXER_API key not set!")
+            r = requests.get(f'http://data.fixer.io/api/latest?access_key={FIXER_API_KEY}')
+            received_rates = r.json()
+            received_rates["date"] = str(datetime.fromtimestamp(received_rates["timestamp"]))
+            if "error" in received_rates:
+                raise Exception(received_rates["error"])
+            usd_eur_rate = received_rates["rates"]["USD"]
+            for rate in received_rates["rates"]:
+                received_rates["rates"][rate] /= usd_eur_rate
+            received_rates["base"] = "USD"
+            received_rates["rates"]["USD"] = 1.0
+            received_rates["rates"].pop("BTC")
+            
+            return received_rates
+        
+        except Exception as e:
+            return {"error": f"{e}"}
+        

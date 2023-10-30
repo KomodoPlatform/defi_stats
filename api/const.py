@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from logger import logger
 from dotenv import load_dotenv
 
 PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,3 +17,6 @@ COINS_URL = os.getenv('COINS_URL') or coins_repo_url
 COINS_CONFIG_URL = os.getenv('COINS_CONFIG_URL') or coins__config_repo_url
 MM2_DB_PATH = f"{API_ROOT_PATH}/cache/MM2.db"
 SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
+FIXER_API_KEY = os.getenv('FIXER_API_KEY') or ""
+if not FIXER_API_KEY:
+    logger.warning("FIXER_API_KEY is not set in .env file. Without this, '/api/v3/rates/fixer_io' will fail.")
