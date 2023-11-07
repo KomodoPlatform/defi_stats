@@ -126,3 +126,9 @@ class FixerRates(BaseModel):
     date: str = "2023-10-30 16:03:03"
     base: str = "XXX"
     rates: Dict[str, float] = {"XXX": "123.456789", "YYY": "123.456789"}
+
+# Coins Models
+
+class ApiIds(BaseModel):
+    timestamp: int = 1700050000
+    ids: Dict[str, str] = {"BTC": "bitcoin", "KMD": "komodo"}

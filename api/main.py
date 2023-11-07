@@ -2,7 +2,7 @@
 import uvicorn
 from fastapi import FastAPI
 from const import API_HOST, API_PORT
-from routes import gecko, cache, swaps, tickers, rates
+from routes import gecko, cache, swaps, tickers, rates, coins
 
 app = FastAPI()
 
@@ -12,6 +12,14 @@ app.include_router(
     gecko.router,
     prefix="/api/v3/gecko",
     tags=["CoinGecko"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    coins.router,
+    prefix="/api/v3/coins",
+    tags=["Coins"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
