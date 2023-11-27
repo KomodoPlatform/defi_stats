@@ -1,9 +1,9 @@
 [
     {
-        "ticker_id": "ABY_KMD",
-        "pool_id": "ABY_KMD",
-        "base": "ABY",
-        "target": "KMD"
+        "ticker_id": "AAVE-PLG20_LTC",
+        "pool_id": "AAVE-PLG20_LTC",
+        "base": "AAVE-PLG20",
+        "target": "LTC"
     },
     {
         "ticker_id": "ACTN_KMD",
@@ -12,10 +12,10 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "AGEUR-PLG20_GRS",
-        "pool_id": "AGEUR-PLG20_GRS",
+        "ticker_id": "AGEUR-PLG20_LTC",
+        "pool_id": "AGEUR-PLG20_LTC",
         "base": "AGEUR-PLG20",
-        "target": "GRS"
+        "target": "LTC"
     },
     {
         "ticker_id": "AUR_DASH",
@@ -48,6 +48,12 @@
         "target": "LTC"
     },
     {
+        "ticker_id": "AUR_USDT-BEP20",
+        "pool_id": "AUR_USDT-BEP20",
+        "base": "AUR",
+        "target": "USDT-BEP20"
+    },
+    {
         "ticker_id": "AVN_KMD",
         "pool_id": "AVN_KMD",
         "base": "AVN",
@@ -60,6 +66,18 @@
         "target": "KMD"
     },
     {
+        "ticker_id": "BCH_BNB",
+        "pool_id": "BCH_BNB",
+        "base": "BCH",
+        "target": "BNB"
+    },
+    {
+        "ticker_id": "BCH_DOGE",
+        "pool_id": "BCH_DOGE",
+        "base": "BCH",
+        "target": "DOGE"
+    },
+    {
         "ticker_id": "BCH_LTC",
         "pool_id": "BCH_LTC",
         "base": "BCH",
@@ -70,6 +88,12 @@
         "pool_id": "BLK_BCH",
         "base": "BLK",
         "target": "BCH"
+    },
+    {
+        "ticker_id": "BLK_DASH",
+        "pool_id": "BLK_DASH",
+        "base": "BLK",
+        "target": "DASH"
     },
     {
         "ticker_id": "BLK_DOGE",
@@ -96,22 +120,22 @@
         "target": "LTC"
     },
     {
+        "ticker_id": "BLK_NAV",
+        "pool_id": "BLK_NAV",
+        "base": "BLK",
+        "target": "NAV"
+    },
+    {
+        "ticker_id": "BLK_PPC",
+        "pool_id": "BLK_PPC",
+        "base": "BLK",
+        "target": "PPC"
+    },
+    {
         "ticker_id": "BLK_RVN",
         "pool_id": "BLK_RVN",
         "base": "BLK",
         "target": "RVN"
-    },
-    {
-        "ticker_id": "BLK_USDC-PLG20",
-        "pool_id": "BLK_USDC-PLG20",
-        "base": "BLK",
-        "target": "USDC-PLG20"
-    },
-    {
-        "ticker_id": "BLK_USDT-PLG20",
-        "pool_id": "BLK_USDT-PLG20",
-        "base": "BLK",
-        "target": "USDT-PLG20"
     },
     {
         "ticker_id": "BLK_VAL",
@@ -120,28 +144,16 @@
         "target": "VAL"
     },
     {
-        "ticker_id": "BLK_VRSC",
-        "pool_id": "BLK_VRSC",
+        "ticker_id": "BLK_ZEC",
+        "pool_id": "BLK_ZEC",
         "base": "BLK",
-        "target": "VRSC"
+        "target": "ZEC"
     },
     {
-        "ticker_id": "BOLI_KMD",
-        "pool_id": "BOLI_KMD",
-        "base": "BOLI",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "BOLI_LTC",
-        "pool_id": "BOLI_LTC",
-        "base": "BOLI",
+        "ticker_id": "BSTY_LTC",
+        "pool_id": "BSTY_LTC",
+        "base": "BSTY",
         "target": "LTC"
-    },
-    {
-        "ticker_id": "BTCZ_DASH",
-        "pool_id": "BTCZ_DASH",
-        "base": "BTCZ",
-        "target": "DASH"
     },
     {
         "ticker_id": "BTCZ_DGB",
@@ -162,18 +174,6 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "BTCZ_QTUM",
-        "pool_id": "BTCZ_QTUM",
-        "base": "BTCZ",
-        "target": "QTUM"
-    },
-    {
-        "ticker_id": "BTCZ_RVN",
-        "pool_id": "BTCZ_RVN",
-        "base": "BTCZ",
-        "target": "RVN"
-    },
-    {
         "ticker_id": "BTCZ_ZEC",
         "pool_id": "BTCZ_ZEC",
         "base": "BTCZ",
@@ -186,16 +186,22 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "CRNC_DOGE",
-        "pool_id": "CRNC_DOGE",
-        "base": "CRNC",
-        "target": "DOGE"
+        "ticker_id": "CADC-PLG20_KMD",
+        "pool_id": "CADC-PLG20_KMD",
+        "base": "CADC-PLG20",
+        "target": "KMD"
     },
     {
-        "ticker_id": "CRNC_KMD",
-        "pool_id": "CRNC_KMD",
-        "base": "CRNC",
+        "ticker_id": "CDN_KMD",
+        "pool_id": "CDN_KMD",
+        "base": "CDN",
         "target": "KMD"
+    },
+    {
+        "ticker_id": "CRNC_LTC",
+        "pool_id": "CRNC_LTC",
+        "base": "CRNC",
+        "target": "LTC"
     },
     {
         "ticker_id": "CY_KMD",
@@ -204,10 +210,10 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "DASH_BCH",
-        "pool_id": "DASH_BCH",
-        "base": "DASH",
-        "target": "BCH"
+        "ticker_id": "DAI-PLG20_SOL-PLG20",
+        "pool_id": "DAI-PLG20_SOL-PLG20",
+        "base": "DAI-PLG20",
+        "target": "SOL-PLG20"
     },
     {
         "ticker_id": "DASH_DOGE",
@@ -216,16 +222,40 @@
         "target": "DOGE"
     },
     {
+        "ticker_id": "DASH_ILV-BEP20",
+        "pool_id": "DASH_ILV-BEP20",
+        "base": "DASH",
+        "target": "ILV-BEP20"
+    },
+    {
         "ticker_id": "DASH_LTC",
         "pool_id": "DASH_LTC",
         "base": "DASH",
         "target": "LTC"
     },
     {
-        "ticker_id": "DGB_DASH",
-        "pool_id": "DGB_DASH",
+        "ticker_id": "DASH_USDC-BEP20",
+        "pool_id": "DASH_USDC-BEP20",
+        "base": "DASH",
+        "target": "USDC-BEP20"
+    },
+    {
+        "ticker_id": "DASH_USDT-PLG20",
+        "pool_id": "DASH_USDT-PLG20",
+        "base": "DASH",
+        "target": "USDT-PLG20"
+    },
+    {
+        "ticker_id": "DASH_ZEC",
+        "pool_id": "DASH_ZEC",
+        "base": "DASH",
+        "target": "ZEC"
+    },
+    {
+        "ticker_id": "DGB_BTC",
+        "pool_id": "DGB_BTC",
         "base": "DGB",
-        "target": "DASH"
+        "target": "BTC"
     },
     {
         "ticker_id": "DGB_DOGE",
@@ -240,12 +270,6 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "DGB_QTUM",
-        "pool_id": "DGB_QTUM",
-        "base": "DGB",
-        "target": "QTUM"
-    },
-    {
         "ticker_id": "DGB_RVN",
         "pool_id": "DGB_RVN",
         "base": "DGB",
@@ -258,16 +282,10 @@
         "target": "XEC"
     },
     {
-        "ticker_id": "DGC_KMD",
-        "pool_id": "DGC_KMD",
-        "base": "DGC",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "DOI_KMD",
-        "pool_id": "DOI_KMD",
-        "base": "DOI",
-        "target": "KMD"
+        "ticker_id": "DOGE_USDT-PLG20",
+        "pool_id": "DOGE_USDT-PLG20",
+        "base": "DOGE",
+        "target": "USDT-PLG20"
     },
     {
         "ticker_id": "DP_KMD",
@@ -276,16 +294,34 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "ECA_DGB",
-        "pool_id": "ECA_DGB",
-        "base": "ECA",
-        "target": "DGB"
+        "ticker_id": "EFL_KMD",
+        "pool_id": "EFL_KMD",
+        "base": "EFL",
+        "target": "KMD"
     },
     {
-        "ticker_id": "ECA_KMD",
-        "pool_id": "ECA_KMD",
-        "base": "ECA",
-        "target": "KMD"
+        "ticker_id": "EMC2_BLK",
+        "pool_id": "EMC2_BLK",
+        "base": "EMC2",
+        "target": "BLK"
+    },
+    {
+        "ticker_id": "EMC2_DASH",
+        "pool_id": "EMC2_DASH",
+        "base": "EMC2",
+        "target": "DASH"
+    },
+    {
+        "ticker_id": "EMC2_DOGE",
+        "pool_id": "EMC2_DOGE",
+        "base": "EMC2",
+        "target": "DOGE"
+    },
+    {
+        "ticker_id": "EMC2_FTC",
+        "pool_id": "EMC2_FTC",
+        "base": "EMC2",
+        "target": "FTC"
     },
     {
         "ticker_id": "EMC2_KMD",
@@ -300,40 +336,40 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "ETC_LTC",
-        "pool_id": "ETC_LTC",
-        "base": "ETC",
-        "target": "LTC"
+        "ticker_id": "EMC2_NAV",
+        "pool_id": "EMC2_NAV",
+        "base": "EMC2",
+        "target": "NAV"
     },
     {
-        "ticker_id": "EUROE-PLG20_LTC",
-        "pool_id": "EUROE-PLG20_LTC",
-        "base": "EUROE-PLG20",
-        "target": "LTC"
+        "ticker_id": "EMC2_RVN",
+        "pool_id": "EMC2_RVN",
+        "base": "EMC2",
+        "target": "RVN"
     },
     {
-        "ticker_id": "EWT_USDT-PLG20",
-        "pool_id": "EWT_USDT-PLG20",
-        "base": "EWT",
+        "ticker_id": "EMC2_USDT-BEP20",
+        "pool_id": "EMC2_USDT-BEP20",
+        "base": "EMC2",
+        "target": "USDT-BEP20"
+    },
+    {
+        "ticker_id": "EMC2_USDT-PLG20",
+        "pool_id": "EMC2_USDT-PLG20",
+        "base": "EMC2",
         "target": "USDT-PLG20"
     },
     {
-        "ticker_id": "FIRO_BCH",
-        "pool_id": "FIRO_BCH",
-        "base": "FIRO",
-        "target": "BCH"
+        "ticker_id": "EMC2_ZEC",
+        "pool_id": "EMC2_ZEC",
+        "base": "EMC2",
+        "target": "ZEC"
     },
     {
-        "ticker_id": "FIRO_BTC",
-        "pool_id": "FIRO_BTC",
-        "base": "FIRO",
-        "target": "BTC"
-    },
-    {
-        "ticker_id": "FIRO_DOGE",
-        "pool_id": "FIRO_DOGE",
-        "base": "FIRO",
-        "target": "DOGE"
+        "ticker_id": "EURE-PLG20_KMD",
+        "pool_id": "EURE-PLG20_KMD",
+        "base": "EURE-PLG20",
+        "target": "KMD"
     },
     {
         "ticker_id": "FIRO_KMD",
@@ -348,124 +384,106 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "FJC_DGB",
-        "pool_id": "FJC_DGB",
-        "base": "FJC",
-        "target": "DGB"
-    },
-    {
         "ticker_id": "FJC_KMD",
         "pool_id": "FJC_KMD",
         "base": "FJC",
         "target": "KMD"
     },
     {
-        "ticker_id": "FJC_VRSC",
-        "pool_id": "FJC_VRSC",
-        "base": "FJC",
-        "target": "VRSC"
+        "ticker_id": "FLUX_LTC",
+        "pool_id": "FLUX_LTC",
+        "base": "FLUX",
+        "target": "LTC"
     },
     {
-        "ticker_id": "FTC_DGB",
-        "pool_id": "FTC_DGB",
+        "ticker_id": "FTC_DASH",
+        "pool_id": "FTC_DASH",
         "base": "FTC",
-        "target": "DGB"
-    },
-    {
-        "ticker_id": "FTC_USDT-PLG20",
-        "pool_id": "FTC_USDT-PLG20",
-        "base": "FTC",
-        "target": "USDT-PLG20"
-    },
-    {
-        "ticker_id": "GAME-PLG20_KMD",
-        "pool_id": "GAME-PLG20_KMD",
-        "base": "GAME-PLG20",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "GBX_KMD",
-        "pool_id": "GBX_KMD",
-        "base": "GBX",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "GFT-BEP20_KMD",
-        "pool_id": "GFT-BEP20_KMD",
-        "base": "GFT-BEP20",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "GRLC_KMD",
-        "pool_id": "GRLC_KMD",
-        "base": "GRLC",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "GRS_BCH",
-        "pool_id": "GRS_BCH",
-        "base": "GRS",
-        "target": "BCH"
-    },
-    {
-        "ticker_id": "GRS_DASH",
-        "pool_id": "GRS_DASH",
-        "base": "GRS",
         "target": "DASH"
     },
     {
-        "ticker_id": "GRS_DGB",
-        "pool_id": "GRS_DGB",
-        "base": "GRS",
-        "target": "DGB"
+        "ticker_id": "FTC_DOGE",
+        "pool_id": "FTC_DOGE",
+        "base": "FTC",
+        "target": "DOGE"
     },
     {
-        "ticker_id": "GRS_EURS-PLG20",
-        "pool_id": "GRS_EURS-PLG20",
-        "base": "GRS",
-        "target": "EURS-PLG20"
-    },
-    {
-        "ticker_id": "GRS_LTC",
-        "pool_id": "GRS_LTC",
-        "base": "GRS",
-        "target": "LTC"
-    },
-    {
-        "ticker_id": "GRS_RVN",
-        "pool_id": "GRS_RVN",
-        "base": "GRS",
-        "target": "RVN"
-    },
-    {
-        "ticker_id": "GRS_USDC-PLG20",
-        "pool_id": "GRS_USDC-PLG20",
-        "base": "GRS",
-        "target": "USDC-PLG20"
-    },
-    {
-        "ticker_id": "GRS_ZEC",
-        "pool_id": "GRS_ZEC",
-        "base": "GRS",
-        "target": "ZEC"
-    },
-    {
-        "ticker_id": "IOTA-BEP20_LTC",
-        "pool_id": "IOTA-BEP20_LTC",
-        "base": "IOTA-BEP20",
-        "target": "LTC"
-    },
-    {
-        "ticker_id": "JEUR-PLG20_KMD",
-        "pool_id": "JEUR-PLG20_KMD",
-        "base": "JEUR-PLG20",
+        "ticker_id": "FTC_KMD",
+        "pool_id": "FTC_KMD",
+        "base": "FTC",
         "target": "KMD"
     },
     {
-        "ticker_id": "JEUR-PLG20_QTUM",
-        "pool_id": "JEUR-PLG20_QTUM",
-        "base": "JEUR-PLG20",
-        "target": "QTUM"
+        "ticker_id": "FTC_LTC",
+        "pool_id": "FTC_LTC",
+        "base": "FTC",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "FTC_RVN",
+        "pool_id": "FTC_RVN",
+        "base": "FTC",
+        "target": "RVN"
+    },
+    {
+        "ticker_id": "FTC_ZEC",
+        "pool_id": "FTC_ZEC",
+        "base": "FTC",
+        "target": "ZEC"
+    },
+    {
+        "ticker_id": "FTM_LTC",
+        "pool_id": "FTM_LTC",
+        "base": "FTM",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "FTM_USDC-PLG20",
+        "pool_id": "FTM_USDC-PLG20",
+        "base": "FTM",
+        "target": "USDC-PLG20"
+    },
+    {
+        "ticker_id": "GLC_DAI-PLG20",
+        "pool_id": "GLC_DAI-PLG20",
+        "base": "GLC",
+        "target": "DAI-PLG20"
+    },
+    {
+        "ticker_id": "GLC_KMD",
+        "pool_id": "GLC_KMD",
+        "base": "GLC",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "GLC_LTC",
+        "pool_id": "GLC_LTC",
+        "base": "GLC",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "GLEEC_KMD",
+        "pool_id": "GLEEC_KMD",
+        "base": "GLEEC",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "GRS_DOGE",
+        "pool_id": "GRS_DOGE",
+        "base": "GRS",
+        "target": "DOGE"
+    },
+    {
+        "ticker_id": "JBRL-PLG20_KMD",
+        "pool_id": "JBRL-PLG20_KMD",
+        "base": "JBRL-PLG20",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "KMD_ADA-BEP20",
+        "pool_id": "KMD_ADA-BEP20",
+        "base": "KMD",
+        "target": "ADA-BEP20"
     },
     {
         "ticker_id": "KMD_AVAX",
@@ -474,34 +492,16 @@
         "target": "AVAX"
     },
     {
-        "ticker_id": "KMD_BAND-BEP20",
-        "pool_id": "KMD_BAND-BEP20",
+        "ticker_id": "KMD_BCH",
+        "pool_id": "KMD_BCH",
         "base": "KMD",
-        "target": "BAND-BEP20"
+        "target": "BCH"
     },
     {
         "ticker_id": "KMD_BNB",
         "pool_id": "KMD_BNB",
         "base": "KMD",
         "target": "BNB"
-    },
-    {
-        "ticker_id": "KMD_BTC",
-        "pool_id": "KMD_BTC",
-        "base": "KMD",
-        "target": "BTC"
-    },
-    {
-        "ticker_id": "KMD_CELR-BEP20",
-        "pool_id": "KMD_CELR-BEP20",
-        "base": "KMD",
-        "target": "CELR-BEP20"
-    },
-    {
-        "ticker_id": "KMD_DAI-PLG20",
-        "pool_id": "KMD_DAI-PLG20",
-        "base": "KMD",
-        "target": "DAI-PLG20"
     },
     {
         "ticker_id": "KMD_DASH",
@@ -522,28 +522,28 @@
         "target": "DOGE"
     },
     {
-        "ticker_id": "KMD_ETH-PLG20",
-        "pool_id": "KMD_ETH-PLG20",
+        "ticker_id": "KMD_ETC",
+        "pool_id": "KMD_ETC",
         "base": "KMD",
-        "target": "ETH-PLG20"
+        "target": "ETC"
     },
     {
-        "ticker_id": "KMD_FLOKI-BEP20",
-        "pool_id": "KMD_FLOKI-BEP20",
+        "ticker_id": "KMD_ETH",
+        "pool_id": "KMD_ETH",
         "base": "KMD",
-        "target": "FLOKI-BEP20"
+        "target": "ETH"
     },
     {
-        "ticker_id": "KMD_FTM",
-        "pool_id": "KMD_FTM",
+        "ticker_id": "KMD_FLUX",
+        "pool_id": "KMD_FLUX",
         "base": "KMD",
-        "target": "FTM"
+        "target": "FLUX"
     },
     {
-        "ticker_id": "KMD_GRS",
-        "pool_id": "KMD_GRS",
+        "ticker_id": "KMD_GRT-PLG20",
+        "pool_id": "KMD_GRT-PLG20",
         "base": "KMD",
-        "target": "GRS"
+        "target": "GRT-PLG20"
     },
     {
         "ticker_id": "KMD_KCS",
@@ -552,40 +552,28 @@
         "target": "KCS"
     },
     {
-        "ticker_id": "KMD_LDO-PLG20",
-        "pool_id": "KMD_LDO-PLG20",
-        "base": "KMD",
-        "target": "LDO-PLG20"
-    },
-    {
         "ticker_id": "KMD_LTC",
         "pool_id": "KMD_LTC",
         "base": "KMD",
         "target": "LTC"
     },
     {
+        "ticker_id": "KMD_MANA-PLG20",
+        "pool_id": "KMD_MANA-PLG20",
+        "base": "KMD",
+        "target": "MANA-PLG20"
+    },
+    {
+        "ticker_id": "KMD_MASK-PLG20",
+        "pool_id": "KMD_MASK-PLG20",
+        "base": "KMD",
+        "target": "MASK-PLG20"
+    },
+    {
         "ticker_id": "KMD_MATIC",
         "pool_id": "KMD_MATIC",
         "base": "KMD",
         "target": "MATIC"
-    },
-    {
-        "ticker_id": "KMD_MKR-PLG20",
-        "pool_id": "KMD_MKR-PLG20",
-        "base": "KMD",
-        "target": "MKR-PLG20"
-    },
-    {
-        "ticker_id": "KMD_NEAR-BEP20",
-        "pool_id": "KMD_NEAR-BEP20",
-        "base": "KMD",
-        "target": "NEAR-BEP20"
-    },
-    {
-        "ticker_id": "KMD_PYR-PLG20",
-        "pool_id": "KMD_PYR-PLG20",
-        "base": "KMD",
-        "target": "PYR-PLG20"
     },
     {
         "ticker_id": "KMD_QTUM",
@@ -600,10 +588,28 @@
         "target": "RVN"
     },
     {
+        "ticker_id": "KMD_SOL-BEP20",
+        "pool_id": "KMD_SOL-BEP20",
+        "base": "KMD",
+        "target": "SOL-BEP20"
+    },
+    {
         "ticker_id": "KMD_SYS",
         "pool_id": "KMD_SYS",
         "base": "KMD",
         "target": "SYS"
+    },
+    {
+        "ticker_id": "KMD_TEL-PLG20",
+        "pool_id": "KMD_TEL-PLG20",
+        "base": "KMD",
+        "target": "TEL-PLG20"
+    },
+    {
+        "ticker_id": "KMD_TRX-BEP20",
+        "pool_id": "KMD_TRX-BEP20",
+        "base": "KMD",
+        "target": "TRX-BEP20"
     },
     {
         "ticker_id": "KMD_USDC-BEP20",
@@ -612,22 +618,16 @@
         "target": "USDC-BEP20"
     },
     {
-        "ticker_id": "KMD_USDC-PLG20",
-        "pool_id": "KMD_USDC-PLG20",
-        "base": "KMD",
-        "target": "USDC-PLG20"
-    },
-    {
         "ticker_id": "KMD_USDT-BEP20",
         "pool_id": "KMD_USDT-BEP20",
         "base": "KMD",
         "target": "USDT-BEP20"
     },
     {
-        "ticker_id": "KMD_USDT-PLG20",
-        "pool_id": "KMD_USDT-PLG20",
+        "ticker_id": "KMD_USDT-KRC20",
+        "pool_id": "KMD_USDT-KRC20",
         "base": "KMD",
-        "target": "USDT-PLG20"
+        "target": "USDT-KRC20"
     },
     {
         "ticker_id": "KMD_VRSC",
@@ -642,10 +642,40 @@
         "target": "XEC"
     },
     {
+        "ticker_id": "KMD_XNA",
+        "pool_id": "KMD_XNA",
+        "base": "KMD",
+        "target": "XNA"
+    },
+    {
+        "ticker_id": "KMD_XVG",
+        "pool_id": "KMD_XVG",
+        "base": "KMD",
+        "target": "XVG"
+    },
+    {
         "ticker_id": "KMD_ZEC",
         "pool_id": "KMD_ZEC",
         "base": "KMD",
         "target": "ZEC"
+    },
+    {
+        "ticker_id": "KNC-BEP20_LTC",
+        "pool_id": "KNC-BEP20_LTC",
+        "base": "KNC-BEP20",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "KOIN_KMD",
+        "pool_id": "KOIN_KMD",
+        "base": "KOIN",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "LBC_BCH",
+        "pool_id": "LBC_BCH",
+        "base": "LBC",
+        "target": "BCH"
     },
     {
         "ticker_id": "LBC_BLK",
@@ -654,10 +684,22 @@
         "target": "BLK"
     },
     {
+        "ticker_id": "LBC_BNB",
+        "pool_id": "LBC_BNB",
+        "base": "LBC",
+        "target": "BNB"
+    },
+    {
         "ticker_id": "LBC_DASH",
         "pool_id": "LBC_DASH",
         "base": "LBC",
         "target": "DASH"
+    },
+    {
+        "ticker_id": "LBC_DGB",
+        "pool_id": "LBC_DGB",
+        "base": "LBC",
+        "target": "DGB"
     },
     {
         "ticker_id": "LBC_DOGE",
@@ -672,12 +714,6 @@
         "target": "EMC2"
     },
     {
-        "ticker_id": "LBC_FTC",
-        "pool_id": "LBC_FTC",
-        "base": "LBC",
-        "target": "FTC"
-    },
-    {
         "ticker_id": "LBC_KMD",
         "pool_id": "LBC_KMD",
         "base": "LBC",
@@ -690,22 +726,16 @@
         "target": "LTC"
     },
     {
+        "ticker_id": "LBC_MATIC",
+        "pool_id": "LBC_MATIC",
+        "base": "LBC",
+        "target": "MATIC"
+    },
+    {
         "ticker_id": "LBC_NAV",
         "pool_id": "LBC_NAV",
         "base": "LBC",
         "target": "NAV"
-    },
-    {
-        "ticker_id": "LBC_PPC",
-        "pool_id": "LBC_PPC",
-        "base": "LBC",
-        "target": "PPC"
-    },
-    {
-        "ticker_id": "LBC_RTM",
-        "pool_id": "LBC_RTM",
-        "base": "LBC",
-        "target": "RTM"
     },
     {
         "ticker_id": "LBC_RVN",
@@ -720,16 +750,16 @@
         "target": "THC"
     },
     {
+        "ticker_id": "LBC_TKL",
+        "pool_id": "LBC_TKL",
+        "base": "LBC",
+        "target": "TKL"
+    },
+    {
         "ticker_id": "LBC_ZEC",
         "pool_id": "LBC_ZEC",
         "base": "LBC",
         "target": "ZEC"
-    },
-    {
-        "ticker_id": "LCC_DASH",
-        "pool_id": "LCC_DASH",
-        "base": "LCC",
-        "target": "DASH"
     },
     {
         "ticker_id": "LCC_DGB",
@@ -738,22 +768,34 @@
         "target": "DGB"
     },
     {
+        "ticker_id": "LCC_DOGE",
+        "pool_id": "LCC_DOGE",
+        "base": "LCC",
+        "target": "DOGE"
+    },
+    {
         "ticker_id": "LCC_KMD",
         "pool_id": "LCC_KMD",
         "base": "LCC",
         "target": "KMD"
     },
     {
-        "ticker_id": "LOOM-BEP20_KMD",
-        "pool_id": "LOOM-BEP20_KMD",
-        "base": "LOOM-BEP20",
-        "target": "KMD"
+        "ticker_id": "LCC_ZEC",
+        "pool_id": "LCC_ZEC",
+        "base": "LCC",
+        "target": "ZEC"
     },
     {
-        "ticker_id": "LTC_BTC-BEP20",
-        "pool_id": "LTC_BTC-BEP20",
+        "ticker_id": "LTC_BNB",
+        "pool_id": "LTC_BNB",
         "base": "LTC",
-        "target": "BTC-BEP20"
+        "target": "BNB"
+    },
+    {
+        "ticker_id": "LTC_BTC",
+        "pool_id": "LTC_BTC",
+        "base": "LTC",
+        "target": "BTC"
     },
     {
         "ticker_id": "LTC_DOGE",
@@ -762,16 +804,10 @@
         "target": "DOGE"
     },
     {
-        "ticker_id": "LTC_ETH",
-        "pool_id": "LTC_ETH",
+        "ticker_id": "LTC_LINK-PLG20",
+        "pool_id": "LTC_LINK-PLG20",
         "base": "LTC",
-        "target": "ETH"
-    },
-    {
-        "ticker_id": "LTC_ETH-PLG20",
-        "pool_id": "LTC_ETH-PLG20",
-        "base": "LTC",
-        "target": "ETH-PLG20"
+        "target": "LINK-PLG20"
     },
     {
         "ticker_id": "LTC_MATIC",
@@ -780,10 +816,10 @@
         "target": "MATIC"
     },
     {
-        "ticker_id": "LTC_USDC-PLG20",
-        "pool_id": "LTC_USDC-PLG20",
+        "ticker_id": "LTC_USDC-BEP20",
+        "pool_id": "LTC_USDC-BEP20",
         "base": "LTC",
-        "target": "USDC-PLG20"
+        "target": "USDC-BEP20"
     },
     {
         "ticker_id": "LTC_USDT-BEP20",
@@ -792,22 +828,22 @@
         "target": "USDT-BEP20"
     },
     {
-        "ticker_id": "LYNX_KMD",
-        "pool_id": "LYNX_KMD",
-        "base": "LYNX",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "MATIC_USDC-PLG20",
-        "pool_id": "MATIC_USDC-PLG20",
-        "base": "MATIC",
-        "target": "USDC-PLG20"
+        "ticker_id": "LTC_USDT-PLG20",
+        "pool_id": "LTC_USDT-PLG20",
+        "base": "LTC",
+        "target": "USDT-PLG20"
     },
     {
         "ticker_id": "MAZA_DASH",
         "pool_id": "MAZA_DASH",
         "base": "MAZA",
         "target": "DASH"
+    },
+    {
+        "ticker_id": "MAZA_KMD",
+        "pool_id": "MAZA_KMD",
+        "base": "MAZA",
+        "target": "KMD"
     },
     {
         "ticker_id": "MAZA_LTC",
@@ -822,12 +858,6 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "MOVR_LTC",
-        "pool_id": "MOVR_LTC",
-        "base": "MOVR",
-        "target": "LTC"
-    },
-    {
         "ticker_id": "NAV_DASH",
         "pool_id": "NAV_DASH",
         "base": "NAV",
@@ -840,22 +870,52 @@
         "target": "DOGE"
     },
     {
+        "ticker_id": "NAV_GRS",
+        "pool_id": "NAV_GRS",
+        "base": "NAV",
+        "target": "GRS"
+    },
+    {
         "ticker_id": "NAV_KMD",
         "pool_id": "NAV_KMD",
         "base": "NAV",
         "target": "KMD"
     },
     {
-        "ticker_id": "NMC_RVN",
-        "pool_id": "NMC_RVN",
-        "base": "NMC",
+        "ticker_id": "NAV_LTC",
+        "pool_id": "NAV_LTC",
+        "base": "NAV",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "NAV_PPC",
+        "pool_id": "NAV_PPC",
+        "base": "NAV",
+        "target": "PPC"
+    },
+    {
+        "ticker_id": "NAV_RVN",
+        "pool_id": "NAV_RVN",
+        "base": "NAV",
         "target": "RVN"
     },
     {
-        "ticker_id": "PIVX_DGB",
-        "pool_id": "PIVX_DGB",
-        "base": "PIVX",
-        "target": "DGB"
+        "ticker_id": "NAV_ZEC",
+        "pool_id": "NAV_ZEC",
+        "base": "NAV",
+        "target": "ZEC"
+    },
+    {
+        "ticker_id": "PAXG-PLG20_LTC",
+        "pool_id": "PAXG-PLG20_LTC",
+        "base": "PAXG-PLG20",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "PGX-PLG20_KMD",
+        "pool_id": "PGX-PLG20_KMD",
+        "base": "PGX-PLG20",
+        "target": "KMD"
     },
     {
         "ticker_id": "PIVX_KMD",
@@ -864,10 +924,10 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "PIVX_USDC-PLG20",
-        "pool_id": "PIVX_USDC-PLG20",
+        "ticker_id": "PIVX_ZEC",
+        "pool_id": "PIVX_ZEC",
         "base": "PIVX",
-        "target": "USDC-PLG20"
+        "target": "ZEC"
     },
     {
         "ticker_id": "PND_KMD",
@@ -886,12 +946,6 @@
         "pool_id": "PPC_DASH",
         "base": "PPC",
         "target": "DASH"
-    },
-    {
-        "ticker_id": "PPC_DGB",
-        "pool_id": "PPC_DGB",
-        "base": "PPC",
-        "target": "DGB"
     },
     {
         "ticker_id": "PPC_KMD",
@@ -918,10 +972,46 @@
         "target": "ZEC"
     },
     {
+        "ticker_id": "PRUX_FLUX",
+        "pool_id": "PRUX_FLUX",
+        "base": "PRUX",
+        "target": "FLUX"
+    },
+    {
+        "ticker_id": "PRUX_KMD",
+        "pool_id": "PRUX_KMD",
+        "base": "PRUX",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "PRUX_LTC",
+        "pool_id": "PRUX_LTC",
+        "base": "PRUX",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "QTUM_BCH",
+        "pool_id": "QTUM_BCH",
+        "base": "QTUM",
+        "target": "BCH"
+    },
+    {
+        "ticker_id": "QTUM_CAKE-BEP20",
+        "pool_id": "QTUM_CAKE-BEP20",
+        "base": "QTUM",
+        "target": "CAKE-BEP20"
+    },
+    {
         "ticker_id": "QTUM_DASH",
         "pool_id": "QTUM_DASH",
         "base": "QTUM",
         "target": "DASH"
+    },
+    {
+        "ticker_id": "QTUM_KCS",
+        "pool_id": "QTUM_KCS",
+        "base": "QTUM",
+        "target": "KCS"
     },
     {
         "ticker_id": "QTUM_LTC",
@@ -930,40 +1020,28 @@
         "target": "LTC"
     },
     {
+        "ticker_id": "QTUM_SOL-PLG20",
+        "pool_id": "QTUM_SOL-PLG20",
+        "base": "QTUM",
+        "target": "SOL-PLG20"
+    },
+    {
         "ticker_id": "RNDR-PLG20_BCH",
         "pool_id": "RNDR-PLG20_BCH",
         "base": "RNDR-PLG20",
         "target": "BCH"
     },
     {
-        "ticker_id": "RTM_BTC",
-        "pool_id": "RTM_BTC",
-        "base": "RTM",
-        "target": "BTC"
+        "ticker_id": "RNDR-PLG20_USDC-PLG20",
+        "pool_id": "RNDR-PLG20_USDC-PLG20",
+        "base": "RNDR-PLG20",
+        "target": "USDC-PLG20"
     },
     {
-        "ticker_id": "RTM_DASH",
-        "pool_id": "RTM_DASH",
+        "ticker_id": "RTM_KMD",
+        "pool_id": "RTM_KMD",
         "base": "RTM",
-        "target": "DASH"
-    },
-    {
-        "ticker_id": "RTM_LTC",
-        "pool_id": "RTM_LTC",
-        "base": "RTM",
-        "target": "LTC"
-    },
-    {
-        "ticker_id": "RTM_RVN",
-        "pool_id": "RTM_RVN",
-        "base": "RTM",
-        "target": "RVN"
-    },
-    {
-        "ticker_id": "RTM_VAL",
-        "pool_id": "RTM_VAL",
-        "base": "RTM",
-        "target": "VAL"
+        "target": "KMD"
     },
     {
         "ticker_id": "RVN_DASH",
@@ -984,16 +1062,28 @@
         "target": "LTC"
     },
     {
+        "ticker_id": "RVN_XEC",
+        "pool_id": "RVN_XEC",
+        "base": "RVN",
+        "target": "XEC"
+    },
+    {
+        "ticker_id": "RVN_ZEC",
+        "pool_id": "RVN_ZEC",
+        "base": "RVN",
+        "target": "ZEC"
+    },
+    {
         "ticker_id": "SYS_DASH",
         "pool_id": "SYS_DASH",
         "base": "SYS",
         "target": "DASH"
     },
     {
-        "ticker_id": "SYS_QTUM",
-        "pool_id": "SYS_QTUM",
+        "ticker_id": "SYS_DOGE",
+        "pool_id": "SYS_DOGE",
         "base": "SYS",
-        "target": "QTUM"
+        "target": "DOGE"
     },
     {
         "ticker_id": "THC_BLK",
@@ -1008,16 +1098,10 @@
         "target": "DASH"
     },
     {
-        "ticker_id": "THC_EMC2",
-        "pool_id": "THC_EMC2",
+        "ticker_id": "THC_DOGE",
+        "pool_id": "THC_DOGE",
         "base": "THC",
-        "target": "EMC2"
-    },
-    {
-        "ticker_id": "THC_GRS",
-        "pool_id": "THC_GRS",
-        "base": "THC",
-        "target": "GRS"
+        "target": "DOGE"
     },
     {
         "ticker_id": "THC_KMD",
@@ -1032,10 +1116,10 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "THC_RTM",
-        "pool_id": "THC_RTM",
+        "ticker_id": "THC_NAV",
+        "pool_id": "THC_NAV",
         "base": "THC",
-        "target": "RTM"
+        "target": "NAV"
     },
     {
         "ticker_id": "THC_RVN",
@@ -1044,16 +1128,28 @@
         "target": "RVN"
     },
     {
+        "ticker_id": "THC_USDT-PLG20",
+        "pool_id": "THC_USDT-PLG20",
+        "base": "THC",
+        "target": "USDT-PLG20"
+    },
+    {
         "ticker_id": "THC_ZEC",
         "pool_id": "THC_ZEC",
         "base": "THC",
         "target": "ZEC"
     },
     {
-        "ticker_id": "TKL_DASH",
-        "pool_id": "TKL_DASH",
+        "ticker_id": "TKL_DOGE",
+        "pool_id": "TKL_DOGE",
         "base": "TKL",
-        "target": "DASH"
+        "target": "DOGE"
+    },
+    {
+        "ticker_id": "TKL_EMC2",
+        "pool_id": "TKL_EMC2",
+        "base": "TKL",
+        "target": "EMC2"
     },
     {
         "ticker_id": "TKL_KMD",
@@ -1062,52 +1158,34 @@
         "target": "KMD"
     },
     {
-        "ticker_id": "TRC_KMD",
-        "pool_id": "TRC_KMD",
-        "base": "TRC",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "TRYB-PLG20_KMD",
-        "pool_id": "TRYB-PLG20_KMD",
-        "base": "TRYB-PLG20",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "TUSD-PLG20_DOGE",
-        "pool_id": "TUSD-PLG20_DOGE",
-        "base": "TUSD-PLG20",
-        "target": "DOGE"
-    },
-    {
-        "ticker_id": "UBT-PLG20_KMD",
-        "pool_id": "UBT-PLG20_KMD",
-        "base": "UBT-PLG20",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "UBT-PLG20_LTC",
-        "pool_id": "UBT-PLG20_LTC",
-        "base": "UBT-PLG20",
+        "ticker_id": "TKL_LTC",
+        "pool_id": "TKL_LTC",
+        "base": "TKL",
         "target": "LTC"
     },
     {
-        "ticker_id": "UBT-PLG20_USDT-PLG20",
-        "pool_id": "UBT-PLG20_USDT-PLG20",
-        "base": "UBT-PLG20",
-        "target": "USDT-PLG20"
+        "ticker_id": "TKL_THC",
+        "pool_id": "TKL_THC",
+        "base": "TKL",
+        "target": "THC"
     },
     {
-        "ticker_id": "UIS_KMD",
-        "pool_id": "UIS_KMD",
-        "base": "UIS",
+        "ticker_id": "TKL_VRSC",
+        "pool_id": "TKL_VRSC",
+        "base": "TKL",
+        "target": "VRSC"
+    },
+    {
+        "ticker_id": "UNO_KMD",
+        "pool_id": "UNO_KMD",
+        "base": "UNO",
         "target": "KMD"
     },
     {
-        "ticker_id": "USDC-BEP20_BTC",
-        "pool_id": "USDC-BEP20_BTC",
-        "base": "USDC-BEP20",
-        "target": "BTC"
+        "ticker_id": "UNO_LTC",
+        "pool_id": "UNO_LTC",
+        "base": "UNO",
+        "target": "LTC"
     },
     {
         "ticker_id": "VAL_KMD",
@@ -1158,16 +1236,16 @@
         "target": "LTC"
     },
     {
-        "ticker_id": "VRSC_QTUM",
-        "pool_id": "VRSC_QTUM",
-        "base": "VRSC",
-        "target": "QTUM"
-    },
-    {
         "ticker_id": "VRSC_RVN",
         "pool_id": "VRSC_RVN",
         "base": "VRSC",
         "target": "RVN"
+    },
+    {
+        "ticker_id": "VRSC_USDC-PLG20",
+        "pool_id": "VRSC_USDC-PLG20",
+        "base": "VRSC",
+        "target": "USDC-PLG20"
     },
     {
         "ticker_id": "VRSC_ZEC",
@@ -1176,58 +1254,106 @@
         "target": "ZEC"
     },
     {
-        "ticker_id": "WCN_LTC",
-        "pool_id": "WCN_LTC",
-        "base": "WCN",
-        "target": "LTC"
-    },
-    {
-        "ticker_id": "WHIVE_KMD",
-        "pool_id": "WHIVE_KMD",
-        "base": "WHIVE",
-        "target": "KMD"
-    },
-    {
-        "ticker_id": "XEC_USDT-PLG20",
-        "pool_id": "XEC_USDT-PLG20",
-        "base": "XEC",
-        "target": "USDT-PLG20"
-    },
-    {
-        "ticker_id": "XEP_DAI-PLG20",
-        "pool_id": "XEP_DAI-PLG20",
-        "base": "XEP",
+        "ticker_id": "VTC_DAI-PLG20",
+        "pool_id": "VTC_DAI-PLG20",
+        "base": "VTC",
         "target": "DAI-PLG20"
     },
     {
-        "ticker_id": "XIDR-PLG20_KMD",
-        "pool_id": "XIDR-PLG20_KMD",
-        "base": "XIDR-PLG20",
+        "ticker_id": "VTC_KMD",
+        "pool_id": "VTC_KMD",
+        "base": "VTC",
         "target": "KMD"
     },
     {
-        "ticker_id": "XNA_USDT-PLG20",
-        "pool_id": "XNA_USDT-PLG20",
-        "base": "XNA",
+        "ticker_id": "VTC_LTC",
+        "pool_id": "VTC_LTC",
+        "base": "VTC",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "VTC_USDT-PLG20",
+        "pool_id": "VTC_USDT-PLG20",
+        "base": "VTC",
         "target": "USDT-PLG20"
     },
     {
-        "ticker_id": "ZEC_DASH",
-        "pool_id": "ZEC_DASH",
-        "base": "ZEC",
+        "ticker_id": "WCN_KMD",
+        "pool_id": "WCN_KMD",
+        "base": "WCN",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "XEP-BEP20_DOGE",
+        "pool_id": "XEP-BEP20_DOGE",
+        "base": "XEP-BEP20",
+        "target": "DOGE"
+    },
+    {
+        "ticker_id": "XEP_KMD",
+        "pool_id": "XEP_KMD",
+        "base": "XEP",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "XMY_DGB",
+        "pool_id": "XMY_DGB",
+        "base": "XMY",
+        "target": "DGB"
+    },
+    {
+        "ticker_id": "XMY_KMD",
+        "pool_id": "XMY_KMD",
+        "base": "XMY",
+        "target": "KMD"
+    },
+    {
+        "ticker_id": "XNA_BCH",
+        "pool_id": "XNA_BCH",
+        "base": "XNA",
+        "target": "BCH"
+    },
+    {
+        "ticker_id": "XNA_DASH",
+        "pool_id": "XNA_DASH",
+        "base": "XNA",
         "target": "DASH"
+    },
+    {
+        "ticker_id": "XNA_DGB",
+        "pool_id": "XNA_DGB",
+        "base": "XNA",
+        "target": "DGB"
+    },
+    {
+        "ticker_id": "XNA_DOGE",
+        "pool_id": "XNA_DOGE",
+        "base": "XNA",
+        "target": "DOGE"
+    },
+    {
+        "ticker_id": "XNA_LTC",
+        "pool_id": "XNA_LTC",
+        "base": "XNA",
+        "target": "LTC"
+    },
+    {
+        "ticker_id": "XNA_USDT-BEP20",
+        "pool_id": "XNA_USDT-BEP20",
+        "base": "XNA",
+        "target": "USDT-BEP20"
+    },
+    {
+        "ticker_id": "XVG_EURS-PLG20",
+        "pool_id": "XVG_EURS-PLG20",
+        "base": "XVG",
+        "target": "EURS-PLG20"
     },
     {
         "ticker_id": "ZEC_DOGE",
         "pool_id": "ZEC_DOGE",
         "base": "ZEC",
         "target": "DOGE"
-    },
-    {
-        "ticker_id": "ZEC_KCS",
-        "pool_id": "ZEC_KCS",
-        "base": "ZEC",
-        "target": "KCS"
     },
     {
         "ticker_id": "ZEC_LTC",
@@ -1240,12 +1366,6 @@
         "pool_id": "ZER_KMD",
         "base": "ZER",
         "target": "KMD"
-    },
-    {
-        "ticker_id": "ZER_LTC",
-        "pool_id": "ZER_LTC",
-        "base": "ZER",
-        "target": "LTC"
     },
     {
         "ticker_id": "ZET_KMD",
