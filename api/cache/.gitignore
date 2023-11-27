@@ -1,6 +1,3 @@
 *.json
-!coins_config.json
-!ticker_cache.json
-!pairs_cache.json
-!source_cache.json
 MM2.db
+coins
