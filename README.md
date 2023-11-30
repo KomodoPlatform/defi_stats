@@ -9,8 +9,9 @@ The goal of this project is to provide all required data from the Komodo DeFi DE
 
 Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.komodoplatform.com/basic-docs/atomicdex/atomicdex-tutorials/query-the-mm2-database.html#my-swaps). It is calculated and then stored in json files in the `cache/`folder every 5 minutes (or less). API endpoints then serve the data from these files (to reduce API endpoint response times).
 
-Data is also imported into more robust databases (mySQL, postgresSQL/Timescale & dGraph) for future reference and to alow more complex queries over a longer timeframe.
+![image](https://github.com/KomodoPlatform/defi_stats/assets/35845239/106973e9-72ca-4486-9fc5-ce7e7e1bfe57)
 
+Data is also imported into more robust databases (mySQL, postgresSQL/Timescale & dGraph) for future reference and to alow more complex queries over a longer timeframe.
 
 
 ### Setup and requirements
