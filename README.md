@@ -2,11 +2,15 @@
 
 **Currrent production URL:** https://defi-stats.komodo.earth/docs#/
 
-The goal of this project is to provide all required data from the Komodo DeFi DEX network to match the required formats for [CoinGecko](https://docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw/edit?usp=sharing)
+The goal of this project is to provide all required data from the Komodo DeFi DEX network to match the required formats for a variety of target consumers:
+- [CoinGecko](https://docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw/edit?usp=sharing)
+- [CMC](https://docs.google.com/document/d/1S4urpzUnO2t7DmS_1dc4EL4tgnnbTObPYXvDeBnukCg/edit#)
+- https://markets.atomicdex.io/
 
 Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.komodoplatform.com/basic-docs/atomicdex/atomicdex-tutorials/query-the-mm2-database.html#my-swaps). It is calculated and then stored in json files in the `cache/`folder every 5 minutes (or less). API endpoints then serve the data from these files (to reduce API endpoint response times).
 
-![image](https://user-images.githubusercontent.com/24797699/109954887-7030db00-7d14-11eb-9b4d-b384082c0705.png)
+Data is also imported into more robust databases (mySQL, postgresSQL/Timescale & dGraph) for future reference and to alow more complex queries over a longer timeframe.
+
 
 
 ### Setup and requirements
@@ -15,16 +19,7 @@ Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.
 - Create `api/.env` file containing the following variables:
 
 ```
-# FastAPI
-API_PORT=8088
-API_HOST='0.0.0.0'
-
-# AtomicDEX API
-API_PORT=7068
-API_HOST='127.0.0.1'
-POETRY_VERSION='1.6.1'
-COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
-COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
+TBA
 ```
 - A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
 
