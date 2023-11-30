@@ -1,39 +1,40 @@
 #!/usr/bin/env python3
 from decimal import Decimal
+from const import MM2_RPC_PORTS, MM2_DB_PATHS, MM2_NETID
 
 
 def format_10f(number: float) -> str:
-    '''
+    """
     Format a float to 10 decimal places.
-    '''
+    """
     return f"{number:.10f}"
 
 
 def list_json_key(data: dict, key: str, filter_value: str) -> Decimal:
-    '''
+    """
     list of key values from dicts.
-    '''
+    """
     return [i for i in data if i[key] == filter_value]
 
 
 def sum_json_key(data: dict, key: str) -> Decimal:
-    '''
+    """
     Sum a key from a list of dicts.
-    '''
+    """
     return sum(Decimal(d[key]) for d in data)
 
 
 def sum_json_key_10f(data: dict, key: str) -> str:
-    '''
+    """
     Sum a key from a list of dicts and format to 10 decimal places.
-    '''
+    """
     return format_10f(sum_json_key(data, key))
 
 
 def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
-    '''
+    """
     Sort a list of dicts by the value of a key.
-    '''
+    """
     return sorted(data, key=lambda k: k[key], reverse=reverse)
 
 
@@ -60,3 +61,16 @@ def order_pair_by_market_cap(pair, gecko_source):
         else:
             pair = (pair[1], pair[0])
     return pair
+
+
+def get_mm2_rpc_port(netid=MM2_NETID):
+    return MM2_RPC_PORTS[str(netid)]
+
+
+def get_db_paths(netid=MM2_NETID):
+    return MM2_DB_PATHS[str(netid)]
+
+
+def get_netid_filename(filename, netid):
+    parts = filename.split(".")
+    return f"{'.'.join(parts[:-1])}_{netid}.{parts[-1]}"

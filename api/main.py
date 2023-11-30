@@ -49,5 +49,5 @@ app.include_router(
 )
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     uvicorn.run("main:app", host=API_HOST, port=API_PORT)

@@ -51,9 +51,17 @@ def test_gecko_tickers_endpoint():
 
 
 def test_orderbook_endpoint():
+    a = client.get("/api/v3/gecko/orderbook/KMD_LTC?netid=0000")
+    assert a.status_code == 422
+    b = client.get("/api/v3/gecko/orderbook/KMD_LTC?netid=7777")
+    assert b.status_code == 200
+    c = client.get("/api/v3/gecko/orderbook/KMD_LTC?netid=8762")
+    assert c.status_code == 200
     r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
+    assert b.json()["bids"][0][0] != c.json()["bids"][0][0]
+    assert b.json()["bids"][0][0] == r.json()["bids"][0][0]
     assert data != {}
     assert "asks" in data
     assert "bids" in data
@@ -72,11 +80,19 @@ def test_orderbook_endpoint():
 
 
 def test_historical_trades_endpoint():
-    '''
+    """
     Uses actual live data, so values
     are not known before tests are run
-    '''
+    """
+    x = client.get("/api/v3/gecko/historical_trades/KMD_LTC?netid=0000")
+    assert x.status_code == 422
+    a = client.get("/api/v3/gecko/historical_trades/KMD_LTC?netid=7777")
+    assert a.status_code == 200
+    b = client.get("/api/v3/gecko/historical_trades/KMD_LTC?netid=8762")
+    assert a.status_code == 200
+    assert a.json()["average_price"] != b.json()["average_price"]
     r = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
+    assert a.json()["average_price"] == r.json()["average_price"]
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
@@ -104,18 +120,20 @@ def test_historical_trades_endpoint():
 
 
 def test_get_swap():
-    '''
+    """
     Returns a single swap from the database
-    '''
+    """
     r = client.get("/api/v3/swaps/swap/39236a1b-f163-4d4f-aa8e-5fe039064e8d")
+    assert r.status_code == 406
+    r = client.get("/api/v3/swaps/swap/c15c7839-0951-445b-84d5-6128167d0b0a")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
-    assert data["uuid"] == "39236a1b-f163-4d4f-aa8e-5fe039064e8d"
-    assert data["maker_amount"] == "0.012370568057616637"
-    assert data["taker_amount"] == "0.4216075605269923"
-    assert data["taker_coin_ticker"] == "DGB"
-    assert data["started_at"] == "1698006396"
+    assert data["uuid"] == "c15c7839-0951-445b-84d5-6128167d0b0a"
+    assert data["maker_amount"] == "123"
+    assert data["taker_amount"] == "6.4715968209"
+    assert data["taker_coin_ticker"] == "KMD"
+    assert data["started_at"] == "1701309262"
 
     with pytest.raises(Exception):
         data = r.json()

@@ -26,7 +26,7 @@ def setup_fake_db():
         dict_format=False
     )
     DB.sql_cursor.execute('''
-        CREATE TABLE stats_swaps (
+        CREATE TABLE IF NOT EXISTS stats_swaps (
             id INTEGER NOT NULL PRIMARY KEY,
             maker_coin VARCHAR(255) NOT NULL,
             taker_coin VARCHAR(255) NOT NULL,

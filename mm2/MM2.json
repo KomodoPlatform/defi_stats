@@ -5,6 +5,8 @@
     "passphrase": "insecure seed for orderbook only",
     "userhome": "/${HOME#\"/\"}",
     "rpc_local_only": false,
-    "rpcip": "0.0.0.0"
+    "i_am_seed":true,
+    "rpcip": "0.0.0.0",
+    "rpcport": 7877
 }
 

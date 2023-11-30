@@ -3,7 +3,6 @@ import logging
 
 
 class CustomFormatter(logging.Formatter):
-
     black = "\x1b[30m"
     error = "\x1b[31m"
     red = "\x1b[31m"
@@ -27,15 +26,17 @@ class CustomFormatter(logging.Formatter):
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    format = "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-    datefmt = '%d-%b-%y %H:%M:%S'
+    format = (
+        "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+    )
+    datefmt = "%d-%b-%y %H:%M:%S"
 
     FORMATS = {
         logging.DEBUG: lightblue + format + reset,
         logging.INFO: lightgreen + format + reset,
         logging.WARNING: red + format + reset,
         logging.ERROR: lightred + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.CRITICAL: bold_red + format + reset,
     }
 
     def format(self, record):

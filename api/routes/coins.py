@@ -2,10 +2,9 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from const import MM2_DB_PATH
 from logger import logger
 from models import ErrorMessage, ApiIds
-from generics import UuidNotFoundException, Files
+from generics import Files
 from utils import Utils
 
 router = APIRouter()

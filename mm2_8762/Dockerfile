@@ -1,4 +1,5 @@
-FROM komodoofficial/atomicdexapi:1.0.7-beta_79f6205
+FROM komodoofficial/atomicdexapi:dev-latest
+
 LABEL maintainer="smk@komodoplatform.com"
 
 # Setup up user and working directory
@@ -16,7 +17,7 @@ RUN apt update && apt install nano htop procps sqlite3 -y
 
 ENV MM2_CONF_PATH=/home/komodian/mm2/MM2.json
 ENV MM_COINS_PATH=/home/komodian/mm2/coins
-ENV MM_LOG=/home/komodian/mm2/mm2.log
+ENV MM_LOG=/home/komodian/mm2/mm2_8762.log
 ENV USERPASS=${userpass}
 
 ENV PATH=/app:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

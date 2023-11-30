@@ -12,9 +12,32 @@ services:
         - USER_ID=${USER_ID:-1000}
         - GROUP_ID=${GROUP_ID:-1000}
     volumes:
-      - ./:/mm2
+      - ./mm2:/home/komodian/mm2
     ports:
-      - 127.0.0.1:7783:7783
+      - 127.0.0.1:7877:7877
+      - 127.0.0.1:38900:38900
+      - 127.0.0.1:38890:38890
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "10"
+    restart: always
+
+  komodefi_8762:
+    container_name: mm2_8762
+    env_file:
+      - ./mm2_8762/.env
+    build:
+      context: ./mm2_8762
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=${USER_ID:-1000}
+        - GROUP_ID=${GROUP_ID:-1000}
+    volumes:
+      - ./mm2_8762:/home/komodian/mm2
+    ports:
+      - 127.0.0.1:7862:7862
       - 127.0.0.1:42845:42845
       - 127.0.0.1:42855:42855
     logging:

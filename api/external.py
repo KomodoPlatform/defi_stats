@@ -14,8 +14,7 @@ class CoinGeckoAPI:
         self.utils = Utils(testing=self.testing)
         self.templates = Templates()
         self.files = Files(self.testing)
-        self.coins_config = self.utils.load_jsonfile(
-            self.files.coins_config_file)
+        self.coins_config = self.utils.load_jsonfile(self.files.coins_config_file)
         self.gecko_source = self.load_gecko_source()
         self.priced_coins = sorted(list(self.gecko_source.keys()))
 
@@ -23,8 +22,7 @@ class CoinGeckoAPI:
         try:
             return self.utils.load_jsonfile(self.files.gecko_source_file)
         except Exception as e:  # pragma: no cover
-            logger.error(
-                f"{type(e)} Error in [CoinGeckoAPI.load_gecko_source]: {e}")
+            logger.error(f"{type(e)} Error in [CoinGeckoAPI.load_gecko_source]: {e}")
             return {}
 
     def get_gecko_coin_ids_list(self) -> list:
@@ -49,9 +47,7 @@ class CoinGeckoAPI:
             if coin_id not in ["na", "test-coin", ""]:
                 coins_info.update({coin: self.templates.gecko_info(coin_id)})
                 if native_coin not in coins_info:
-                    coins_info.update(
-                        {native_coin: self.templates.gecko_info(coin_id)}
-                    )
+                    coins_info.update({native_coin: self.templates.gecko_info(coin_id)})
         return coins_info
 
     def get_gecko_coins_dict(self, gecko_info: dict, coin_ids: list):
@@ -80,8 +76,7 @@ class CoinGeckoAPI:
                 gecko_source = r.json()
 
             except Exception as e:  # pragma: no cover
-                error = {
-                    "error": f"{type(e)} Error in [get_gecko_source]: {e}"}
+                error = {"error": f"{type(e)} Error in [get_gecko_source]: {e}"}
                 logger.error(error)
                 return error
             try:
@@ -108,8 +103,7 @@ class CoinGeckoAPI:
                         logger.warning(error)
 
             except Exception as e:  # pragma: no cover
-                error = {
-                    "error": f"{type(e)} Error in [get_gecko_source]: {e}"}
+                error = {"error": f"{type(e)} Error in [get_gecko_source]: {e}"}
                 logger.error(error)
                 return error
         return coins_info
@@ -124,9 +118,13 @@ class FixerAPI:
         try:
             if FIXER_API_KEY == "":
                 raise ApiKeyNotFoundException("FIXER_API key not set!")
-            r = requests.get(f'http://data.fixer.io/api/latest?access_key={FIXER_API_KEY}')
+            r = requests.get(
+                f"http://data.fixer.io/api/latest?access_key={FIXER_API_KEY}"
+            )
             received_rates = r.json()
-            received_rates["date"] = str(datetime.fromtimestamp(received_rates["timestamp"]))
+            received_rates["date"] = str(
+                datetime.fromtimestamp(received_rates["timestamp"])
+            )
             if "error" in received_rates:
                 raise Exception(received_rates["error"])
             usd_eur_rate = received_rates["rates"]["USD"]
@@ -135,9 +133,8 @@ class FixerAPI:
             received_rates["base"] = "USD"
             received_rates["rates"]["USD"] = 1.0
             received_rates["rates"].pop("BTC")
-            
+
             return received_rates
-        
+
         except Exception as e:
             return {"error": f"{e}"}
-        

@@ -3,28 +3,21 @@ import time
 import sqlite3
 from decimal import Decimal
 from logger import logger
-import const
-from helper import order_pair_by_market_cap
+from helper import order_pair_by_market_cap, get_db_paths
 from generics import Files
 from utils import Utils
 from enums import TradeType
 
 
 def get_db(
-    path_to_db=None,
-    testing: bool = False,
-    DB=None,
-    dict_format=False
+    path_to_db=None, testing: bool = False, DB=None, dict_format=False, netid=None
 ):
     if DB is not None:
         return DB
-    if path_to_db is None:
-        path_to_db = const.MM2_DB_PATH
-    return SqliteDB(
-        path_to_db=path_to_db,
-        testing=testing,
-        dict_format=dict_format
-    )
+
+    if netid is not None:
+        path_to_db = get_db_paths(netid)
+    return SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
 
 
 class SqliteDB:
@@ -36,8 +29,8 @@ class SqliteDB:
         if dict_format:
             self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
-        self.gecko_source = self.utils.load_jsonfile(
-            self.files.gecko_source_file)
+        self.create_swap_stats_table()
+        self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
 
     def close(self):
         self.conn.close()
@@ -55,18 +48,31 @@ class SqliteDB:
                 WHERE started_at > {timestamp} AND is_success=1;"
         self.sql_cursor.execute(sql)
         data = self.sql_cursor.fetchall()
-        pairs = [(f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}") for i in data if i[1]
-                 not in ['', "segwit"] and i[3] not in ['', "segwit"]]
-        pairs += [(f"{i[0]}-{i[1]}", f"{i[2]}") for i in data if i[1]
-                  not in ['', "segwit"] and i[3] in ['', "segwit"]]
-        pairs += [(f"{i[0]}", f"{i[2]}-{i[3]}") for i in data if i[1]
-                  in ['', "segwit"] and i[3] not in ['', "segwit"]]
-        pairs += [(f"{i[0]}", f"{i[2]}") for i in data if i[1]
-                  in ['', "segwit"] and i[3] in ['', "segwit"]]
+        pairs = [
+            (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
+            for i in data
+            if i[1] not in ["", "segwit"] and i[3] not in ["", "segwit"]
+        ]
+        pairs += [
+            (f"{i[0]}-{i[1]}", f"{i[2]}")
+            for i in data
+            if i[1] not in ["", "segwit"] and i[3] in ["", "segwit"]
+        ]
+        pairs += [
+            (f"{i[0]}", f"{i[2]}-{i[3]}")
+            for i in data
+            if i[1] in ["", "segwit"] and i[3] not in ["", "segwit"]
+        ]
+        pairs += [
+            (f"{i[0]}", f"{i[2]}")
+            for i in data
+            if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
+        ]
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
         pairs = list(set(sorted_pairs))
-        data = sorted([order_pair_by_market_cap(
-            pair, self.gecko_source) for pair in pairs])
+        data = sorted(
+            [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
+        )
         return data
 
     def get_swaps_for_pair(
@@ -75,7 +81,7 @@ class SqliteDB:
         trade_type: TradeType = TradeType.ALL,
         limit: int = 0,
         start_time: int = 0,
-        end_time: int = 0
+        end_time: int = 0,
     ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
@@ -192,7 +198,6 @@ class SqliteDB:
             if data[i] is None:
                 data[i] = "0"
         return data
-            
 
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
         """
@@ -216,9 +221,7 @@ class SqliteDB:
         self.sql_cursor.execute(sql)
         resp = self.sql_cursor.fetchone()
         if resp is not None:
-            swap_price = Decimal(resp["taker_amount"]) / Decimal(
-                resp["maker_amount"]
-            )
+            swap_price = Decimal(resp["taker_amount"]) / Decimal(resp["maker_amount"])
             swap_time = resp["started_at"]
 
         swap_price2 = None
@@ -259,3 +262,27 @@ class SqliteDB:
             "price": price,
             "timestamp": last_swap_time,
         }
+
+    def create_swap_stats_table(self):
+        self.sql_cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS
+            stats_swaps (
+                id INTEGER NOT NULL PRIMARY KEY,
+                maker_coin VARCHAR(255) NOT NULL,
+                taker_coin VARCHAR(255) NOT NULL,
+                uuid VARCHAR(255) NOT NULL UNIQUE,
+                started_at INTEGER NOT NULL,
+                finished_at INTEGER NOT NULL,
+                maker_amount DECIMAL NOT NULL,
+                taker_amount DECIMAL NOT NULL,
+                is_success INTEGER NOT NULL,
+                maker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                maker_coin_usd_price DECIMAL,
+                taker_coin_usd_price DECIMAL
+            );
+        """
+        )

@@ -4,13 +4,17 @@ import sqlite3
 from collections import OrderedDict
 from decimal import Decimal
 from logger import logger
-from const import MM2_DB_PATH
+from const import MM2_DB_PATH_7777
 from helper import (
-    sum_json_key, sum_json_key_10f, format_10f,
-    list_json_key, sort_dict_list, order_pair_by_market_cap,
-    set_pair_as_tuple
+    sum_json_key,
+    sum_json_key_10f,
+    format_10f,
+    list_json_key,
+    sort_dict_list,
+    order_pair_by_market_cap,
+    set_pair_as_tuple,
 )
-
+from const import MM2_HOST
 from orderbook import Orderbook
 from generics import Files, Templates
 from utils import Utils
@@ -25,50 +29,61 @@ class Pair:
     e.g. DOGE_BTC, not BTC_DOGE
     """
 
-    def __init__(self, pair, testing: bool = False, path_to_db=MM2_DB_PATH):
+    def __init__(
+        self,
+        pair,
+        testing: bool = False,
+        path_to_db=MM2_DB_PATH_7777,
+        mm2_host=MM2_HOST,
+        mm2_port=7877,
+    ):
         self.path_to_db = path_to_db
+        self.mm2_host = mm2_host
+        self.mm2_port = mm2_port
+        self.mm2_rpc = f"{mm2_host}:{mm2_port}"
         self.testing = testing
         self.files = Files(testing=self.testing)
         self.utils = Utils(testing=self.testing)
         self.templates = Templates()
-        self.gecko_source = self.utils.load_jsonfile(
-            self.files.gecko_source_file)
+        self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
         self.as_tuple = order_pair_by_market_cap(
-            set_pair_as_tuple(pair), self.gecko_source)
+            set_pair_as_tuple(pair), self.gecko_source
+        )
         self.as_str = self.as_tuple[0] + "_" + self.as_tuple[1]
         self.base = self.as_tuple[0]
         self.quote = self.as_tuple[1]
-        self.base_coin = self.as_tuple[0].split('-')[0]
-        self.quote_coin = self.as_tuple[1].split('-')[0]
-        if len(self.as_tuple[0].split('-')) == 2:
-            self.base_platform = self.as_tuple[0].split('-')[1]
-        if len(self.as_tuple[1].split('-')) == 2:
-            self.quote_platform = self.as_tuple[1].split('-')[1]
+        self.base_coin = self.as_tuple[0].split("-")[0]
+        self.quote_coin = self.as_tuple[1].split("-")[0]
+        if len(self.as_tuple[0].split("-")) == 2:
+            self.base_platform = self.as_tuple[0].split("-")[1]
+        if len(self.as_tuple[1].split("-")) == 2:
+            self.quote_platform = self.as_tuple[1].split("-")[1]
 
         self.base_price = self.utils.get_gecko_usd_price(
-            self.base_coin,
-            self.gecko_source
+            self.base_coin, self.gecko_source
         )
         self.quote_price = self.utils.get_gecko_usd_price(
-            self.quote_coin,
-            self.gecko_source
+            self.quote_coin, self.gecko_source
         )
-        self.orderbook = Orderbook(pair=self, testing=self.testing)
+        self.orderbook = Orderbook(
+            pair=self, testing=self.testing, mm2_host=MM2_HOST, mm2_port=7877
+        )
         self.orderbook_data = self.orderbook.for_pair(endpoint=False)
         self.info = {
             "ticker_id": self.as_str,
             "pool_id": self.as_str,
             "base": self.base,
-            "target": self.quote
+            "target": self.quote,
         }
 
     def historical_trades(
         self,
         trade_type: TradeType,
+        netid: int,
         limit: int = 100,
         start_time: int = 0,
         end_time: int = 0,
-        DB=None
+        DB=None,
     ):
         """Returns trades for this pair."""
         try:
@@ -77,22 +92,21 @@ class Pair:
             if end_time == 0:
                 end_time = int(time.time())
             trades_info = []
-            DB = get_db(path_to_db=self.path_to_db,
-                        testing=self.testing, DB=DB)
+            DB = get_db(
+                path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
+            )
 
             swaps_for_pair = DB.get_swaps_for_pair(
                 self.as_tuple,
                 limit=limit,
                 trade_type=trade_type,
                 start_time=start_time,
-                end_time=end_time
+                end_time=end_time,
             )
-            logger.debug(
-                f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
+            logger.debug(f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
             for swap in swaps_for_pair:
                 trade_info = OrderedDict()
-                price = Decimal(swap["taker_amount"]) / \
-                    Decimal(swap["maker_amount"])
+                price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
                 trade_info["trade_id"] = swap["uuid"]
                 trade_info["base_ticker"] = self.base
                 trade_info["target_ticker"] = self.quote
@@ -124,22 +138,17 @@ class Pair:
             "sum_target_volume_sells": sum_json_key_10f(sells, "target_volume"),
             "average_price": format_10f(average_price),
             "buy": buys,
-            "sell": sells
+            "sell": sells,
         }
 
         return data
 
     def get_average_price(self, trades_info):
         if len(trades_info) > 0:
-            return sum_json_key(
-                trades_info, "price") / len(trades_info)
+            return sum_json_key(trades_info, "price") / len(trades_info)
         return 0
 
-    def get_volumes_and_prices(
-        self,
-        days: int = 1,
-        DB=None
-    ):
+    def get_volumes_and_prices(self, days: int = 1, DB=None):
         """
         Iterates over list of swaps to get volumes and prices data
         """
@@ -148,14 +157,10 @@ class Pair:
         data = self.templates.volumes_and_prices(suffix)
         timestamp = int(time.time() - 86400 * days)
         try:
-            swaps_for_pair = DB.get_swaps_for_pair(
-                self.as_tuple,
-                start_time=timestamp
-            )
+            swaps_for_pair = DB.get_swaps_for_pair(self.as_tuple, start_time=timestamp)
 
         except Exception as e:
-            logger.warning(
-                f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
+            logger.warning(f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
             return data
         data["base"] = self.base
         data["quote"] = self.quote
@@ -167,27 +172,20 @@ class Pair:
         swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
         data["base_volume"] = swaps_volumes[0]
         data["quote_volume"] = swaps_volumes[1]
-        data["base_volume_usd"] = Decimal(
-            swaps_volumes[0]) * Decimal(self.base_price)
-        data["quote_volume_usd"] = Decimal(
-            swaps_volumes[1]) * Decimal(self.quote_price)
-        data["combined_volume_usd"] = data["base_volume_usd"] + \
-            data["quote_volume_usd"]
+        data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(self.base_price)
+        data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(self.quote_price)
+        data["combined_volume_usd"] = data["base_volume_usd"] + data["quote_volume_usd"]
 
         if len(swap_prices) > 0:
             # TODO: using timestamps as an index works for now,
             # but breaks when two swaps have the same timestamp.
-            last_swap = DB.get_last_price_for_pair(
-                self.base, self.quote
-            )
+            last_swap = DB.get_last_price_for_pair(self.base, self.quote)
             highest_price = max(swap_prices.values())
             lowest_price = min(swap_prices.values())
             newest_price = swap_prices[max(swap_prices.keys())]
             oldest_price = swap_prices[min(swap_prices.keys())]
             price_change = Decimal(newest_price) - Decimal(oldest_price)
-            pct_change = (
-                (Decimal(newest_price) / Decimal(oldest_price) - 1)
-            )
+            pct_change = Decimal(newest_price) / Decimal(oldest_price) - 1
 
             data[f"highest_price_{suffix}"] = highest_price
             data[f"lowest_price_{suffix}"] = lowest_price
@@ -198,7 +196,7 @@ class Pair:
         return data
 
     def get_liquidity(self):
-        '''Liquidity for pair from current orderbook & usd price.'''
+        """Liquidity for pair from current orderbook & usd price."""
         x = isinstance(self.orderbook_data, dict)
         if not x:
             logger.warning(f"{self.as_str} {x}")
@@ -221,7 +219,7 @@ class Pair:
             "base_usd_price": self.base_price,
             "base_liquidity_coins": base_liq_coins,
             "base_liquidity_usd": base_liq_usd,
-            "liquidity_usd": base_liq_usd + rel_liq_usd
+            "liquidity_usd": base_liq_usd + rel_liq_usd,
         }
 
     def gecko_ticker_info(self, days=1, DB=None, exclude_unpriced=True):
@@ -233,14 +231,13 @@ class Pair:
                 err = {"error": f"Excluding {self.as_str} because it's unpriced"}
                 # logger.debug(err)
                 return err
-            DB = get_db(path_to_db=self.path_to_db,
-                        testing=self.testing, DB=DB)
+            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             DB.conn.row_factory = sqlite3.Row
             DB.sql_cursor = DB.conn.cursor()
             data = self.get_volumes_and_prices(days, DB=DB)
             liquidity = self.get_liquidity()
             suffix = self.utils.get_suffix(days)
-                
+
             return {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
@@ -258,7 +255,7 @@ class Pair:
                 "high": format_10f(data[f"highest_price_{suffix}"]),
                 "low": format_10f(data[f"lowest_price_{suffix}"]),
                 "volume_usd_24hr": format_10f(data["combined_volume_usd"]),
-                "liquidity_in_usd": format_10f(liquidity["liquidity_usd"])
+                "liquidity_in_usd": format_10f(liquidity["liquidity_usd"]),
             }
         except Exception as e:  # pragma: no cover
             err = {"error": f"Error in [Pair.ticker] {self.as_str}: {e}"}
@@ -268,8 +265,12 @@ class Pair:
     def get_swap_prices(self, swaps_for_pair):
         data = {}
         [
-            data.update({i["started_at"]: Decimal(
-                i["taker_amount"]) / Decimal(i["maker_amount"])})
+            data.update(
+                {
+                    i["started_at"]: Decimal(i["taker_amount"])
+                    / Decimal(i["maker_amount"])
+                }
+            )
             for i in swaps_for_pair
         ]
         return data
@@ -278,7 +279,7 @@ class Pair:
         try:
             return [
                 sum_json_key_10f(swaps_for_pair, "maker_amount"),
-                sum_json_key_10f(swaps_for_pair, "taker_amount")
+                sum_json_key_10f(swaps_for_pair, "taker_amount"),
             ]
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [get_swaps_volumes]: {e}")

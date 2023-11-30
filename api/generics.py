@@ -39,11 +39,7 @@ class Templates:
         pass
 
     def gecko_info(self, coin_id):
-        return {
-            "usd_market_cap": 0,
-            "usd_price": 0,
-            "coingecko_id": coin_id
-        }
+        return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}
 
     def volumes_and_prices(self, suffix):
         return {
@@ -68,35 +64,20 @@ class Templates:
             "total_asks_base_vol": 0,
             "total_asks_quote_vol": 0,
             "total_bids_base_vol": 0,
-            "total_bids_quote_vol": 0
+            "total_bids_quote_vol": 0,
         }
         if v2:  # pragma: no cover
-            data.update({
-                "total_asks_base_vol": {
-                    "decimal": 0
-                }
-            })
-            data.update({
-                "total_asks_quote_vol": {
-                    "decimal": 0
-                }
-            })
-            data.update({
-                "total_bids_base_vol": {
-                    "decimal": 0
-                }
-            })
-            data.update({
-                "total_bids_quote_vol": {
-                    "decimal": 0
-                }
-            })
+            data.update({"total_asks_base_vol": {"decimal": 0}})
+            data.update({"total_asks_quote_vol": {"decimal": 0}})
+            data.update({"total_bids_base_vol": {"decimal": 0}})
+            data.update({"total_bids_quote_vol": {"decimal": 0}})
         return data
 
 
 class UuidNotFoundException(Exception):
     "Raised when a UUID is not found in the database"
     pass
+
 
 class ApiKeyNotFoundException(Exception):
     "Raised when a required API key is not found in the .env file"

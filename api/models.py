@@ -1,10 +1,10 @@
-
 # Gecko Response Models
 from pydantic import BaseModel
 from typing import List, Dict
 
 
 # Generic Base Models
+
 
 class GenericTickersItem(BaseModel):
     base_currency: str = "XXX"
@@ -20,8 +20,8 @@ class GenericTickersItem(BaseModel):
     low: str = "123.456789"
     volume_usd_24hr: str = "123.456789"
     liquidity_in_usd: str = "123.456789"
-    
-    
+
+
 class GenericTickersInfo(BaseModel):
     last_update: str = "1697383557"
     pairs_count: str = "9999999999"
@@ -29,9 +29,10 @@ class GenericTickersInfo(BaseModel):
     combined_volume_usd: str = "123.456789"
     combined_liquidity_usd: str = "123.456789"
     data: Dict[str, GenericTickersItem]
-    
-    
+
+
 # Generic Base Models
+
 
 class GeckoPairsItem(BaseModel):
     ticker_id: str = "XXX_YYY"
@@ -113,13 +114,17 @@ class GeckoSwapItem(BaseModel):
     maker_coin_usd_price: str = "123.456789"
     taker_coin_usd_price: str = "123.456789"
 
+
 # Generic Base Models
+
 
 class ErrorMessage(BaseModel):
     error: str = ""
     message: str = ""
 
+
 # Rates Models
+
 
 class FixerRates(BaseModel):
     timestamp: int = 1700050000
@@ -127,7 +132,9 @@ class FixerRates(BaseModel):
     base: str = "XXX"
     rates: Dict[str, float] = {"XXX": "123.456789", "YYY": "123.456789"}
 
+
 # Coins Models
+
 
 class ApiIds(BaseModel):
     timestamp: int = 1700050000

@@ -34,12 +34,9 @@ From the project root folder, execute `./run.sh`.
 Optionally, use the `defi-stats.service` file as a template to let systemd to manage the defi stats service.
 
 ## Testing
-
-You may need to install pytest: `sudo apt install python-pytest`
-
 From the `api` folder:
-- To test everything: `poetry run pytest -vv`
-- To test a specific file: `poetry run pytest -vv tests/test_file.py`
+- To test everything: `pytest -vv`
+- To test a specific file: `pytest -vv tests/test_file.py`
 
 
 ## Note

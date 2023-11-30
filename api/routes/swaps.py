@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from const import MM2_DB_PATH
+from const import MM2_DB_PATH_7777
 from logger import logger
 from models import ErrorMessage, GeckoSwapItem
 from generics import UuidNotFoundException
@@ -19,7 +19,7 @@ router = APIRouter()
 )
 def get_swap(uuid: str):
     try:
-        sqliteDB = SqliteDB(path_to_db=MM2_DB_PATH)
+        sqliteDB = SqliteDB(path_to_db=MM2_DB_PATH_7777)
         resp = sqliteDB.get_swap(uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])

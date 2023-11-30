@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
-from const import MM2_DB_PATH
 from logger import logger
-from db import SqliteDB
 from cache import Cache
-from models import (
-    GenericTickersInfo
-)
+from models import GenericTickersInfo
+from enums import NetId
 
 router = APIRouter()
 cache = Cache()
@@ -18,9 +14,9 @@ cache = Cache()
     response_model=GenericTickersInfo,
     description="24-hour price & volume for each market pair traded in last 7 days."
 )
-def gecko_tickers():
+def gecko_tickers(netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers()
+        data = cache.load.load_gecko_tickers(netid=netid.value)
         tickers = {}
         [tickers.update({i['ticker_id']: i}) for i in data["data"]]
         data['data'] = tickers

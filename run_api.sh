@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Starting DeFi API
-cd /home/admin/defi_stats/api
+cd $(pwd)/api
 source .env
 export PATH="$HOME/.local/bin:$PATH"
 poetry env use /usr/bin/python3.10

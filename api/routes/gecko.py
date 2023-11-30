@@ -10,12 +10,13 @@ from models import (
     GeckoTickersSummary,
     GeckoOrderbookItem,
     GeckoHistoricalTradesItem,
-    ErrorMessage
+    ErrorMessage,
 )
+from helper import get_mm2_rpc_port
 from cache import Cache
 from pair import Pair
 from orderbook import Orderbook
-from enums import TradeType
+from enums import TradeType, NetId
 
 router = APIRouter()
 cache = Cache()
@@ -29,6 +30,7 @@ def validate_ticker_id(ticker_id, valid_tickers):
         msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
         raise ValueError(msg)
 
+
 def validate_positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:
@@ -39,7 +41,9 @@ def validate_positive_numeric(value, name, is_int=False):
         logger.warning(f"{type(e)} Error validating {name}: {e}")
         raise ValueError(f"{name} must be numeric!")
 
+
 # Gecko Caching
+
 
 @router.on_event("startup")
 @repeat_every(seconds=120)
@@ -53,61 +57,71 @@ def cache_gecko_data():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=90)
 def cache_gecko_pairs():  # pragma: no cover
-    try:
-        cache.save.save_gecko_pairs()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
+    for netid in NetId:
+        try:
+            cache.save.save_gecko_pairs(netid=netid.value)
+        except Exception as e:
+            logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
 
 
 @router.on_event("startup")
 @repeat_every(seconds=180)
 def cache_gecko_tickers():  # pragma: no cover
-    try:
-        cache.save.save_gecko_tickers()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [cache_gecko_tickers]: {e}")
+    for netid in NetId:
+        try:
+            cache.save.save_gecko_tickers(netid=netid.value)
+        except Exception as e:
+            logger.warning(f"{type(e)} Error in [cache_gecko_tickers]: {e}")
 
 
 # Gecko Endpoints
 @router.get(
-    '/pairs',
+    "/pairs",
     response_model=List[GeckoPairsItem],
-    description="a list pairs with price data traded within the week."
+    description="a list pairs with price data traded within the week.",
 )
-async def gecko_pairs():
+async def gecko_pairs(netid: NetId = NetId.NETID_7777):
     try:
-        return cache.load.load_gecko_pairs()
+        return cache.load.load_gecko_pairs(netid=netid.value)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
 
 
 @router.get(
-    '/tickers',
+    "/tickers",
     response_model=GeckoTickersSummary,
-    description="24-hour price & volume for each market pair traded in last 7 days."
+    description="24-hour price & volume for each market pair traded in last 7 days.",
 )
-def gecko_tickers():
+def gecko_tickers(netid: NetId = NetId.NETID_7777):
     try:
-        return cache.load.load_gecko_tickers()
+        return cache.load.load_gecko_tickers(netid=netid.value)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}
 
 
 @router.get(
-    '/orderbook/{ticker_id}',
+    "/orderbook/{ticker_id}",
     description="Provides current order book information for the given market pair.",
     response_model=GeckoOrderbookItem,
     responses={406: {"model": ErrorMessage}},
-    status_code=200
+    status_code=200,
 )
-def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int = 100):
+def gecko_orderbook(
+    response: Response,
+    ticker_id: str = "KMD_LTC",
+    depth: int = 100,
+    netid: NetId = NetId.NETID_7777,
+):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs()
-        valid_tickers = [ticker['ticker_id'] for ticker in gecko_pairs]
+        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
         validate_ticker_id(ticker_id, valid_tickers)
-        return Orderbook(Pair(ticker_id)).for_pair(endpoint=True, depth=depth)
+        mm2_port = get_mm2_rpc_port(netid=netid.value)
+        return Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
+            endpoint=True, depth=depth
+        )
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -115,40 +129,42 @@ def gecko_orderbook(response: Response, ticker_id: str = "KMD_LTC", depth: int =
 
 
 @router.get(
-    '/historical_trades/{ticker_id}',
+    "/historical_trades/{ticker_id}",
     description="Data for completed trades for a given market pair.",
     response_model=GeckoHistoricalTradesItem,
     responses={406: {"model": ErrorMessage}},
-    status_code=200
+    status_code=200,
 )
 def gecko_historical_trades(
-        response: Response,
-        trade_type: TradeType = 'all',
-        ticker_id: str = "KMD_LTC",
-        limit: int = 100,
-        start_time: int = 0,
-        end_time: int = 0
+    response: Response,
+    trade_type: TradeType = "all",
+    ticker_id: str = "KMD_LTC",
+    limit: int = 100,
+    start_time: int = 0,
+    end_time: int = 0,
+    netid: NetId = NetId.NETID_7777,
 ):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs()
-        valid_tickers = [ticker['ticker_id'] for ticker in gecko_pairs]
+        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
         validate_ticker_id(ticker_id, valid_tickers)
         for value, name in [
-            (limit, 'limit'),
-            (start_time, 'start_time'),
-            (end_time, 'end_time')
+            (limit, "limit"),
+            (start_time, "start_time"),
+            (end_time, "end_time"),
         ]:
             validate_positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
-        if trade_type not in ['all', 'buy', 'sell']:
+        if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         pair = Pair(ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,
             limit=limit,
             start_time=start_time,
-            end_time=end_time
+            end_time=end_time,
+            netid=netid.value,
         )
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

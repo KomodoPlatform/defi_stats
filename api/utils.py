@@ -48,10 +48,10 @@ class Utils:
         return f"{value:.{rounding}f}"
 
     def clean_decimal_dict_list(self, data, to_string=False, rounding=8):
-        '''
+        """
         Works for a list of dicts with no nesting
         (e.g. summary_cache.json)
-        '''
+        """
         for i in data:
             for j in i:
                 if isinstance(i[j], Decimal):
@@ -62,10 +62,10 @@ class Utils:
         return data
 
     def clean_decimal_dict(self, data, to_string=False, rounding=8):
-        '''
+        """
         Works for a simple dict with no nesting
         (e.g. summary_cache.json)
-        '''
+        """
         for i in data:
             if isinstance(data[i], Decimal):
                 if to_string:
@@ -82,26 +82,22 @@ class Utils:
 
     def segwit_coins(self) -> list:
         coins = self.load_jsonfile(self.files.coins_file)
-        return [
-            i["coin"].split("-")[0] for i in coins
-            if i['coin'].endswith("-segwit")
-        ]
+        return [i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")]
 
     def get_related_coins(self, coin, exclude_segwit=True):
         try:
             coin = coin.split("-")[0]
             coins = self.load_jsonfile(self.files.coins_file)
             data = [
-                i["coin"] for i in coins
-                if i["coin"] == coin
-                or i["coin"].startswith(f"{coin}-")
+                i["coin"]
+                for i in coins
+                if i["coin"] == coin or i["coin"].startswith(f"{coin}-")
             ]
             if exclude_segwit:
                 data = [i for i in data if "-segwit" not in i]
             return data
         except Exception as e:  # pragma: no cover
-            logger.error(
-                f"{type(e)} Error getting related coins for {coin}: {e}")
+            logger.error(f"{type(e)} Error getting related coins for {coin}: {e}")
             return []
 
     def get_related_pairs(self, pair: tuple):
@@ -109,11 +105,7 @@ class Utils:
         coin_b = pair.as_tuple[1]
         coins_a = self.get_related_coins(coin_a, exclude_segwit=True)
         coins_b = self.get_related_coins(coin_b, exclude_segwit=True)
-        return [
-            (i, j) for i in coins_a
-            for j in coins_b
-            if i != j
-        ]
+        return [(i, j) for i in coins_a for j in coins_b if i != j]
 
     def get_chunks(self, data, chunk_length):
         for i in range(0, len(data), chunk_length):

@@ -3,24 +3,26 @@ import time
 from collections import OrderedDict
 from decimal import Decimal
 from logger import logger
-
+from const import MM2_HOST
 from generics import Files, Templates
 from utils import Utils
 from dex_api import DexAPI
 
 
 class Orderbook:
-    def __init__(self, pair, testing: bool = False):
+    def __init__(self, pair, testing: bool = False, mm2_host=MM2_HOST, mm2_port=7877):
         self.pair = pair
         self.base = pair.base
         self.quote = pair.quote
+        self.mm2_host = mm2_host
+        self.mm2_port = mm2_port
+        self.mm2_rpc = f"{mm2_host}:{mm2_port}"
         self.testing = testing
         self.files = Files(testing=self.testing)
         self.utils = Utils(testing=self.testing)
         self.templates = Templates()
-        self.dexapi = DexAPI(testing=self.testing)
-        self.gecko_source = self.utils.load_jsonfile(
-            self.files.gecko_source_file)
+        self.dexapi = DexAPI(testing=self.testing, mm2_host=mm2_host, mm2_port=mm2_port)
+        self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
         pass
 
     def for_pair(self, endpoint=False, depth=10000000):
@@ -35,42 +37,24 @@ class Orderbook:
             orderbook_data["asks"] = data["asks"][::-1][:depth]
             if endpoint:
                 total_bids_base_vol = sum(
-                    [
-                        Decimal(i[1])
-                        for i in orderbook_data["bids"]
-                    ]
+                    [Decimal(i[1]) for i in orderbook_data["bids"]]
                 )
                 total_asks_base_vol = sum(
-                    [
-                        Decimal(i[1])
-                        for i in orderbook_data["asks"]
-                    ]
+                    [Decimal(i[1]) for i in orderbook_data["asks"]]
                 )
                 total_bids_quote_vol = sum(
-                    [
-                        Decimal(i[0]) * Decimal(i[1])
-                        for i in orderbook_data["bids"]
-                    ]
+                    [Decimal(i[0]) * Decimal(i[1]) for i in orderbook_data["bids"]]
                 )
                 total_asks_quote_vol = sum(
-                    [
-                        Decimal(i[0]) * Decimal(i[1])
-                        for i in orderbook_data["asks"]
-                    ]
+                    [Decimal(i[0]) * Decimal(i[1]) for i in orderbook_data["asks"]]
                 )
             else:
                 # logger.debug(f"Total bids: {orderbook_data['bids']}")
                 total_bids_base_vol = sum(
-                    [
-                        Decimal(i["base_max_volume"])
-                        for i in orderbook_data["bids"]
-                    ]
+                    [Decimal(i["base_max_volume"]) for i in orderbook_data["bids"]]
                 )
                 total_asks_base_vol = sum(
-                    [
-                        Decimal(i["base_max_volume"])
-                        for i in orderbook_data["asks"]
-                    ]
+                    [Decimal(i["base_max_volume"]) for i in orderbook_data["asks"]]
                 )
                 total_bids_quote_vol = sum(
                     [
@@ -88,12 +72,16 @@ class Orderbook:
             orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
             orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
-            orderbook_data["total_asks_base_usd"] = total_asks_base_vol * \
-                self.pair.base_price
-            orderbook_data["total_bids_quote_usd"] = total_bids_quote_vol * \
-                self.pair.quote_price
-            orderbook_data["liquidity_usd"] = orderbook_data["total_asks_base_usd"] + \
-                orderbook_data["total_bids_quote_usd"]
+            orderbook_data["total_asks_base_usd"] = (
+                total_asks_base_vol * self.pair.base_price
+            )
+            orderbook_data["total_bids_quote_usd"] = (
+                total_bids_quote_vol * self.pair.quote_price
+            )
+            orderbook_data["liquidity_usd"] = (
+                orderbook_data["total_asks_base_usd"]
+                + orderbook_data["total_bids_quote_usd"]
+            )
 
             return orderbook_data
         except Exception as e:  # pragma: no cover
@@ -115,30 +103,28 @@ class Orderbook:
         for bid in orderbook["bids"]:
             if endpoint:
                 bids_converted_list.append(
-                    [
-                        bid["price"]["decimal"],
-                        bid["base_max_volume"]["decimal"]
-                    ]
+                    [bid["price"]["decimal"], bid["base_max_volume"]["decimal"]]
                 )
             else:
-                bids_converted_list.append({
-                    "price": bid["price"]["decimal"],
-                    "base_max_volume": bid["base_max_volume"]["decimal"]
-                })
+                bids_converted_list.append(
+                    {
+                        "price": bid["price"]["decimal"],
+                        "base_max_volume": bid["base_max_volume"]["decimal"],
+                    }
+                )
 
         for ask in orderbook["asks"]:
             if endpoint:
                 asks_converted_list.append(
-                    [
-                        ask["price"]["decimal"],
-                        ask["base_max_volume"]["decimal"]
-                    ]
+                    [ask["price"]["decimal"], ask["base_max_volume"]["decimal"]]
                 )
             else:
-                asks_converted_list.append({
-                    "price": ask["price"]["decimal"],
-                    "base_max_volume": ask["base_max_volume"]["decimal"]
-                })
+                asks_converted_list.append(
+                    {
+                        "price": ask["price"]["decimal"],
+                        "base_max_volume": ask["base_max_volume"]["decimal"],
+                    }
+                )
         orderbook["bids"] = bids_converted_list
         orderbook["asks"] = asks_converted_list
         return orderbook
