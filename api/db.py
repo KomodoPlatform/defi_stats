@@ -45,9 +45,10 @@ class SqliteDB:
         timestamp = int(time.time() - 86400 * days)
         sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
                 taker_coin_ticker, taker_coin_platform FROM stats_swaps \
-                WHERE started_at > {timestamp} AND is_success=1;"
+                WHERE finished_at > {timestamp} AND is_success=1;"
         self.sql_cursor.execute(sql)
         data = self.sql_cursor.fetchall()
+        # Cover the variants
         pairs = [
             (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
             for i in data
@@ -68,8 +69,11 @@ class SqliteDB:
             for i in data
             if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
         ]
+        # Sort pair by ticker to expose base-rel and rel-base duplicates
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
+        # Remove the duplicates
         pairs = list(set(sorted_pairs))
+        # Sort the pair tickers with lower MC first and higher MC second
         data = sorted(
             [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
         )
@@ -119,13 +123,13 @@ class SqliteDB:
                         quote_platform = j.split("-")[1]
 
                     sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" started_at > {start_time}"
-                    sql += f" AND started_at < {end_time}"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
                     sql += f" AND maker_coin_ticker='{base_ticker}'"
                     sql += f" AND taker_coin_ticker='{quote_ticker}'"
                     sql += f" AND maker_coin_platform='{base_platform}'"
                     sql += f" AND taker_coin_platform='{quote_platform}'"
-                    sql += " AND is_success=1 ORDER BY started_at DESC"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC"
                     if limit > 0:
                         sql += f" LIMIT {limit}"
                     sql += ";"
@@ -138,13 +142,13 @@ class SqliteDB:
                         swap["trade_type"] = "buy"
 
                     sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" started_at > {start_time}"
-                    sql += f" AND started_at < {end_time}"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
                     sql += f" AND taker_coin_ticker='{base_ticker}'"
                     sql += f" AND maker_coin_ticker='{quote_ticker}'"
                     sql += f" AND taker_coin_platform='{base_platform}'"
                     sql += f" AND maker_coin_platform='{quote_platform}'"
-                    sql += " AND is_success=1 ORDER BY started_at DESC"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC"
                     if limit > 0:
                         sql += f" LIMIT {limit}"
                     sql += ";"
@@ -163,7 +167,7 @@ class SqliteDB:
                     swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
             # Sort swaps by timestamp
             swaps_for_pair = sorted(
-                swaps_for_pair, key=lambda k: k["started_at"], reverse=True
+                swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
             )
             if trade_type == TradeType.BUY:
                 swaps_for_pair = [
@@ -217,12 +221,12 @@ class SqliteDB:
         if len(quote.split("-")) == 2:
             platform = quote.split("-")[1]
             sql += f" AND taker_coin_platform='{platform}'"
-        sql += " ORDER BY started_at DESC LIMIT 1;"
+        sql += " ORDER BY finished_at DESC LIMIT 1;"
         self.sql_cursor.execute(sql)
         resp = self.sql_cursor.fetchone()
         if resp is not None:
             swap_price = Decimal(resp["taker_amount"]) / Decimal(resp["maker_amount"])
-            swap_time = resp["started_at"]
+            swap_time = resp["finished_at"]
 
         swap_price2 = None
         swap_time2 = None
@@ -234,14 +238,14 @@ class SqliteDB:
         if len(quote.split("-")) == 2:
             platform = quote.split("-")[1]
             sql += f" AND maker_coin_platform='{platform}'"
-        sql += " ORDER BY started_at DESC LIMIT 1;"
+        sql += " ORDER BY finished_at DESC LIMIT 1;"
         self.sql_cursor.execute(sql)
         resp2 = self.sql_cursor.fetchone()
         if resp2 is not None:
             swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
                 resp2["taker_amount"]
             )
-            swap_time2 = resp2["started_at"]
+            swap_time2 = resp2["finished_at"]
         if swap_price and swap_price2:
             if swap_time > swap_time2:
                 price = swap_price

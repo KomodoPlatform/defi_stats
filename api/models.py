@@ -139,3 +139,16 @@ class FixerRates(BaseModel):
 class ApiIds(BaseModel):
     timestamp: int = 1700050000
     ids: Dict[str, str] = {"BTC": "bitcoin", "KMD": "komodo"}
+
+
+class UsdVolume(BaseModel):
+    usd_volume_24h: float = 1234567.89
+
+
+class CurrentLiquidity(BaseModel):
+    current_liquidity: float = 1234567.89
+
+
+class SwapUuids(BaseModel):
+    pair: str = "KMD_LTC"
+    swap_uuids: List[str]

@@ -123,6 +123,7 @@ class Utils:
         try:
             for ask in orderbook["asks"]:
                 price = ask["price"]
+                # This might already be decimal if not direct from mm2
                 if not isinstance(ask["price"], Decimal):
                     if "decimal" in ask["price"]:
                         price = Decimal(ask["price"]["decimal"])
@@ -142,6 +143,7 @@ class Utils:
         try:
             for bid in orderbook["bids"]:
                 price = bid["price"]
+                # This might already be decimal if not direct from mm2
                 if not isinstance(bid["price"], Decimal):
                     if "decimal" in bid["price"]:
                         price = Decimal(bid["price"]["decimal"])
