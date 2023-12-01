@@ -27,7 +27,7 @@ class DexAPI:
                 err = {"error": "CoinConfigNotFound", "message": r.text}
                 logger.error(f"CoinConfigNotFound for {params['params']}")
             err = {"error": f"{e}", "message": r.text}
-            # logger.error(err)
+            logger.error(err)
             return err
 
     # tuple, string, string -> list

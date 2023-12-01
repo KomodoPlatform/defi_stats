@@ -152,3 +152,27 @@ class CurrentLiquidity(BaseModel):
 class SwapUuids(BaseModel):
     pair: str = "KMD_LTC"
     swap_uuids: List[str]
+
+
+class Swaps24(BaseModel):
+    ticker: str = "KMD"
+    swaps_amount_24h: int
+
+class PairTrades(BaseModel):
+    trade_id: str = "77777777-7777-7777-7777-777777777777"
+    price: str = "123.456"
+    base_volume: str = "123.456"
+    quote_volume: str = "123.456"
+    timestamp: int = 1700050000
+    type: str = "sell"
+
+
+class Swaps24(BaseModel):
+    ticker: str = "KMD"
+    swaps_amount_24h: int
+
+class AdexIo(BaseModel):
+    swaps_all_time: int = 12345
+    swaps_30d: int = 12345
+    swaps_24h: int = 12345
+

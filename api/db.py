@@ -2,6 +2,7 @@
 import time
 import sqlite3
 from decimal import Decimal
+from datetime import datetime, timedelta
 from logger import logger
 from helper import order_pair_by_market_cap, get_db_paths
 from generics import Files
@@ -290,3 +291,174 @@ class SqliteDB:
             );
         """
         )
+
+    def swap_counts(self):
+        timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
+        timestamp_30d_ago = int((datetime.now() - timedelta(30)).strftime("%s"))
+
+        self.sql_cursor
+        self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE is_success=1;")
+        swaps_all_time = self.sql_cursor.fetchone()[0]
+        self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;", (timestamp_24h_ago,))
+        swaps_24h = self.sql_cursor.fetchone()[0]
+        self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;", (timestamp_30d_ago,))
+        swaps_30d = self.sql_cursor.fetchone()[0]
+        self.conn.close()
+        return {
+            "swaps_all_time" : swaps_all_time,
+            "swaps_30d" : swaps_30d,
+            "swaps_24h" : swaps_24h
+        }
+
+    def get_swaps_for_ticker(
+        self,
+        ticker: str,
+        trade_type: TradeType = TradeType.ALL,
+        limit: int = 0,
+        start_time: int = 0,
+        end_time: int = 0,
+    ) -> list:
+        """
+        Returns a list of swaps for a given ticker between two timestamps.
+        If no timestamp is given, returns all swaps for the ticker.
+        Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
+        """
+        # logger.warning(pair)
+        try:
+            tickers = []
+            if end_time == 0:
+                end_time = int(time.time())
+
+            # We stripped segwit from the pairs in get_pairs()
+            # so we need to add it back here if it's present
+            segwit_coins = self.utils.segwit_coins()
+            if ticker in segwit_coins:
+                tickers.append(f"{ticker}-segwit")
+
+            swaps_for_ticker = []
+            self.conn.row_factory = sqlite3.Row
+            self.sql_cursor = self.conn.cursor()
+            for i in tickers:
+                base_ticker = i.split("-")[0]
+                base_platform = ""
+                if len(i.split("-")) == 2:
+                    base_platform = i.split("-")[1]
+
+                sql = "SELECT * FROM stats_swaps WHERE"
+                sql += f" finished_at > {start_time}"
+                sql += f" AND finished_at < {end_time}"
+                sql += f" AND maker_coin_ticker='{base_ticker}'"
+                sql += f" AND maker_coin_platform='{base_platform}'"
+                sql += " AND is_success=1 ORDER BY finished_at DESC"
+                if limit > 0:
+                    sql += f" LIMIT {limit}"
+                sql += ";"
+
+                self.sql_cursor.execute(sql)
+                data = self.sql_cursor.fetchall()
+                swaps_as_maker = [dict(row) for row in data]
+
+                for swap in swaps_as_maker:
+                    swap["trade_type"] = "sell"
+
+                sql = "SELECT * FROM stats_swaps WHERE"
+                sql += f" finished_at > {start_time}"
+                sql += f" AND finished_at < {end_time}"
+                sql += f" AND taker_coin_ticker='{base_ticker}'"
+                sql += f" AND taker_coin_platform='{base_platform}'"
+                sql += " AND is_success=1 ORDER BY finished_at DESC"
+                if limit > 0:
+                    sql += f" LIMIT {limit}"
+                sql += ";"
+                # logger.warning(sql)
+                self.sql_cursor.execute(sql)
+                data = self.sql_cursor.fetchall()
+                swaps_as_taker = [dict(row) for row in data]
+
+                for swap in swaps_as_taker:
+                    swap["trade_type"] = "buy"
+
+                swaps_for_ticker += swaps_as_maker + swaps_as_taker
+            # Sort swaps by timestamp
+            swaps_for_pair = sorted(
+                swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
+            )
+            if trade_type == TradeType.BUY:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
+                ]
+            elif trade_type == TradeType.SELL:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
+                ]
+            if limit > 0:
+                swaps_for_pair = swaps_for_pair[:limit]
+            return swaps_for_pair
+
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+            return []
+
+    def get_volume_for_ticker(
+        self,
+        ticker: str,
+        trade_type: str,
+        start_time: int = 0,
+        end_time: int = 0,
+    ) -> list:
+        """
+        Returns volume traded of ticker between two timestamps.
+        If no timestamp is given, returns all swaps for the ticker.
+        """
+        try:
+            logger.info(f"Getting volume for {ticker} between {start_time} and {end_time}")
+            tickers = [ticker]
+            if end_time == 0:
+                end_time = int(time.time())
+
+            # We stripped segwit from the pairs in get_pairs()
+            # so we need to add it back here if it's present
+            segwit_coins = self.utils.segwit_coins()
+            if ticker in segwit_coins:
+                tickers.append(f"{ticker}-segwit")
+
+            volume_for_ticker = 0
+            self.sql_cursor = self.conn.cursor()
+            for i in tickers:
+                base_ticker = i.split("-")[0]
+                base_platform = ""
+                if len(i.split("-")) == 2:
+                    base_platform = i.split("-")[1]
+
+                volume_as_maker = 0
+                if trade_type in [TradeType.BUY, TradeType.ALL]:
+                    sql = "SELECT SUM(CAST(maker_amount AS NUMERIC)) FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND maker_coin_ticker='{base_ticker}'"
+                    sql += f" AND maker_coin_platform='{base_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC;"
+                    self.sql_cursor.execute(sql)
+                    data = self.sql_cursor.fetchone()
+                    if data[0] is not None:
+                        volume_as_maker = data[0]
+
+                volume_as_taker = 0
+                if trade_type in [TradeType.SELL, TradeType.ALL]:
+                    sql = "SELECT SUM(CAST(taker_amount as NUMERIC)) FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND taker_coin_ticker='{base_ticker}'"
+                    sql += f" AND taker_coin_platform='{base_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC;"
+                    self.sql_cursor.execute(sql)
+                    data = self.sql_cursor.fetchone()
+                    if data[0] is not None:
+                        volume_as_taker = data[0]
+
+                volume_for_ticker += volume_as_maker + volume_as_taker
+            return volume_for_ticker
+
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+            return 0

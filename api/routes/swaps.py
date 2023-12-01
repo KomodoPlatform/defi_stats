@@ -45,11 +45,12 @@ def swap_uuids(pair: str, start_time: int = int(time.time() - 86400), end_time: 
                     path_to_db=MM2_DB_PATHS[netid.value],
                     mm2_port=MM2_RPC_PORTS[netid.value]
         )
+        uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {
             "pair": pair.as_str,
-            "swap_uuids": pair.swap_uuids(start_time=start_time, end_time=end_time)
+            "swap_count": len(uuids),
+            "swap_uuids": uuids
         }
-        print(resp)
         return resp
     except Exception as e:
         err = {"error": f"{e}"}
