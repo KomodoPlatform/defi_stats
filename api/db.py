@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
+import os
 import time
 import sqlite3
 from decimal import Decimal
 from datetime import datetime, timedelta
 from logger import logger
-from helper import order_pair_by_market_cap, get_db_paths
+from helper import order_pair_by_market_cap, get_sqlite_db_paths
 from generics import Files
 from utils import Utils
-from enums import TradeType
+from enums import TradeType, NetId
+from const import (
+    PROJECT_ROOT_PATH,
+    LOCAL_MM2_DB_PATH_7777,
+    LOCAL_MM2_DB_PATH_8762,
+    LOCAL_MM2_DB_BACKUP_7777,
+    LOCAL_MM2_DB_BACKUP_8762,
+    MM2_DB_PATHS
+)
 
 
-def get_db(
+def get_sqlite_db(
     path_to_db=None, testing: bool = False, DB=None, dict_format=False, netid=None
 ):
     if DB is not None:
         return DB
 
     if netid is not None:
-        path_to_db = get_db_paths(netid)
+        path_to_db = get_sqlite_db_paths(netid)
     return SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
 
 
@@ -26,7 +35,8 @@ class SqliteDB:
         self.testing = testing
         self.utils = Utils(testing=self.testing)
         self.files = Files(testing=self.testing)
-        self.conn = sqlite3.connect(path_to_db)
+        self.path_to_db = path_to_db
+        self.conn = sqlite3.connect(self.path_to_db)
         if dict_format:
             self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
@@ -35,6 +45,17 @@ class SqliteDB:
 
     def close(self):
         self.conn.close()
+
+    @property
+    def tables(self):
+        self.sql_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        return [i[0] for i in self.sql_cursor.fetchall()]
+
+    def get_table_columns(self, table):
+        sql = f"SELECT * FROM '{table}' LIMIT 1;"
+        r = self.sql_cursor.execute(sql)
+        r.fetchone()
+        return [i[0] for i in r.description]
 
     def get_pairs(self, days: int = 7) -> list:
         """
@@ -204,6 +225,21 @@ class SqliteDB:
                 data[i] = "0"
         return data
 
+    def get_row_count(self, table):
+        self.sql_cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        r = self.sql_cursor.fetchone()
+        return r[0]
+
+    def get_uuids(self):
+        self.sql_cursor.execute(f"SELECT uuid FROM stats_swaps WHERE is_success = 1")
+        r = self.sql_cursor.fetchall()
+        return [i[0] for i in r]
+    
+    def get_failed_uuids(self):
+        self.sql_cursor.execute(f"SELECT uuid FROM stats_swaps WHERE is_success = 0")
+        r = self.sql_cursor.fetchall()
+        return [i[0] for i in r]
+
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
         """
         Takes a pair in the format `KMD_BTC` and returns the
@@ -287,10 +323,22 @@ class SqliteDB:
                 taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
                 taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
                 maker_coin_usd_price DECIMAL,
-                taker_coin_usd_price DECIMAL
+                taker_coin_usd_price DECIMAL,
+                maker_pubkey VARCHAR(255) DEFAULT '',
+                taker_pubkey VARCHAR(255) DEFAULT ''
             );
         """
         )
+
+    def remove_uuids(self, remove_list):
+        rows = self.get_row_count("stats_swaps")
+        logger.debug(f"{rows} before removing overlaps")
+        sql = f"DELETE FROM stats_swaps WHERE uuid in {tuple(remove_list)}"
+
+        self.sql_cursor.execute(sql)
+        self.conn.commit()
+        rows = self.get_row_count("stats_swaps")
+        logger.debug(f"{rows} after overlaps removed")
 
     def swap_counts(self):
         timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
@@ -299,15 +347,21 @@ class SqliteDB:
         self.sql_cursor
         self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE is_success=1;")
         swaps_all_time = self.sql_cursor.fetchone()[0]
-        self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;", (timestamp_24h_ago,))
+        self.sql_cursor.execute(
+            "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
+            (timestamp_24h_ago,),
+        )
         swaps_24h = self.sql_cursor.fetchone()[0]
-        self.sql_cursor.execute("SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;", (timestamp_30d_ago,))
+        self.sql_cursor.execute(
+            "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
+            (timestamp_30d_ago,),
+        )
         swaps_30d = self.sql_cursor.fetchone()[0]
         self.conn.close()
         return {
-            "swaps_all_time" : swaps_all_time,
-            "swaps_30d" : swaps_30d,
-            "swaps_24h" : swaps_24h
+            "swaps_all_time": swaps_all_time,
+            "swaps_30d": swaps_30d,
+            "swaps_24h": swaps_24h,
         }
 
     def get_swaps_for_ticker(
@@ -381,7 +435,7 @@ class SqliteDB:
                 swaps_for_ticker += swaps_as_maker + swaps_as_taker
             # Sort swaps by timestamp
             swaps_for_pair = sorted(
-                swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
+                swaps_for_ticker, key=lambda k: k["finished_at"], reverse=True
             )
             if trade_type == TradeType.BUY:
                 swaps_for_pair = [
@@ -411,7 +465,9 @@ class SqliteDB:
         If no timestamp is given, returns all swaps for the ticker.
         """
         try:
-            logger.info(f"Getting volume for {ticker} between {start_time} and {end_time}")
+            logger.info(
+                f"Getting volume for {ticker} between {start_time} and {end_time}"
+            )
             tickers = [ticker]
             if end_time == 0:
                 end_time = int(time.time())
@@ -462,3 +518,142 @@ class SqliteDB:
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
             return 0
+
+
+def list_sqlite_dbs(folder):
+    return [i for i in os.listdir(folder) if i.endswith(".db")]
+
+
+def import_db_table_data(src_db_path, dest_db, table, key):
+    sql = ""
+    try:
+        if src_db_path != dest_db.path_to_db:
+            logger.debug(f"Merging {src_db_path} into {dest_db.path_to_db}")
+            dest_columns = dest_db.get_table_columns(table)
+            src_db = get_sqlite_db(path_to_db=src_db_path)
+            src_columns = src_db.get_table_columns(table)
+            src_columns.pop(src_columns.index("id"))
+            sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
+            sql += f" INSERT INTO {table} ({','.join(src_columns)})"
+            sql += f" SELECT {','.join(src_columns)}"
+            sql += f" FROM src_db.{table}"
+            sql += " WHERE NOT EXISTS ("
+            sql += f"SELECT * FROM {table} WHERE {table}.{key} = src_db.{table}.{key});"
+            sql += " DETACH DATABASE 'src_db';"
+            dest_db.sql_cursor.executescript(sql)
+    except Exception as e:
+        logger.warning({f"Error": str(e), "sql": sql})
+
+def progress(status, remaining, total):
+    print(f'Copied {total-remaining} of {total} pages...')
+
+def backup_db(src_db_path, dest_db_path):
+    src = SqliteDB(path_to_db=src_db_path)
+    dest = SqliteDB(path_to_db=dest_db_path)
+    with dest:
+        dest.create_swap_stats_table()
+        src.conn.backup(dest.conn, pages=1, progress=progress)
+    dest.close()
+    src.close()
+
+def init_dbs():
+    logger.debug("Initialising reference databases...")
+    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
+    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
+    db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
+    db_8762.close()
+    db_7777.close()
+    db_all.close()
+
+
+def update_master_sqlite_db():
+    init_dbs()
+    db_folder = f"{PROJECT_ROOT_PATH}/DB"
+
+    # Merge local into master netid dbs
+    db_7777 = get_sqlite_db(path_to_db=f"{db_folder}/MM2_7777.db")
+    import_db_table_data(
+        src_db_path=LOCAL_MM2_DB_BACKUP_7777,
+        dest_db=db_7777,
+        table="stats_swaps",
+        key="uuid"
+    )
+    db_7777.close()
+
+    db_8762 = get_sqlite_db(path_to_db=f"{db_folder}/MM2_8762.db")
+    import_db_table_data(
+        src_db_path=LOCAL_MM2_DB_BACKUP_8762,
+        dest_db=db_8762,
+        table="stats_swaps",
+        key="uuid"
+    )
+    db_8762.close()
+
+    # Get list of supplemental db files
+    sqlite_db_list = list_sqlite_dbs(db_folder)
+    for source_db_file in sqlite_db_list:
+        source_db_path = f"{db_folder}/{source_db_file}"
+        if source_db_file.startswith('seed'):
+            db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
+            import_db_table_data(
+                src_db_path=source_db_path,
+                dest_db=db_7777,
+                table="stats_swaps",
+                key="uuid"
+            )
+            db_7777.close()
+        elif source_db_file.startswith('streamseed'):
+            db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
+            import_db_table_data(
+                src_db_path=source_db_path,
+                dest_db=db_8762,
+                table="stats_swaps",
+                key="uuid"
+            )
+            db_8762.close()
+
+    
+    for i in ["7777", "8762"]:
+        db_all = get_sqlite_db(path_to_db=f"{db_folder}/MM2_all.db")
+        import_db_table_data(
+            src_db_path=MM2_DB_PATHS[i],
+            dest_db=db_all,
+            table="stats_swaps",
+            key="uuid"
+        )
+        db_all.close()
+    remove_overlaps()
+
+def remove_overlaps():
+    
+    # Remove from 8762 if in 7777
+    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
+    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
+    db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
+
+    uuids_7777 = db_7777.get_uuids()
+    uuids_8762 = db_8762.get_uuids()
+    overlap = set(uuids_8762).intersection(set(uuids_7777))
+    logger.debug(f"{len(overlap)} 7777 uuids overlapping to remove from 8762")
+    if len(overlap) > 0:
+        db_8762.remove_uuids(overlap)
+    
+    uuids_7777 = db_7777.get_uuids()
+    uuids_8762 = db_8762.get_uuids()
+    overlap = set(uuids_7777).intersection(set(uuids_8762))
+    logger.debug(f"{len(overlap)} 8762 uuids overlapping to remove from 7777")
+    if len(overlap) > 0:
+        db_7777.remove_uuids(overlap)
+    
+    uuids_7777 = db_7777.get_uuids()
+    uuids_8762 = db_8762.get_uuids()
+    uuids_all = db_all.get_uuids()
+    inspect = set(uuids_all) - set(uuids_7777) - set(uuids_8762)
+    print(f"{len(inspect)} uuids in all, but not in netid dbs.")
+    uuids_7777 = db_7777.get_uuids()
+    uuids_8762 = db_8762.get_uuids()
+    uuids_all = db_all.get_uuids()
+    inspect = set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all)
+    print(f"{len(inspect)} uuids not in all, but in netid dbs.")
+    print(list(inspect)[:5])
+    

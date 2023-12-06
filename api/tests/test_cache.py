@@ -123,8 +123,8 @@ def test_calc_gecko_tickers(
         logger.info(
             f"{i['ticker_id']}: [{i['trades_24hr']}] [{i['volume_usd_24hr']}]")
     assert r["swaps_count"] == 7
-    assert r["pairs_count"] == 5
-    assert len(r["data"]) == 5
+    assert r["pairs_count"] == 6
+    assert len(r["data"]) == 6
     assert "combined_volume_usd" in r
     assert isinstance(r["data"], list)
     assert isinstance(r["data"][0], dict)
@@ -151,8 +151,8 @@ def test_calc_gecko_pairs(setup_cache, setup_swaps_db_data):
     r2 = cache.calc.calc_gecko_pairs(DB=setup_swaps_db_data)
     logger.info(r)
     logger.info(r2)
-    assert len(r) == 6
-    assert len(r2) == 5
+    assert len(r) == 7
+    assert len(r2) == 6
     assert len(r) > len(r2)
     assert isinstance(r, list)
     assert isinstance(r[0], dict)

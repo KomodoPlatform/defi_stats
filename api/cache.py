@@ -8,7 +8,7 @@ from pair import Pair
 from generics import Files
 from utils import Utils
 from external import CoinGeckoAPI, FixerAPI
-from db import get_db
+from db import get_sqlite_db
 from const import COINS_CONFIG_URL, COINS_URL, MM2_DB_PATH_7777
 
 
@@ -115,7 +115,7 @@ class Cache:
         def calc_gecko_pairs(
             self, days: int = 7, exclude_unpriced: bool = True, DB=None
         ) -> list:
-            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+            DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             try:
                 pairs = DB.get_pairs(days)
                 data = [
@@ -134,7 +134,7 @@ class Cache:
         def calc_gecko_tickers(
             self, trades_days: int = 1, pairs_days: int = 7, DB=None
         ):
-            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+            DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             pairs = DB.get_pairs(pairs_days)
             logger.debug(
                 f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)"
@@ -210,7 +210,7 @@ class Cache:
                 self.save(self.files.gecko_source_file, data)
 
         def save_gecko_pairs(self, netid, DB=None):  # pragma: no cover
-            DB = get_db(
+            DB = get_sqlite_db(
                 path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
             )
             data = self.calc.calc_gecko_pairs(DB=DB)
@@ -218,7 +218,7 @@ class Cache:
             return self.save(fn, data)
 
         def save_gecko_tickers(self, netid, DB=None):  # pragma: no cover
-            DB = get_db(
+            DB = get_sqlite_db(
                 path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
             )
             data = self.calc.calc_gecko_tickers(DB=DB)

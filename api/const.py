@@ -17,16 +17,29 @@ COINS_URL = os.getenv("COINS_URL") or coins_repo_url
 coins_config_repo_url = f"{git_raw}/KomodoPlatform/coins/master/utils/coins_config.json"
 COINS_CONFIG_URL = os.getenv("COINS_CONFIG_URL") or coins_config_repo_url
 
+MM2_DB_PATH_ALL = (
+    os.getenv("MM2_DB_PATH_ALL") or f"{PROJECT_ROOT_PATH}/DB/MM2_all.db"
+)
 MM2_DB_PATH_7777 = (
-    f"{PROJECT_ROOT_PATH}/mm2/DB/8a460e332dc74d803eed3757f77bc3bdbbfa2374/MM2.db"
+    os.getenv("MM2_DB_PATH_7777") or f"{PROJECT_ROOT_PATH}/DB/MM2_7777.db"
 )
 MM2_DB_PATH_8762 = (
-    f"{PROJECT_ROOT_PATH}/mm2_8762/DB/7b235c40d413d28b1f7a292f4b8660bc296db743/MM2.db"
+    os.getenv("MM2_DB_PATH_8762") or f"{PROJECT_ROOT_PATH}/DB/MM2_8762.db"
 )
+LOCAL_MM2_DB_PATH_7777 = f"{PROJECT_ROOT_PATH}/mm2/DB/8a460e332dc74d803eed3757f77bc3bdbbfa2374/MM2.db"
+LOCAL_MM2_DB_PATH_8762 = f"{PROJECT_ROOT_PATH}/mm2_8762/DB/7b235c40d413d28b1f7a292f4b8660bc296db743/MM2.db"
+
+LOCAL_MM2_DB_BACKUP_7777 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_7777.db"
+LOCAL_MM2_DB_BACKUP_8762 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_8762.db"
+
 
 MM2_HOST = "http://127.0.0.1"
 MM2_RPC_PORTS = {"7777": 7877, "8762": 7862}
-MM2_DB_PATHS = {"7777": MM2_DB_PATH_7777, "8762": MM2_DB_PATH_8762}
+MM2_DB_PATHS = {
+    "7777": MM2_DB_PATH_7777,
+    "8762": MM2_DB_PATH_8762,
+    "all": MM2_DB_PATH_ALL,
+}
 MM2_NETID = 7777
 
 FIXER_API_KEY = os.getenv("FIXER_API_KEY") or ""

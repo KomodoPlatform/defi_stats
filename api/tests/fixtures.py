@@ -11,7 +11,7 @@ from dex_api import DexAPI
 from utils import Utils
 from cache import Cache
 from pair import Pair
-from db import SqliteDB, get_db
+from db import SqliteDB, get_sqlite_db
 from orderbook import Orderbook
 import helper
 from logger import logger
@@ -49,7 +49,7 @@ def setup_fake_db():
 
 @pytest.fixture
 def setup_actual_db():
-    yield get_db()
+    yield get_sqlite_db()
 
 
 @pytest.fixture
