@@ -79,10 +79,10 @@ def gecko_orderbook(
         if netid.value == "all":
             for x in NetId:
                 if x.value != "all":
-                    gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+                    gecko_pairs = cache.load.load_gecko_pairs(netid=x.value)
                     valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
                     validate_ticker_id(ticker_id, valid_tickers)
-                    mm2_port = get_mm2_rpc_port(netid=netid.value)
+                    mm2_port = get_mm2_rpc_port(netid=x.value)
                     data = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
                         endpoint=True, depth=depth
                     )
