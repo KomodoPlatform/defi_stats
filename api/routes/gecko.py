@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter, Response
-from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
 from typing import List
 import time
@@ -21,8 +20,6 @@ from validate import validate_positive_numeric, validate_ticker_id
 
 router = APIRouter()
 cache = Cache()
-
-
 
 
 # Gecko Endpoints

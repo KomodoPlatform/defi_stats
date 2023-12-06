@@ -25,6 +25,7 @@ class Orderbook:
         self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
         self.base_is_segwit_coin = self.base in self.utils.segwit_coins()
         self.quote_is_segwit_coin = self.quote in self.utils.segwit_coins()
+        self.coins_config = self.utils.load_jsonfile(self.files.coins_config_file)
 
     def for_pair(self, endpoint=False, depth=10000000):
         try:
@@ -51,7 +52,6 @@ class Orderbook:
                         [Decimal(i[0]) * Decimal(i[1]) for i in orderbook_data["asks"]]
                     )
                 else:
-                    # logger.debug(f"Total bids: {orderbook_data['bids']}")
                     total_bids_base_vol = sum(
                         [Decimal(i["base_max_volume"]) for i in orderbook_data["bids"]]
                     )
@@ -109,25 +109,25 @@ class Orderbook:
 
     def get_and_parse(self, endpoint=False):
         try:
-            base_coins = [self.pair.base]
-            quote_coins = [self.pair.quote]
-            if self.base_is_segwit_coin:
-                base_coins.append(f"{self.pair.base}-segwit")
-            if self.quote_is_segwit_coin:
-                quote_coins.append(f"{self.pair.quote}-segwit")
+            base = self.pair.base
+            quote = self.pair.quote
+            pair_set = {base, quote}
+            if self.base_is_segwit_coin and base not in self.coins_config.keys():
+                base = f"{self.pair.base}-segwit"
+            if self.quote_is_segwit_coin and quote not in self.coins_config.keys():
+                base = f"{self.pair.quote}-segwit"
             orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
-            for base in base_coins:
-                for quote in quote_coins:
-                    pair = (base, quote)
-                    x = self.dexapi.orderbook(pair)
+            pair = (base, quote)
+            x = self.dexapi.orderbook(pair)
 
-                    for i in ["asks", "bids"]:
-                        if 'error' not in x:
-                            orderbook[i] += x[i]
-                        else:
-                            pair_set = {self.pair.base, self.pair.quote}
-                            if pair_set.intersection(set(IGNORE_TICKERS)) == 0:
-                                logger.debug(f"No orderbook for {self.pair.base}/{self.pair.quote}")
+            for i in ["asks", "bids"]:
+                if "error" not in x:
+                    orderbook[i] += x[i]
+                else:
+                    if pair_set.intersection(set(IGNORE_TICKERS)) == 0:
+                        logger.debug(
+                            f"No orderbook for {base}/{quote}"
+                        )
 
             bids_converted_list = []
             asks_converted_list = []
@@ -158,6 +158,8 @@ class Orderbook:
                     )
             orderbook["bids"] = bids_converted_list
             orderbook["asks"] = asks_converted_list
+            if "XEP-segwit" in pair_set:
+                print(orderbook)
         except Exception as e:
             logger.error(f"Error: {e}")
         return orderbook

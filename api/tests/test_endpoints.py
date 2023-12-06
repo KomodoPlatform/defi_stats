@@ -123,7 +123,7 @@ def test_get_swap():
     """
     Returns a single swap from the database
     """
-    r = client.get("/api/v3/swaps/swap/39236a1b-f163-4d4f-aa8e-5fe039064e8d")
+    r = client.get("/api/v3/swaps/swap/39236a1b-7777-7777-7777-5fe039064e8d")
     assert r.status_code == 406
     r = client.get("/api/v3/swaps/swap/c15c7839-0951-445b-84d5-6128167d0b0a")
     assert r.status_code == 200

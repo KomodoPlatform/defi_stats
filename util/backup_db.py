@@ -2,10 +2,12 @@
 import sqlite3
 import argparse
 
-'''Used to backup MM2.db files on source servers prior to exfiltration with rsync'''
+"""Used to backup MM2.db files on source servers prior to exfiltration with rsync"""
+
 
 def progress(status, remaining, total):
-    print(f'Copied {total-remaining} of {total} pages...')
+    print(f"Copied {total-remaining} of {total} pages...")
+
 
 def backup_db(src_db_path, dest_db_path):
     src = sqlite3.connect(src_db_path)
@@ -19,7 +21,7 @@ def backup_db(src_db_path, dest_db_path):
 
 def create_swap_stats_table(cursor):
     cursor.execute(
-            """
+        """
             CREATE TABLE IF NOT EXISTS
             stats_swaps (
                 id INTEGER NOT NULL PRIMARY KEY,
@@ -41,11 +43,12 @@ def create_swap_stats_table(cursor):
                 taker_pubkey VARCHAR(255) DEFAULT ''
             );
         """
-        )
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src', type=str, required=True)
-    parser.add_argument('--dest', type=str, required=True)
+    parser.add_argument("--src", type=str, required=True)
+    parser.add_argument("--dest", type=str, required=True)
     args = parser.parse_args()
     backup_db(args.src, args.dest)

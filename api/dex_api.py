@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import requests
 from logger import logger
 from utils import Utils
@@ -22,7 +21,7 @@ class DexAPI:
         try:
             r = requests.post(self.mm2_rpc, json=params)
             resp = r.json()
-            if 'error' not in resp:
+            if "error" not in resp:
                 return resp["result"]
             err = {"error": f'{resp["error_type"]} [{resp["error_data"]}]'}
         except Exception as e:  # pragma: no cover
