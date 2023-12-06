@@ -51,5 +51,10 @@ These should be consolidated in this repo at some point. They are based on branc
 
 All endpoints for this update will have a `api/v3/` prefix. Swagger docs are available at https://192.168.0.1:7766/docs#/ (replace with domain/IP address when deployed).
 
-For gecko endpoints, we are using the prefix `api/v3/gecko/`
+For [CoinGecko](https://www.coingecko.com/) endpoints, we are using the prefix `api/v3/gecko/`
+Endpoints previously at http://stats.testchain.xyz/ have been migrated to the prefix `api/v3/markets/`
 
+## Data completeness
+Add `* * * * * /home/USERNAME/defi_stats/update_MM2_db.sh > /home/atomic/logs/db_update.log` to the crontab of the server you are running this api on to collect a variety of MM2.db files on varying netids, and to cover any missing data from swaps completed during server downtime. SSH key access is required.
+
+This will place the external MM2.db copies into the `defi_stats/DB` folder, which is then periodically scanned, with all data merged into `defi_stats/DB/{netid}_MM2.db` for each netid, and `defi_stats/DB/all_MM2.db` for the complete picture.
