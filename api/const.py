@@ -47,3 +47,4 @@ if not FIXER_API_KEY:
     logger.warning(
         "FIXER_API_KEY is not set in .env file. Without this, '/api/v3/rates/fixer_io' will fail."
     )
+IGNORE_TICKERS = ["XEP"]

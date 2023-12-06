@@ -21,14 +21,13 @@ class DexAPI:
     def api(self, params: dict) -> dict:
         try:
             r = requests.post(self.mm2_rpc, json=params)
-            return json.loads(r.text)["result"]
+            resp = r.json()
+            if 'error' not in resp:
+                return resp["result"]
+            err = {"error": f'{resp["error_type"]} [{resp["error_data"]}]'}
         except Exception as e:  # pragma: no cover
-            if "CoinConfigNotFound" in r.text:
-                err = {"error": "CoinConfigNotFound", "message": r.text}
-                logger.error(f"CoinConfigNotFound for {params['params']}")
             err = {"error": f"{e}", "message": r.text}
-            logger.error(err)
-            return err
+        return err
 
     # tuple, string, string -> list
     # returning orderbook for given trading pair
@@ -38,12 +37,14 @@ class DexAPI:
             quote = pair[1]
             # Check if pair is in coins config
             if len(set(pair).intersection(set(self.coins_config.keys()))) != 2:
-                if base not in self.coins_config.keys():
-                    err = {"error": f"CoinConfigNotFound for {base}"}
-                else:
-                    err = {"error": f"CoinConfigNotFound for {quote}"}
-                logger.warning(err)
-                return err
+                # XEP is segwit only
+                if "XEP" not in [base, quote]:
+                    if base not in self.coins_config.keys():
+                        err = {"error": f"CoinConfigNotFound for {base}"}
+                    else:
+                        err = {"error": f"CoinConfigNotFound for {quote}"}
+                    logger.warning(err)
+                    return err
             if self.testing:
                 orderbook = (
                     f"{API_ROOT_PATH}/tests/fixtures/orderbook/{base}_{quote}.json"

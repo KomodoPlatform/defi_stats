@@ -39,7 +39,6 @@ class Cache:
         self.gecko_source_cache = None
         self.gecko_tickers_cache = None
         self.refresh()
-        logger.info("Cache initialized...")
 
     def refresh(self):
         # Coins repo data
@@ -124,7 +123,7 @@ class Cache:
                     if self.is_pair_priced(i) or not exclude_unpriced
                 ]
                 data = sorted(data, key=lambda d: d["ticker_id"])
-                logger.debug(f"{len(data)} priced pairs ({days} days)")
+                # logger.debug(f"{len(data)} priced pairs ({days} days)")
                 return data
             except Exception as e:  # pragma: no cover
                 err = {"error": f"[calc_gecko_pairs]: {e}"}
@@ -136,9 +135,9 @@ class Cache:
         ):
             DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             pairs = DB.get_pairs(pairs_days)
-            logger.debug(
-                f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)"
-            )
+            # logger.debug(
+            #    f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)"
+            # )
             data = [
                 Pair(i, self.testing).gecko_ticker_info(trades_days, DB=DB)
                 for i in pairs
@@ -179,11 +178,10 @@ class Cache:
                 raise Exception(data["error"])
             elif self.testing:  # pragma: no cover
                 if path in [self.files.gecko_source_file, self.files.coins_config_file]:
-                    logger.info(f"Validated {path} data")
                     return {"result": f"Validated {path} data"}
             with open(path, "w+") as f:
                 json.dump(data, f, indent=4)
-                logger.info(f"Updated {path}")
+                # logger.info(f"Updated {path}")
                 return {"result": f"Updated {path}"}
 
         # Coins repo data

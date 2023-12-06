@@ -27,7 +27,9 @@ def get_sqlite_db(
 
     if netid is not None:
         path_to_db = get_sqlite_db_paths(netid)
-    return SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
+    db = SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
+    # logger.info(f"Connected to DB [{db.path_to_db}]")
+    return db
 
 
 class SqliteDB:
@@ -36,15 +38,78 @@ class SqliteDB:
         self.utils = Utils(testing=self.testing)
         self.files = Files(testing=self.testing)
         self.path_to_db = path_to_db
-        self.conn = sqlite3.connect(self.path_to_db)
+        self.conn = self.connect()
         if dict_format:
             self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
-        self.create_swap_stats_table()
         self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
 
     def close(self):
         self.conn.close()
+        # logger.info(f"Closed connection to {self.path_to_db}")
+
+    def connect(self):
+        return sqlite3.connect(self.path_to_db)
+
+    def import_swap_stats_data(self, src_db_path, table, column):
+        sql = ""
+        try:
+            if src_db_path != self.path_to_db:
+                dest_columns = self.get_table_columns(table)
+                self.denullify_stats_swaps()
+                try:
+                    src_db = get_sqlite_db(path_to_db=src_db_path)
+                    src_db.denullify_stats_swaps()
+                except Exception as e:
+                    logger.warning({
+                        f"Error": str(e),
+                        "db": src_db_path
+                    })
+                    return
+                    
+                src_columns = src_db.get_table_columns(table)
+                src_columns.pop(src_columns.index("id"))
+                sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
+                sql += f" INSERT INTO {table} ({','.join(src_columns)})"
+                sql += f" SELECT {','.join(src_columns)}"
+                sql += f" FROM src_db.{table}"
+                sql += " WHERE NOT EXISTS ("
+                sql += f"SELECT * FROM {table} WHERE {table}.{column} = src_db.{table}.{column});"
+                sql += " DETACH DATABASE 'src_db';"
+                self.sql_cursor.executescript(sql)
+                # logger.debug(f"{src_db_path} merged into {self.path_to_db}")
+        except Exception as e:
+            logger.warning({
+                f"Error": str(e),
+                "src_db": src_db_path,
+                "dest_db": self.path_to_db,
+                "sql": sql
+            })
+
+    def denullify_stats_swaps(self):
+        for column in [
+            "maker_coin_usd_price",
+            "taker_coin_usd_price",
+            "maker_pubkey",
+            "taker_pubkey"
+        ]:
+            self.denullify_db('stats_swaps', column)
+        # logger.debug(f"Nullified 'stats_swaps' for {self.path_to_db}")
+
+    def denullify_db(self, table, column, value="''"):
+        if column in ["maker_coin_usd_price", "taker_coin_usd_price"]:
+            value = 0
+        if column in ["maker_pubkey", "taker_pubkey"]:
+            value = "''"
+        sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
+        self.sql_cursor.execute(sql)
+        self.conn.commit()
+
+    def update_stats_swap_row(self, uuid, data):
+        colvals = ','.join([f"{k} = {v}" for k, v in data.items()])
+        sql = f"UPDATE {'stats_swaps'} SET {colvals} WHERE uuid = '{uuid}';"
+        self.sql_cursor.execute(sql)
+        self.conn.commit()
 
     @property
     def tables(self):
@@ -215,7 +280,6 @@ class SqliteDB:
         self.sql_cursor.execute(sql)
         data = self.sql_cursor.fetchall()
         data = [dict(row) for row in data]
-        logger.info(data)
         if len(data) == 0:
             return {"error": f"swap uuid {uuid} not found"}
         else:
@@ -322,23 +386,23 @@ class SqliteDB:
                 maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
                 taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
                 taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
-                maker_coin_usd_price DECIMAL,
-                taker_coin_usd_price DECIMAL,
-                maker_pubkey VARCHAR(255) DEFAULT '',
-                taker_pubkey VARCHAR(255) DEFAULT ''
+                maker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
+                taker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
+                maker_pubkey VARCHAR(255) NOT NULL DEFAULT '',
+                taker_pubkey VARCHAR(255) NOT NULL DEFAULT ''
             );
         """
         )
 
     def remove_uuids(self, remove_list):
         rows = self.get_row_count("stats_swaps")
-        logger.debug(f"{rows} before removing overlaps")
+        # logger.debug(f"{rows} before removing overlaps")
         sql = f"DELETE FROM stats_swaps WHERE uuid in {tuple(remove_list)}"
 
         self.sql_cursor.execute(sql)
         self.conn.commit()
         rows = self.get_row_count("stats_swaps")
-        logger.debug(f"{rows} after overlaps removed")
+        # logger.debug(f"{rows} after overlaps removed")
 
     def swap_counts(self):
         timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
@@ -524,108 +588,108 @@ def list_sqlite_dbs(folder):
     return [i for i in os.listdir(folder) if i.endswith(".db")]
 
 
-def import_db_table_data(src_db_path, dest_db, table, key):
-    sql = ""
-    try:
-        if src_db_path != dest_db.path_to_db:
-            logger.debug(f"Merging {src_db_path} into {dest_db.path_to_db}")
-            dest_columns = dest_db.get_table_columns(table)
-            src_db = get_sqlite_db(path_to_db=src_db_path)
-            src_columns = src_db.get_table_columns(table)
-            src_columns.pop(src_columns.index("id"))
-            sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
-            sql += f" INSERT INTO {table} ({','.join(src_columns)})"
-            sql += f" SELECT {','.join(src_columns)}"
-            sql += f" FROM src_db.{table}"
-            sql += " WHERE NOT EXISTS ("
-            sql += f"SELECT * FROM {table} WHERE {table}.{key} = src_db.{table}.{key});"
-            sql += " DETACH DATABASE 'src_db';"
-            dest_db.sql_cursor.executescript(sql)
-    except Exception as e:
-        logger.warning({f"Error": str(e), "sql": sql})
-
-def progress(status, remaining, total):
-    print(f'Copied {total-remaining} of {total} pages...')
+def progress(status, remaining, total, show=False):
+    if show:
+        logger.debug(f'Copied {total-remaining} of {total} pages...')
 
 def backup_db(src_db_path, dest_db_path):
-    src = SqliteDB(path_to_db=src_db_path)
-    dest = SqliteDB(path_to_db=dest_db_path)
-    with dest:
-        dest.create_swap_stats_table()
-        src.conn.backup(dest.conn, pages=1, progress=progress)
+    src = get_sqlite_db(path_to_db=src_db_path)
+    dest = get_sqlite_db(path_to_db=dest_db_path)
+    src.conn.backup(dest.conn, pages=1, progress=progress)
+    # logger.debug(f'Backed up {src_db_path} to {dest_db_path}')
     dest.close()
     src.close()
+    
 
 def init_dbs():
-    logger.debug("Initialising reference databases...")
-    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
-    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
-    db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
-    db_8762.close()
-    db_7777.close()
-    db_all.close()
+    logger.debug("Initialising databases...")
+    for i in MM2_DB_PATHS:
+        db = get_sqlite_db(path_to_db=MM2_DB_PATHS[i])
+        db.create_swap_stats_table()
+        db.close()
+    for i in [
+        LOCAL_MM2_DB_BACKUP_7777,
+        LOCAL_MM2_DB_PATH_7777,
+        LOCAL_MM2_DB_BACKUP_8762,
+        LOCAL_MM2_DB_PATH_8762
+    ]:
+        db = get_sqlite_db(path_to_db=i)
+        db.create_swap_stats_table()
+        db.close()
 
+def backup_local_dbs():
+    try:
+        backup_db(
+            src_db_path=LOCAL_MM2_DB_PATH_7777,
+            dest_db_path=LOCAL_MM2_DB_BACKUP_7777
+        )
+        backup_db(
+            src_db_path=LOCAL_MM2_DB_PATH_8762,
+            dest_db_path=LOCAL_MM2_DB_BACKUP_8762
+        )
+        return {"result": "backed up local databases"}
+    except Exception as e:
+        err = f"Error in [backup_local_dbs]: {e}"
+        logger.warning(err)
+        return {"error": err}
 
-def update_master_sqlite_db():
-    init_dbs()
-    db_folder = f"{PROJECT_ROOT_PATH}/DB"
+def update_master_sqlite_dbs():
+    backup_local_dbs()
 
     # Merge local into master netid dbs
-    db_7777 = get_sqlite_db(path_to_db=f"{db_folder}/MM2_7777.db")
-    import_db_table_data(
+    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
+    db_7777.import_swap_stats_data(
         src_db_path=LOCAL_MM2_DB_BACKUP_7777,
-        dest_db=db_7777,
         table="stats_swaps",
-        key="uuid"
+        column="uuid"
     )
     db_7777.close()
 
-    db_8762 = get_sqlite_db(path_to_db=f"{db_folder}/MM2_8762.db")
-    import_db_table_data(
+    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
+    db_8762.import_swap_stats_data(
         src_db_path=LOCAL_MM2_DB_BACKUP_8762,
-        dest_db=db_8762,
         table="stats_swaps",
-        key="uuid"
+        column="uuid"
     )
     db_8762.close()
 
     # Get list of supplemental db files
+    db_folder = f"{PROJECT_ROOT_PATH}/DB"
     sqlite_db_list = list_sqlite_dbs(db_folder)
     for source_db_file in sqlite_db_list:
         source_db_path = f"{db_folder}/{source_db_file}"
+        db_source = get_sqlite_db(path_to_db=source_db_path)
+        
         if source_db_file.startswith('seed'):
             db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
-            import_db_table_data(
+            db_7777.import_swap_stats_data(
                 src_db_path=source_db_path,
-                dest_db=db_7777,
                 table="stats_swaps",
-                key="uuid"
+                column="uuid"
             )
             db_7777.close()
         elif source_db_file.startswith('streamseed'):
             db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
-            import_db_table_data(
+            db_8762.import_swap_stats_data(
                 src_db_path=source_db_path,
-                dest_db=db_8762,
                 table="stats_swaps",
-                key="uuid"
+                column="uuid"
             )
             db_8762.close()
 
     
     for i in ["7777", "8762"]:
-        db_all = get_sqlite_db(path_to_db=f"{db_folder}/MM2_all.db")
-        import_db_table_data(
+        db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
+        db_all.import_swap_stats_data(
             src_db_path=MM2_DB_PATHS[i],
-            dest_db=db_all,
             table="stats_swaps",
-            key="uuid"
+            column="uuid"
         )
         db_all.close()
     remove_overlaps()
+    return {"result": "merge to master databases complete"}
 
 def remove_overlaps():
-    
     # Remove from 8762 if in 7777
     db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
     db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
@@ -634,14 +698,14 @@ def remove_overlaps():
     uuids_7777 = db_7777.get_uuids()
     uuids_8762 = db_8762.get_uuids()
     overlap = set(uuids_8762).intersection(set(uuids_7777))
-    logger.debug(f"{len(overlap)} 7777 uuids overlapping to remove from 8762")
+    # logger.debug(f"{len(overlap)} 7777 uuids overlapping to remove from 8762")
     if len(overlap) > 0:
         db_8762.remove_uuids(overlap)
     
     uuids_7777 = db_7777.get_uuids()
     uuids_8762 = db_8762.get_uuids()
     overlap = set(uuids_7777).intersection(set(uuids_8762))
-    logger.debug(f"{len(overlap)} 8762 uuids overlapping to remove from 7777")
+    # logger.debug(f"{len(overlap)} 8762 uuids overlapping to remove from 7777")
     if len(overlap) > 0:
         db_7777.remove_uuids(overlap)
     
@@ -649,11 +713,56 @@ def remove_overlaps():
     uuids_8762 = db_8762.get_uuids()
     uuids_all = db_all.get_uuids()
     inspect = set(uuids_all) - set(uuids_7777) - set(uuids_8762)
-    print(f"{len(inspect)} uuids in all, but not in netid dbs.")
+    # logger.debug(f"{len(inspect)} uuids in all, but not in netid dbs.")
     uuids_7777 = db_7777.get_uuids()
     uuids_8762 = db_8762.get_uuids()
     uuids_all = db_all.get_uuids()
     inspect = set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all)
-    print(f"{len(inspect)} uuids not in all, but in netid dbs.")
-    print(list(inspect)[:5])
-    
+    # logger.debug(f"{len(inspect)} uuids not in all, but in netid dbs.")
+    missing = {
+        "7777": 0,
+        "8762": 0
+    }
+    for i in list(inspect):
+        try:
+            swap_7777 = db_7777.get_swap(i)
+            swap_8762 = db_8762.get_swap(i)
+            fixed = {}
+            for k, v in swap_7777.items():
+                if k != 'id':
+                    if k in swap_8762:
+                        if swap_8762[k] != v:
+                            logger.debug(f"UUID [{i}] duplicate mismatch for {k}: {v} vs {swap_8762[k]}")
+                            if k in [
+                                "is_success",
+                                "started_at",
+                                "finished_at",
+                                "maker_coin_usd_price",
+                                "taker_coin_usd_price"
+                            ]:
+                                fixed.update({
+                                    k: max([v,swap_8762[k]])
+                                })
+                    else:
+                        raise Exception
+            if len(fixed) > 0:
+                db_7777.update_stats_swap_row(i, fixed)
+                db_8762.update_stats_swap_row(i, fixed)
+                db_all.update_stats_swap_row(i, fixed)
+        except Exception as e:
+            logger.error(f"Failed to repair swap [{i}]: {e}")
+            logger.debug(f"swap_7777: {swap_7777}")
+            logger.debug(f"swap_8762: {swap_8762}")
+            time.sleep(5)
+        
+            
+    db_7777.close()
+    db_8762.close()
+    db_all.close()
+
+def view_locks(cursor):
+    sql = "PRAGMA lock_status"
+    r = cursor.execute(sql)
+    return r.fetchall()
+
+init_dbs()

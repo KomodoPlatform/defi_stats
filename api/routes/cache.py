@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from logger import logger
 from cache import Cache
-from db import remove_overlaps, update_master_sqlite_db, backup_db
+from db import remove_overlaps, update_master_sqlite_dbs
 from logger import logger
 from enums import NetId
 from const import (
@@ -79,19 +79,12 @@ def cache_gecko_tickers():  # pragma: no cover
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
-def update_master_db():  # pragma: no cover
+def update_dbs():
     try:
-        backup_db(
-            src_db_path=LOCAL_MM2_DB_PATH_7777,
-            dest_db_path=LOCAL_MM2_DB_BACKUP_7777
-        )
-        backup_db(
-            src_db_path=LOCAL_MM2_DB_PATH_8762,
-            dest_db_path=LOCAL_MM2_DB_BACKUP_8762
-        )
-        update_master_sqlite_db()
-        return {"result": "Updated reference databases"}
+        result = update_master_sqlite_dbs()
+        # logger.info(result)
+        return result
     except Exception as e:
-        err = f"Error in [update_coins]: {e}"
+        err = f"Error in [update_master_dbs]: {e}"
         logger.warning(err)
         return {"error": err}

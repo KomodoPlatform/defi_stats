@@ -3,7 +3,7 @@ import time
 from collections import OrderedDict
 from decimal import Decimal
 from logger import logger
-from const import MM2_HOST
+from const import MM2_HOST, IGNORE_TICKERS
 from generics import Files, Templates
 from utils import Utils
 from dex_api import DexAPI
@@ -23,7 +23,8 @@ class Orderbook:
         self.templates = Templates()
         self.dexapi = DexAPI(testing=self.testing, mm2_host=mm2_host, mm2_port=mm2_port)
         self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
-        pass
+        self.base_is_segwit_coin = self.base in self.utils.segwit_coins()
+        self.quote_is_segwit_coin = self.quote in self.utils.segwit_coins()
 
     def for_pair(self, endpoint=False, depth=10000000):
         try:
@@ -108,13 +109,25 @@ class Orderbook:
 
     def get_and_parse(self, endpoint=False):
         try:
+            base_coins = [self.pair.base]
+            quote_coins = [self.pair.quote]
+            if self.base_is_segwit_coin:
+                base_coins.append(f"{self.pair.base}-segwit")
+            if self.quote_is_segwit_coin:
+                quote_coins.append(f"{self.pair.quote}-segwit")
             orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
-            for i in ["asks", "bids"]:
-                x = self.dexapi.orderbook(self.pair.as_tuple)
-                if 'error' not in x:
-                    orderbook[i] = x[i]
-                else:
-                    logger.debug(f"No orderbook for {self.pair.base}/{self.pair.quote}")
+            for base in base_coins:
+                for quote in quote_coins:
+                    pair = (base, quote)
+                    x = self.dexapi.orderbook(pair)
+
+                    for i in ["asks", "bids"]:
+                        if 'error' not in x:
+                            orderbook[i] += x[i]
+                        else:
+                            pair_set = {self.pair.base, self.pair.quote}
+                            if pair_set.intersection(set(IGNORE_TICKERS)) == 0:
+                                logger.debug(f"No orderbook for {self.pair.base}/{self.pair.quote}")
 
             bids_converted_list = []
             asks_converted_list = []

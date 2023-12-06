@@ -267,12 +267,10 @@ def volumes_history_ticker(
         db = get_sqlite_db(netid=netid.value)
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
-        e = int(int(d.strftime("%s")) / 86400) * 86400
+        day_ts = int(int(d.strftime("%s")) / 86400) * 86400
         # TODO: Align with midnight
-        start_time = int(e) - 86400
-        end_time = int(e)
-        print(f"start_time: {start_time}")
-        print(f"end_time: {end_time}")
+        start_time = int(day_ts) - 86400
+        end_time = int(day_ts)
         volumes_dict[d_str] = db.get_volume_for_ticker(
             ticker=ticker,
             trade_type=trade_type.value,

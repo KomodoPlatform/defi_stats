@@ -82,7 +82,9 @@ class Utils:
 
     def segwit_coins(self) -> list:
         coins = self.load_jsonfile(self.files.coins_file)
-        return [i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")]
+        segwit_coins = [i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")]
+        # logger.debug(f'Segwit coins: {[i for i in segwit_coins if i.startswith("X")]}')
+        return segwit_coins
 
     def get_related_coins(self, coin, exclude_segwit=True):
         try:
