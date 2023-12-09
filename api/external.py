@@ -147,7 +147,7 @@ class PriceServiceAPI:
 
     def get_calc_prices_tickers_v1(self):
         try:
-            r = requests.get("https://prices.komodian.info/api/v1/tickers")
+            r = requests.get("https://prices.komodian.info/api/v1/tickers?expire_at=21600")
             data = r.json()
             return data
 
@@ -156,7 +156,7 @@ class PriceServiceAPI:
 
     def get_calc_prices_tickers_v2(self):
         try:
-            r = requests.get("https://prices.komodian.info/api/v2/tickers")
+            r = requests.get("https://prices.komodian.info/api/v2/tickers?expire_at=21600")
             data = r.json()
             return data
 

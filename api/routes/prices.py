@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from logger import logger
@@ -17,10 +18,14 @@ cache = Cache()
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def get_v1_tickers():
+def get_v1_tickers(expire_at: int=900):
     # r.GET("/api/v1/tickers", TickerAllInfos)
     try:
-        data = cache.load.load_prices_tickers_v1()
+        data = {}
+        resp = cache.load.load_prices_tickers_v1()
+        for i in resp:
+            if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
+                data.update({i: resp[i]})
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/prices/tickers_v1]: {e}"}
@@ -34,10 +39,14 @@ def get_v1_tickers():
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def get_v2_tickers():
+def get_v2_tickers(expire_at: int=900):
     # r.GET("/api/v2/tickers", TickerAllInfosV2)
     try:
-        data = cache.load.load_prices_tickers_v2()
+        data = {}
+        resp = cache.load.load_prices_tickers_v2()
+        for i in resp:
+            if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
+                data.update({i: resp[i]})
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/prices/tickers_v2]: {e}"}
