@@ -60,7 +60,9 @@ def test_orderbook_endpoint():
     r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
-    assert b.json()["bids"][0][0] != c.json()["bids"][0][0]
+    assert len(b.json()["bids"]) + len(b.json()["asks"]) != len(c.json()["bids"]) + len(
+        c.json()["asks"]
+    )
     assert b.json()["bids"][0][0] == r.json()["bids"][0][0]
     assert data != {}
     assert "asks" in data

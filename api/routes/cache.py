@@ -34,6 +34,19 @@ def cache_gecko_data():  # pragma: no cover
 
 
 @router.on_event("startup")
+@repeat_every(seconds=60)
+def cache_prices_service():  # pragma: no cover
+    try:
+        cache.save.save_prices_tickers_v1()
+    except IOError as e:
+        logger.warning(f"{type(e)} Error in [cache_prices_service]: {e}")
+    try:
+        cache.save.save_prices_tickers_v2()
+    except IOError as e:
+        logger.warning(f"{type(e)} Error in [cache_prices_service]: {e}")
+
+
+@router.on_event("startup")
 @repeat_every(seconds=600)
 def cache_fixer_rates():  # pragma: no cover
     try:

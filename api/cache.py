@@ -7,7 +7,7 @@ from enums import NetId
 from pair import Pair
 from generics import Files
 from utils import Utils
-from external import CoinGeckoAPI, FixerAPI
+from external import CoinGeckoAPI, FixerAPI, PriceServiceAPI
 from db import get_sqlite_db
 from const import COINS_CONFIG_URL, COINS_URL, MM2_DB_PATH_7777
 
@@ -38,6 +38,8 @@ class Cache:
         # For CoinGecko endpoints
         self.gecko_source_cache = None
         self.gecko_tickers_cache = None
+        self.prices_tickers_v1_cache = None
+        self.prices_tickers_v2_cache = None
         self.refresh()
 
     def refresh(self):
@@ -51,6 +53,9 @@ class Cache:
             self.gecko_tickers_cache = self.load.load_gecko_tickers(netid=netid.value)
         # For Rates endpoints
         self.fixer_rates_cache = self.load.load_fixer_rates()
+        # For Prices endpoints
+        self.prices_tickers_v1_cache = self.load.load_prices_tickers_v1()
+        self.prices_tickers_v2_cache = self.load.load_prices_tickers_v2()
 
     class Load:
         def __init__(self, files, utils):
@@ -80,6 +85,13 @@ class Cache:
         def load_fixer_rates(self):
             return self.utils.load_jsonfile(self.files.fixer_rates_file)
 
+        # For Prices endpoints
+        def load_prices_tickers_v1(self):
+            return self.utils.load_jsonfile(self.files.prices_tickers_v1_file)
+
+        def load_prices_tickers_v2(self):
+            return self.utils.load_jsonfile(self.files.prices_tickers_v2_file)
+
     class Calc:
         def __init__(self, path_to_db, load, testing, utils):
             self.path_to_db = path_to_db
@@ -88,10 +100,18 @@ class Cache:
             self.utils = utils
             self.gecko = CoinGeckoAPI(self.testing)
             self.fixer = FixerAPI(self.testing)
+            self.price_service = PriceServiceAPI(self.testing)
 
         # For Rates endpoints
         def calc_fixer_rates_source(self):
             return self.fixer.get_fixer_rates_source()
+
+        # For Prices endpoints
+        def calc_prices_tickers_v1(self):
+            return self.price_service.get_calc_prices_tickers_v1()
+
+        def calc_prices_tickers_v2(self):
+            return self.price_service.get_calc_prices_tickers_v2()
 
         # For CoinGecko endpoints
         def calc_gecko_source(self):
@@ -181,7 +201,7 @@ class Cache:
                     return {"result": f"Validated {path} data"}
             with open(path, "w+") as f:
                 json.dump(data, f, indent=4)
-                # logger.info(f"Updated {path}")
+                logger.info(f"Updated {path}")
                 return {"result": f"Updated {path}"}
 
         # Coins repo data
@@ -195,9 +215,19 @@ class Cache:
             if data is not None:
                 return self.save(self.files.coins_file, data)
 
+        # For Rates endpoints
         def save_fixer_rates_source(self):  # pragma: no cover
             data = self.calc.calc_fixer_rates_source()
             return self.save(self.files.fixer_rates_file, data)
+
+        # For Prices endpoints
+        def save_prices_tickers_v1(self):
+            data = self.calc.calc_prices_tickers_v1()
+            return self.save(self.files.prices_tickers_v1_file, data)
+
+        def save_prices_tickers_v2(self):
+            data = self.calc.calc_prices_tickers_v2()
+            return self.save(self.files.prices_tickers_v2_file, data)
 
         # For CoinGecko endpoints
         def save_gecko_source(self):  # pragma: no cover

@@ -138,3 +138,27 @@ class FixerAPI:
 
         except Exception as e:
             return {"error": f"{e}"}
+
+
+class PriceServiceAPI:
+    def __init__(self, testing: bool = False):
+        self.testing = testing
+        self.files = Files(self.testing)
+
+    def get_calc_prices_tickers_v1(self):
+        try:
+            r = requests.get("https://prices.komodian.info/api/v1/tickers")
+            data = r.json()
+            return data
+
+        except Exception as e:
+            return {"error": f"{e}"}
+
+    def get_calc_prices_tickers_v2(self):
+        try:
+            r = requests.get("https://prices.komodian.info/api/v2/tickers")
+            data = r.json()
+            return data
+
+        except Exception as e:
+            return {"error": f"{e}"}
