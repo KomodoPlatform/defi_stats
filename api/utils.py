@@ -82,7 +82,10 @@ class Utils:
 
     def segwit_coins(self) -> list:
         coins = self.load_jsonfile(self.files.coins_file)
-        return [i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")]
+        segwit_coins = [
+            i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")
+        ]
+        return segwit_coins
 
     def get_related_coins(self, coin, exclude_segwit=True):
         try:
@@ -123,6 +126,7 @@ class Utils:
         try:
             for ask in orderbook["asks"]:
                 price = ask["price"]
+                # This might already be decimal if not direct from mm2
                 if not isinstance(ask["price"], Decimal):
                     if "decimal" in ask["price"]:
                         price = Decimal(ask["price"]["decimal"])
@@ -142,6 +146,7 @@ class Utils:
         try:
             for bid in orderbook["bids"]:
                 price = bid["price"]
+                # This might already be decimal if not direct from mm2
                 if not isinstance(bid["price"], Decimal):
                     if "decimal" in bid["price"]:
                         price = Decimal(bid["price"]["decimal"])

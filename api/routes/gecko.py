@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter, Response
-from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
-from decimal import Decimal
 from typing import List
+import time
 from logger import logger
 from models import (
     GeckoPairsItem,
@@ -17,61 +16,10 @@ from cache import Cache
 from pair import Pair
 from orderbook import Orderbook
 from enums import TradeType, NetId
+from validate import validate_positive_numeric, validate_ticker_id
 
 router = APIRouter()
 cache = Cache()
-
-# Geckop Validation
-
-
-def validate_ticker_id(ticker_id, valid_tickers):
-    if ticker_id not in valid_tickers:
-        msg = f"ticker_id '{ticker_id}' not in available pairs."
-        msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
-        raise ValueError(msg)
-
-
-def validate_positive_numeric(value, name, is_int=False):
-    try:
-        if Decimal(value) < 0:
-            raise ValueError(f"{name} can not be negative!")
-        if is_int and Decimal(value) % 1 != 0:
-            raise ValueError(f"{name} must be an integer!")
-    except Exception as e:
-        logger.warning(f"{type(e)} Error validating {name}: {e}")
-        raise ValueError(f"{name} must be numeric!")
-
-
-# Gecko Caching
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-def cache_gecko_data():  # pragma: no cover
-    try:
-        cache.save.save_gecko_source()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=90)
-def cache_gecko_pairs():  # pragma: no cover
-    for netid in NetId:
-        try:
-            cache.save.save_gecko_pairs(netid=netid.value)
-        except Exception as e:
-            logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=180)
-def cache_gecko_tickers():  # pragma: no cover
-    for netid in NetId:
-        try:
-            cache.save.save_gecko_tickers(netid=netid.value)
-        except Exception as e:
-            logger.warning(f"{type(e)} Error in [cache_gecko_tickers]: {e}")
 
 
 # Gecko Endpoints
@@ -115,13 +63,49 @@ def gecko_orderbook(
     netid: NetId = NetId.NETID_7777,
 ):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-        validate_ticker_id(ticker_id, valid_tickers)
-        mm2_port = get_mm2_rpc_port(netid=netid.value)
-        return Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
-            endpoint=True, depth=depth
-        )
+        resp = {
+            "ticker_id": ticker_id,
+            "timestamp": f"{int(time.time())}",
+            "asks": [],
+            "bids": [],
+            "liquidity_usd": 0,
+            "total_asks_base_vol": 0,
+            "total_bids_base_vol": 0,
+            "total_asks_quote_vol": 0,
+            "total_bids_quote_vol": 0,
+            "total_asks_base_usd": 0,
+            "total_bids_quote_usd": 0,
+        }
+        if netid.value == "all":
+            for x in NetId:
+                if x.value != "all":
+                    gecko_pairs = cache.load.load_gecko_pairs(netid=x.value)
+                    valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
+                    validate_ticker_id(ticker_id, valid_tickers)
+                    mm2_port = get_mm2_rpc_port(netid=x.value)
+                    data = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
+                        endpoint=True, depth=depth
+                    )
+                    resp["asks"] += data["asks"]
+                    resp["bids"] += data["bids"]
+                    resp["liquidity_usd"] += data["liquidity_usd"]
+                    resp["total_asks_base_vol"] += data["total_asks_base_vol"]
+                    resp["total_bids_base_vol"] += data["total_bids_base_vol"]
+                    resp["total_asks_quote_vol"] += data["total_asks_quote_vol"]
+                    resp["total_bids_quote_vol"] += data["total_bids_quote_vol"]
+                    resp["total_asks_base_usd"] += data["total_asks_base_usd"]
+                    resp["total_bids_quote_usd"] += data["total_bids_quote_usd"]
+            resp["bids"] = resp["bids"][:depth][::-1]
+            resp["asks"] = resp["asks"][::-1][:depth]
+        else:
+            gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+            valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
+            validate_ticker_id(ticker_id, valid_tickers)
+            mm2_port = get_mm2_rpc_port(netid=netid.value)
+            resp = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
+                endpoint=True, depth=depth
+            )
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

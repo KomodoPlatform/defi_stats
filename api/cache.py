@@ -7,8 +7,8 @@ from enums import NetId
 from pair import Pair
 from generics import Files
 from utils import Utils
-from external import CoinGeckoAPI, FixerAPI
-from db import get_db
+from external import CoinGeckoAPI, FixerAPI, PriceServiceAPI
+from db import get_sqlite_db
 from const import COINS_CONFIG_URL, COINS_URL, MM2_DB_PATH_7777
 
 
@@ -38,8 +38,9 @@ class Cache:
         # For CoinGecko endpoints
         self.gecko_source_cache = None
         self.gecko_tickers_cache = None
+        self.prices_tickers_v1_cache = None
+        self.prices_tickers_v2_cache = None
         self.refresh()
-        logger.info("Cache initialized...")
 
     def refresh(self):
         # Coins repo data
@@ -52,6 +53,9 @@ class Cache:
             self.gecko_tickers_cache = self.load.load_gecko_tickers(netid=netid.value)
         # For Rates endpoints
         self.fixer_rates_cache = self.load.load_fixer_rates()
+        # For Prices endpoints
+        self.prices_tickers_v1_cache = self.load.load_prices_tickers_v1()
+        self.prices_tickers_v2_cache = self.load.load_prices_tickers_v2()
 
     class Load:
         def __init__(self, files, utils):
@@ -81,6 +85,13 @@ class Cache:
         def load_fixer_rates(self):
             return self.utils.load_jsonfile(self.files.fixer_rates_file)
 
+        # For Prices endpoints
+        def load_prices_tickers_v1(self):
+            return self.utils.load_jsonfile(self.files.prices_tickers_v1_file)
+
+        def load_prices_tickers_v2(self):
+            return self.utils.load_jsonfile(self.files.prices_tickers_v2_file)
+
     class Calc:
         def __init__(self, path_to_db, load, testing, utils):
             self.path_to_db = path_to_db
@@ -89,10 +100,18 @@ class Cache:
             self.utils = utils
             self.gecko = CoinGeckoAPI(self.testing)
             self.fixer = FixerAPI(self.testing)
+            self.price_service = PriceServiceAPI(self.testing)
 
         # For Rates endpoints
         def calc_fixer_rates_source(self):
             return self.fixer.get_fixer_rates_source()
+
+        # For Prices endpoints
+        def calc_prices_tickers_v1(self):
+            return self.price_service.get_calc_prices_tickers_v1()
+
+        def calc_prices_tickers_v2(self):
+            return self.price_service.get_calc_prices_tickers_v2()
 
         # For CoinGecko endpoints
         def calc_gecko_source(self):
@@ -115,7 +134,7 @@ class Cache:
         def calc_gecko_pairs(
             self, days: int = 7, exclude_unpriced: bool = True, DB=None
         ) -> list:
-            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+            DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             try:
                 pairs = DB.get_pairs(days)
                 data = [
@@ -124,7 +143,7 @@ class Cache:
                     if self.is_pair_priced(i) or not exclude_unpriced
                 ]
                 data = sorted(data, key=lambda d: d["ticker_id"])
-                logger.debug(f"{len(data)} priced pairs ({days} days)")
+                # logger.debug(f"{len(data)} priced pairs ({days} days)")
                 return data
             except Exception as e:  # pragma: no cover
                 err = {"error": f"[calc_gecko_pairs]: {e}"}
@@ -134,11 +153,11 @@ class Cache:
         def calc_gecko_tickers(
             self, trades_days: int = 1, pairs_days: int = 7, DB=None
         ):
-            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+            DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             pairs = DB.get_pairs(pairs_days)
-            logger.debug(
-                f"Calculating [gecko_tickers] {len(pairs)} pairs ({pairs_days}d)"
-            )
+            # logger.debug(
+            #    f"[gecko_tickers] {len(pairs)} pairs ({pairs_days}d)"
+            # )
             data = [
                 Pair(i, self.testing).gecko_ticker_info(trades_days, DB=DB)
                 for i in pairs
@@ -179,7 +198,6 @@ class Cache:
                 raise Exception(data["error"])
             elif self.testing:  # pragma: no cover
                 if path in [self.files.gecko_source_file, self.files.coins_config_file]:
-                    logger.info(f"Validated {path} data")
                     return {"result": f"Validated {path} data"}
             with open(path, "w+") as f:
                 json.dump(data, f, indent=4)
@@ -197,9 +215,19 @@ class Cache:
             if data is not None:
                 return self.save(self.files.coins_file, data)
 
+        # For Rates endpoints
         def save_fixer_rates_source(self):  # pragma: no cover
             data = self.calc.calc_fixer_rates_source()
             return self.save(self.files.fixer_rates_file, data)
+
+        # For Prices endpoints
+        def save_prices_tickers_v1(self):
+            data = self.calc.calc_prices_tickers_v1()
+            return self.save(self.files.prices_tickers_v1_file, data)
+
+        def save_prices_tickers_v2(self):
+            data = self.calc.calc_prices_tickers_v2()
+            return self.save(self.files.prices_tickers_v2_file, data)
 
         # For CoinGecko endpoints
         def save_gecko_source(self):  # pragma: no cover
@@ -210,7 +238,7 @@ class Cache:
                 self.save(self.files.gecko_source_file, data)
 
         def save_gecko_pairs(self, netid, DB=None):  # pragma: no cover
-            DB = get_db(
+            DB = get_sqlite_db(
                 path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
             )
             data = self.calc.calc_gecko_pairs(DB=DB)
@@ -218,7 +246,7 @@ class Cache:
             return self.save(fn, data)
 
         def save_gecko_tickers(self, netid, DB=None):  # pragma: no cover
-            DB = get_db(
+            DB = get_sqlite_db(
                 path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
             )
             data = self.calc.calc_gecko_tickers(DB=DB)

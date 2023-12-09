@@ -2,11 +2,16 @@
 
 **Currrent production URL:** https://defi-stats.komodo.earth/docs#/
 
-The goal of this project is to provide all required data from the Komodo DeFi DEX network to match the required formats for [CoinGecko](https://docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw/edit?usp=sharing)
+The goal of this project is to provide all required data from the Komodo DeFi DEX network to match the required formats for a variety of target consumers:
+- [CoinGecko](https://docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw/edit?usp=sharing)
+- [CMC](https://docs.google.com/document/d/1S4urpzUnO2t7DmS_1dc4EL4tgnnbTObPYXvDeBnukCg/edit#)
+- https://markets.atomicdex.io/
 
 Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.komodoplatform.com/basic-docs/atomicdex/atomicdex-tutorials/query-the-mm2-database.html#my-swaps). It is calculated and then stored in json files in the `cache/`folder every 5 minutes (or less). API endpoints then serve the data from these files (to reduce API endpoint response times).
 
-![image](https://user-images.githubusercontent.com/24797699/109954887-7030db00-7d14-11eb-9b4d-b384082c0705.png)
+![image](https://github.com/KomodoPlatform/defi_stats/assets/35845239/106973e9-72ca-4486-9fc5-ce7e7e1bfe57)
+
+Data is also imported into more robust databases (mySQL, postgresSQL/Timescale & dGraph) for future reference and to alow more complex queries over a longer timeframe.
 
 
 ### Setup and requirements
@@ -15,16 +20,7 @@ Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.
 - Create `api/.env` file containing the following variables:
 
 ```
-# FastAPI
-API_PORT=8088
-API_HOST='0.0.0.0'
-
-# AtomicDEX API
-API_PORT=7068
-API_HOST='127.0.0.1'
-POETRY_VERSION='1.6.1'
-COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
-COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
+TBA
 ```
 - A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
 
@@ -55,5 +51,10 @@ These should be consolidated in this repo at some point. They are based on branc
 
 All endpoints for this update will have a `api/v3/` prefix. Swagger docs are available at https://192.168.0.1:7766/docs#/ (replace with domain/IP address when deployed).
 
-For gecko endpoints, we are using the prefix `api/v3/gecko/`
+For [CoinGecko](https://www.coingecko.com/) endpoints, we are using the prefix `api/v3/gecko/`
+Endpoints previously at http://stats.testchain.xyz/ have been migrated to the prefix `api/v3/markets/`
 
+## Data completeness
+Add `* * * * * /home/USERNAME/defi_stats/update_MM2_db.sh > /home/atomic/logs/db_update.log` to the crontab of the server you are running this api on to collect a variety of MM2.db files on varying netids, and to cover any missing data from swaps completed during server downtime. SSH key access is required.
+
+This will place the external MM2.db copies into the `defi_stats/DB` folder, which is then periodically scanned, with all data merged into `defi_stats/DB/{netid}_MM2.db` for each netid, and `defi_stats/DB/all_MM2.db` for the complete picture.

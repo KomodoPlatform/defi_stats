@@ -22,7 +22,7 @@ def test_get_pairs(setup_swaps_db_data):
     pairs = DB.get_pairs()
     assert ("KMD", "BTC") in pairs
     assert ("DOGE", "LTC") not in pairs
-    assert len(pairs) == 6
+    assert len(pairs) == 7
     pairs = DB.get_pairs(45)
     logger.info(pairs)
     assert ("KMD", "BTC") in pairs

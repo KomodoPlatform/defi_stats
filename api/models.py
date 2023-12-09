@@ -1,9 +1,5 @@
-# Gecko Response Models
 from pydantic import BaseModel
 from typing import List, Dict
-
-
-# Generic Base Models
 
 
 class GenericTickersItem(BaseModel):
@@ -31,9 +27,6 @@ class GenericTickersInfo(BaseModel):
     data: Dict[str, GenericTickersItem]
 
 
-# Generic Base Models
-
-
 class GeckoPairsItem(BaseModel):
     ticker_id: str = "XXX_YYY"
     pool_id: str = "XXX_YYY"
@@ -51,11 +44,11 @@ class GeckoTickersSummary(GenericTickersInfo):
 
 class GeckoOrderbookItem(BaseModel):
     ticker_id: str = "XXX_YYY"
-    # base: str = "XXX"
-    # quote: str = "YYY"
     timestamp: str = "1700050000"
     bids: List[List] = [["123.456789", "123.456789"]]
     asks: List[List] = [["123.456789", "123.456789"]]
+    # base: str = "XXX"
+    # quote: str = "YYY"
     # total_asks_base_vol: str = "123.456789"
     # total_bids_base_vol: str = "123.456789"
     # total_asks_quote_vol: str = "123.456789"
@@ -115,15 +108,9 @@ class GeckoSwapItem(BaseModel):
     taker_coin_usd_price: str = "123.456789"
 
 
-# Generic Base Models
-
-
 class ErrorMessage(BaseModel):
     error: str = ""
     message: str = ""
-
-
-# Rates Models
 
 
 class FixerRates(BaseModel):
@@ -133,9 +120,39 @@ class FixerRates(BaseModel):
     rates: Dict[str, float] = {"XXX": "123.456789", "YYY": "123.456789"}
 
 
-# Coins Models
-
-
 class ApiIds(BaseModel):
     timestamp: int = 1700050000
     ids: Dict[str, str] = {"BTC": "bitcoin", "KMD": "komodo"}
+
+
+class UsdVolume(BaseModel):
+    usd_volume_24h: float = 1234567.89
+
+
+class CurrentLiquidity(BaseModel):
+    current_liquidity: float = 1234567.89
+
+
+class SwapUuids(BaseModel):
+    pair: str = "KMD_LTC"
+    swap_uuids: List[str]
+
+
+class Swaps24(BaseModel):
+    ticker: str = "KMD"
+    swaps_amount_24h: int
+
+
+class PairTrades(BaseModel):
+    trade_id: str = "77777777-7777-7777-7777-777777777777"
+    price: str = "123.456"
+    base_volume: str = "123.456"
+    quote_volume: str = "123.456"
+    timestamp: int = 1700050000
+    type: str = "sell"
+
+
+class AdexIo(BaseModel):
+    swaps_all_time: int = 12345
+    swaps_30d: int = 12345
+    swaps_24h: int = 12345

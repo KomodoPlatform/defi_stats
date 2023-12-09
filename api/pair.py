@@ -18,7 +18,7 @@ from const import MM2_HOST
 from orderbook import Orderbook
 from generics import Files, Templates
 from utils import Utils
-from db import get_db
+from db import get_sqlite_db
 from enums import TradeType
 
 
@@ -92,7 +92,7 @@ class Pair:
             if end_time == 0:
                 end_time = int(time.time())
             trades_info = []
-            DB = get_db(
+            DB = get_sqlite_db(
                 path_to_db=self.path_to_db, testing=self.testing, DB=DB, netid=netid
             )
 
@@ -113,7 +113,7 @@ class Pair:
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
                 trade_info["target_volume"] = format_10f(swap["taker_amount"])
-                trade_info["timestamp"] = swap["started_at"]
+                trade_info["timestamp"] = swap["finished_at"]
                 trade_info["type"] = swap["trade_type"]
                 trades_info.append(trade_info)
         except Exception as e:  # pragma: no cover
@@ -152,13 +152,12 @@ class Pair:
         """
         Iterates over list of swaps to get volumes and prices data
         """
-        DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+        DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
         suffix = self.utils.get_suffix(days)
         data = self.templates.volumes_and_prices(suffix)
         timestamp = int(time.time() - 86400 * days)
         try:
             swaps_for_pair = DB.get_swaps_for_pair(self.as_tuple, start_time=timestamp)
-
         except Exception as e:
             logger.warning(f"{type(e)} Error in [Pair.get_volumes_and_prices]: {e}")
             return data
@@ -231,14 +230,14 @@ class Pair:
                 err = {"error": f"Excluding {self.as_str} because it's unpriced"}
                 # logger.debug(err)
                 return err
-            DB = get_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+            DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             DB.conn.row_factory = sqlite3.Row
             DB.sql_cursor = DB.conn.cursor()
             data = self.get_volumes_and_prices(days, DB=DB)
-            liquidity = self.get_liquidity()
             suffix = self.utils.get_suffix(days)
+            liquidity = self.get_liquidity()
 
-            return {
+            resp = {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
                 "base_currency": self.base,
@@ -256,7 +255,13 @@ class Pair:
                 "low": format_10f(data[f"lowest_price_{suffix}"]),
                 "volume_usd_24hr": format_10f(data["combined_volume_usd"]),
                 "liquidity_in_usd": format_10f(liquidity["liquidity_usd"]),
+                f"price_change_percent_{suffix}": data[
+                    f"price_change_percent_{suffix}"
+                ],
+                f"price_change_{suffix}": data[f"price_change_{suffix}"],
             }
+            return resp
+
         except Exception as e:  # pragma: no cover
             err = {"error": f"Error in [Pair.ticker] {self.as_str}: {e}"}
             logger.warning(err)
@@ -267,12 +272,20 @@ class Pair:
         [
             data.update(
                 {
-                    i["started_at"]: Decimal(i["taker_amount"])
+                    i["finished_at"]: Decimal(i["taker_amount"])
                     / Decimal(i["maker_amount"])
                 }
             )
             for i in swaps_for_pair
         ]
+        return data
+
+    def swap_uuids(self, start_time: int, end_time: int = 0, DB=None) -> list:
+        DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
+        swaps_for_pair = DB.get_swaps_for_pair(
+            self.as_tuple, start_time=start_time, end_time=end_time
+        )
+        data = [i["uuid"] for i in swaps_for_pair]
         return data
 
     def get_swaps_volumes(self, swaps_for_pair):

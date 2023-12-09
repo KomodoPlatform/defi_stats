@@ -67,7 +67,7 @@ def get_mm2_rpc_port(netid=MM2_NETID):
     return MM2_RPC_PORTS[str(netid)]
 
 
-def get_db_paths(netid=MM2_NETID):
+def get_sqlite_db_paths(netid=MM2_NETID):
     return MM2_DB_PATHS[str(netid)]
 
 

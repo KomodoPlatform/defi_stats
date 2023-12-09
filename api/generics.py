@@ -10,14 +10,17 @@ class Files:
         else:
             folder = f"{API_ROOT_PATH}/cache"
         # Coins repo data
-        self.coins_file = f"{folder}/coins"
-        self.coins_config_file = f"{folder}/coins_config.json"
+        self.coins_file = f"{folder}/coins/coins.json"
+        self.coins_config_file = f"{folder}/coins/coins_config.json"
         # For CoinGecko endpoints
         self.gecko_source_file = f"{folder}/gecko/source_cache.json"
         self.gecko_tickers_file = f"{folder}/gecko/ticker_cache.json"
         self.gecko_pairs_file = f"{folder}/gecko/pairs_cache.json"
         # For Rates endpoints
-        self.fixer_rates_file = f"{folder}/gecko/fixer_rates_cache.json"
+        self.fixer_rates_file = f"{folder}/rates/fixer_rates_cache.json"
+        # For Prices endpoints
+        self.prices_tickers_v1_file = f"{folder}/prices/prices_tickers_v1.json"
+        self.prices_tickers_v2_file = f"{folder}/prices/prices_tickers_v2.json"
 
 
 class Time:
