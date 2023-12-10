@@ -173,7 +173,7 @@ class Pair:
         data["quote_volume"] = swaps_volumes[1]
         data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(self.base_price)
         data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(self.quote_price)
-        data["combined_volume_usd"] = data["base_volume_usd"] + data["quote_volume_usd"]
+        data["combined_volume_usd"] = (data["base_volume_usd"] + data["quote_volume_usd"])/2
 
         if len(swap_prices) > 0:
             # TODO: using timestamps as an index works for now,

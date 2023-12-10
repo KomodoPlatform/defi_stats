@@ -88,7 +88,8 @@ def test_get_volumes_and_prices(
     assert float(r["price_change_percent_24h"]) == -0.75
     assert float(r["base_volume_usd"]) == 3
     assert float(r["quote_volume_usd"]) == 3500
-    assert float(r["combined_volume_usd"]) == 3503
+    # average of base and rel volume
+    assert float(r["combined_volume_usd"]) == 3503 / 2
     assert float(r["last_trade"]) > int(time.time() - 86400)
 
     pair = setup_not_existing_pair
