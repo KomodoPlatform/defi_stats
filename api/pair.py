@@ -84,6 +84,7 @@ class Pair:
         start_time: int = 0,
         end_time: int = 0,
         DB=None,
+        reverse=False,
     ):
         """Returns trades for this pair."""
         try:
@@ -102,6 +103,7 @@ class Pair:
                 trade_type=trade_type,
                 start_time=start_time,
                 end_time=end_time,
+                reverse=reverse,
             )
             logger.debug(f"{len(swaps_for_pair)} swaps_for_pair: {self.as_str}")
             for swap in swaps_for_pair:
@@ -112,6 +114,7 @@ class Pair:
                 trade_info["target_ticker"] = self.quote
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
+                trade_info["quote_volume"] = format_10f(swap["taker_amount"])
                 trade_info["target_volume"] = format_10f(swap["taker_amount"])
                 trade_info["timestamp"] = swap["finished_at"]
                 trade_info["type"] = swap["trade_type"]
@@ -136,6 +139,8 @@ class Pair:
             "sum_base_volume_sells": sum_json_key_10f(sells, "base_volume"),
             "sum_target_volume_buys": sum_json_key_10f(buys, "target_volume"),
             "sum_target_volume_sells": sum_json_key_10f(sells, "target_volume"),
+            "sum_quote_volume_buys": sum_json_key_10f(buys, "quote_volume"),
+            "sum_quote_volume_sells": sum_json_key_10f(sells, "quote_volume"),
             "average_price": format_10f(average_price),
             "buy": buys,
             "sell": sells,
@@ -173,7 +178,9 @@ class Pair:
         data["quote_volume"] = swaps_volumes[1]
         data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(self.base_price)
         data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(self.quote_price)
-        data["combined_volume_usd"] = (data["base_volume_usd"] + data["quote_volume_usd"])/2
+        data["combined_volume_usd"] = (
+            data["base_volume_usd"] + data["quote_volume_usd"]
+        ) / 2
 
         if len(swap_prices) > 0:
             # TODO: using timestamps as an index works for now,

@@ -2,11 +2,20 @@ from decimal import Decimal
 from logger import logger
 
 
-def validate_ticker_id(ticker_id, valid_tickers):
-    if ticker_id not in valid_tickers:
-        msg = f"ticker_id '{ticker_id}' not in available pairs."
-        msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
-        raise ValueError(msg)
+def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False):
+    if allow_reverse:
+        inverse_valid_tickers = [
+            f'{i.split("_")[1]}_{i.split("_")[0]}' for i in valid_tickers
+        ]
+        if ticker_id in inverse_valid_tickers:
+            return "reversed"
+
+    if ticker_id in valid_tickers:
+        return "standard"
+
+    msg = f"ticker_id '{ticker_id}' not in available pairs."
+    msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
+    raise ValueError(msg)
 
 
 def validate_positive_numeric(value, name, is_int=False):

@@ -3,7 +3,7 @@ import requests
 from logger import logger
 from utils import Utils
 from generics import Files, Templates
-from const import API_ROOT_PATH, MM2_HOST
+from const import API_ROOT_PATH, MM2_HOST, CoinConfigNotFoundCoins
 
 
 class DexAPI:
@@ -37,7 +37,10 @@ class DexAPI:
             # Check if pair is in coins config
             if len(set(pair).intersection(set(self.coins_config.keys()))) != 2:
                 # XEP is segwit only
-                if "XEP" not in [base, quote]:
+                if (
+                    base not in CoinConfigNotFoundCoins
+                    and quote not in CoinConfigNotFoundCoins
+                ):
                     if base not in self.coins_config.keys():
                         err = {"error": f"CoinConfigNotFound for {base}"}
                     else:

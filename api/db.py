@@ -5,7 +5,7 @@ import sqlite3
 from decimal import Decimal
 from datetime import datetime, timedelta
 from logger import logger
-from helper import order_pair_by_market_cap, get_sqlite_db_paths
+from helper import order_pair_by_market_cap, get_sqlite_db_paths, sort_dict
 from generics import Files
 from utils import Utils
 from enums import TradeType
@@ -176,6 +176,7 @@ class SqliteDB:
         limit: int = 0,
         start_time: int = 0,
         end_time: int = 0,
+        reverse=False,
     ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
@@ -184,19 +185,26 @@ class SqliteDB:
         """
         # logger.warning(pair)
         try:
-            pair = order_pair_by_market_cap(pair, self.gecko_source)
-            base = [pair[0]]
-            quote = [pair[1]]
             if end_time == 0:
                 end_time = int(time.time())
-
+            pair = order_pair_by_market_cap(pair, self.gecko_source)
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
             segwit_coins = self.utils.segwit_coins()
-            if pair[0] in segwit_coins:
-                base.append(f"{pair[0]}-segwit")
-            if pair[1] in segwit_coins:
-                quote.append(f"{pair[1]}-segwit")
+            if reverse:
+                base = [pair[1]]
+                quote = [pair[0]]
+                if pair[0] in segwit_coins:
+                    quote.append(f"{pair[0]}-segwit")
+                if pair[1] in segwit_coins:
+                    base.append(f"{pair[1]}-segwit")
+            else:
+                base = [pair[0]]
+                quote = [pair[1]]
+                if pair[0] in segwit_coins:
+                    base.append(f"{pair[0]}-segwit")
+                if pair[1] in segwit_coins:
+                    quote.append(f"{pair[1]}-segwit")
 
             swaps_for_pair = []
             self.conn.row_factory = sqlite3.Row
@@ -307,6 +315,66 @@ class SqliteDB:
         r = self.sql_cursor.fetchall()
         return [i[0] for i in r]
 
+    def get_pairs_last_trade(self, start=None, end=None, min_swaps=5, as_dict=True):
+        sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
+                taker_coin_platform, maker_coin_platform, \
+                taker_amount AS last_taker_amount, \
+                maker_amount AS last_maker_amount, \
+                MAX(finished_at) AS last_swap_time, \
+                COUNT(uuid) AS swap_count, \
+                SUM(taker_amount) AS sum_taker_traded, \
+                SUM(maker_amount) AS sum_maker_traded \
+                FROM stats_swaps"
+
+        sql += " WHERE is_success=1"
+        if start is not None:
+            sql += f" AND finished_at > {start}"
+        if end is not None:
+            sql += f" AND finished_at < {end}"
+        sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
+                taker_coin_platform, maker_coin_platform;"
+        self.conn.row_factory = sqlite3.Row
+        self.sql_cursor = self.conn.cursor()
+        self.sql_cursor.execute(sql)
+        resp = self.sql_cursor.fetchall()
+        resp = [dict(i) for i in resp if i["swap_count"] >= min_swaps]
+        by_pair_dict = {}
+        for i in resp:
+            item = {}
+            for k, v in i.items():
+                if k not in [
+                    "taker_coin_ticker",
+                    "maker_coin_ticker",
+                    "taker_coin_platform",
+                    "maker_coin_platform",
+                ]:
+                    item.update({k: v})
+            if i["taker_coin_platform"] in ["", "segwit"]:
+                taker = i["taker_coin_ticker"]
+            else:
+                taker = f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}'
+            if i["maker_coin_platform"] in ["", "segwit"]:
+                maker = i["maker_coin_ticker"]
+            else:
+                maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
+
+            ticker = order_pair_by_market_cap((taker, maker), self.gecko_source)
+            ticker = "_".join(ticker)
+            # Handle segwit
+            if ticker not in by_pair_dict:
+                by_pair_dict.update({ticker: item})
+            elif item["last_swap_time"] > by_pair_dict[ticker]["last_swap_time"]:
+                by_pair_dict.update({ticker: item})
+        sorted_dict = sort_dict(by_pair_dict)
+        if as_dict:
+            return sorted_dict
+        dict_list = []
+        for i in sorted_dict:
+            item = sorted_dict[i]
+            item.update({"ticker": i})
+            dict_list.append(item)
+        return dict_list
+
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
         """
         Takes a pair in the format `KMD_BTC` and returns the
@@ -320,11 +388,13 @@ class SqliteDB:
         sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{base.split('-')[0]}' \
                 AND taker_coin_ticker='{quote.split('-')[0]}' AND is_success=1"
         if len(base.split("-")) == 2:
-            platform = base.split("-")[1]
-            sql += f" AND maker_coin_platform='{platform}'"
+            if base.split("-")[1] != "segwit":
+                platform = base.split("-")[1]
+                sql += f" AND maker_coin_platform='{platform}'"
         if len(quote.split("-")) == 2:
-            platform = quote.split("-")[1]
-            sql += f" AND taker_coin_platform='{platform}'"
+            if quote.split("-")[1] != "segwit":
+                platform = quote.split("-")[1]
+                sql += f" AND taker_coin_platform='{platform}'"
         sql += " ORDER BY finished_at DESC LIMIT 1;"
         self.sql_cursor.execute(sql)
         resp = self.sql_cursor.fetchone()
@@ -337,11 +407,13 @@ class SqliteDB:
         sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{quote.split('-')[0]}' \
                 AND taker_coin_ticker='{base.split('-')[0]}' AND is_success=1"
         if len(base.split("-")) == 2:
-            platform = base.split("-")[1]
-            sql += f" AND taker_coin_platform='{platform}'"
+            if base.split("-")[1] != "segwit":
+                platform = base.split("-")[1]
+                sql += f" AND taker_coin_platform='{platform}'"
         if len(quote.split("-")) == 2:
-            platform = quote.split("-")[1]
-            sql += f" AND maker_coin_platform='{platform}'"
+            if quote.split("-")[1] != "segwit":
+                platform = quote.split("-")[1]
+                sql += f" AND maker_coin_platform='{platform}'"
         sql += " ORDER BY finished_at DESC LIMIT 1;"
         self.sql_cursor.execute(sql)
         resp2 = self.sql_cursor.fetchone()

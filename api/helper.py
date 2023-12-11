@@ -38,6 +38,20 @@ def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
     return sorted(data, key=lambda k: k[key], reverse=reverse)
 
 
+def sort_dict(data: dict, reverse=False) -> dict:
+    """
+    Sort a list of dicts by the value of a key.
+    """
+    k = list(data.keys())
+    k.sort()
+    if reverse:
+        k.reverse()
+    resp = {}
+    for i in k:
+        resp.update({i: data[i]})
+    return resp
+
+
 def set_pair_as_tuple(pair):
     if isinstance(pair, list):
         pair = tuple(pair)

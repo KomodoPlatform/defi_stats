@@ -39,7 +39,7 @@ cache = Cache()
 )
 def usd_volume_24h(netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         return {"usd_volume_24h": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
@@ -54,7 +54,7 @@ def usd_volume_24h(netid: NetId = NetId.NETID_7777):
 )
 def current_liquidity(netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         return {"current_liquidity": data["combined_liquidity_usd"]}
 
     except Exception as e:  # pragma: no cover
@@ -65,11 +65,11 @@ def current_liquidity(netid: NetId = NetId.NETID_7777):
 # Migrated from https://stats.testchain.xyz/api/v1/summary
 @router.get(
     "/summary",
-    description="24-hour price & volume for each market pair traded in last 7 days.",
+    description="24-hour price & volume for each market pair traded in last 180 days.",
 )
 def summary(netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
         for i in data["data"]:
             resp.append(gecko_ticker_to_market_ticker_summary(i))
@@ -86,11 +86,37 @@ def summary(netid: NetId = NetId.NETID_7777):
 )
 def summary_for_ticker(ticker: str, netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
+        last_trade_cache = cache.load.load_markets_last_trade(netid=netid.value)
         resp = []
         for i in data["data"]:
             if ticker in [i["base_currency"], i["target_currency"]]:
-                resp.append(gecko_ticker_to_market_ticker_summary(i))
+                ignore = [
+                    "base_currency",
+                    "target_currency",
+                    "target_usd_price",
+                    "base_usd_price",
+                    "ticker_id",
+                    "pool_id",
+                ]
+                if "KMD_LTC" == i["ticker_id"]:
+                    logger.debug(i)
+                if sum([Decimal(v) for k, v in i.items() if k not in ignore]) > 0:
+                    item = gecko_ticker_to_market_ticker_summary(i)
+                    if i["ticker_id"] in last_trade_cache:
+                        last_price = (
+                            last_trade_cache[i["ticker_id"]]["last_taker_amount"]
+                            / last_trade_cache[i["ticker_id"]]["last_maker_amount"]
+                        )
+                        item.update(
+                            {
+                                "last_price": str(last_price),
+                                "last_swap_timestamp": last_trade_cache[i["ticker_id"]][
+                                    "last_swap_time"
+                                ],
+                            }
+                        )
+                    resp.append(item)
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/summary_for_ticker]: {e}")
@@ -103,7 +129,7 @@ def summary_for_ticker(ticker: str, netid: NetId = NetId.NETID_7777):
 )
 def ticker(netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
         for i in data["data"]:
             resp.append(gecko_ticker_to_market_ticker(i))
@@ -119,7 +145,7 @@ def ticker(netid: NetId = NetId.NETID_7777):
 )
 def ticker_for_ticker(ticker, netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
         for i in data["data"]:
             if ticker in [i["base_currency"], i["target_currency"]]:
@@ -137,7 +163,7 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.NETID_7777):
 )
 def swaps24(ticker, netid: NetId = NetId.NETID_7777):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         trades = 0
         for i in data["data"]:
             if ticker in [i["base_currency"], i["target_currency"]]:
@@ -151,9 +177,13 @@ def swaps24(ticker, netid: NetId = NetId.NETID_7777):
 @router.get("/orderbook/{market_pair}")
 def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-        validate_ticker_id(market_pair, valid_tickers)
+        market_pairs = cache.load.load_markets_pairs(netid=netid.value)
+        valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
+        ticker_type = validate_ticker_id(market_pair, valid_tickers, allow_reverse=True)
+        if ticker_type == "reversed":
+            reverse = True
+        else:
+            reverse = False
         resp = {
             "market_pair": market_pair,
             "timestamp": f"{int(time.time())}",
@@ -166,7 +196,7 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
                     mm2_port = get_mm2_rpc_port(netid=x.value)
                     data = Orderbook(
                         pair=Pair(market_pair), mm2_port=mm2_port
-                    ).for_pair(endpoint=True)
+                    ).for_pair(endpoint=True, reverse=reverse)
                     resp["asks"] += data["asks"]
                     resp["bids"] += data["bids"]
                     resp["liquidity_usd"] += data["liquidity_usd"]
@@ -181,7 +211,7 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
         else:
             mm2_port = get_mm2_rpc_port(netid=netid.value)
             data = Orderbook(pair=Pair(market_pair), mm2_port=mm2_port).for_pair(
-                endpoint=True
+                endpoint=True, reverse=reverse
             )
             resp["asks"] += data["asks"]
             resp["bids"] += data["bids"]
@@ -200,6 +230,13 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
 def trades(
     market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.NETID_7777
 ):
+    market_pairs = cache.load.load_markets_pairs(netid=netid.value)
+    valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
+    ticker_type = validate_ticker_id(market_pair, valid_tickers, allow_reverse=True)
+    if ticker_type == "reversed":
+        reverse = True
+    else:
+        reverse = False
     try:
         if netid.value == "all":
             resp = []
@@ -215,6 +252,7 @@ def trades(
                         netid=netid.value,
                         start_time=int(time.time() - 86400),
                         end_time=int(time.time()),
+                        reverse=reverse,
                     )
                     resp += data["buy"]
                     resp += data["sell"]
@@ -229,6 +267,7 @@ def trades(
                 netid=netid.value,
                 start_time=int(time.time() - 86400),
                 end_time=int(time.time()),
+                reverse=reverse,
             )
             resp = data["buy"] + data["sell"]
 
@@ -248,6 +287,22 @@ def trades(
 def atomicdex_info_api(netid: NetId = NetId.NETID_7777):
     db = get_sqlite_db(netid=netid.value)
     return db.swap_counts()
+
+
+@router.get("/pairs_last_trade", description="Returns the last trade for all pairs")
+def pairs_last_trade(
+    netid: NetId = NetId.NETID_7777,
+    start=0,
+    end=int(time.time()),
+    min_swaps=5,
+    as_dict="false",
+):
+    dict_format = as_dict.lower() == "true"
+    print(dict_format)
+    db = get_sqlite_db(netid=netid.value)
+    return db.get_pairs_last_trade(
+        start=start, end=end, min_swaps=5, as_dict=dict_format
+    )
 
 
 # TODO: get volumes for x days for ticker
@@ -280,12 +335,6 @@ def volumes_history_ticker(
     return volumes_dict
 
 
-@router.get("/fiat_rates")
-def fiat_rates():
-    utils = Utils()
-    return utils.load_jsonfile(utils.files.gecko_source_file)
-
-
 @router.get(
     "/tickers_summary",
     description="Total swaps and volume involving for each active ticker in the last 24hrs.",
@@ -293,7 +342,7 @@ def fiat_rates():
 def tickers_summary(netid: NetId = NetId.NETID_7777):
     try:
         utils = Utils()
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_markets_tickers(netid=netid.value)
         resp = {}
         for i in data["data"]:
             base = i["base_currency"]
@@ -307,7 +356,13 @@ def tickers_summary(netid: NetId = NetId.NETID_7777):
                 elif ticker == rel:
                     resp[ticker]["volume_24h"] += Decimal(i["target_volume"])
         resp = utils.clean_decimal_dict(resp)
-        return resp
+        with_action = {}
+        tickers = list(resp.keys())
+        tickers.sort()
+        for ticker in tickers:
+            if resp[ticker]["trades_24h"] > 0:
+                with_action.update({ticker: resp[ticker]})
+        return with_action
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}")
         return {
