@@ -368,3 +368,13 @@ def tickers_summary(netid: NetId = NetId.NETID_7777):
         return {
             "error": f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}"
         }
+
+
+@router.get(
+    "/fiat_rates",
+    description="Coin prices in USD (where available)",
+)
+def fiat_rates():
+    utils = Utils()
+    return utils.load_jsonfile(utils.files.gecko_source_file)
+    
