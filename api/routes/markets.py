@@ -179,17 +179,22 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
     try:
         market_pairs = cache.load.load_markets_pairs(netid=netid.value)
         valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
-        ticker_type = validate_ticker_id(market_pair, valid_tickers, allow_reverse=True)
-        if ticker_type == "reversed":
-            reverse = True
-        else:
-            reverse = False
+        ticker_type = validate_ticker_id(
+            market_pair, valid_tickers,
+            allow_reverse=True, allow_fail=True
+        )
         resp = {
             "market_pair": market_pair,
             "timestamp": f"{int(time.time())}",
             "asks": [],
             "bids": [],
         }
+        if ticker_type == "reversed":
+            reverse = True
+        elif ticker_type == "failed":
+            return resp
+        else:
+            reverse = False
         if netid.value == "all":
             for x in NetId:
                 if x.value != "all":
@@ -232,14 +237,19 @@ def trades(
 ):
     market_pairs = cache.load.load_markets_pairs(netid=netid.value)
     valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
-    ticker_type = validate_ticker_id(market_pair, valid_tickers, allow_reverse=True)
+    ticker_type = validate_ticker_id(
+        market_pair, valid_tickers,
+        allow_reverse=True, allow_fail=True
+    )
+    resp = []
     if ticker_type == "reversed":
         reverse = True
+    elif ticker_type == "failed":
+        return resp
     else:
         reverse = False
     try:
         if netid.value == "all":
-            resp = []
             for x in NetId:
                 if x.value != "all":
                     pair = Pair(
@@ -269,7 +279,8 @@ def trades(
                 end_time=int(time.time()),
                 reverse=reverse,
             )
-            resp = data["buy"] + data["sell"]
+            resp += data["buy"]
+            resp += data["sell"]
 
         sorted_trades = sort_dict_list(resp, "timestamp", reverse=True)
         return sorted_trades
