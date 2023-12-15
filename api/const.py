@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 from logger import logger
 from dotenv import load_dotenv
 
@@ -26,11 +27,19 @@ MM2_DB_PATH_8762 = (
     os.getenv("MM2_DB_PATH_8762") or f"{PROJECT_ROOT_PATH}/DB/MM2_8762.db"
 )
 LOCAL_MM2_DB_PATH_7777 = (
-    f"{PROJECT_ROOT_PATH}/mm2/DB/8a460e332dc74d803eed3757f77bc3bdbbfa2374/MM2.db"
+    os.getenv("LOCAL_MM2_DB_PATH_7777")
 )
+if LOCAL_MM2_DB_PATH_7777 is None:
+    logger.error("You need to set 'LOCAL_MM2_DB_PATH_7777' in api/.env")
+    sys.exit()
+
 LOCAL_MM2_DB_PATH_8762 = (
-    f"{PROJECT_ROOT_PATH}/mm2_8762/DB/7b235c40d413d28b1f7a292f4b8660bc296db743/MM2.db"
+    os.getenv("LOCAL_MM2_DB_PATH_8762")
 )
+if LOCAL_MM2_DB_PATH_8762 is None:
+    logger.error("You need to set 'LOCAL_MM2_DB_PATH_8762' in api/.env")
+    sys.exit()
+
 
 LOCAL_MM2_DB_BACKUP_7777 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_7777.db"
 LOCAL_MM2_DB_BACKUP_8762 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_8762.db"
