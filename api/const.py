@@ -18,6 +18,7 @@ coins_config_repo_url = f"{git_raw}/KomodoPlatform/coins/master/utils/coins_conf
 COINS_CONFIG_URL = os.getenv("COINS_CONFIG_URL") or coins_config_repo_url
 
 MM2_DB_PATH_ALL = os.getenv("MM2_DB_PATH_ALL") or f"{PROJECT_ROOT_PATH}/DB/MM2_all.db"
+MM2_DB_PATH_TEMP = os.getenv("MM2_DB_PATH_TEMP") or f"{PROJECT_ROOT_PATH}/DB/MM2_temp.db"
 MM2_DB_PATH_7777 = (
     os.getenv("MM2_DB_PATH_7777") or f"{PROJECT_ROOT_PATH}/DB/MM2_7777.db"
 )
@@ -41,6 +42,7 @@ MM2_DB_PATHS = {
     "7777": MM2_DB_PATH_7777,
     "8762": MM2_DB_PATH_8762,
     "all": MM2_DB_PATH_ALL,
+    "temp": MM2_DB_PATH_TEMP,
 }
 MM2_NETID = 7777
 

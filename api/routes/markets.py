@@ -180,8 +180,7 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
         market_pairs = cache.load.load_markets_pairs(netid=netid.value)
         valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
         ticker_type = validate_ticker_id(
-            market_pair, valid_tickers,
-            allow_reverse=True, allow_fail=True
+            market_pair, valid_tickers, allow_reverse=True, allow_fail=True
         )
         resp = {
             "market_pair": market_pair,
@@ -232,14 +231,11 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
     response_model=List[PairTrades],
     description="Summary of trades for the last 'x' days.",
 )
-def trades(
-    market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.ALL
-):
+def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.ALL):
     market_pairs = cache.load.load_markets_pairs(netid=netid.value)
     valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
     ticker_type = validate_ticker_id(
-        market_pair, valid_tickers,
-        allow_reverse=True, allow_fail=True
+        market_pair, valid_tickers, allow_reverse=True, allow_fail=True
     )
     resp = []
     if ticker_type == "reversed":
@@ -388,4 +384,3 @@ def tickers_summary(netid: NetId = NetId.ALL):
 def fiat_rates():
     utils = Utils()
     return utils.load_jsonfile(utils.files.gecko_source_file)
-    

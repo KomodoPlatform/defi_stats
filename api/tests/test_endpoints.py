@@ -57,13 +57,15 @@ def test_orderbook_endpoint():
     assert b.status_code == 200
     c = client.get("/api/v3/gecko/orderbook/KMD_LTC?netid=8762")
     assert c.status_code == 200
+    d = client.get("/api/v3/gecko/orderbook/KMD_LTC?netid=all")
+    assert d.status_code == 200
     r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
     assert r.status_code == 200
     data = r.json()
     assert len(b.json()["bids"]) + len(b.json()["asks"]) != len(c.json()["bids"]) + len(
         c.json()["asks"]
     )
-    assert b.json()["bids"][0][0] == r.json()["bids"][0][0]
+    assert d.json()["bids"][0][0] == r.json()["bids"][0][0]
     assert data != {}
     assert "asks" in data
     assert "bids" in data
@@ -92,9 +94,13 @@ def test_historical_trades_endpoint():
     assert a.status_code == 200
     b = client.get("/api/v3/gecko/historical_trades/KMD_LTC?netid=8762")
     assert a.status_code == 200
+    c = client.get("/api/v3/gecko/historical_trades/KMD_LTC?netid=all")
+    assert a.status_code == 200
+    d = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
+    assert a.status_code == 200
     assert a.json()["average_price"] != b.json()["average_price"]
     r = client.get("/api/v3/gecko/historical_trades/KMD_LTC")
-    assert a.json()["average_price"] == r.json()["average_price"]
+    assert c.json()["average_price"] == d.json()["average_price"]
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)

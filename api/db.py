@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from os.path import basename
 import time
 import sqlite3
 from decimal import Decimal
@@ -38,6 +39,7 @@ class SqliteDB:
         self.utils = Utils(testing=self.testing)
         self.files = Files(testing=self.testing)
         self.path_to_db = path_to_db
+        self.db_file = basename(self.path_to_db)
         self.conn = self.connect()
         if dict_format:
             self.conn.row_factory = sqlite3.Row
@@ -53,41 +55,54 @@ class SqliteDB:
 
     def import_swap_stats_data(self, src_db_path, table, column):
         sql = ""
-        try:
-            if src_db_path != self.path_to_db:
-                self.denullify_stats_swaps()
-                try:
-                    src_db = get_sqlite_db(path_to_db=src_db_path)
-                    src_db.denullify_stats_swaps()
-                except Exception as e:
-                    err = {
-                        "Error": f"{type(e)} in [import_swap_data] {e}",
-                        "db": src_db_path,
-                    }
-                    logger.warning(err)
+        n = 0
+        while True:
+            try:
+                if src_db_path != self.path_to_db:
+                    self.denullify_stats_swaps()
+                    try:
+                        src_db = get_sqlite_db(path_to_db=src_db_path)
+                        src_db.denullify_stats_swaps()
+                    except Exception as e:
+                        err = {
+                            "Error": f"{type(e)} in [import_swap_data] {e}",
+                            "db": src_db_path,
+                        }
+                        logger.warning(err)
+                        return
+
+                    src_columns = src_db.get_table_columns(table)
+                    src_columns.pop(src_columns.index("id"))
+                    sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
+                    sql += f" INSERT INTO {table} ({','.join(src_columns)})"
+                    sql += f" SELECT {','.join(src_columns)}"
+                    sql += f" FROM src_db.{table}"
+                    sql += " WHERE NOT EXISTS ("
+                    sql += f"SELECT * FROM {table}"
+                    sql += f" WHERE {table}.{column} = src_db.{table}.{column});"
+                    sql += " DETACH DATABASE 'src_db';"
+                    self.sql_cursor.executescript(sql)
+                    logger.imported(
+                        f"Imported [{basename(src_db_path)}] into [{self.db_file}]..."
+                    )
+                return
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"Error in [import_swap_stats_data]: {e}")
                     return
-
-                src_columns = src_db.get_table_columns(table)
-                src_columns.pop(src_columns.index("id"))
-                sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
-                sql += f" INSERT INTO {table} ({','.join(src_columns)})"
-                sql += f" SELECT {','.join(src_columns)}"
-                sql += f" FROM src_db.{table}"
-                sql += " WHERE NOT EXISTS ("
-                sql += f"SELECT * FROM {table}"
-                sql += f" WHERE {table}.{column} = src_db.{table}.{column});"
-                sql += " DETACH DATABASE 'src_db';"
-                self.sql_cursor.executescript(sql)
-
-        except Exception as e:
-            logger.warning(
-                {
-                    "Error": str(e),
-                    "src_db": src_db_path,
-                    "dest_db": self.path_to_db,
-                    "sql": sql,
-                }
-            )
+                n += 1
+                logger.warning(f"Error in [import_swap_stats_data]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:
+                logger.error(
+                    {
+                        "error": str(e),
+                        "type": type(e),
+                        "src_db": src_db_path,
+                        "dest_db": self.path_to_db,
+                        "sql": sql,
+                    }
+                )
 
     def denullify_stats_swaps(self):
         for column in [
@@ -97,22 +112,50 @@ class SqliteDB:
             "taker_pubkey",
         ]:
             self.denullify_db("stats_swaps", column)
-        # logger.debug(f"Nullified 'stats_swaps' for {self.path_to_db}")
 
     def denullify_db(self, table, column, value="''"):
-        if column in ["maker_coin_usd_price", "taker_coin_usd_price"]:
-            value = 0
-        if column in ["maker_pubkey", "taker_pubkey"]:
-            value = "''"
-        sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
-        self.sql_cursor.execute(sql)
-        self.conn.commit()
+        n = 0
+        while True:
+            try:
+                if column in ["maker_coin_usd_price", "taker_coin_usd_price"]:
+                    value = 0
+                if column in ["maker_pubkey", "taker_pubkey"]:
+                    value = "''"
+                sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
+                self.sql_cursor.execute(sql)
+                self.conn.commit()
+                return
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"Error in [denullify_db]: {e}")
+                    return
+                n += 1
+                logger.warning(f"Error in [denullify_db]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:
+                logger.error(f"Error in [denullify_db]: {e}")
+                return
 
     def update_stats_swap_row(self, uuid, data):
-        colvals = ",".join([f"{k} = {v}" for k, v in data.items()])
-        sql = f"UPDATE {'stats_swaps'} SET {colvals} WHERE uuid = '{uuid}';"
-        self.sql_cursor.execute(sql)
-        self.conn.commit()
+        n = 0
+        while True:
+            try:
+                colvals = ",".join([f"{k} = {v}" for k, v in data.items()])
+                sql = f"UPDATE {'stats_swaps'} SET {colvals} WHERE uuid = '{uuid}';"
+                self.sql_cursor.execute(sql)
+                self.conn.commit()
+                logger.info(f"{uuid} repaired for netid {self.db_file}!")
+                return
+            except sqlite3.OperationalError as e:
+                logger.error(f"Error in [update_stats_swap_row]: {e}")
+                if n > 10:
+                    return
+                n += 1
+                logger.warning(f"Error in [update_stats_swap_row]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:
+                logger.error(f"Error in [update_stats_swap_row]: {e}")
+                return
 
     @property
     def tables(self):
@@ -184,104 +227,112 @@ class SqliteDB:
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         # logger.warning(pair)
-        try:
-            if end_time == 0:
-                end_time = int(time.time())
-            pair = order_pair_by_market_cap(pair, self.gecko_source)
-            # We stripped segwit from the pairs in get_pairs()
-            # so we need to add it back here if it's present
-            segwit_coins = self.utils.segwit_coins()
-            if reverse:
-                base = [pair[1]]
-                quote = [pair[0]]
-                if pair[0] in segwit_coins:
-                    quote.append(f"{pair[0]}-segwit")
-                if pair[1] in segwit_coins:
-                    base.append(f"{pair[1]}-segwit")
-            else:
-                base = [pair[0]]
-                quote = [pair[1]]
-                if pair[0] in segwit_coins:
-                    base.append(f"{pair[0]}-segwit")
-                if pair[1] in segwit_coins:
-                    quote.append(f"{pair[1]}-segwit")
+        n = 0
+        while True:
+            try:
+                if end_time == 0:
+                    end_time = int(time.time())
+                pair = order_pair_by_market_cap(pair, self.gecko_source)
+                # We stripped segwit from the pairs in get_pairs()
+                # so we need to add it back here if it's present
+                segwit_coins = self.utils.segwit_coins()
+                if reverse:
+                    base = [pair[1]]
+                    quote = [pair[0]]
+                    if pair[0] in segwit_coins:
+                        quote.append(f"{pair[0]}-segwit")
+                    if pair[1] in segwit_coins:
+                        base.append(f"{pair[1]}-segwit")
+                else:
+                    base = [pair[0]]
+                    quote = [pair[1]]
+                    if pair[0] in segwit_coins:
+                        base.append(f"{pair[0]}-segwit")
+                    if pair[1] in segwit_coins:
+                        quote.append(f"{pair[1]}-segwit")
 
-            swaps_for_pair = []
-            self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = self.conn.cursor()
-            for i in base:
-                for j in quote:
-                    base_ticker = i.split("-")[0]
-                    quote_ticker = j.split("-")[0]
-                    base_platform = ""
-                    quote_platform = ""
-                    if len(i.split("-")) == 2:
-                        base_platform = i.split("-")[1]
-                    if len(j.split("-")) == 2:
-                        quote_platform = j.split("-")[1]
+                swaps_for_pair = []
+                self.conn.row_factory = sqlite3.Row
+                self.sql_cursor = self.conn.cursor()
+                for i in base:
+                    for j in quote:
+                        base_ticker = i.split("-")[0]
+                        quote_ticker = j.split("-")[0]
+                        base_platform = ""
+                        quote_platform = ""
+                        if len(i.split("-")) == 2:
+                            base_platform = i.split("-")[1]
+                        if len(j.split("-")) == 2:
+                            quote_platform = j.split("-")[1]
 
-                    sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" finished_at > {start_time}"
-                    sql += f" AND finished_at < {end_time}"
-                    sql += f" AND maker_coin_ticker='{base_ticker}'"
-                    sql += f" AND taker_coin_ticker='{quote_ticker}'"
-                    sql += f" AND maker_coin_platform='{base_platform}'"
-                    sql += f" AND taker_coin_platform='{quote_platform}'"
-                    sql += " AND is_success=1 ORDER BY finished_at DESC"
-                    if limit > 0:
-                        sql += f" LIMIT {limit}"
-                    sql += ";"
+                        sql = "SELECT * FROM stats_swaps WHERE"
+                        sql += f" finished_at > {start_time}"
+                        sql += f" AND finished_at < {end_time}"
+                        sql += f" AND maker_coin_ticker='{base_ticker}'"
+                        sql += f" AND taker_coin_ticker='{quote_ticker}'"
+                        sql += f" AND maker_coin_platform='{base_platform}'"
+                        sql += f" AND taker_coin_platform='{quote_platform}'"
+                        sql += " AND is_success=1 ORDER BY finished_at DESC"
+                        if limit > 0:
+                            sql += f" LIMIT {limit}"
+                        sql += ";"
 
-                    self.sql_cursor.execute(sql)
-                    data = self.sql_cursor.fetchall()
-                    swaps_for_pair_a_b = [dict(row) for row in data]
+                        self.sql_cursor.execute(sql)
+                        data = self.sql_cursor.fetchall()
+                        swaps_for_pair_a_b = [dict(row) for row in data]
 
-                    for swap in swaps_for_pair_a_b:
-                        swap["trade_type"] = "buy"
+                        for swap in swaps_for_pair_a_b:
+                            swap["trade_type"] = "buy"
 
-                    sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" finished_at > {start_time}"
-                    sql += f" AND finished_at < {end_time}"
-                    sql += f" AND taker_coin_ticker='{base_ticker}'"
-                    sql += f" AND maker_coin_ticker='{quote_ticker}'"
-                    sql += f" AND taker_coin_platform='{base_platform}'"
-                    sql += f" AND maker_coin_platform='{quote_platform}'"
-                    sql += " AND is_success=1 ORDER BY finished_at DESC"
-                    if limit > 0:
-                        sql += f" LIMIT {limit}"
-                    sql += ";"
-                    # logger.warning(sql)
-                    self.sql_cursor.execute(sql)
-                    data = self.sql_cursor.fetchall()
-                    swaps_for_pair_b_a = [dict(row) for row in data]
+                        sql = "SELECT * FROM stats_swaps WHERE"
+                        sql += f" finished_at > {start_time}"
+                        sql += f" AND finished_at < {end_time}"
+                        sql += f" AND taker_coin_ticker='{base_ticker}'"
+                        sql += f" AND maker_coin_ticker='{quote_ticker}'"
+                        sql += f" AND taker_coin_platform='{base_platform}'"
+                        sql += f" AND maker_coin_platform='{quote_platform}'"
+                        sql += " AND is_success=1 ORDER BY finished_at DESC"
+                        if limit > 0:
+                            sql += f" LIMIT {limit}"
+                        sql += ";"
+                        # logger.warning(sql)
+                        self.sql_cursor.execute(sql)
+                        data = self.sql_cursor.fetchall()
+                        swaps_for_pair_b_a = [dict(row) for row in data]
 
-                    for swap in swaps_for_pair_b_a:
-                        # A little slieght of hand for reverse pairs
-                        temp_maker_amount = swap["maker_amount"]
-                        swap["maker_amount"] = swap["taker_amount"]
-                        swap["taker_amount"] = temp_maker_amount
-                        swap["trade_type"] = "sell"
+                        for swap in swaps_for_pair_b_a:
+                            # A little slieght of hand for reverse pairs
+                            temp_maker_amount = swap["maker_amount"]
+                            swap["maker_amount"] = swap["taker_amount"]
+                            swap["taker_amount"] = temp_maker_amount
+                            swap["trade_type"] = "sell"
 
-                    swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
-            # Sort swaps by timestamp
-            swaps_for_pair = sorted(
-                swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
-            )
-            if trade_type == TradeType.BUY:
-                swaps_for_pair = [
-                    swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
-                ]
-            elif trade_type == TradeType.SELL:
-                swaps_for_pair = [
-                    swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
-                ]
-            if limit > 0:
-                swaps_for_pair = swaps_for_pair[:limit]
-            return swaps_for_pair
-
-        except Exception as e:  # pragma: no cover
-            logger.warning(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
-            return []
+                        swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
+                # Sort swaps by timestamp
+                swaps_for_pair = sorted(
+                    swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
+                )
+                if trade_type == TradeType.BUY:
+                    swaps_for_pair = [
+                        swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
+                    ]
+                elif trade_type == TradeType.SELL:
+                    swaps_for_pair = [
+                        swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
+                    ]
+                if limit > 0:
+                    swaps_for_pair = swaps_for_pair[:limit]
+                return swaps_for_pair
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+                    return []
+                n += 1
+                logger.warning(f"Error in [get_swaps_for_pair]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:  # pragma: no cover
+                logger.error(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+                return []
 
     def get_swap(self, uuid):
         sql = "SELECT * FROM stats_swaps WHERE"
@@ -443,41 +494,85 @@ class SqliteDB:
             "timestamp": last_swap_time,
         }
 
+    def clear(self, table):
+        n = 0
+        while True:
+            try:
+                self.sql_cursor.execute(f"DELETE FROM {table}")
+                self.conn.commit()
+                return
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"{type(e)} Error in [clear]: {e}")
+                    return
+                n += 1
+                logger.warning(f"Error in [clear]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:  # pragma: no cover
+                logger.error(f"{type(e)} Error in [clear]: {e}")
+                return
+
     def create_swap_stats_table(self):
-        self.sql_cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS
-            stats_swaps (
-                id INTEGER NOT NULL PRIMARY KEY,
-                maker_coin VARCHAR(255) NOT NULL,
-                taker_coin VARCHAR(255) NOT NULL,
-                uuid VARCHAR(255) NOT NULL UNIQUE,
-                started_at INTEGER NOT NULL,
-                finished_at INTEGER NOT NULL,
-                maker_amount DECIMAL NOT NULL,
-                taker_amount DECIMAL NOT NULL,
-                is_success INTEGER NOT NULL,
-                maker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
-                maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
-                taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
-                taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
-                maker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
-                taker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
-                maker_pubkey VARCHAR(255) NOT NULL DEFAULT '',
-                taker_pubkey VARCHAR(255) NOT NULL DEFAULT ''
-            );
-        """
-        )
+        n = 0
+        while True:
+            try:
+                self.sql_cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS
+                    stats_swaps (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        maker_coin VARCHAR(255) NOT NULL,
+                        taker_coin VARCHAR(255) NOT NULL,
+                        uuid VARCHAR(255) NOT NULL UNIQUE,
+                        started_at INTEGER NOT NULL,
+                        finished_at INTEGER NOT NULL,
+                        maker_amount DECIMAL NOT NULL,
+                        taker_amount DECIMAL NOT NULL,
+                        is_success INTEGER NOT NULL,
+                        maker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                        maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                        taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                        taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                        maker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
+                        taker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
+                        maker_pubkey VARCHAR(255) NOT NULL DEFAULT '',
+                        taker_pubkey VARCHAR(255) NOT NULL DEFAULT ''
+                    );
+                """
+                )
+                return
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
+                    return
+                n += 1
+                logger.warning(f"Error in [create_swap_stats_table]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:  # pragma: no cover
+                logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
+                return
 
     def remove_uuids(self, remove_list):
-        # rows = self.get_row_count("stats_swaps")
-        # logger.debug(f"{rows} before removing overlaps")
-        sql = f"DELETE FROM stats_swaps WHERE uuid in {tuple(remove_list)}"
-
-        self.sql_cursor.execute(sql)
-        self.conn.commit()
-        # rows = self.get_row_count("stats_swaps")
-        # logger.debug(f"{rows} after overlaps removed")
+        n = 0
+        while True:
+            try:
+                if len(remove_list) > 1:
+                    sql = f"DELETE FROM stats_swaps WHERE uuid in {tuple(remove_list)};"
+                else:
+                    sql = f"DELETE FROM stats_swaps WHERE uuid = '{list(remove_list)[0]}';"
+                self.sql_cursor.execute(sql)
+                self.conn.commit()
+                return
+            except sqlite3.OperationalError as e:
+                if n > 10:
+                    logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
+                    return
+                n += 1
+                logger.warning(f"Error in [remove_uuids]: {e}, retrying...")
+                time.sleep(0.1)
+            except Exception as e:  # pragma: no cover
+                logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
+                return
 
     def swap_counts(self):
         timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
@@ -695,6 +790,7 @@ def init_dbs():
 
 
 def backup_local_dbs():
+    # Backup the local active mm2 instance DBs
     try:
         backup_db(
             src_db_path=LOCAL_MM2_DB_PATH_7777, dest_db_path=LOCAL_MM2_DB_BACKUP_7777
@@ -712,85 +808,119 @@ def backup_local_dbs():
 def update_master_sqlite_dbs():
     backup_local_dbs()
 
-    # Merge local into master netid dbs
-    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
-    db_7777.import_swap_stats_data(
-        src_db_path=LOCAL_MM2_DB_BACKUP_7777, table="stats_swaps", column="uuid"
-    )
-    db_7777.close()
-
-    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
-    db_8762.import_swap_stats_data(
-        src_db_path=LOCAL_MM2_DB_BACKUP_8762, table="stats_swaps", column="uuid"
-    )
-    db_8762.close()
-
     # Get list of supplemental db files
     db_folder = f"{PROJECT_ROOT_PATH}/DB"
     sqlite_db_list = list_sqlite_dbs(db_folder)
+    sqlite_db_list.sort()
+
+    # Open master databases
+    db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
+    db_temp = get_sqlite_db(path_to_db=MM2_DB_PATHS["temp"])
+    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
+    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
+
+    # Merge local into master databases. Defer import into 8762.
+    db_7777.import_swap_stats_data(
+        src_db_path=LOCAL_MM2_DB_BACKUP_7777, table="stats_swaps", column="uuid"
+    )
+    db_all.import_swap_stats_data(
+        src_db_path=LOCAL_MM2_DB_BACKUP_7777, table="stats_swaps", column="uuid"
+    )
+    db_all.import_swap_stats_data(
+        src_db_path=LOCAL_MM2_DB_BACKUP_8762, table="stats_swaps", column="uuid"
+    )
+
+    # Handle 7777 first
     for source_db_file in sqlite_db_list:
-        source_db_path = f"{db_folder}/{source_db_file}"
-
-        if source_db_file.startswith("seed"):
-            db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
-            db_7777.import_swap_stats_data(
+        if not source_db_file.startswith("MM2"):
+            source_db_path = f"{db_folder}/{source_db_file}"
+            if source_db_file.startswith("seed"):
+                # Import into 7777
+                db_7777.import_swap_stats_data(
+                    src_db_path=source_db_path, table="stats_swaps", column="uuid"
+                )
+            # Import into ALL
+            db_all.import_swap_stats_data(
                 src_db_path=source_db_path, table="stats_swaps", column="uuid"
             )
-            db_7777.close()
-        else:
-            db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
-            db_8762.import_swap_stats_data(
-                src_db_path=source_db_path, table="stats_swaps", column="uuid"
-            )
-            db_8762.close()
 
-    for i in ["7777", "8762"]:
-        db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
-        db_all.import_swap_stats_data(
-            src_db_path=MM2_DB_PATHS[i], table="stats_swaps", column="uuid"
-        )
-        db_all.close()
-    remove_overlaps()
+    inspect_data(db_7777, db_8762, db_all)
+    # import all into temp
+    db_temp.import_swap_stats_data(
+        src_db_path=db_all.path_to_db, table="stats_swaps", column="uuid"
+    )
+    uuids_7777 = db_7777.get_uuids()
+    uuids_temp = db_temp.get_uuids()
+    overlap = set(uuids_temp).intersection(set(uuids_7777))
+    if len(overlap) > 0:
+        logger.error(f"7777 to remove from Temp DB... {len(overlap)}")
+        db_temp.remove_uuids(overlap)
+
+    # Import from temp into 8762 after 7777 removed
+
+    db_8762.import_swap_stats_data(
+        src_db_path=db_temp.path_to_db, table="stats_swaps", column="uuid"
+    )
+
+    # Close master databases
+    db_7777.close()
+    db_8762.close()
+    db_all.close()
+    # Clear the temp database
+    db_temp.clear("stats_swaps")
+    db_temp.close()
     return {"result": "merge to master databases complete"}
 
 
-def remove_overlaps():
+def remove_overlaps(retain_db, remove_db):
+    uuids_retain = retain_db.get_uuids()
+    uuids_remove = remove_db.get_uuids()
+    overlap = set(uuids_remove).intersection(set(uuids_retain))
+    if len(overlap) > 0:
+        logger.debug(
+            f"Removing from {remove_db.db_file} where in {retain_db.db_file}: {len(overlap)}"
+        )
+        remove_db.remove_uuids(overlap)
+
+
+def inspect_data(db_7777, db_8762, db_all):
     # Remove from 8762 if in 7777
-    db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
-    db_7777 = get_sqlite_db(path_to_db=MM2_DB_PATHS["7777"])
-    db_all = get_sqlite_db(path_to_db=MM2_DB_PATHS["all"])
-
-    uuids_7777 = db_7777.get_uuids()
-    uuids_8762 = db_8762.get_uuids()
-    overlap = set(uuids_8762).intersection(set(uuids_7777))
-    if len(overlap) > 0:
-        db_8762.remove_uuids(overlap)
-
-    uuids_7777 = db_7777.get_uuids()
-    uuids_8762 = db_8762.get_uuids()
-    overlap = set(uuids_7777).intersection(set(uuids_8762))
-    if len(overlap) > 0:
-        db_7777.remove_uuids(overlap)
+    remove_overlaps(db_7777, db_8762)
 
     uuids_7777 = db_7777.get_uuids()
     uuids_8762 = db_8762.get_uuids()
     uuids_all = db_all.get_uuids()
-    inspect = set(uuids_all) - set(uuids_7777) - set(uuids_8762)
-    uuids_7777 = db_7777.get_uuids()
-    uuids_8762 = db_8762.get_uuids()
-    uuids_all = db_all.get_uuids()
-    inspect = set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all)
+    extras = list(set(uuids_all) - set(uuids_7777) - set(uuids_8762))
+    logger.debug(f"{len(extras)} uuids in ALL but not in 8762 or 7777")
+    extras2 = list(set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all))
+    logger.debug(f"{len(extras2)} uuids in 8762 or 7777 but not in ALL")
+    inspect = list(set(extras + extras2))
+    if len(inspect) > 0:
+        logger.error(f"{len(inspect)} records with missing info to inspect...")
+        inspect.sort()
     for i in list(inspect):
         try:
-            swap_7777 = db_7777.get_swap(i)
             swap_8762 = db_8762.get_swap(i)
+            if "error" in swap_8762:
+                continue
+
+            swap_7777 = db_7777.get_swap(i)
+            if "error" in swap_7777:
+                continue
+
+            swap_all = db_all.get_swap(i)
+            if "error" in swap_all:
+                continue
+
+            logger.debug(f"Repairing swap {i}")
             fixed = {}
             for k, v in swap_7777.items():
                 if k != "id":
                     if k in swap_8762:
                         if swap_8762[k] != v:
                             logger.debug(
-                                f"UUID [{i}] duplicate mismatch for {k}: {v} vs {swap_8762[k]}"
+                                f"UUID [{i}] duplicate mismatch for {k}: {v} \
+                                    (7777) vs {swap_8762[k]} (8762)"
                             )
                             if k in [
                                 "is_success",
@@ -800,21 +930,48 @@ def remove_overlaps():
                                 "taker_coin_usd_price",
                             ]:
                                 fixed.update({k: max([v, swap_8762[k]])})
-                    else:
-                        raise Exception
+
+                    if k in swap_all:
+                        if swap_all[k] != v:
+                            logger.debug(
+                                f"UUID [{i}] duplicate mismatch for {k}: {v} \
+                                    (7777) vs {swap_all[k]} (all)"
+                            )
+                            if k in [
+                                "is_success",
+                                "started_at",
+                                "finished_at",
+                                "maker_coin_usd_price",
+                                "taker_coin_usd_price",
+                            ]:
+                                fixed.update({k: max([v, swap_all[k]])})
             if len(fixed) > 0:
                 db_7777.update_stats_swap_row(i, fixed)
                 db_8762.update_stats_swap_row(i, fixed)
                 db_all.update_stats_swap_row(i, fixed)
+
         except Exception as e:
             logger.error(f"Failed to repair swap [{i}]: {e}")
             logger.debug(f"swap_7777: {swap_7777}")
             logger.debug(f"swap_8762: {swap_8762}")
-            time.sleep(5)
 
-    db_7777.close()
-    db_8762.close()
-    db_all.close()
+    # In case not yet in ALL
+    db_all.import_swap_stats_data(
+        src_db_path=db_7777.path_to_db, table="stats_swaps", column="uuid"
+    )
+    db_all.import_swap_stats_data(
+        src_db_path=db_8762.path_to_db, table="stats_swaps", column="uuid"
+    )
+
+    uuids_7777 = db_7777.get_uuids()
+    uuids_8762 = db_8762.get_uuids()
+    uuids_all = db_all.get_uuids()
+
+    extras = list(set(uuids_all) - set(uuids_7777) - set(uuids_8762))
+    logger.debug(f"{len(extras)} uuids in ALL but not in 8762 or 7777")
+    extras2 = list(set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all))
+    logger.debug(f"{len(extras2)} uuids in 8762 or 7777 but not in ALL")
+    logger.info("Data overlap removal complete...")
 
 
 def view_locks(cursor):

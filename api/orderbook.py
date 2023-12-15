@@ -126,8 +126,6 @@ class Orderbook:
             base = self.pair.base
             quote = self.pair.quote
             pair_set = {base, quote}
-            if "KMD" in pair_set and "LTC" in pair_set:
-                logger.info(f"reverse: {reverse}")
             # Handle segwit only coins
             if self.base_is_segwit_coin and base not in self.coins_config.keys():
                 base = f"{self.pair.base}-segwit"

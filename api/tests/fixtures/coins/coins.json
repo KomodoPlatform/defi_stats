@@ -3622,6 +3622,29 @@
         "derivation_path": "m/44'/714'"
     },
     {
+        "coin": "DIAC",
+        "name": "diabasecore",
+        "fname": "Diabase",
+        "confpath": "USERHOME/.diabasecore/diabase.conf",
+        "rpcport": 7676,
+        "pubtype": 76,
+        "p2shtype": 16,
+        "wiftype": 204,
+        "txfee": 1000,
+        "force_min_relay_fee": true,
+        "mm2": 1,
+        "required_confirmations": 2,
+        "avg_blocktime": 90,
+        "protocol": {
+            "type": "UTXO"
+        },
+        "derivation_path": "m/44'/5'",
+        "links": {
+            "github": "https://github.com/diabasecoin/diabase",
+            "homepage": "https://www.diabasecoin.com"
+        }
+    },
+    {
         "coin": "DIMI",
         "name": "diminutivecoin",
         "fname": "Diminutive Coin",
@@ -5315,6 +5338,25 @@
             }
         },
         "derivation_path": "m/44'/714'"
+    },
+    {
+        "coin": "GMT-PLG20",
+        "name": "gmt_plg20",
+        "fname": "STEPN",
+        "rpcport": 80,
+        "mm2": 1,
+        "chain_id": 137,
+        "decimals": 8,
+        "avg_blocktime": 1.8,
+        "required_confirmations": 20,
+        "protocol": {
+            "type": "ERC20",
+            "protocol_data": {
+                "platform": "MATIC",
+                "contract_address": "0x714DB550b574b3E927af3D93E26127D15721D4C2"
+            }
+        },
+        "derivation_path": "m/44'/966'"
     },
     {
         "coin": "GMX-AVX20",
@@ -14449,5 +14491,44 @@
             "github": "https://github.com/bunkercoin/bunkercoin",
             "homepage": "https://bunkercoin.org"
         }
+    },
+    {
+        "coin": "KIIRO",
+        "name": "kiiro",
+        "fname": "Kiiro",
+        "sign_message_prefix": "Zcoin Signed Message:\n",
+        "rpcport": 8999,
+        "pubtype": 45,
+        "p2shtype": 7,
+        "wiftype": 210,
+        "txfee": 1000,
+        "mm2": 1,
+        "required_confirmations": 3,
+        "avg_blocktime": 150,
+        "protocol": {
+            "type": "UTXO"
+        },
+        "links": {
+            "github": "https://github.com/kiirocoin/kiiro",
+            "homepage": "https://kiirocoin.org"
+        }
+    },
+    {
+        "coin": "KIIRO-BEP20",
+        "name": "kiiro_bep20",
+        "fname": "Kiiro",
+        "rpcport": 80,
+        "mm2": 1,
+        "chain_id": 56,
+        "avg_blocktime": 3,
+        "required_confirmations": 3,
+        "protocol": {
+            "type": "ERC20",
+            "protocol_data": {
+                "platform": "BNB",
+                "contract_address": "0x347862372f7C8f83D69025234367Ac11c5241Db3"
+            }
+        },
+        "derivation_path": "m/44'/714'"
     }
 ]

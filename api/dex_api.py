@@ -45,7 +45,7 @@ class DexAPI:
                         err = {"error": f"CoinConfigNotFound for {base}"}
                     else:
                         err = {"error": f"CoinConfigNotFound for {quote}"}
-                    logger.warning(err)
+                    logger.muted(err)
                     return err
             if self.testing:
                 orderbook = (
