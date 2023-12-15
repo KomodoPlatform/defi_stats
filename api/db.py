@@ -737,7 +737,7 @@ def update_master_sqlite_dbs():
                 src_db_path=source_db_path, table="stats_swaps", column="uuid"
             )
             db_7777.close()
-        elif source_db_file.startswith("streamseed"):
+        else:
             db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
             db_8762.import_swap_stats_data(
                 src_db_path=source_db_path, table="stats_swaps", column="uuid"

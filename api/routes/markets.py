@@ -37,7 +37,7 @@ cache = Cache()
     response_model=UsdVolume,
     description="24-hour price & volume for each market pair traded in last 7 days.",
 )
-def usd_volume_24h(netid: NetId = NetId.NETID_7777):
+def usd_volume_24h(netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         return {"usd_volume_24h": data["combined_volume_usd"]}
@@ -52,7 +52,7 @@ def usd_volume_24h(netid: NetId = NetId.NETID_7777):
     response_model=CurrentLiquidity,
     description="24-hour price & volume for each market pair traded in last 7 days.",
 )
-def current_liquidity(netid: NetId = NetId.NETID_7777):
+def current_liquidity(netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         return {"current_liquidity": data["combined_liquidity_usd"]}
@@ -67,7 +67,7 @@ def current_liquidity(netid: NetId = NetId.NETID_7777):
     "/summary",
     description="24-hour price & volume for each market pair traded in last 180 days.",
 )
-def summary(netid: NetId = NetId.NETID_7777):
+def summary(netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
@@ -84,7 +84,7 @@ def summary(netid: NetId = NetId.NETID_7777):
     "/summary_for_ticker/{ticker}",
     description="24h price & volume for market pairs with a specific ticker traded in last 7 days",
 )
-def summary_for_ticker(ticker: str, netid: NetId = NetId.NETID_7777):
+def summary_for_ticker(ticker: str, netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         last_trade_cache = cache.load.load_markets_last_trade(netid=netid.value)
@@ -127,7 +127,7 @@ def summary_for_ticker(ticker: str, netid: NetId = NetId.NETID_7777):
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
 )
-def ticker(netid: NetId = NetId.NETID_7777):
+def ticker(netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
@@ -143,7 +143,7 @@ def ticker(netid: NetId = NetId.NETID_7777):
     "/ticker_for_ticker",
     description="Simple last price and liquidity for each market pair for a specific ticker.",
 )
-def ticker_for_ticker(ticker, netid: NetId = NetId.NETID_7777):
+def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         resp = []
@@ -161,7 +161,7 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.NETID_7777):
     response_model=Swaps24,
     description="Total swaps involving a specific ticker in the last 24hrs.",
 )
-def swaps24(ticker, netid: NetId = NetId.NETID_7777):
+def swaps24(ticker, netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_markets_tickers(netid=netid.value)
         trades = 0
@@ -175,7 +175,7 @@ def swaps24(ticker, netid: NetId = NetId.NETID_7777):
 
 
 @router.get("/orderbook/{market_pair}")
-def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
+def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
     try:
         market_pairs = cache.load.load_markets_pairs(netid=netid.value)
         valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
@@ -233,7 +233,7 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.NETID_7777):
     description="Summary of trades for the last 'x' days.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.NETID_7777
+    market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.ALL
 ):
     market_pairs = cache.load.load_markets_pairs(netid=netid.value)
     valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
@@ -295,14 +295,14 @@ def trades(
     description="Returns swap counts over a variety of periods",
     response_model=AdexIo,
 )
-def atomicdex_info_api(netid: NetId = NetId.NETID_7777):
+def atomicdex_info_api(netid: NetId = NetId.ALL):
     db = get_sqlite_db(netid=netid.value)
     return db.swap_counts()
 
 
 @router.get("/pairs_last_trade", description="Returns the last trade for all pairs")
 def pairs_last_trade(
-    netid: NetId = NetId.NETID_7777,
+    netid: NetId = NetId.ALL,
     start=0,
     end=int(time.time()),
     min_swaps=5,
@@ -325,7 +325,7 @@ def volumes_history_ticker(
     ticker="KMD",
     days_in_past=1,
     trade_type: TradeType = TradeType.ALL,
-    netid: NetId = NetId.NETID_7777,
+    netid: NetId = NetId.ALL,
 ):
     db = get_sqlite_db(netid=netid.value)
     volumes_dict = {}
@@ -350,7 +350,7 @@ def volumes_history_ticker(
     "/tickers_summary",
     description="Total swaps and volume involving for each active ticker in the last 24hrs.",
 )
-def tickers_summary(netid: NetId = NetId.NETID_7777):
+def tickers_summary(netid: NetId = NetId.ALL):
     try:
         utils = Utils()
         data = cache.load.load_markets_tickers(netid=netid.value)

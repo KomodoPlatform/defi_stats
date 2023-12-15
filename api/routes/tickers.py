@@ -14,7 +14,7 @@ cache = Cache()
     response_model=GenericTickersInfo,
     description="24-hour price & volume for each market pair traded in last 7 days."
 )
-def summary(netid: NetId = NetId.NETID_7777):
+def summary(netid: NetId = NetId.ALL):
     try:
         data = cache.load.load_gecko_tickers(netid=netid.value)
         tickers = {}
