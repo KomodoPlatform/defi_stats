@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from logger import logger
@@ -56,20 +57,133 @@ def cache_fixer_rates():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=300)
 def update_dbs():
+    started = int(time.time())
     try:
         update_master_sqlite_dbs()
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_master_sqlite_dbs]: {e}")
+        logger.warning(f"{type(e)} Error in [update_dbs]: {e}")
+    logger.stopwatch(f"Time to process [update_dbs]: {int(time.time()) - started} sec")
 
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_gecko_pairs():
+    started = int(time.time())
+    try:
+        r = cache.save.save_gecko_pairs(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_gecko_pairs]: {e}")
+    logger.stopwatch(
+        f"Time to process {r[1]} pairs in [update_gecko_pairs]: {int(time.time()) - started} sec"
+    )
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_gecko_tickers():
+    started = int(time.time())
+    try:
+        r = cache.save.save_gecko_tickers(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_gecko_tickers]: {e}")
+    logger.stopwatch(
+        f"Time to process {r[1]} pairs in [update_gecko_tickers]: {int(time.time()) - started} sec"
+    )
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_last_trade():
+    # This one is fast, so can do all netids in seq in same func
+    started = int(time.time())
+    started = int(time.time())
     for netid in NetId:
         try:
-            cache.save.save_gecko_tickers(netid=netid.value)
+            r = cache.save.save_markets_last_trade(netid=netid.value)
         except Exception as e:
-            logger.warning(f"{type(e)} Error in [save_gecko_tickers]: {e}")
+            logger.warning(
+                f"{type(e)} Error in [update_markets_last_trade] for {netid.value}: {e}"
+            )
+    msg = f"Time to process {r[1]} pairs in [update_markets_last_trade]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
-        try:
-            cache.save.save_gecko_pairs(netid=netid.value)
-        except Exception as e:
-            logger.warning(f"{type(e)} Error in [save_gecko_pairs]: {e}")
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_pairs_8762():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_pairs(netid=8762)
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_pairs_8762]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_8762]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_tickers_8762():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_tickers(netid=8762)
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_tickers_8762]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_8762]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_pairs_7777():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_pairs(netid=7777)
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_pairs_7777]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_7777]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_tickers_7777():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_tickers(netid=7777)
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_tickers_7777]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_7777]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_pairs_all():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_pairs(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_pairs_all]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_all]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+def update_markets_tickers_all():
+    started = int(time.time())
+    try:
+        r = cache.save.save_markets_tickers(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_markets_tickers_all]: {e}")
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_all]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)

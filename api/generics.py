@@ -12,6 +12,10 @@ class Files:
         # Coins repo data
         self.coins_file = f"{folder}/coins/coins.json"
         self.coins_config_file = f"{folder}/coins/coins_config.json"
+        # For Markets endpoints
+        self.markets_tickers_file = f"{folder}/markets/ticker_cache.json"
+        self.markets_pairs_file = f"{folder}/markets/pairs_cache.json"
+        self.markets_last_trade_file = f"{folder}/markets/last_trade_cache.json"
         # For CoinGecko endpoints
         self.gecko_source_file = f"{folder}/gecko/source_cache.json"
         self.gecko_tickers_file = f"{folder}/gecko/ticker_cache.json"

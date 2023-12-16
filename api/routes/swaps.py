@@ -22,7 +22,7 @@ router = APIRouter()
 )
 def get_swap(
     uuid: str,
-    netid: NetId = NetId.NETID_7777
+    netid: NetId = NetId.ALL
 ):
     try:
         db = get_sqlite_db(netid=netid.value)
@@ -47,7 +47,7 @@ def swap_uuids(
     pair: str,
     start_time: int = int(time.time() - 86400),
     end_time: int = int(time.time()),
-    netid: NetId = NetId.NETID_7777
+    netid: NetId = NetId.ALL
 ):
     try:
         pair = Pair(

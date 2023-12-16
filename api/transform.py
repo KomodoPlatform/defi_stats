@@ -8,7 +8,7 @@ def gecko_ticker_to_market_ticker_summary(i):
         "quote_volume": i["target_volume"],
         "lowest_ask": i["ask"],
         "highest_bid": i["bid"],
-        "price_change_percent_24h": i["price_change_percent_24h"],
+        "price_change_percent_24h": str(i["price_change_percent_24h"]),
         "highest_price_24h": i["high"],
         "lowest_price_24h": i["low"],
         "trades_24h": int(i["trades_24hr"]),

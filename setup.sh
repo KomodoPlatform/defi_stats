@@ -47,6 +47,8 @@ echo "USERPASS=${userpass}" >> mm2_8762/.env
 echo "USER_ID=${USER_ID}" >> mm2_8762/.env
 echo "GROUP_ID=${GROUP_ID}" >> mm2_8762/.env
 
+echo "username=${USER}" > username
+
 echo "Installing poetry..."
 pip install poetry
 poetry config virtualenvs.in-project true

@@ -28,7 +28,7 @@ cache = Cache()
     response_model=List[GeckoPairsItem],
     description="a list pairs with price data traded within the week.",
 )
-async def gecko_pairs(netid: NetId = NetId.NETID_7777):
+async def gecko_pairs(netid: NetId = NetId.ALL):
     try:
         return cache.load.load_gecko_pairs(netid=netid.value)
     except Exception as e:  # pragma: no cover
@@ -41,7 +41,7 @@ async def gecko_pairs(netid: NetId = NetId.NETID_7777):
     response_model=GeckoTickersSummary,
     description="24-hour price & volume for each market pair traded in last 7 days.",
 )
-def gecko_tickers(netid: NetId = NetId.NETID_7777):
+def gecko_tickers(netid: NetId = NetId.ALL):
     try:
         return cache.load.load_gecko_tickers(netid=netid.value)
     except Exception as e:  # pragma: no cover
@@ -60,7 +60,7 @@ def gecko_orderbook(
     response: Response,
     ticker_id: str = "KMD_LTC",
     depth: int = 100,
-    netid: NetId = NetId.NETID_7777,
+    netid: NetId = NetId.ALL,
 ):
     try:
         resp = {
@@ -126,7 +126,7 @@ def gecko_historical_trades(
     limit: int = 100,
     start_time: int = 0,
     end_time: int = 0,
-    netid: NetId = NetId.NETID_7777,
+    netid: NetId = NetId.ALL,
 ):
     try:
         gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 from logger import logger
 from dotenv import load_dotenv
 
@@ -18,6 +19,7 @@ coins_config_repo_url = f"{git_raw}/KomodoPlatform/coins/master/utils/coins_conf
 COINS_CONFIG_URL = os.getenv("COINS_CONFIG_URL") or coins_config_repo_url
 
 MM2_DB_PATH_ALL = os.getenv("MM2_DB_PATH_ALL") or f"{PROJECT_ROOT_PATH}/DB/MM2_all.db"
+MM2_DB_PATH_TEMP = os.getenv("MM2_DB_PATH_TEMP") or f"{PROJECT_ROOT_PATH}/DB/MM2_temp.db"
 MM2_DB_PATH_7777 = (
     os.getenv("MM2_DB_PATH_7777") or f"{PROJECT_ROOT_PATH}/DB/MM2_7777.db"
 )
@@ -25,11 +27,19 @@ MM2_DB_PATH_8762 = (
     os.getenv("MM2_DB_PATH_8762") or f"{PROJECT_ROOT_PATH}/DB/MM2_8762.db"
 )
 LOCAL_MM2_DB_PATH_7777 = (
-    f"{PROJECT_ROOT_PATH}/mm2/DB/8a460e332dc74d803eed3757f77bc3bdbbfa2374/MM2.db"
+    os.getenv("LOCAL_MM2_DB_PATH_7777")
 )
+if LOCAL_MM2_DB_PATH_7777 is None:
+    logger.error("You need to set 'LOCAL_MM2_DB_PATH_7777' in api/.env")
+    sys.exit()
+
 LOCAL_MM2_DB_PATH_8762 = (
-    f"{PROJECT_ROOT_PATH}/mm2_8762/DB/7b235c40d413d28b1f7a292f4b8660bc296db743/MM2.db"
+    os.getenv("LOCAL_MM2_DB_PATH_8762")
 )
+if LOCAL_MM2_DB_PATH_8762 is None:
+    logger.error("You need to set 'LOCAL_MM2_DB_PATH_8762' in api/.env")
+    sys.exit()
+
 
 LOCAL_MM2_DB_BACKUP_7777 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_7777.db"
 LOCAL_MM2_DB_BACKUP_8762 = f"{PROJECT_ROOT_PATH}/DB/local_MM2_8762.db"
@@ -41,6 +51,7 @@ MM2_DB_PATHS = {
     "7777": MM2_DB_PATH_7777,
     "8762": MM2_DB_PATH_8762,
     "all": MM2_DB_PATH_ALL,
+    "temp": MM2_DB_PATH_TEMP,
 }
 MM2_NETID = 7777
 
@@ -49,4 +60,5 @@ if not FIXER_API_KEY:
     logger.warning(
         "FIXER_API_KEY is not set in .env file. Without this, '/api/v3/rates/fixer_io' will fail."
     )
-IGNORE_TICKERS = ["XEP"]
+
+CoinConfigNotFoundCoins = ["XEP", "MORTY", "RICK", "SMTF-v2"]

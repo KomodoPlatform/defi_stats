@@ -3,7 +3,7 @@ import time
 from collections import OrderedDict
 from decimal import Decimal
 from logger import logger
-from const import MM2_HOST, IGNORE_TICKERS
+from const import MM2_HOST, CoinConfigNotFoundCoins
 from generics import Files, Templates
 from utils import Utils
 from dex_api import DexAPI
@@ -27,14 +27,20 @@ class Orderbook:
         self.quote_is_segwit_coin = self.quote in self.utils.segwit_coins()
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config_file)
 
-    def for_pair(self, endpoint=False, depth=10000000):
+    def for_pair(self, endpoint=False, depth=10000000, reverse=False):
         try:
             orderbook_data = OrderedDict()
             orderbook_data["ticker_id"] = self.pair.as_str
             orderbook_data["base"] = self.pair.base
             orderbook_data["quote"] = self.pair.quote
+            if reverse:
+                orderbook_data[
+                    "ticker_id"
+                ] = f'{self.pair.as_str.split("_")[1]}_{self.pair.as_str.split("_")[0]}'
+                orderbook_data["base"] = self.pair.quote
+                orderbook_data["quote"] = self.pair.base
             orderbook_data["timestamp"] = f"{int(time.time())}"
-            data = self.get_and_parse(endpoint)
+            data = self.get_and_parse(endpoint, reverse)
             if data is not None:
                 orderbook_data["bids"] = data["bids"][:depth][::-1]
                 orderbook_data["asks"] = data["asks"][::-1][:depth]
@@ -80,6 +86,14 @@ class Orderbook:
                 orderbook_data["total_bids_quote_usd"] = (
                     total_bids_quote_vol * self.pair.quote_price
                 )
+                if reverse:
+                    orderbook_data["total_asks_base_usd"] = (
+                        total_asks_base_vol * self.pair.quote_price
+                    )
+                    orderbook_data["total_bids_quote_usd"] = (
+                        total_bids_quote_vol * self.pair.base_price
+                    )
+
                 orderbook_data["liquidity_usd"] = (
                     orderbook_data["total_asks_base_usd"]
                     + orderbook_data["total_bids_quote_usd"]
@@ -107,27 +121,30 @@ class Orderbook:
             orderbook_data["total_bids_quote_usd"] = 0
             return orderbook_data
 
-    def get_and_parse(self, endpoint=False):
+    def get_and_parse(self, endpoint=False, reverse=False):
         try:
             base = self.pair.base
             quote = self.pair.quote
             pair_set = {base, quote}
+            # Handle segwit only coins
             if self.base_is_segwit_coin and base not in self.coins_config.keys():
                 base = f"{self.pair.base}-segwit"
             if self.quote_is_segwit_coin and quote not in self.coins_config.keys():
-                base = f"{self.pair.quote}-segwit"
-            orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
-            pair = (base, quote)
+                quote = f"{self.pair.quote}-segwit"
+            if reverse:
+                orderbook = self.templates.orderbook(self.pair.quote, self.pair.base)
+                pair = (quote, base)
+            else:
+                orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
+                pair = (base, quote)
             x = self.dexapi.orderbook(pair)
 
             for i in ["asks", "bids"]:
                 if "error" not in x:
                     orderbook[i] += x[i]
                 else:
-                    if pair_set.intersection(set(IGNORE_TICKERS)) == 0:
-                        logger.debug(
-                            f"No orderbook for {base}/{quote}"
-                        )
+                    if pair_set.intersection(set(CoinConfigNotFoundCoins)) == 0:
+                        logger.debug(f"No orderbook for {base}/{quote}")
 
             bids_converted_list = []
             asks_converted_list = []
@@ -158,8 +175,6 @@ class Orderbook:
                     )
             orderbook["bids"] = bids_converted_list
             orderbook["asks"] = asks_converted_list
-            if "XEP-segwit" in pair_set:
-                print(orderbook)
         except Exception as e:
             logger.error(f"Error: {e}")
         return orderbook

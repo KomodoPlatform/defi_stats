@@ -3,9 +3,11 @@ import time
 import sqlite3
 from fixtures import (
     setup_swaps_db_data,
-    setup_time, logger, helper,
+    setup_time,
+    logger,
+    helper,
     setup_actual_db,
-    setup_fake_db
+    setup_fake_db,
 )
 
 now = int(time.time())
@@ -19,17 +21,17 @@ two_months_ago = now - 5184000
 
 def test_get_pairs(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    pairs = DB.get_pairs()
+    pairs = DB.get_pairs(include_all_kmd=False)
     assert ("KMD", "BTC") in pairs
     assert ("DOGE", "LTC") not in pairs
     assert len(pairs) == 7
-    pairs = DB.get_pairs(45)
+    pairs = DB.get_pairs(45, include_all_kmd=False)
     logger.info(pairs)
     assert ("KMD", "BTC") in pairs
     assert ("DGB", "LTC") in pairs
     assert ("DOGE", "LTC") not in pairs
     assert len(pairs) == 7
-    pairs = DB.get_pairs(90)
+    pairs = DB.get_pairs(90, include_all_kmd=False)
     assert ("KMD", "BTC") in pairs
     assert ("DGB", "LTC") in pairs
     assert ("DOGE", "LTC") in pairs
@@ -66,13 +68,12 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
 
 
 def get_actual_db_data(setup_actual_db):
-    '''
+    """
     This is just here for convienince to get data from
     actual DB for use in testing fixtures
-    '''
+    """
     DB = setup_actual_db
-    DB.sql_cursor.execute(
-        'select * from stats_swaps where maker_coin = "KMD" limit 5')
+    DB.sql_cursor.execute('select * from stats_swaps where maker_coin = "KMD" limit 5')
     data = []
     for r in DB.sql_cursor.fetchall():
         data.append(r)

@@ -18,7 +18,7 @@ cache = Cache()
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def get_v1_tickers(expire_at: int=900):
+def get_v1_tickers(expire_at: int = 900):
     # r.GET("/api/v1/tickers", TickerAllInfos)
     try:
         data = {}
@@ -39,7 +39,7 @@ def get_v1_tickers(expire_at: int=900):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def get_v2_tickers(expire_at: int=900):
+def get_v2_tickers(expire_at: int = 900):
     # r.GET("/api/v2/tickers", TickerAllInfosV2)
     try:
         data = {}
