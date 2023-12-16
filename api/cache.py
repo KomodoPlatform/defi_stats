@@ -152,20 +152,25 @@ class Cache:
                 return False
 
         def calc_gecko_pairs(
-            self, days: int = 7, exclude_unpriced: bool = True, DB=None, netid=7777
+            self,
+            days: int = 7,
+            exclude_unpriced: bool = True,
+            DB=None,
+            netid=7777,
+            include_all_kmd=False,
         ) -> list:
             DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             try:
-                pairs = DB.get_pairs(days)
+                pairs = DB.get_pairs(days, include_all_kmd=include_all_kmd)
                 data = [
                     Pair(i, self.testing).info
                     for i in pairs
                     if self.is_pair_priced(i) or not exclude_unpriced
                 ]
                 data = sorted(data, key=lambda d: d["ticker_id"])
-                logger.debug(
-                    f"{len(data)} priced pairs ({days} days) days) from netid [{netid}]"
-                )
+                msg = f"{len(data)} priced pairs ({days} days) days)"
+                msg += f"from netid [{netid}] (include all kmd: {include_all_kmd})"
+                logger.debug(msg)
                 return data
             except Exception as e:  # pragma: no cover
                 err = {"error": f"[calc_gecko_pairs]: {e}"}
@@ -173,10 +178,15 @@ class Cache:
                 return err  # pragma: no cover
 
         def calc_gecko_tickers(
-            self, trades_days: int = 1, pairs_days: int = 7, DB=None, netid=7777
+            self,
+            trades_days: int = 1,
+            pairs_days: int = 7,
+            DB=None,
+            netid=7777,
+            include_all_kmd=False,
         ):
             DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
-            pairs = DB.get_pairs(pairs_days)
+            pairs = DB.get_pairs(pairs_days, include_all_kmd=include_all_kmd)
             logger.debug(
                 f"[gecko_tickers] {len(pairs)} pairs ({pairs_days} days) from netid [{netid}]"
             )
@@ -200,12 +210,16 @@ class Cache:
         def calc_markets_pairs(
             self, days: int = 7, exclude_unpriced: bool = True, DB=None, netid=7777
         ) -> list:
-            return self.calc_gecko_pairs(DB=DB, days=180, netid=netid)
+            return self.calc_gecko_pairs(
+                DB=DB, days=180, netid=netid, include_all_kmd=True
+            )
 
         def calc_markets_tickers(
             self, trades_days: int = 1, pairs_days: int = 7, DB=None, netid=7777
         ):
-            return self.calc_gecko_tickers(DB=DB, pairs_days=180, netid=netid)
+            return self.calc_gecko_tickers(
+                DB=DB, pairs_days=180, netid=netid, include_all_kmd=True
+            )
 
         def calc_markets_last_trade(self, DB=None, netid=7777):
             return DB.get_pairs_last_trade(min_swaps=1, as_dict=True)
@@ -236,7 +250,7 @@ class Cache:
                     return {"result": f"Validated {path} data"}
             with open(path, "w+") as f:
                 json.dump(data, f, indent=4)
-                logger.info(f"Updated {path}")
+                logger.updated(f"Updated {path}")
                 return {"result": f"Updated {path}"}
 
         # Coins repo data
@@ -278,7 +292,7 @@ class Cache:
             )
             data = self.calc.calc_gecko_pairs(DB=DB, netid=netid)
             fn = get_netid_filename(self.files.gecko_pairs_file, netid)
-            return self.save(fn, data)
+            return self.save(fn, data), len(data)
 
         def save_gecko_tickers(self, netid, DB=None):  # pragma: no cover
             DB = get_sqlite_db(
@@ -286,7 +300,7 @@ class Cache:
             )
             data = self.calc.calc_gecko_tickers(DB=DB, netid=netid)
             fn = get_netid_filename(self.files.gecko_tickers_file, netid)
-            return self.save(fn, data)
+            return self.save(fn, data), data['pairs_count']
 
         # For Markets endpoints
         def save_markets_pairs(self, netid, DB=None):  # pragma: no cover
@@ -295,7 +309,7 @@ class Cache:
             )
             data = self.calc.calc_markets_pairs(DB=DB, days=180, netid=netid)
             fn = get_netid_filename(self.files.markets_pairs_file, netid)
-            return self.save(fn, data)
+            return self.save(fn, data), len(data)
 
         def save_markets_last_trade(self, netid, DB=None):  # pragma: no cover
             DB = get_sqlite_db(
@@ -303,7 +317,7 @@ class Cache:
             )
             data = self.calc.calc_markets_last_trade(DB=DB, netid=netid)
             fn = get_netid_filename(self.files.markets_last_trade_file, netid)
-            return self.save(fn, data)
+            return self.save(fn, data), len(data)
 
         def save_markets_tickers(self, netid, DB=None):  # pragma: no cover
             DB = get_sqlite_db(
@@ -311,4 +325,4 @@ class Cache:
             )
             data = self.calc.calc_markets_tickers(DB=DB, pairs_days=180, netid=netid)
             fn = get_netid_filename(self.files.markets_tickers_file, netid)
-            return self.save(fn, data)
+            return self.save(fn, data), data['pairs_count']

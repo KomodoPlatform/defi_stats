@@ -2,6 +2,7 @@
 import time
 import json
 import requests
+from random import randrange
 from typing import Any
 from decimal import Decimal, InvalidOperation
 from logger import logger
@@ -25,7 +26,7 @@ class Utils:
                 err = {"error": f"Error loading {path}: {e}"}
                 if i >= attempts:
                     return err
-                time.sleep(0.2)
+                time.sleep(randrange(20) / 10)
 
     def download_json(self, url):
         try:

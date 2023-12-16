@@ -5,8 +5,14 @@ import time
 import sqlite3
 from decimal import Decimal
 from datetime import datetime, timedelta
+from random import randrange
 from logger import logger
-from helper import order_pair_by_market_cap, get_sqlite_db_paths, sort_dict
+from helper import (
+    order_pair_by_market_cap,
+    get_sqlite_db_paths,
+    sort_dict,
+    get_all_coin_pairs,
+)
 from generics import Files
 from utils import Utils
 from enums import TradeType
@@ -45,6 +51,7 @@ class SqliteDB:
             self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
         self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
+        self.coins_config = self.utils.load_jsonfile(self.files.coins_config_file)
 
     def close(self):
         self.conn.close()
@@ -88,12 +95,22 @@ class SqliteDB:
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
-                    logger.error(f"Error in [import_swap_stats_data]: {e}")
+                    logger.error(
+                        f"Error in [import_swap_stats_data] for {src_db.db_file} \
+                            into {self.db_file}: {e}"
+                    )
                     return
                 n += 1
-                logger.warning(f"Error in [import_swap_stats_data]: {e}, retrying...")
-                time.sleep(0.1)
+                logger.warning(
+                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
+                        into {self.db_file}: {e}, retrying..."
+                )
+                time.sleep(randrange(20) / 10)
             except Exception as e:
+                logger.error(
+                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
+                        into {self.db_file}: {e}, retrying..."
+                )
                 logger.error(
                     {
                         "error": str(e),
@@ -127,13 +144,15 @@ class SqliteDB:
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
-                    logger.error(f"Error in [denullify_db]: {e}")
+                    logger.error(f"Error in [denullify_db] for {self.db_file}: {e}")
                     return
                 n += 1
-                logger.warning(f"Error in [denullify_db]: {e}, retrying...")
-                time.sleep(0.1)
+                logger.warning(
+                    f"Error in [denullify_db] for {self.db_file}: {e}, retrying..."
+                )
+                time.sleep(randrange(20) / 10)
             except Exception as e:
-                logger.error(f"Error in [denullify_db]: {e}")
+                logger.error(f"Error in [denullify_db] for {self.db_file}: {e}")
                 return
 
     def update_stats_swap_row(self, uuid, data):
@@ -152,7 +171,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [update_stats_swap_row]: {e}, retrying...")
-                time.sleep(0.1)
+                time.sleep(randrange(20) / 10)
             except Exception as e:
                 logger.error(f"Error in [update_stats_swap_row]: {e}")
                 return
@@ -168,7 +187,7 @@ class SqliteDB:
         r.fetchone()
         return [i[0] for i in r.description]
 
-    def get_pairs(self, days: int = 7) -> list:
+    def get_pairs(self, days: int = 7, include_all_kmd=True) -> list:
         """
         Returns an alphabetically sorted list of pairs
         (as a list of tuples) with at least one successful
@@ -202,6 +221,15 @@ class SqliteDB:
             for i in data
             if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
         ]
+        if include_all_kmd:
+            all_coins = self.coins_config
+            coins = [
+                i
+                for i in all_coins
+                if all_coins[i]["is_testnet"] is False
+                and all_coins[i]["wallet_only"] is False
+            ]
+            pairs += get_all_coin_pairs("KMD", coins)
         # Sort pair by ticker to expose base-rel and rel-base duplicates
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
         # Remove the duplicates
@@ -329,7 +357,7 @@ class SqliteDB:
                     return []
                 n += 1
                 logger.warning(f"Error in [get_swaps_for_pair]: {e}, retrying...")
-                time.sleep(0.1)
+                time.sleep(randrange(20) / 10)
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
                 return []
@@ -367,6 +395,7 @@ class SqliteDB:
         return [i[0] for i in r]
 
     def get_pairs_last_trade(self, start=None, end=None, min_swaps=5, as_dict=True):
+        # TODO: Filter out test coins
         sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
                 taker_coin_platform, maker_coin_platform, \
                 taker_amount AS last_taker_amount, \
@@ -507,7 +536,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [clear]: {e}, retrying...")
-                time.sleep(0.1)
+                time.sleep(randrange(20) / 10)
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [clear]: {e}")
                 return
@@ -547,7 +576,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [create_swap_stats_table]: {e}, retrying...")
-                time.sleep(0.1)
+                time.sleep(randrange(20) / 10)
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
                 return
@@ -569,7 +598,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [remove_uuids]: {e}, retrying...")
-                time.sleep(0.1)
+                time.sleep(randrange(20) / 10)
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
                 return
@@ -820,10 +849,10 @@ def update_master_sqlite_dbs():
     db_8762 = get_sqlite_db(path_to_db=MM2_DB_PATHS["8762"])
 
     # Merge local into master databases. Defer import into 8762.
-    db_7777.import_swap_stats_data(
+    db_all.import_swap_stats_data(
         src_db_path=LOCAL_MM2_DB_BACKUP_7777, table="stats_swaps", column="uuid"
     )
-    db_all.import_swap_stats_data(
+    db_7777.import_swap_stats_data(
         src_db_path=LOCAL_MM2_DB_BACKUP_7777, table="stats_swaps", column="uuid"
     )
     db_all.import_swap_stats_data(

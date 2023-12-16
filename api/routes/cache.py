@@ -57,13 +57,11 @@ def cache_fixer_rates():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 def update_dbs():
     started = int(time.time())
-    logger.info("Init DB imports...")
     try:
         update_master_sqlite_dbs()
-        logger.info("DB imports complete...")
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_dbs]: {e}")
     logger.stopwatch(f"Time to process [update_dbs]: {int(time.time()) - started} sec")
@@ -71,123 +69,121 @@ def update_dbs():
 
 @router.on_event("startup")
 @repeat_every(seconds=120)
-def update_pairs():
+def update_gecko_pairs():
     started = int(time.time())
-    for netid in NetId:
-        try:
-            cache.save.save_gecko_pairs(netid=netid.value)
-        except Exception as e:
-            logger.warning(f"{type(e)} Error in [update_gecko_pairs]: {e}")
+    try:
+        r = cache.save.save_gecko_pairs(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_gecko_pairs]: {e}")
     logger.stopwatch(
-        f"Time to process [update_gecko_pairs]: {int(time.time()) - started} sec"
+        f"Time to process {r[1]} pairs in [update_gecko_pairs]: {int(time.time()) - started} sec"
     )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=240)
-def update_tickers():
+@repeat_every(seconds=120)
+def update_gecko_tickers():
     started = int(time.time())
-    for netid in NetId:
-        try:
-            cache.save.save_gecko_tickers(netid=netid.value)
-        except Exception as e:
-            logger.warning(f"{type(e)} Error in [update_gecko_tickers]: {e}")
+    try:
+        r = cache.save.save_gecko_tickers(netid="all")
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_gecko_tickers]: {e}")
     logger.stopwatch(
-        f"Time to process [update_gecko_tickers]: {int(time.time()) - started} sec"
+        f"Time to process {r[1]} pairs in [update_gecko_tickers]: {int(time.time()) - started} sec"
     )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 def update_markets_last_trade():
     # This one is fast, so can do all netids in seq in same func
     started = int(time.time())
     started = int(time.time())
     for netid in NetId:
         try:
-            cache.save.save_markets_last_trade(netid=netid.value)
+            r = cache.save.save_markets_last_trade(netid=netid.value)
         except Exception as e:
             logger.warning(
                 f"{type(e)} Error in [update_markets_last_trade] for {netid.value}: {e}"
             )
-    logger.stopwatch(
-        f"Time to process [update_markets_last_trade]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_last_trade]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 def update_markets_pairs_8762():
     started = int(time.time())
     try:
-        cache.save.save_markets_pairs(netid=8762)
+        r = cache.save.save_markets_pairs(netid=8762)
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_pairs_8762]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_pairs_8762]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_8762]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 def update_markets_tickers_8762():
     started = int(time.time())
     try:
-        cache.save.save_markets_tickers(netid=8762)
+        r = cache.save.save_markets_tickers(netid=8762)
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_tickers_8762]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_tickers_8762]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_8762]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=180)
+@repeat_every(seconds=120)
 def update_markets_pairs_7777():
     started = int(time.time())
     try:
-        cache.save.save_markets_pairs(netid=7777)
+        r = cache.save.save_markets_pairs(netid=7777)
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_pairs_7777]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_pairs_7777]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_7777]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 def update_markets_tickers_7777():
     started = int(time.time())
     try:
-        cache.save.save_markets_tickers(netid=7777)
+        r = cache.save.save_markets_tickers(netid=7777)
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_tickers_7777]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_tickers_7777]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_7777]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 def update_markets_pairs_all():
     started = int(time.time())
     try:
-        cache.save.save_markets_pairs(netid="all")
+        r = cache.save.save_markets_pairs(netid="all")
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_pairs_all]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_pairs_all]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_all]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 def update_markets_tickers_all():
     started = int(time.time())
     try:
-        cache.save.save_markets_tickers(netid="all")
+        r = cache.save.save_markets_tickers(netid="all")
     except Exception as e:
         logger.warning(f"{type(e)} Error in [update_markets_tickers_all]: {e}")
-    logger.stopwatch(
-        f"Time to process [update_markets_tickers_all]: {int(time.time()) - started} sec"
-    )
+    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_all]: "
+    msg += f"{int(time.time()) - started} sec"
+    logger.stopwatch(msg)

@@ -88,3 +88,7 @@ def get_sqlite_db_paths(netid=MM2_NETID):
 def get_netid_filename(filename, netid):
     parts = filename.split(".")
     return f"{'.'.join(parts[:-1])}_{netid}.{parts[-1]}"
+
+
+def get_all_coin_pairs(coin, coins):
+    return [(i, coin) for i in coins if coin not in [i, f"{i}-segwit"]]
