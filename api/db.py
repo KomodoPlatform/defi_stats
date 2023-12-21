@@ -36,12 +36,13 @@ def get_sqlite_db(
     if netid is not None:
         path_to_db = get_sqlite_db_paths(netid)
     db = SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
-    # logger.info(f"Connected to DB [{db.path_to_db}]")
+    logger.info(f"Connected to DB [{db.path_to_db}]")
     return db
 
 
 class SqliteDB:
     def __init__(self, path_to_db, dict_format=False, testing: bool = False):
+        self.start = int(time.time())
         self.testing = testing
         self.utils = Utils(testing=self.testing)
         self.files = Files(testing=self.testing)
@@ -56,7 +57,8 @@ class SqliteDB:
 
     def close(self):
         self.conn.close()
-        # logger.info(f"Closed connection to {self.path_to_db}")
+        end = int(time.time())
+        logger.info(f"Closed connection to {self.path_to_db} after {end - self.start} sec")
 
     def connect(self):
         return sqlite3.connect(self.path_to_db)
@@ -64,6 +66,7 @@ class SqliteDB:
     def import_swap_stats_data(self, src_db_path, table, column):
         sql = ""
         n = 0
+        start = time.time()
         while True:
             try:
                 if src_db_path != self.path_to_db:
@@ -90,9 +93,11 @@ class SqliteDB:
                     sql += f" WHERE {table}.{column} = src_db.{table}.{column});"
                     sql += " DETACH DATABASE 'src_db';"
                     self.sql_cursor.executescript(sql)
-                    logger.imported(
-                        f"Imported [{basename(src_db_path)}] into [{self.db_file}]..."
-                    )
+                    end = time.time()
+                    if end-start > 10:
+                        logger.imported(
+                            f"Imported [{basename(src_db_path)}] into [{self.db_file}] [{int(end-start)}sec]..."
+                        )
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
@@ -120,13 +125,18 @@ class SqliteDB:
                 )
 
     def denullify_stats_swaps(self):
+        start = int(time.time())
         for column in [
             "maker_coin_usd_price",
             "taker_coin_usd_price",
             "maker_pubkey",
             "taker_pubkey",
         ]:
-            self.denullify_db("stats_swaps", column)
+            # self.denullify_db("stats_swaps", column)
+            pass
+        end = int(time.time())
+        if end-start > 10:
+            logger.stopwatch(f"Time to denullify {self.path_to_db} [{column}]: {end-start} sec")
 
     def denullify_db(self, table, column, value="''"):
         n = 0
@@ -379,6 +389,7 @@ class SqliteDB:
         return r[0]
 
     def get_uuids(self, success_only=True, fail_only=False):
+        start = time.time()
         if fail_only:
             self.sql_cursor.execute("SELECT uuid FROM stats_swaps WHERE is_success = 0")
         elif success_only:
@@ -386,6 +397,8 @@ class SqliteDB:
         else:
             self.sql_cursor.execute("SELECT uuid FROM stats_swaps")
         r = self.sql_cursor.fetchall()
+        end = int(time.time())
+        print(f"Time to get uuids for {self.path_to_db}: {int(end-start)}")
         return [i[0] for i in r]
 
     def get_pairs_last_trade(self, start=None, end=None, min_swaps=5, as_dict=True):
@@ -577,6 +590,7 @@ class SqliteDB:
 
     def remove_uuids(self, remove_list):
         n = 0
+        start = time.time()
         while True:
             try:
                 if len(remove_list) > 1:
@@ -585,6 +599,8 @@ class SqliteDB:
                     sql = f"DELETE FROM stats_swaps WHERE uuid = '{list(remove_list)[0]}';"
                 self.sql_cursor.execute(sql)
                 self.conn.commit()
+                end = time.time()
+                logger.stopwatch(f"Time to complete uuid removal for {self.path_to_db}: {int(end-start)}")
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
@@ -979,12 +995,15 @@ def inspect_data(db_7777, db_8762, db_all):
             logger.debug(f"swap_8762: {swap_8762}")
 
     # In case not yet in ALL
+    logger.stopwatch("Importing 7777 into all")
     db_all.import_swap_stats_data(
         src_db_path=db_7777.path_to_db, table="stats_swaps", column="uuid"
     )
+    logger.stopwatch("Importing 8762 into all")
     db_all.import_swap_stats_data(
         src_db_path=db_8762.path_to_db, table="stats_swaps", column="uuid"
     )
+    logger.stopwatch("Importing complete")
 
     uuids_7777 = db_7777.get_uuids()
     uuids_8762 = db_8762.get_uuids()

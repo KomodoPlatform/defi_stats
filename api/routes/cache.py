@@ -26,7 +26,7 @@ def update_coins():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=210)
 def cache_gecko_data():  # pragma: no cover
     try:
         cache.save.save_gecko_source()
@@ -35,7 +35,7 @@ def cache_gecko_data():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 def cache_prices_service():  # pragma: no cover
     try:
         cache.save.save_prices_tickers_v1()
@@ -68,7 +68,7 @@ def update_dbs():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=210)
 def update_gecko_pairs():
     started = int(time.time())
     try:
@@ -81,7 +81,7 @@ def update_gecko_pairs():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=130)
+@repeat_every(seconds=300)
 def update_gecko_tickers():
     started = int(time.time())
     try:
@@ -94,10 +94,9 @@ def update_gecko_tickers():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=65)
+@repeat_every(seconds=210)
 def update_markets_last_trade():
     # This one is fast, so can do all netids in seq in same func
-    started = int(time.time())
     started = int(time.time())
     for netid in NetId:
         try:
@@ -112,7 +111,7 @@ def update_markets_last_trade():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=125)
+@repeat_every(seconds=600)
 def update_markets_pairs_8762():
     started = int(time.time())
     try:
@@ -125,7 +124,7 @@ def update_markets_pairs_8762():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 def update_markets_tickers_8762():
     started = int(time.time())
     try:
@@ -138,7 +137,7 @@ def update_markets_tickers_8762():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=600)
 def update_markets_pairs_7777():
     started = int(time.time())
     try:
@@ -151,7 +150,7 @@ def update_markets_pairs_7777():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 def update_markets_tickers_7777():
     started = int(time.time())
     try:
@@ -164,7 +163,7 @@ def update_markets_tickers_7777():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=600)
 def update_markets_pairs_all():
     started = int(time.time())
     try:
@@ -177,7 +176,7 @@ def update_markets_pairs_all():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 def update_markets_tickers_all():
     started = int(time.time())
     try:

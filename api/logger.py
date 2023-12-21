@@ -103,7 +103,6 @@ handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
-
 # Shows DB imports
 addLoggingLevel("IMPORTED", logging.DEBUG + 9)
 logger.setLevel("IMPORTED")

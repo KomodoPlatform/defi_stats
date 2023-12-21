@@ -1,12 +1,11 @@
 {
-    "gui": "MM2CLI",
-    "netid": 7777,
-    "rpc_password": "RPC_CONTRoL_USERP@SSW0RD",
-    "passphrase": "insecure seed for orderbook only",
-    "userhome": "/${HOME#\"/\"}",
-    "rpc_local_only": false,
-    "i_am_seed":true,
-    "rpcip": "0.0.0.0",
-    "rpcport": 7877
+  "gui": "MM2CLI",
+  "netid": 7777,
+  "rpc_password": "423770c53752214bfcd42bb1c0d8487d818c9a7a-E",
+  "passphrase": "282e458a23970091ad99c660409b1788ce2d38b5504071baf23fa68c39edd896b9b69300e85dd548aa2b7d2ea0cc1c4e6d5faa33f6634a1fee27f3b85071dfe68204e8e68c5dc2de8f976f2d6a188f6c20f9a1182a797bdfb836b1cef754f9901a9389f2d18880a19c950e9a2b429369eb432dd6e65a80430ac3f1aeec1d5999",
+  "userhome": "/${HOME#\"/\"}",
+  "rpc_local_only": false,
+  "i_am_seed": false,
+  "rpcip": "0.0.0.0",
+  "rpcport": 7877
 }
-
