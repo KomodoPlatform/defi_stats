@@ -7,6 +7,8 @@ from const import MM2_HOST, CoinConfigNotFoundCoins
 from generics import Files, Templates
 from utils import Utils
 from dex_api import DexAPI
+from helper import valid_coins
+from validate import validate_coin
 
 
 class Orderbook:
@@ -126,6 +128,7 @@ class Orderbook:
             base = self.pair.base
             quote = self.pair.quote
             pair_set = {base, quote}
+
             # Handle segwit only coins
             if self.base_is_segwit_coin and base not in self.coins_config.keys():
                 base = f"{self.pair.base}-segwit"
@@ -137,6 +140,12 @@ class Orderbook:
             else:
                 orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
                 pair = (base, quote)
+            
+            base = self.pair.base
+            validate_coin(base, self.coins_config)
+            quote = self.pair.quote
+            validate_coin(quote, self.coins_config)
+            
             x = self.dexapi.orderbook(pair)
 
             for i in ["asks", "bids"]:
@@ -176,5 +185,5 @@ class Orderbook:
             orderbook["bids"] = bids_converted_list
             orderbook["asks"] = asks_converted_list
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.muted(f"Error: {e}")
         return orderbook

@@ -2,3 +2,5 @@ coins
 *.json
 MM2*
 DB/*
+MM2.json
+!MM2.template.json

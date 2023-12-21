@@ -12,6 +12,7 @@ from helper import (
     get_sqlite_db_paths,
     sort_dict,
     get_all_coin_pairs,
+    valid_coins
 )
 from generics import Files
 from utils import Utils
@@ -95,22 +96,19 @@ class SqliteDB:
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
-                    logger.error(
-                        f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                            into {self.db_file}: {e}"
-                    )
+                    msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                    msg += f"into {self.db_file}: {e}"
+                    logger.error(msg)
                     return
                 n += 1
-                logger.warning(
-                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                        into {self.db_file}: {e}, retrying..."
-                )
+                msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                msg += "into {self.db_file}: {e}, retrying..."
+                logger.warning(msg)
                 time.sleep(randrange(20) / 10)
             except Exception as e:
-                logger.error(
-                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                        into {self.db_file}: {e}, retrying..."
-                )
+                msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                msg += f"into {self.db_file}: {e}, retrying..."
+                logger.error(msg)
                 logger.error(
                     {
                         "error": str(e),
@@ -223,12 +221,7 @@ class SqliteDB:
         ]
         if include_all_kmd:
             all_coins = self.coins_config
-            coins = [
-                i
-                for i in all_coins
-                if all_coins[i]["is_testnet"] is False
-                and all_coins[i]["wallet_only"] is False
-            ]
+            coins = valid_coins(all_coins)
             pairs += get_all_coin_pairs("KMD", coins)
         # Sort pair by ticker to expose base-rel and rel-base duplicates
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
@@ -359,7 +352,8 @@ class SqliteDB:
                 logger.warning(f"Error in [get_swaps_for_pair]: {e}, retrying...")
                 time.sleep(randrange(20) / 10)
             except Exception as e:  # pragma: no cover
-                logger.error(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+                msg = f"{type(e)} Error in [get_swaps_for_pair] {pair} with {self.db_file}: {e}"
+                logger.error(msg)
                 return []
 
     def get_swap(self, uuid):

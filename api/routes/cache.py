@@ -74,14 +74,14 @@ def update_gecko_pairs():
     try:
         r = cache.save.save_gecko_pairs(netid="all")
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_gecko_pairs]: {e}")
+        logger.warning(f"{type(e)} Error in [update_gecko_pairs] netid 'all': {e}")
     logger.stopwatch(
         f"Time to process {r[1]} pairs in [update_gecko_pairs]: {int(time.time()) - started} sec"
     )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=130)
 def update_gecko_tickers():
     started = int(time.time())
     try:
@@ -94,7 +94,7 @@ def update_gecko_tickers():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=65)
 def update_markets_last_trade():
     # This one is fast, so can do all netids in seq in same func
     started = int(time.time())
@@ -112,7 +112,7 @@ def update_markets_last_trade():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=125)
 def update_markets_pairs_8762():
     started = int(time.time())
     try:
