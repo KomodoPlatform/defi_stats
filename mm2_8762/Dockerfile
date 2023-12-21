@@ -1,4 +1,4 @@
-FROM komodoofficial/atomicdexapi:dev-latest
+FROM komodoofficial/atomicdexapi:main-latest
 
 LABEL maintainer="smk@komodoplatform.com"
 

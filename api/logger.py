@@ -103,11 +103,6 @@ handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
-# Shows generally ignorable errors, e.g. CoinConfigNotFound
-addLoggingLevel("MUTED", logging.DEBUG - 1)
-logger.setLevel("MUTED")
-
-
 # Shows DB imports
 addLoggingLevel("IMPORTED", logging.DEBUG + 9)
 logger.setLevel("IMPORTED")
@@ -119,3 +114,8 @@ logger.setLevel("UPDATED")
 # Shows time taken to run functions
 addLoggingLevel("STOPWATCH", logging.DEBUG + 5)
 logger.setLevel("STOPWATCH")
+
+# Shows generally ignorable errors, e.g. CoinConfigNotFound
+addLoggingLevel("MUTED", logging.DEBUG - 1)
+logger.setLevel("MUTED")
+

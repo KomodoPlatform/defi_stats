@@ -65,7 +65,7 @@ def current_liquidity(netid: NetId = NetId.ALL):
 # Migrated from https://stats.testchain.xyz/api/v1/summary
 @router.get(
     "/summary",
-    description="24-hour price & volume for each market pair traded in last 180 days.",
+    description="24-hour price & volume for each market pair traded in last 120 days.",
 )
 def summary(netid: NetId = NetId.ALL):
     try:
