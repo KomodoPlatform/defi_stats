@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 from const import API_ROOT_PATH
 
 
@@ -25,20 +24,6 @@ class Files:
         # For Prices endpoints
         self.prices_tickers_v1_file = f"{folder}/prices/prices_tickers_v1.json"
         self.prices_tickers_v2_file = f"{folder}/prices/prices_tickers_v2.json"
-
-
-class Time:
-    def __init__(self, testing: bool = False):
-        self.testing = testing
-
-    def now(self):  # pragma: no cover
-        return int(time.time())
-
-    def hours_ago(self, num):
-        return int(time.time()) - (num * 60 * 60)
-
-    def days_ago(self, num):
-        return int(time.time()) - (num * 60 * 60) * 24
 
 
 class Templates:
