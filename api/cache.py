@@ -188,7 +188,7 @@ class Cache:
             DB = get_sqlite_db(path_to_db=self.path_to_db, testing=self.testing, DB=DB)
             pairs = DB.get_pairs(pairs_days, include_all_kmd=include_all_kmd)
             logger.debug(
-                f"[gecko_tickers] {len(pairs)} pairs ({pairs_days} days) from netid [{netid}]"
+                f"[gecko_tickers] [{len(pairs)} pairs] [{pairs_days} days] [netid {netid}]"
             )
             data = [
                 Pair(i, self.testing).gecko_ticker_info(trades_days, DB=DB)

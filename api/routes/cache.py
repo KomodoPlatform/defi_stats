@@ -74,7 +74,7 @@ def update_gecko_pairs():
     try:
         r = cache.save.save_gecko_pairs(netid="all")
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_gecko_pairs]: {e}")
+        logger.warning(f"{type(e)} Error in [update_gecko_pairs] netid 'all': {e}")
     logger.stopwatch(
         f"Time to process {r[1]} pairs in [update_gecko_pairs]: {int(time.time()) - started} sec"
     )

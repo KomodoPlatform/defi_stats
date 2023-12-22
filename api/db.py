@@ -12,6 +12,7 @@ from helper import (
     get_sqlite_db_paths,
     sort_dict,
     get_all_coin_pairs,
+    valid_coins
 )
 from generics import Files
 from utils import Utils
@@ -35,12 +36,12 @@ def get_sqlite_db(
     if netid is not None:
         path_to_db = get_sqlite_db_paths(netid)
     db = SqliteDB(path_to_db=path_to_db, testing=testing, dict_format=dict_format)
-    logger.info(f"Connected to DB [{db.path_to_db}]")
+    # logger.info(f"Connected to DB [{db.path_to_db}]")
     return db
 
 
 class SqliteDB:
-    def __init__(self, path_to_db, dict_format=False, testing: bool = False):
+    def __init__(self, path_to_db, dict_format=False, testing: bool = False, wal: bool = True):
         self.start = int(time.time())
         self.testing = testing
         self.utils = Utils(testing=self.testing)
@@ -51,36 +52,40 @@ class SqliteDB:
         if dict_format:
             self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
+        if wal:
+            sql = "PRAGMA journal_mode=WAL;"
+            self.sql_cursor.execute(sql)
+            self.sql_cursor.fetchall()
         self.gecko_source = self.utils.load_jsonfile(self.files.gecko_source_file)
         self.coins_config = self.utils.load_jsonfile(self.files.coins_config_file)
 
     def close(self):
         self.conn.close()
         end = int(time.time())
-        logger.info(f"Closed connection to {self.path_to_db} after {end - self.start} sec")
+        # logger.info(f"Closed connection to {self.path_to_db} after {end - self.start} sec")
 
-    def connect(self):
+    def connect(self, wal=True):
         return sqlite3.connect(self.path_to_db)
 
     def import_swap_stats_data(self, src_db_path, table, column):
         sql = ""
         n = 0
-        start = time.time()
         while True:
             try:
                 if src_db_path != self.path_to_db:
-                    self.denullify_stats_swaps()
-                    try:
-                        src_db = get_sqlite_db(path_to_db=src_db_path)
-                        src_db.denullify_stats_swaps()
-                    except Exception as e:
-                        err = {
-                            "Error": f"{type(e)} in [import_swap_data] {e}",
-                            "db": src_db_path,
-                        }
-                        logger.warning(err)
-                        return
-
+                    src_db = get_sqlite_db(path_to_db=src_db_path)
+                    if src_db_path not in MM2_DB_PATHS.values():
+                        try:
+                            # Denulify is expensive, so we only run on source.
+                            denullify_stats_swaps(src_db)
+                        except Exception as e:
+                            err = {
+                                "Error": f"{type(e)} in [import_swap_data] {e}",
+                                "db": src_db_path,
+                            }
+                            logger.warning(err)
+                            return
+                    start = int(time.time())
                     src_columns = src_db.get_table_columns(table)
                     src_columns.pop(src_columns.index("id"))
                     sql = f"ATTACH DATABASE '{src_db_path}' AS src_db;"
@@ -89,33 +94,36 @@ class SqliteDB:
                     sql += f" FROM src_db.{table}"
                     sql += " WHERE NOT EXISTS ("
                     sql += f"SELECT * FROM {table}"
-                    sql += f" WHERE {table}.{column} = src_db.{table}.{column});"
+                    sql += f" WHERE {table}.{column} = src_db.{table}.{column})"
+                    sql += f" AND src_db.{table}.finished_at > {int(time.time()) - 86400};"
                     sql += " DETACH DATABASE 'src_db';"
                     self.sql_cursor.executescript(sql)
-                    end = time.time()
-                    if end-start > 10:
-                        logger.imported(
-                            f"Imported [{basename(src_db_path)}] into [{self.db_file}] [{int(end-start)}sec]..."
-                        )
+                    end = int(time.time())
+                    logger.imported(
+                        f"Imported [{basename(src_db_path)}] into [{self.db_file}] [{int(end-start)}sec]..."
+                    )
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
-                    logger.error(
-                        f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                            into {self.db_file}: {e}"
-                    )
+                    msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                    msg += f" into {self.db_file}: {e}"
+                    logger.error(msg)
                     return
                 n += 1
-                logger.warning(
-                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                        into {self.db_file}: {e}, retrying..."
-                )
-                time.sleep(randrange(20) / 10)
+                msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                msg += f" into {self.db_file}: {e}, retrying..."
+                logger.warning(msg)
+                time.sleep(randrange(20))
             except Exception as e:
-                logger.error(
-                    f"Error in [import_swap_stats_data] for {src_db.db_file} \
-                        into {self.db_file}: {e}, retrying..."
-                )
+                if n > 10:
+                    msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                    msg += f" into {self.db_file}: {e}"
+                    logger.error(msg)
+                    return
+                n += 1
+                msg = f"Error in [import_swap_stats_data] for {src_db.db_file}"
+                msg += f" into {self.db_file}: {e}, retrying..."
+                logger.error(msg)
                 logger.error(
                     {
                         "error": str(e),
@@ -126,44 +134,6 @@ class SqliteDB:
                     }
                 )
 
-    def denullify_stats_swaps(self):
-        start = int(time.time())
-        for column in [
-            "maker_coin_usd_price",
-            "taker_coin_usd_price",
-            "maker_pubkey",
-            "taker_pubkey",
-        ]:
-            # self.denullify_db("stats_swaps", column)
-            pass
-        end = int(time.time())
-        if end-start > 10:
-            logger.stopwatch(f"Time to denullify {self.path_to_db} [{column}]: {end-start} sec")
-
-    def denullify_db(self, table, column, value="''"):
-        n = 0
-        while True:
-            try:
-                if column in ["maker_coin_usd_price", "taker_coin_usd_price"]:
-                    value = 0
-                if column in ["maker_pubkey", "taker_pubkey"]:
-                    value = "''"
-                sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
-                self.sql_cursor.execute(sql)
-                self.conn.commit()
-                return
-            except sqlite3.OperationalError as e:
-                if n > 10:
-                    logger.error(f"Error in [denullify_db] for {self.db_file}: {e}")
-                    return
-                n += 1
-                logger.warning(
-                    f"Error in [denullify_db] for {self.db_file}: {e}, retrying..."
-                )
-                time.sleep(randrange(20) / 10)
-            except Exception as e:
-                logger.error(f"Error in [denullify_db] for {self.db_file}: {e}")
-                return
 
     def update_stats_swap_row(self, uuid, data):
         n = 0
@@ -181,7 +151,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [update_stats_swap_row]: {e}, retrying...")
-                time.sleep(randrange(20) / 10)
+                time.sleep(randrange(20))
             except Exception as e:
                 logger.error(f"Error in [update_stats_swap_row]: {e}")
                 return
@@ -233,12 +203,7 @@ class SqliteDB:
         ]
         if include_all_kmd:
             all_coins = self.coins_config
-            coins = [
-                i
-                for i in all_coins
-                if all_coins[i]["is_testnet"] is False
-                and all_coins[i]["wallet_only"] is False
-            ]
+            coins = valid_coins(all_coins)
             pairs += get_all_coin_pairs("KMD", coins)
         # Sort pair by ticker to expose base-rel and rel-base duplicates
         sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
@@ -367,9 +332,10 @@ class SqliteDB:
                     return []
                 n += 1
                 logger.warning(f"Error in [get_swaps_for_pair]: {e}, retrying...")
-                time.sleep(randrange(20) / 10)
+                time.sleep(randrange(20))
             except Exception as e:  # pragma: no cover
-                logger.error(f"{type(e)} Error in [get_swaps_for_pair]: {e}")
+                msg = f"{type(e)} Error in [get_swaps_for_pair] {pair} with {self.db_file}: {e}"
+                logger.error(msg)
                 return []
 
     def get_swap(self, uuid):
@@ -404,7 +370,6 @@ class SqliteDB:
             self.sql_cursor.execute("SELECT uuid FROM stats_swaps")
         r = self.sql_cursor.fetchall()
         end = int(time.time())
-        print(f"Time to get uuids for {self.path_to_db}: {int(end-start)}")
         return [i[0] for i in r]
 
     def get_pairs_last_trade(self, start=None, end=None, min_swaps=5, as_dict=True):
@@ -549,7 +514,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [clear]: {e}, retrying...")
-                time.sleep(randrange(20) / 10)
+                time.sleep(randrange(20))
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [clear]: {e}")
                 return
@@ -589,7 +554,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [create_swap_stats_table]: {e}, retrying...")
-                time.sleep(randrange(20) / 10)
+                time.sleep(randrange(20))
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
                 return
@@ -614,7 +579,7 @@ class SqliteDB:
                     return
                 n += 1
                 logger.warning(f"Error in [remove_uuids]: {e}, retrying...")
-                time.sleep(randrange(20) / 10)
+                time.sleep(randrange(20))
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
                 return
@@ -843,6 +808,10 @@ def backup_local_dbs():
         backup_db(
             src_db_path=LOCAL_MM2_DB_PATH_8762, dest_db_path=LOCAL_MM2_DB_BACKUP_8762
         )
+        db = get_sqlite_db(path_to_db=LOCAL_MM2_DB_BACKUP_8762)
+        denullify_stats_swaps(db)
+        db = get_sqlite_db(path_to_db=LOCAL_MM2_DB_BACKUP_7777)
+        denullify_stats_swaps(db)
         return {"result": "backed up local databases"}
     except Exception as e:
         err = f"Error in [backup_local_dbs]: {e}"
@@ -917,6 +886,44 @@ def update_master_sqlite_dbs():
     return {"result": "merge to master databases complete"}
 
 
+def denullify_stats_swaps(db):
+    start = int(time.time())
+    for column in [
+        "maker_coin_usd_price",
+        "taker_coin_usd_price",
+        "maker_pubkey",
+        "taker_pubkey",
+    ]:
+        denullify_db(db, "stats_swaps", column)
+    end = int(time.time())
+    if end - start > 15:
+        logger.stopwatch(f"Time to denullify {db.path_to_db} [{column}]: {end-start} sec")
+
+def denullify_db(db, table, column, value="''"):
+    n = 0
+    while True:
+        try:
+            if column in ["maker_coin_usd_price", "taker_coin_usd_price"]:
+                value = 0
+            if column in ["maker_pubkey", "taker_pubkey"]:
+                value = "''"
+            sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
+            db.sql_cursor.execute(sql)
+            db.conn.commit()
+            return
+        except sqlite3.OperationalError as e:
+            if n > 10:
+                logger.error(f"Error in [denullify_db] for {db.db_file}: {e}")
+                return
+            n += 1
+            logger.warning(
+                f"Error in [denullify_db] for {db.db_file}: {e}, retrying..."
+            )
+            time.sleep(randrange(30))
+        except Exception as e:
+            logger.error(f"Error in [denullify_db] for {db.db_file}: {e}")
+            return
+        
 def remove_overlaps(retain_db, remove_db):
     uuids_retain = retain_db.get_uuids()
     uuids_remove = remove_db.get_uuids()
@@ -930,6 +937,7 @@ def remove_overlaps(retain_db, remove_db):
 
 def inspect_data(db_7777, db_8762, db_all):
     # Remove from 8762 if in 7777
+    start = int(time.time())
     remove_overlaps(db_7777, db_8762)
 
     uuids_7777 = db_7777.get_uuids()
@@ -999,6 +1007,8 @@ def inspect_data(db_7777, db_8762, db_all):
             logger.error(f"Failed to repair swap [{i}]: {e}")
             logger.debug(f"swap_7777: {swap_7777}")
             logger.debug(f"swap_8762: {swap_8762}")
+
+    logger.stopwatch(f"Time to repair mismatched swaps: {int(time.time()-start)} sec")
 
     # In case not yet in ALL
     logger.stopwatch("Importing 7777 into all")

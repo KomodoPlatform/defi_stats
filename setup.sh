@@ -14,15 +14,15 @@ cp coins $(pwd)/mm2/coins
 cp coins $(pwd)/mm2_8762/coins
 
 
-rpc_password=$(echo $RANDOM | md5sum | head -c 20)
-passphrase=$(echo $RANDOM | md5sum | head -c 128)
-contents=$(jq '.rpc_password = "${rpc_password}"' $(pwd)/mm2_8762/MM2.template.json) && echo -E "${contents}" > $(pwd)/mm2_8762/MM2.json
-contents=$(jq '.passphrase = "${passphrase}"' $(pwd)/mm2_8762/MM2.json) && echo -E "${contents}" > $(pwd)/mm2_8762/MM2.json
+rpc_password="$(openssl rand -hex 20)-E"
+passphrase=$(openssl rand -hex 128)
+contents=$(jq '.rpc_password = "'${rpc_password}'"' $(pwd)/mm2_8762/MM2.template.json) && echo -E "${contents}" > $(pwd)/mm2_8762/MM2.json
+contents=$(jq '.passphrase = "'${passphrase}'"' $(pwd)/mm2_8762/MM2.json) && echo -E "${contents}" > $(pwd)/mm2_8762/MM2.json
 
-rpc_password=$(echo $RANDOM | md5sum | head -c 20)
-passphrase=$(echo $RANDOM | md5sum | head -c 128)
-contents=$(jq '.rpc_password = "${rpc_password}"' $(pwd)/mm2/MM2.template.json) && echo -E "${contents}" > $(pwd)/mm2/MM2.json
-contents=$(jq '.passphrase = "${passphrase}"' $(pwd)/mm2/MM2.json) && echo -E "${contents}" > $(pwd)/mm2/MM2.json
+rpc_password="$(openssl rand -hex 20)-E"
+passphrase=$(openssl rand -hex 128)
+contents=$(jq '.rpc_password = "'${rpc_password}'"' $(pwd)/mm2/MM2.template.json) && echo -E "${contents}" > $(pwd)/mm2/MM2.json
+contents=$(jq '.passphrase = "'$passphrase'"' $(pwd)/mm2/MM2.json) && echo -E "${contents}" > $(pwd)/mm2/MM2.json
 
 echo "Setting up .env [netid 7777] file..."
 USER_ID=$(id -u)

@@ -51,6 +51,12 @@ def sort_dict(data: dict, reverse=False) -> dict:
         resp.update({i: data[i]})
     return resp
 
+def valid_coins(coins_config):
+    return [
+    i for i in list(coins_config.keys())
+    if coins_config[i]["is_testnet"] is False
+    and coins_config[i]["wallet_only"] is False
+]
 
 def set_pair_as_tuple(pair):
     if isinstance(pair, list):

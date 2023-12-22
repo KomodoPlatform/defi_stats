@@ -118,4 +118,3 @@ logger.setLevel("STOPWATCH")
 # Shows generally ignorable errors, e.g. CoinConfigNotFound
 addLoggingLevel("MUTED", logging.DEBUG - 1)
 logger.setLevel("MUTED")
-

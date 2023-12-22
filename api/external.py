@@ -65,7 +65,6 @@ class CoinGeckoAPI:
         coins_info = self.get_gecko_info_dict()
         gecko_coins = self.get_gecko_coins_dict(coins_info, coin_ids)
         coin_id_chunks = list(self.utils.get_chunks(coin_ids, param_limit))
-        logger.info(f"{len(coin_id_chunks)} chunks for coingeck query params")
         for chunk in coin_id_chunks:
             chunk_ids = ",".join(chunk)
             try:

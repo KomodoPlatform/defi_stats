@@ -16,17 +16,74 @@ Data is also imported into more robust databases (mySQL, postgresSQL/Timescale &
 
 ### Setup and requirements
 
-- Run `./setup.sh` to generate `mm2/.env`, and install poetry dependencies
+- Run `./setup.sh` to install poetry dependencies
+- Create `mm2/.env`, and `mm2_8762/.env` with the following inside (change the userpass)
+```
+MM2_CONF_PATH=/home/komodian/mm2/MM2.json
+MM_COINS_PATH=/home/komodian/mm2/coins
+MM_LOG=/home/komodian/mm2/mm2.log
+USERPASS=RPC_CONTRoL_USERP@SSW0RD
+USER_ID=1000
+GROUP_ID=1000
+```
+- Next, create `mm2/MM2.json` and `mm2_8762/MM2.json`. Use the templates in each folder - `cp mm2/MM2.template.json mm2/MM2.json`. Change the passphrases.
+
+- Get the latest coins file for each mm2 folder with `wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins`
+
+- Then execute `./run_mm2.sh` to initialise the mm2 databases. You will need to find the path to the MM2.db file in each folder to input below. This script will tail the logs, but you can `ctl-c` to exit without stopping the service.
+
 - Create `api/.env` file containing the following variables:
 
 ```
-TBA
+# DEPENDENCY VERSIONS
+POETRY_VERSION='1.6.1'
+
+# FastAPI
+API_PORT=7068
+API_HOST='0.0.0.0'
+API_USER="komodian"
+API_PASS="api_password"
+
+# AtomicDEX API
+COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
+COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
+
+
+
+# API KEYS
+FIXER_API_KEY=your_key
+
+# DATABASES
+
+## External MySQL source DB
+mysql_hostname="db_IP"
+mysql_username="db_username"
+mysql_password="db_password"
+mysql_db="db_name"
+
+## Postgres/TimescaleDB
+POSTGRES_HOST=timescale
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=db_name
+PGDATA=/var/lib/postgresql/data
+POSTGRES_USER=db_user
+POSTGRES_PASSWORD=db_pass
+
+## Sqlite
+LOCAL_MM2_DB_PATH_7777="/home/admin/defi_stats/mm2/DB/db_hex/MM2.db"
+LOCAL_MM2_DB_PATH_8762="/home/admin/defi_stats/mm2_8762/DB/db_hex/MM2.db"
+
 ```
-- A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
+
+Edit the values for your paths and passwords etc. Some of these are not curently in us in main branch, but will be used later.
+
+# Sourcing data
+
+- To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
 
 
 ### Running the API
-From the project root folder, execute `./run.sh`.
+From the project root folder, execute `./run_api.sh`.
 Optionally, use the `defi-stats.service` file as a template to let systemd to manage the defi stats service.
 
 ## Testing

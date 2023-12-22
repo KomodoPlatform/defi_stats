@@ -89,3 +89,13 @@ class UuidNotFoundException(Exception):
 class ApiKeyNotFoundException(Exception):
     "Raised when a required API key is not found in the .env file"
     pass
+
+
+class CoinNotFoundException(Exception):
+    "Raised when a coin is not found in the coins_config"
+    pass
+
+
+class CoinWalletOnlyException(Exception):
+    "Raised when a coin is wallet_only in the coins_config"
+    pass
