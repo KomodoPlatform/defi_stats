@@ -17,16 +17,22 @@ class Utils:
 
     def load_jsonfile(self, path, attempts=5):
         i = 0
+        start = int(time.time())
+        # logger.stopwatch(f"Loading {path}")
         while True:
             i += 1
             try:
                 with open(path, "r") as f:
+                    end = int(time.time())
+                    # logger.stopwatch(f"Loaded {path} in [{end - start} sec]")
                     return json.load(f)
             except Exception as e:  # pragma: no cover
                 err = {"error": f"Error loading {path}: {e}"}
                 if i >= attempts:
+                    end = int(time.time())
+                    # logger.stopwatch(f"Loaded {path} in [{end - start} sec]")
                     return err
-                time.sleep(randrange(20) / 10)
+                time.sleep(0.1)
 
     def download_json(self, url):
         try:

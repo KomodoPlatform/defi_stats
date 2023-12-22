@@ -42,8 +42,12 @@ async def gecko_pairs(netid: NetId = NetId.ALL):
     description="24-hour price & volume for each market pair traded in last 7 days.",
 )
 def gecko_tickers(netid: NetId = NetId.ALL):
+    start = int(time.time())
+    logger.stopwatch(f"[/api/v3/gecko/tickers] Request recieved...")
     try:
-        return cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load.load_gecko_tickers(netid=netid.value)
+        logger.stopwatch(f"[/api/v3/gecko/tickers] Data returned...")
+        return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}

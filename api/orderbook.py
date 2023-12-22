@@ -140,14 +140,18 @@ class Orderbook:
             else:
                 orderbook = self.templates.orderbook(self.pair.base, self.pair.quote)
                 pair = (base, quote)
-            
+        except CoinNotFoundException as e:
+            pass
+        except Exception as e:
+            logger.muted(f"{type(e)} Error: {e}")
+
+        try:            
             base = self.pair.base
             validate_coin(base, self.coins_config)
             quote = self.pair.quote
             validate_coin(quote, self.coins_config)
             
             x = self.dexapi.orderbook(pair)
-
             for i in ["asks", "bids"]:
                 if "error" not in x:
                     orderbook[i] += x[i]
@@ -155,6 +159,13 @@ class Orderbook:
                     if pair_set.intersection(set(CoinConfigNotFoundCoins)) == 0:
                         logger.debug(f"No orderbook for {base}/{quote}")
 
+
+        except CoinNotFoundException as e:
+            pass
+        except Exception as e:
+            logger.muted(f"{type(e)} Error: {e}")
+
+        try:
             bids_converted_list = []
             asks_converted_list = []
             for bid in orderbook["bids"]:
