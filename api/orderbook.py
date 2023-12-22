@@ -4,7 +4,7 @@ from collections import OrderedDict
 from decimal import Decimal
 from logger import logger
 from const import MM2_HOST, CoinConfigNotFoundCoins
-from generics import Files, Templates
+from generics import Files, Templates, CoinNotFoundException
 from utils import Utils
 from dex_api import DexAPI
 from helper import valid_coins
@@ -184,6 +184,8 @@ class Orderbook:
                     )
             orderbook["bids"] = bids_converted_list
             orderbook["asks"] = asks_converted_list
+        except CoinNotFoundException as e:
+            pass
         except Exception as e:
-            logger.muted(f"Error: {e}")
+            logger.muted(f"{type(e)} Error: {e}")
         return orderbook
