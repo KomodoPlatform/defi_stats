@@ -2,9 +2,9 @@
 import time
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from logger import logger
-from models import ErrorMessage
-from cache import Cache
+from util.logger import logger
+from lib.models import ErrorMessage
+from lib.cache import Cache
 
 router = APIRouter()
 cache = Cache()
@@ -22,7 +22,7 @@ def get_v1_tickers(expire_at: int = 900):
     # r.GET("/api/v1/tickers", TickerAllInfos)
     try:
         data = {}
-        resp = cache.load.load_prices_tickers_v1()
+        resp = cache.load_prices_tickers_v1()
         for i in resp:
             if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
                 data.update({i: resp[i]})
@@ -43,7 +43,7 @@ def get_v2_tickers(expire_at: int = 900):
     # r.GET("/api/v2/tickers", TickerAllInfosV2)
     try:
         data = {}
-        resp = cache.load.load_prices_tickers_v2()
+        resp = cache.load_prices_tickers_v2()
         for i in resp:
             if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
                 data.update({i: resp[i]})

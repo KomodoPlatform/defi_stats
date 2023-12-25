@@ -1,7 +1,7 @@
 from decimal import Decimal
-from logger import logger
-from helper import valid_coins
-from generics import CoinNotFoundException, CoinWalletOnlyException
+from util.logger import logger
+from util.helper import valid_coins
+from util.exceptions import CoinNotFoundException, CoinWalletOnlyException
 
 def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     if allow_reverse:

@@ -44,11 +44,6 @@ API_HOST='0.0.0.0'
 API_USER="komodian"
 API_PASS="api_password"
 
-# AtomicDEX API
-COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
-COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
-
-
 
 # API KEYS
 FIXER_API_KEY=your_key
@@ -79,7 +74,7 @@ Edit the values for your paths and passwords etc. Some of these are not curently
 
 # Sourcing data
 
-- To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
+- To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./import_dbs.sh` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/USERNAME/defi_stats/api/db/source/import_dbs.sh`
 
 
 ### Running the API

@@ -2,7 +2,7 @@
 from fastapi.testclient import TestClient
 import pytest
 from main import app
-from logger import logger
+from util.logger import logger
 
 client = TestClient(app)
 

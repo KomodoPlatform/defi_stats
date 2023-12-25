@@ -16,11 +16,6 @@ from fixtures import (
 # /////////////////////// #
 
 
-# def test_calc_gecko_source(setup_cache):
-#    calc = setup_cache.calc
-#    r = calc.calc_gecko_source()
-#    assert len(r) > 0
-
 
 # /////////////////////// #
 # Cache.save class tests  #
@@ -87,10 +82,10 @@ def test_load_gecko(setup_cache):
         assert gecko[i]["coingecko_id"] != ""
 
 
-def test_calc_gecko_tickers(setup_cache, setup_helper, setup_swaps_db_data):
+def test_calc_traded_tickers(setup_cache, setup_helper, setup_swaps_db_data):
     helper = setup_helper
     calc = setup_cache.calc
-    r = calc.calc_gecko_tickers(
+    r = calc.calc_traded_tickers(
         DB=setup_swaps_db_data,
     )
     assert len(r) > 0
@@ -120,12 +115,12 @@ def test_calc_gecko_tickers(setup_cache, setup_helper, setup_swaps_db_data):
     assert "bid" in r["data"][0]
 
 
-def test_calc_gecko_pairs(setup_cache, setup_swaps_db_data):
+def test_calc_traded_pairs(setup_cache, setup_swaps_db_data):
     cache = setup_cache
-    r = cache.calc.calc_gecko_pairs(
+    r = cache.calc.calc_traded_pairs(
         days=7, exclude_unpriced=False, DB=setup_swaps_db_data, include_all_kmd=False
     )
-    r2 = cache.calc.calc_gecko_pairs(DB=setup_swaps_db_data)
+    r2 = cache.calc.calc_traded_pairs(DB=setup_swaps_db_data)
     logger.info(r)
     logger.info(r2)
     assert len(r) == 7

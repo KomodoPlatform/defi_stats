@@ -2,9 +2,9 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from logger import logger
-from models import FixerRates, ErrorMessage
-from cache import Cache
+from util.logger import logger
+from lib.models import FixerRates, ErrorMessage
+from lib.cache import Cache
 
 router = APIRouter()
 cache = Cache()
@@ -19,7 +19,7 @@ cache = Cache()
 )
 def get_fixer_rates():
     try:
-        data = cache.load.load_fixer_rates()
+        data = cache.load_fixer_rates()
         if "timestamp" not in data:
             raise ValueError("No timestamp in data!")
         elif data["timestamp"] < time.time() - 900:

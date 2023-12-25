@@ -5,23 +5,25 @@ import pytest
 from decimal import Decimal
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
-from generics import Templates, Time
-from external import CoinGeckoAPI
-from dex_api import DexAPI
-from utils import Utils
-from cache import Cache
-from pair import Pair
-from db import SqliteDB, get_sqlite_db
-from orderbook import Orderbook
-import helper
-from logger import logger
+from util.cron import Time
+from lib.external import CoinGeckoAPI
+from lib.dex_api import DexAPI
+from util.utils import Utils
+from util.logger import logger
+from lib.cache import Cache
+from lib.pair import Pair
+from db.sqlitedb import SqliteDB, get_sqlite_db
+from lib.orderbook import Orderbook
+import util.helper as helper
+from const import templates
 
+logger.info("Loading test fixtures...")
 
 @pytest.fixture
 def setup_fake_db():
     """ Fixture to set up the in-memory database with test data """
     DB = SqliteDB(
-        path_to_db=':memory:',
+        db_path=':memory:',
         testing=True,
         dict_format=False
     )
@@ -91,7 +93,6 @@ def setup_helper():
 
 @pytest.fixture
 def setup_templates():
-    templates = Templates()
     yield templates
 
 

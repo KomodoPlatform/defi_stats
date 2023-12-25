@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
-from logger import logger
-from cache import Cache
-from models import GenericTickersInfo
-from enums import NetId
+from util.logger import logger
+from lib.cache import Cache
+from lib.models import GenericTickersInfo
+from util.enums import NetId
 
 router = APIRouter()
 cache = Cache()
@@ -16,7 +16,7 @@ cache = Cache()
 )
 def summary(netid: NetId = NetId.ALL):
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
+        data = cache.load_gecko_tickers(netid=netid.value)
         tickers = {}
         [tickers.update({i['ticker_id']: i}) for i in data["data"]]
         data['data'] = tickers

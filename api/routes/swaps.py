@@ -3,12 +3,12 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
 from const import MM2_DB_PATHS, MM2_RPC_PORTS
-from logger import logger
-from models import ErrorMessage, GeckoSwapItem, SwapUuids
-from generics import UuidNotFoundException
-from db import get_sqlite_db
-from pair import Pair
-from enums import NetId
+from util.logger import logger
+from lib.models import ErrorMessage, GeckoSwapItem, SwapUuids
+from util.exceptions import UuidNotFoundException
+from db.sqlitedb import get_sqlite_db
+from lib.pair import Pair
+from util.enums import NetId
 
 router = APIRouter()
 
@@ -52,8 +52,7 @@ def swap_uuids(
     try:
         pair = Pair(
             pair=pair,
-            path_to_db=MM2_DB_PATHS[netid.value],
-            mm2_port=MM2_RPC_PORTS[netid.value],
+            netid=netid.value
         )
         uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}

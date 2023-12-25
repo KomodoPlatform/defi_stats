@@ -1,188 +1,366 @@
 #!/usr/bin/env python3
 import time
+import inspect
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
-from logger import logger
-from cache import Cache
-from db import update_master_sqlite_dbs
-from enums import NetId
-
+from util.logger import logger
+from lib.cache import Cache
+from lib.cache_item import CacheItem
+from db.sqlitedb import update_master_sqlite_dbs
+from util.enums import NetId
+from lib.external import FixerAPI, CoinGeckoAPI
+from const import NODE_TYPE
+from util.helper import get_stopwatch, get_trace
 
 router = APIRouter()
-cache = Cache()
 
+# Pure Upstream Data Sourcing
 
 @router.on_event("startup")
-@repeat_every(seconds=86400)
+@repeat_every(seconds=60)
 def update_coins():  # pragma: no cover
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    context = get_trace(stack)
     try:
-        cache.save.save_coins()
-        cache.save.save_coins_config()
-        return {"result": "Updated coins"}
-    except IOError as e:
-        err = f"Error in [update_coins]: {e}"
-        logger.warning(err)
-        return {"error": err}
+        coins_cache = CacheItem("coins")
+        coins_cache.save()
+        coins_config_cache = CacheItem("coins_config")
+        coins_config_cache.save()
+    except Exception as e:
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=f"update_coins: {context}")
+        return
+    get_stopwatch(
+        start, updated=True, context="CacheLoop.update_coins | update_coins complete!"
+    )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=210)
-def cache_gecko_data():  # pragma: no cover
+@repeat_every(seconds=60)
+def update_gecko_data():  # pragma: no cover
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    context = get_trace(stack)
     try:
-        cache.save.save_gecko_source()
-    except IOError as e:
-        logger.warning(f"{type(e)} Error in [cache_gecko_data]: {e}")
+        cache = Cache()
+        gecko_cache = cache.get_item("gecko_source")
+        data = CoinGeckoAPI().get_gecko_source()
+        gecko_cache.save(data)
+    except Exception as e:
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=f"update_gecko_data: {context}")
+        return
+    get_stopwatch(
+        start,
+        updated=True,
+        context="CacheLoop.update_gecko_data | gecko source updated",
+    )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
-def cache_prices_service():  # pragma: no cover
+@repeat_every(seconds=60)
+def update_prices_service():  # pragma: no cover
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    context = get_trace(stack)
     try:
-        cache.save.save_prices_tickers_v1()
-    except IOError as e:
-        logger.warning(f"{type(e)} Error in [cache_prices_service]: {e}")
+        cache = Cache()
+        prices_tickers_v1_cache = cache.get_item("prices_tickers_v1")
+        prices_tickers_v1_cache.save()
+    except Exception as e:
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
     try:
-        cache.save.save_prices_tickers_v2()
-    except IOError as e:
-        logger.warning(f"{type(e)} Error in [cache_prices_service]: {e}")
+        cache = Cache()
+        prices_tickers_v2_cache = cache.get_item("prices_tickers_v2")
+        prices_tickers_v2_cache.save()
+    except Exception as e:
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    get_stopwatch(
+        start,
+        updated=True,
+        context="CacheLoop.update_prices_service | prices service updated",
+    )
 
 
 @router.on_event("startup")
 @repeat_every(seconds=600)
-def cache_fixer_rates():  # pragma: no cover
+def update_fixer_rates():  # pragma: no cover
+    start = int(time.time())
+    stack = inspect.stack()[0]
     try:
-        cache.save.save_fixer_rates_source()
-    except IOError as e:
-        logger.warning(f"{type(e)} Error in [cache_fixer_rates]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=300)
-def update_dbs():
-    started = int(time.time())
-    try:
-        update_master_sqlite_dbs()
+        cache = Cache()
+        fixer = FixerAPI()
+        fixer_rates_cache = cache.get_item("fixer_rates")
+        fixer_rates_cache.save(fixer.latest())
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_dbs]: {e}")
-    logger.stopwatch(f"Time to process [update_dbs]: {int(time.time()) - started} sec")
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    get_stopwatch(
+        start,
+        updated=True,
+        context="CacheLoop.update_fixer_rates | fixer source updated",
+    )
+
+
+# Derived Cache data for Gecko endpoints
 
 
 @router.on_event("startup")
-@repeat_every(seconds=210)
+@repeat_every(seconds=10)
 def update_gecko_pairs():
-    started = int(time.time())
+    start = int(time.time())
+    stack = inspect.stack()[0]
     try:
-        r = cache.save.save_gecko_pairs(netid="all")
+        cache = Cache(netid="ALL")
+        gecko_pairs_cache = cache.get_item("gecko_pairs")
+        data = cache.calc.traded_pairs(days=7)
+        resp = gecko_pairs_cache.save(data)
+
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_gecko_pairs] netid 'all': {e}")
-    logger.stopwatch(
-        f"Time to process {r[1]} pairs in [update_gecko_pairs]: {int(time.time()) - started} sec"
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    get_stopwatch(
+        start,
+        updated=True,
+        context=f"CacheLoop.update_gecko_pairs | updated with {resp[1]} pairs",
     )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=10)
 def update_gecko_tickers():
-    started = int(time.time())
+    start = int(time.time())
+    stack = inspect.stack()[0]
     try:
-        r = cache.save.save_gecko_tickers(netid="all")
+        cache = Cache(netid="ALL")
+        gecko_tickers_cache = CacheItem(name="gecko_tickers", netid="ALL")
+        data = cache.calc.traded_tickers(pairs_days=7)
+        resp = gecko_tickers_cache.save(data)
+        context = f"{resp[1]} pairs"
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_gecko_tickers]: {e}")
-    logger.stopwatch(
-        f"Time to process {r[1]} pairs in [update_gecko_tickers]: {int(time.time()) - started} sec"
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    get_stopwatch(
+        start,
+        updated=True,
+        context=f"CacheLoop.update_gecko_tickers | updated with {resp[1]} pairs",
     )
 
 
+
+### Stats-API Cache
+
+"""
 @router.on_event("startup")
-@repeat_every(seconds=210)
+@repeat_every(seconds=60)
+def update_gecko_data():  # pragma: no cover
+    try:
+        cache.save.gecko_data()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_gecko_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def update_summary():  # pragma: no cover
+    try:
+        cache.save.summary()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_summary_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def update_ticker():  # pragma: no cover
+    try:
+        cache.save.ticker()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_ticker_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)  # caching data every 10 minutes
+def update_atomicdexio():  # pragma: no cover
+    try:
+        cache.save.atomicdexio()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_atomicdex_io]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)  # caching data every 10 minutes
+def update_atomicdex_fortnight():  # pragma: no cover
+    try:
+        cache.save.atomicdex_fortnight()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [update_atomicdex_io_fortnight]: {e}")
+"""
+
+### Derived Cache data for Markets endpoints
+
+
+@router.on_event("startup")
+@repeat_every(seconds=10)
 def update_markets_last_trade():
     # This one is fast, so can do all netids in seq in same func
-    started = int(time.time())
+    start = int(time.time())
+    stack = inspect.stack()[0]
     for netid in NetId:
         try:
-            r = cache.save.save_markets_last_trade(netid=netid.value)
+            cache = Cache(netid=netid.value)
+            cache_item = CacheItem("markets_last_trade")
+            data = cache.calc.pairs_last_trade()
+            # logger.info(f"[CacheLoop.update_markets_last_trade] items for {netid.value}: {len(data)}")
+            resp = cache_item.save(data)
+            if resp is None:
+                get_stopwatch(
+                    start,
+                    warning=True,
+                    context=f"CacheLoop.update_markets_last_trade | empty resp for {netid.value}",
+                )
+            else:
+                context = f"{resp[1]} pairs"
+                get_stopwatch(
+                    start,
+                    updated=True,
+                    context=f"CacheLoop.update_markets_last_trade | updated for netid {netid.value}",
+                )
+
         except Exception as e:
-            logger.warning(
-                f"{type(e)} Error in [update_markets_last_trade] for {netid.value}: {e}"
+            error = f"{type(e)}: {e} [CacheLoop.update_markets_last_trade] ({netid})]"
+            context = get_trace(stack, error)
+            get_stopwatch(start, error=True, context=context)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=10)
+def update_markets_pairs(netid):
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    try:
+        cache = Cache(netid=netid)
+        cache_item = CacheItem(name="markets_pairs", netid=netid)
+        data = cache.calc.traded_pairs(days=120)
+        if len(data) > 0:
+            resp = cache_item.save(data)
+            get_stopwatch(
+                start,
+                updated=True,
+                context=f"updated update_markets_pairs_{netid} cache with {resp[1]} pairs",
             )
-    msg = f"Time to process {r[1]} pairs in [update_markets_last_trade]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)
-def update_markets_pairs_8762():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_pairs(netid=8762)
+            return
     except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_pairs_8762]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_8762]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
+        error = f"{type(e)}: {e}"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    get_stopwatch(
+        start,
+        warning=True,
+        context=f"CacheLoop.update_markets_pairs_{netid} | No data from cache.calc_markets_pairs()",
+    )
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
-def update_markets_tickers_8762():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_tickers(netid=8762)
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_tickers_8762]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_8762]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=10)
 def update_markets_pairs_7777():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_pairs(netid=7777)
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_pairs_7777]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_7777]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
+    update_markets_pairs("7777")
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=10)
+def update_markets_pairs_8762():
+    update_markets_pairs("8762")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=10)
+def update_markets_pairs_ALL():
+    update_markets_pairs("ALL")
+
+
+def update_markets_tickers(netid):
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    try:
+        cache = Cache(netid=netid)
+        cache_item = CacheItem(name="markets_tickers", netid=netid)
+        data = cache.calc.traded_tickers(pairs_days=120)
+        if data is not None:
+            logger.info(f"{len(data)} results from cache.calc.markets_tickers() [netid {netid}]")
+        else:
+            logger.info(f"{data} data from cache.calc.markets_tickers() [netid {netid}]")
+        resp = cache_item.save(data)
+        context = f"CacheLoop.update_markets_tickers_{netid} | "
+        context += f"updated markets_tickers_{netid} cache with {resp[1]} pairs"
+        get_stopwatch(start, updated=True, context=context)
+    except Exception as e:
+        error = f"{type(e)}: {e} [netid {netid}]"
+        context = get_trace(stack, error)
+        get_stopwatch(start, error=True, context=context)
+        return
+    
+
+
+@router.on_event("startup")
+@repeat_every(seconds=10)
 def update_markets_tickers_7777():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_tickers(netid=7777)
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_tickers_7777]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_7777]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
+    update_markets_tickers("7777")
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
-def update_markets_pairs_all():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_pairs(netid="all")
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_pairs_all]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_pairs_all]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
+@repeat_every(seconds=10)
+def update_markets_tickers_8762():
+    update_markets_tickers("8762")
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
-def update_markets_tickers_all():
-    started = int(time.time())
-    try:
-        r = cache.save.save_markets_tickers(netid="all")
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [update_markets_tickers_all]: {e}")
-    msg = f"Time to process {r[1]} pairs in [update_markets_tickers_all]: "
-    msg += f"{int(time.time()) - started} sec"
-    logger.stopwatch(msg)
+@repeat_every(seconds=10)
+def update_markets_tickers_8762():
+    update_markets_tickers("ALL")
+
+
+
+### Processing Loops
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def import_dbs():
+    start = int(time.time())
+    stack = inspect.stack()[0]
+    context = get_trace(stack, error)
+    if NODE_TYPE != "serve":
+        try:
+            update_master_sqlite_dbs()
+        except Exception as e:
+            error = f"{type(e)}: {e}"
+            context = get_trace(stack, error)
+            get_stopwatch(start, error=True, context=context)
+            return
+        get_stopwatch(
+            start,
+            updated=True,
+            context="CacheLoop.import_dbs | Source database imports complete!",
+        )
+        return
+    get_stopwatch(
+        start,
+        muted=True,
+        context="CacheLoop.import_dbs | Node type is serve, not importing databases",
+    )

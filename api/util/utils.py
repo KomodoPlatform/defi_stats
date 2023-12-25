@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import time
 import json
+import inspect
 import requests
 from random import randrange
 from typing import Any
 from decimal import Decimal, InvalidOperation
-from logger import logger
-from helper import format_10f
-from generics import Files
+from util.logger import logger
+from util.helper import format_10f, get_stopwatch, get_trace
+from util.files import Files
 
 
 class Utils:
@@ -15,30 +16,37 @@ class Utils:
         self.testing = testing
         self.files = Files(testing=self.testing)
 
-    def load_jsonfile(self, path, attempts=5):
+    def load_jsonfile(self, path, attempts=5, fallback=None):
         i = 0
         start = int(time.time())
-        # logger.stopwatch(f"Loading {path}")
         while True:
             i += 1
             try:
                 with open(path, "r") as f:
                     end = int(time.time())
-                    # logger.stopwatch(f"Loaded {path} in [{end - start} sec]")
                     return json.load(f)
             except Exception as e:  # pragma: no cover
                 err = {"error": f"Error loading {path}: {e}"}
                 if i >= attempts:
                     end = int(time.time())
-                    # logger.stopwatch(f"Loaded {path} in [{end - start} sec]")
+                    if fallback:
+                        return fallback
+                    get_stopwatch(start, context=f"utils.load_jsonfile | Loading {path}")
                     return err
                 time.sleep(0.1)
 
     def download_json(self, url):
+        start = int(time.time())
+        stack = inspect.stack()[1]
+        context = get_trace(stack)
         try:
-            return requests.get(url).json()
+            data = requests.get(url).json()
+            # get_stopwatch(start, muted=True, context=f"{url} response recieved")
+            return data
         except Exception as e:  # pragma: no cover
-            logger.error(f"{type(e)} Error downloading {url}: {e}")
+            error = f"{type(e)}: {e}"
+            context = get_trace(stack, error)
+            get_stopwatch(start, error=True, context=context)
             return None
 
     def round_to_str(self, value: Any, rounding=8):
@@ -88,7 +96,7 @@ class Utils:
             return f"{days}d"
 
     def segwit_coins(self) -> list:
-        coins = self.load_jsonfile(self.files.coins_file)
+        coins = self.load_jsonfile(self.files.coins)
         segwit_coins = [
             i["coin"].split("-")[0] for i in coins if i["coin"].endswith("-segwit")
         ]
@@ -97,7 +105,7 @@ class Utils:
     def get_related_coins(self, coin, exclude_segwit=True):
         try:
             coin = coin.split("-")[0]
-            coins = self.load_jsonfile(self.files.coins_file)
+            coins = self.load_jsonfile(self.files.coins)
             data = [
                 i["coin"]
                 for i in coins
@@ -119,7 +127,7 @@ class Utils:
 
     def get_chunks(self, data, chunk_length):
         for i in range(0, len(data), chunk_length):
-            yield data[i: i + chunk_length]
+            yield data[i : i + chunk_length]
 
     def get_gecko_usd_price(self, coin: str, gecko_source) -> float:
         try:

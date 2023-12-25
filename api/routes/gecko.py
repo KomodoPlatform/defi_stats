@@ -3,23 +3,22 @@ from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
 import time
-from logger import logger
-from models import (
+from util.logger import logger
+from lib.models import (
     GeckoPairsItem,
     GeckoTickersSummary,
     GeckoOrderbookItem,
     GeckoHistoricalTradesItem,
     ErrorMessage,
 )
-from helper import get_mm2_rpc_port
-from cache import Cache
-from pair import Pair
-from orderbook import Orderbook
-from enums import TradeType, NetId
-from validate import validate_positive_numeric, validate_ticker_id
+from util.helper import get_mm2_rpc_port, get_sqlite_db_paths, get_stopwatch
+from lib.cache import Cache
+from lib.pair import Pair
+from lib.orderbook import Orderbook
+from util.enums import TradeType, NetId
+from util.validate import validate_positive_numeric, validate_ticker_id
 
 router = APIRouter()
-cache = Cache()
 
 
 # Gecko Endpoints
@@ -30,7 +29,9 @@ cache = Cache()
 )
 async def gecko_pairs(netid: NetId = NetId.ALL):
     try:
-        return cache.load.load_gecko_pairs(netid=netid.value)
+        db_path = get_sqlite_db_paths(netid)
+        cache = Cache(db_path=db_path)
+        return cache.load_gecko_pairs(netid=netid.value)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -43,14 +44,16 @@ async def gecko_pairs(netid: NetId = NetId.ALL):
 )
 def gecko_tickers(netid: NetId = NetId.ALL):
     start = int(time.time())
-    logger.stopwatch(f"[/api/v3/gecko/tickers] Request recieved...")
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
-        logger.stopwatch(f"[/api/v3/gecko/tickers] Data returned...")
+        db_path = get_sqlite_db_paths(netid)
+        cache = Cache(db_path=db_path)
+        data = cache.load_gecko_tickers(netid=netid.value)
+        get_stopwatch(start, context="/api/v3/gecko/tickers")
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}
+    
 
 
 @router.get(
@@ -67,6 +70,8 @@ def gecko_orderbook(
     netid: NetId = NetId.ALL,
 ):
     try:
+        db_path = get_sqlite_db_paths(netid)
+        cache = Cache(db_path=db_path)
         resp = {
             "ticker_id": ticker_id,
             "timestamp": f"{int(time.time())}",
@@ -83,11 +88,11 @@ def gecko_orderbook(
         if netid.value == "all":
             for x in NetId:
                 if x.value != "all":
-                    gecko_pairs = cache.load.load_gecko_pairs(netid=x.value)
+                    gecko_pairs = cache.load_gecko_pairs(netid=x.value)
                     valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
                     validate_ticker_id(ticker_id, valid_tickers)
                     mm2_port = get_mm2_rpc_port(netid=x.value)
-                    data = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
+                    data = Orderbook(pair=Pair(ticker_id), netid=x.value).for_pair(
                         endpoint=True, depth=depth
                     )
                     resp["asks"] += data["asks"]
@@ -102,11 +107,10 @@ def gecko_orderbook(
             resp["bids"] = resp["bids"][:depth][::-1]
             resp["asks"] = resp["asks"][::-1][:depth]
         else:
-            gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+            gecko_pairs = cache.load_gecko_pairs(netid=netid.value)
             valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
             validate_ticker_id(ticker_id, valid_tickers)
-            mm2_port = get_mm2_rpc_port(netid=netid.value)
-            resp = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
+            resp = Orderbook(pair=Pair(ticker_id), netid=netid.value).for_pair(
                 endpoint=True, depth=depth
             )
         return resp
@@ -133,7 +137,9 @@ def gecko_historical_trades(
     netid: NetId = NetId.ALL,
 ):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
+        db_path = get_sqlite_db_paths(netid)
+        cache = Cache(db_path=db_path)
+        gecko_pairs = cache.load_gecko_pairs(netid=netid.value)
         valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
         validate_ticker_id(ticker_id, valid_tickers)
         for value, name in [
@@ -146,7 +152,7 @@ def gecko_historical_trades(
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        pair = Pair(ticker_id)
+        pair = Pair(pair=ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,
             limit=limit,

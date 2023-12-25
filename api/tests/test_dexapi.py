@@ -4,7 +4,7 @@ from fixtures import (
     setup_kmd_dgb_tuple_pair, logger, setup_swaps_db_data,
     setup_time
 )
-from dex_api import DexAPI
+from lib.dex_api import DexAPI
 
 
 def test_orderbook(setup_dexapi, setup_dgb_kmd_str_pair, setup_kmd_dgb_tuple_pair):

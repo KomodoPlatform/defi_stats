@@ -35,7 +35,7 @@ def test_historical_trades(
 ):
     DB = setup_swaps_db_data
     pair = setup_kmd_ltc_str_pair
-    r = pair.historical_trades(trade_type='all', DB=DB, netid=7777)["buy"]
+    r = pair.historical_trades(trade_type='all', DB=DB)["buy"]
     assert len(r) == 1
     logger.info(r[0])
     assert r[0]["type"] == "buy"
@@ -44,9 +44,9 @@ def test_historical_trades(
     assert r[0]["price"] == helper.format_10f(5)
 
     pair = setup_ltc_kmd_list_pair
-    r = pair.historical_trades('all', DB=DB, netid=7777)["buy"]
+    r = pair.historical_trades('all', DB=DB)["buy"]
     assert len(r) == 1
-    r = pair.historical_trades('all', DB=DB, netid=7777)["sell"]
+    r = pair.historical_trades('all', DB=DB)["sell"]
     assert len(r) == 2
     logger.info(r[0])
     assert r[0]["type"] == "sell"
