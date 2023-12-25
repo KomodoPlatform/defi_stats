@@ -2,7 +2,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from const import MM2_DB_PATHS, MM2_RPC_PORTS
 from util.logger import logger
 from lib.models import ErrorMessage, GeckoSwapItem, SwapUuids
 from util.exceptions import UuidNotFoundException

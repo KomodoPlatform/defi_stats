@@ -2,14 +2,16 @@
 import time
 import sqlite3
 import inspect
-from os.path import basename
 from random import randrange
 from db.sqlitedb_query import SqliteQuery
-from util.logger import logger
 from util.files import Files
 from util.utils import Utils
 from const import templates
-from util.helper import get_stopwatch, get_netid, get_trace
+from util.helper import get_netid
+from util.logger import logger, get_trace, StopWatch
+
+get_stopwatch = StopWatch
+
 
 class SqliteUpdate:
     def __init__(self, db, **kwargs):
@@ -50,7 +52,7 @@ class SqliteUpdate:
                 sql += " DETACH DATABASE 'src_db';"
                 self.sql_cursor.executescript(sql)
                 context = f"Imported [{src_db.db_file}] into [{self.db_file}]"
-                
+
                 return get_stopwatch(start, imported=True, context=context)
             except sqlite3.OperationalError as e:
                 if n > 10:
@@ -58,7 +60,9 @@ class SqliteUpdate:
                     msg += f" into {self.db_file}: {e}"
                     error = f"{type(e)}: {e}"
                     context = get_trace(stack, error)
-                    return get_stopwatch(start, error=True, context=f"update.merge_db_tables {context}")
+                    return get_stopwatch(
+                        start, error=True, context=f"update.merge_db_tables {context}"
+                    )
                 msg = f"Error in [merge_db_tables] for {src_db.db_file}"
                 msg += f" into {self.db_file}: {e}, retrying..."
                 logger.warning(msg)

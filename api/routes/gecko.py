@@ -11,7 +11,7 @@ from lib.models import (
     GeckoHistoricalTradesItem,
     ErrorMessage,
 )
-from util.helper import get_mm2_rpc_port, get_sqlite_db_paths, get_stopwatch
+from util.helper import get_sqlite_db_paths, get_stopwatch
 from lib.cache import Cache
 from lib.pair import Pair
 from lib.orderbook import Orderbook
@@ -53,7 +53,6 @@ def gecko_tickers(netid: NetId = NetId.ALL):
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}
-    
 
 
 @router.get(
@@ -91,7 +90,6 @@ def gecko_orderbook(
                     gecko_pairs = cache.load_gecko_pairs(netid=x.value)
                     valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
                     validate_ticker_id(ticker_id, valid_tickers)
-                    mm2_port = get_mm2_rpc_port(netid=x.value)
                     data = Orderbook(pair=Pair(ticker_id), netid=x.value).for_pair(
                         endpoint=True, depth=depth
                     )

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from os import listdir
-from util.logger import logger
 from util.enums import NetId
 from db.sqlitedb import SqliteDB
 from const import DB_SOURCE_PATH, MM2_DB_PATHS

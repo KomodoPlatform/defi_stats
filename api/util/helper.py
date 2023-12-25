@@ -3,9 +3,11 @@ import json
 import time
 import inspect
 from decimal import Decimal
-from util.logger import logger
 from util.enums import NetId
 from const import MM2_RPC_PORTS, MM2_DB_PATHS, MM2_NETID
+from util.logger import logger, get_trace, StopWatch
+
+get_stopwatch = StopWatch
 
 
 def format_10f(number: float) -> str:
@@ -170,50 +172,3 @@ def dict_to_dict_list(data, key):
         item.update({key: i})
         dict_list.append(item)
     return dict_list
-
-
-def get_stopwatch(start_time, context=None, trigger=0,
-                  updated=False, query=False, imported=False,
-                  error=False, warning=False, debug=False,
-                  dexrpc=False, muted=False
-    ):
-    if trigger == 0:
-        trigger = 10
-        if updated or imported or query or dexrpc:
-            trigger = 5
-        if error or debug or warning:
-            trigger = 0
-    trigger = 0
-    duration = int(time.time()) - int(start_time)
-    if duration > trigger:
-        if context is None:
-            context = get_trace(inspect.stack()[1], "guessed action")
-        msg = f"[{duration:>4} sec] [{context}]"
-        if updated:
-            logger.updated(f"    {msg}")
-        elif error:
-            logger.error(f"      {msg}")
-        elif imported:
-            logger.imported(f"   {msg}")
-        elif query:
-            logger.query(f"      {msg}")
-        elif debug:
-            logger.debug(f"      {msg}")
-        elif warning:
-            logger.warning(f"    {msg}")
-        elif muted:
-            logger.muted(f"      {msg}")
-        else:
-            logger.stopwatch(f"  {msg}")
-
-def get_trace(stack, error=None):
-    context = {
-        "stack": {
-            "function": stack.function,
-            "file": stack.filename,
-            "lineno": stack.lineno
-        }                
-    }
-    if error is not None:
-        context.update({"error": error})
-    return context

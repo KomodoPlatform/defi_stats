@@ -4,7 +4,7 @@ from util.exceptions import NoDefaultForKeyError
 
 
 class Templates:
-    def __init__(self, mm2_host):
+    def __init__(self, mm2_host="http://127.0.0.1"):
         self.mm2_host = mm2_host
 
     def gecko_info(self, coin_id):
@@ -15,7 +15,6 @@ class Templates:
 
     def swap_counts(self):
         return {"swaps_all_time": 0, "swaps_30d": 0, "swaps_24h": 0}
-
 
     def volumes_and_prices(self, suffix):
         return {
@@ -52,12 +51,29 @@ class Templates:
     @property
     def arg_defaults(self):
         val_keys = {
-            "false": ["testing", "include_all_kmd"],
+            "false": [
+                "testing",
+                "include_all_kmd",
+                "context",
+                "updated",
+                "query",
+                "imported",
+                "error",
+                "warning",
+                "debug",
+                "dexrpc",
+                "muted",
+                "info",
+                "loop",
+                "calc",
+                "save",
+            ],
             "true": ["wal", "exclude_unpriced", "dict_format"],
             "none": ["endpoint", "reverse", "source_url"],
             "now": ["end"],
             "all": ["netid"],
             "default_host": ["mm2_host"],
+            "zero": ["trigger"],
         }
         args = []
         for v in val_keys.values():
@@ -77,6 +93,8 @@ class Templates:
                     return "ALL"
                 if val.lower() == "empty_string":
                     return ""
+                if val.lower() == "zero":
+                    return 0
                 if val.lower() == "default_host":
                     return self.mm2_host
                 if val.lower() == "now":

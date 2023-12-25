@@ -27,11 +27,12 @@ class UuidNotFoundException(Exception):
     "Raised when a UUID is not found in the database"
     pass
 
+
 class CacheFilenameNotFound(Exception):
     "Raised when a filename for a cache item is not found in the 'File' class"
     pass
 
+
 class CacheItemNotFound(Exception):
     "Raised when a cache item is not found in the 'Cache' class"
     pass
-

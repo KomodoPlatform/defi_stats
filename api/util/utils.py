@@ -6,9 +6,11 @@ import requests
 from random import randrange
 from typing import Any
 from decimal import Decimal, InvalidOperation
-from util.logger import logger
-from util.helper import format_10f, get_stopwatch, get_trace
+from util.helper import format_10f
 from util.files import Files
+from util.logger import logger, get_trace, StopWatch
+
+get_stopwatch = StopWatch
 
 
 class Utils:
@@ -31,7 +33,9 @@ class Utils:
                     end = int(time.time())
                     if fallback:
                         return fallback
-                    get_stopwatch(start, context=f"utils.load_jsonfile | Loading {path}")
+                    get_stopwatch(
+                        start, context=f"utils.load_jsonfile | Loading {path}"
+                    )
                     return err
                 time.sleep(0.1)
 

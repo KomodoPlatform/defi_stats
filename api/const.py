@@ -70,11 +70,10 @@ MM2_DB_PATHS = {
 }
 
 # KomodoPlatform DeFi API config.
-MM2_HOST = "http://127.0.0.1"
 MM2_RPC_PORTS = {"7777": 7877, "8762": 7862, "ALL": "ALL"}
 MM2_NETID = 8762  # The primary active NetId currently supported by KomodoPlatform
 
 # Some coins may have swaps data, but are not currently in the coins repo.
 CoinConfigNotFoundCoins = ["XEP", "MORTY", "RICK", "SMTF-v2"]
 
-templates = Templates(mm2_host=MM2_HOST)
+templates = Templates()

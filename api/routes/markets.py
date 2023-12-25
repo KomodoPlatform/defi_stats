@@ -13,7 +13,7 @@ from lib.models import (
     PairTrades,
     AdexIo,
 )
-from util.helper import get_mm2_rpc_port, sort_dict_list, get_stopwatch
+from util.helper import sort_dict_list, get_stopwatch
 from lib.cache import Cache
 from lib.cache import CacheItem
 from lib.pair import Pair
@@ -25,9 +25,7 @@ from util.transform import (
     gecko_ticker_to_market_ticker_summary,
 )
 from util.validate import validate_ticker_id
-from const import MM2_DB_PATHS, MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
-from db.sqlitedb_query import SqliteQuery
 
 router = APIRouter()
 cache = Cache()
@@ -199,7 +197,6 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
         if netid.value == "all":
             for x in NetId:
                 if x.value != "all":
-                    mm2_port = get_mm2_rpc_port(netid=x.value)
                     data = Orderbook(
                         pair=Pair(pair=market_pair, netid=x.value),
                         netid=x.value
@@ -216,7 +213,6 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
             resp["bids"] = resp["bids"][::-1]
             resp["asks"] = resp["asks"][::-1]
         else:
-            mm2_port = get_mm2_rpc_port(netid=netid.value)
             data = Orderbook(
                 pair=Pair(
                     pair=market_pair,
@@ -310,7 +306,6 @@ def pairs_last_trade(
     end=int(time.time()),
     min_swaps=5
 ):
-    db = get_sqlite_db(netid=netid.value)
     return CacheItem('pairs_last_trade', netid=netid.value).data
 
 
@@ -342,7 +337,7 @@ def volumes_history_ticker(
             start_time=start_time,
             end_time=end_time,
         )
-    get_stopwatch(start, context=f"/volumes_ticker/{ticker}/{days_in_past}")
+    get_stopwatch(start, context=f"/volumes_ticker/{ticker}/{days_in_past} | responded")
     return volumes_dict
 
 
@@ -374,7 +369,7 @@ def tickers_summary(netid: NetId = NetId.ALL):
         for ticker in tickers:
             if resp[ticker]["trades_24h"] > 0:
                 with_action.update({ticker: resp[ticker]})
-        get_stopwatch(start, context=f"/tickers_summary")
+        get_stopwatch(start, context="/tickers_summary | responded")
         return with_action
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}")
@@ -390,5 +385,5 @@ def tickers_summary(netid: NetId = NetId.ALL):
 def fiat_rates():
     start = int(time.time())
     data = CacheItem('gecko_source').data
-    get_stopwatch(start, context=f"/fiat_rates")
+    get_stopwatch(start, context="/fiat_rates | responded")
     return data

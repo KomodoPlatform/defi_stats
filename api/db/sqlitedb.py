@@ -15,8 +15,10 @@ from const import (
 )
 from db.sqlitedb_query import SqliteQuery
 from db.sqlitedb_update import SqliteUpdate
-from util.logger import logger
-from util.helper import get_sqlite_db_paths, get_stopwatch, get_netid, get_trace
+from util.helper import get_sqlite_db_paths, get_netid
+from util.logger import logger, get_trace, StopWatch
+
+get_stopwatch = StopWatch
 
 
 class SqliteDB:
@@ -150,7 +152,7 @@ def update_master_sqlite_dbs():
         context = get_trace(stack, error)
         return get_stopwatch(start, error=True, context=context)
     get_stopwatch(start, imported=True, context="Backup DB merge complete")
-    
+
     try:
         # Handle 7777 first
         for source_db_file in sqlite_db_list:
@@ -215,16 +217,16 @@ def inspect_data(db_7777, db_8762, db_all):
         context = f"{len(extras)} uuids in ALL but not in 8762 or 7777"
         extras2 = list(set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all))
         context = f"{len(extras2)} uuids in 8762 or 7777 but not in ALL"
-        inspect = list(set(extras + extras2))
-        context = f"{len(inspect)} records with missing info to inspect..."
+        inspect_uuids = list(set(extras + extras2))
+        context = f"{len(inspect_uuids)} records with missing info to inspect..."
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
         get_stopwatch(start, error=True, context=context)
     try:
-        if len(inspect) > 0:
-            inspect.sort()
-        for i in list(inspect):
+        if len(inspect_uuids) > 0:
+            inspect_uuids.sort()
+        for i in list(inspect_uuids):
             try:
                 swap_8762 = query_8762_db.get_swap(i)
                 if "error" in swap_8762:
@@ -290,7 +292,6 @@ def inspect_data(db_7777, db_8762, db_all):
     get_stopwatch(start, context="repaired mismatched swaps")
 
     try:
-
         # In case not yet in ALL
         update_all_db.merge_db_tables(
             src_db=db_7777, table="stats_swaps", column="uuid"
@@ -335,6 +336,7 @@ def init_dbs():
     ]:
         db = get_sqlite_db(db_path=i)
         init_stats_swaps_db(db)
+    logger.debug("Database initialisation complete...")
 
 
 def init_stats_swaps_db(db):
