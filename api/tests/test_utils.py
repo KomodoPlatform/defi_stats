@@ -44,7 +44,7 @@ def test_get_gecko_usd_price(setup_utils, setup_cache):
     utils = setup_utils
     cache = setup_cache
     source_path = f"{API_ROOT_PATH}/tests/fixtures/gecko/source_cache.json"
-    assert cache.files.gecko_source_file == source_path
+    assert cache.files.gecko_source == source_path
     assert utils.get_gecko_usd_price("KMD", cache.gecko_source_cache) == 1
     assert utils.get_gecko_usd_price(
         "BTC", cache.gecko_source_cache) == 1000000

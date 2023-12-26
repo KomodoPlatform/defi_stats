@@ -3,7 +3,6 @@ import time
 import json
 import inspect
 import requests
-from random import randrange
 from typing import Any
 from decimal import Decimal, InvalidOperation
 from util.helper import format_10f
@@ -25,12 +24,10 @@ class Utils:
             i += 1
             try:
                 with open(path, "r") as f:
-                    end = int(time.time())
                     return json.load(f)
             except Exception as e:  # pragma: no cover
                 err = {"error": f"Error loading {path}: {e}"}
                 if i >= attempts:
-                    end = int(time.time())
                     if fallback:
                         return fallback
                     get_stopwatch(
@@ -45,7 +42,8 @@ class Utils:
         context = get_trace(stack)
         try:
             data = requests.get(url).json()
-            # get_stopwatch(start, muted=True, context=f"{url} response recieved")
+            context = f"{url} response recieved"
+            get_stopwatch(start, request=True, context=context)
             return data
         except Exception as e:  # pragma: no cover
             error = f"{type(e)}: {e}"
@@ -131,7 +129,7 @@ class Utils:
 
     def get_chunks(self, data, chunk_length):
         for i in range(0, len(data), chunk_length):
-            yield data[i : i + chunk_length]
+            yield data[i: i + chunk_length]
 
     def get_gecko_usd_price(self, coin: str, gecko_source) -> float:
         try:

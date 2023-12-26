@@ -14,7 +14,10 @@ class CoinWalletOnlyException(Exception):
 
 
 class NoDefaultForKeyError(Exception):
-    "Raised when attempting to get the default value of a key which has no default value."
+    """
+    Raised when attempting to get the default value of a key
+    which has no default value.
+    """
     pass
 
 
@@ -29,7 +32,10 @@ class UuidNotFoundException(Exception):
 
 
 class CacheFilenameNotFound(Exception):
-    "Raised when a filename for a cache item is not found in the 'File' class"
+    """
+    Raised when a filename for a cache item is not found
+    in the 'File' class"
+    """
     pass
 
 

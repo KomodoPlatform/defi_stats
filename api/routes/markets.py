@@ -302,11 +302,17 @@ def atomicdex_info_api(netid: NetId = NetId.ALL):
 @router.get("/pairs_last_trade", description="Returns the last trade for all pairs")
 def pairs_last_trade(
     netid: NetId = NetId.ALL,
-    start=0,
-    end=int(time.time()),
+    start_time=0,
+    end_time=int(time.time()),
     min_swaps=5
 ):
-    return CacheItem('pairs_last_trade', netid=netid.value).data
+    data = CacheItem('pairs_last_trade', netid=netid.value).data
+    filtered_data = [
+        i for i in data
+        if i['last_swap_time'] > start_time
+        and i['last_swap_time'] < end_time
+    ]
+    return filtered_data
 
 
 # TODO: get volumes for x days for ticker

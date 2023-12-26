@@ -47,22 +47,24 @@ if LOCAL_MM2_DB_PATH_8762 is None and NODE_TYPE != "process":
 
 # Paths for backups of mm2 instances running in local docker container
 DB_SOURCE_PATH = f"{PROJECT_ROOT_PATH}/api/db/source"
+DB_CLEAN_PATH = f"{PROJECT_ROOT_PATH}/api/db/cleaned"
+DB_MASTER_PATH = f"{PROJECT_ROOT_PATH}/api/db/master"
 LOCAL_MM2_DB_BACKUP_7777 = f"{DB_SOURCE_PATH}/local_MM2_7777.db"
 LOCAL_MM2_DB_BACKUP_8762 = f"{DB_SOURCE_PATH}/local_MM2_8762.db"
 
 # Paths for "master" databases, which import seed node databases
-MM2_DB_PATH_ALL = os.getenv("MM2_DB_PATH_ALL") or f"{DB_SOURCE_PATH}/MM2_all.db"
-MM2_DB_PATH_7777 = os.getenv("MM2_DB_PATH_7777") or f"{DB_SOURCE_PATH}/MM2_7777.db"
-MM2_DB_PATH_8762 = os.getenv("MM2_DB_PATH_8762") or f"{DB_SOURCE_PATH}/MM2_8762.db"
+MM2_DB_PATH_ALL = os.getenv("MM2_DB_PATH_ALL") or f"{DB_MASTER_PATH}/MM2_all.db"
+MM2_DB_PATH_7777 = os.getenv("MM2_DB_PATH_7777") or f"{DB_MASTER_PATH}/MM2_7777.db"
+MM2_DB_PATH_8762 = os.getenv("MM2_DB_PATH_8762") or f"{DB_MASTER_PATH}/MM2_8762.db"
 
 # Database paths as a dict, for convenience
 MM2_DB_PATHS = {
     "7777": MM2_DB_PATH_7777,
     "8762": MM2_DB_PATH_8762,
     "ALL": MM2_DB_PATH_ALL,
-    "temp_ALL": f"{DB_SOURCE_PATH}/temp_MM2_ALL.db",
-    "temp_7777": f"{DB_SOURCE_PATH}/temp_MM2_7777.db",
-    "temp_8762": f"{DB_SOURCE_PATH}/temp_MM2_8762.db",
+    "temp_ALL": f"{DB_CLEAN_PATH}/temp_MM2_ALL.db",
+    "temp_7777": f"{DB_CLEAN_PATH}/temp_MM2_7777.db",
+    "temp_8762": f"{DB_CLEAN_PATH}/temp_MM2_8762.db",
     "local_7777": LOCAL_MM2_DB_PATH_7777,
     "local_8762": LOCAL_MM2_DB_PATH_8762,
     "local_7777_backup": LOCAL_MM2_DB_BACKUP_7777,

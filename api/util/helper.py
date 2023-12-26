@@ -38,7 +38,7 @@ def sum_json_key_10f(data: dict, key: str) -> str:
     return format_10f(sum_json_key(data, key))
 
 
-def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
+def sort_dict_list(data: list(), key: str, reverse=False) -> dict:
     """
     Sort a list of dicts by the value of a key.
     """
@@ -47,7 +47,7 @@ def sort_dict_list(data: dict, key: str, reverse=False) -> dict:
 
 def sort_dict(data: dict, reverse=False) -> dict:
     """
-    Sort a list of dicts by the value of a key.
+    Sort a dict by the value the root key.
     """
     k = list(data.keys())
     k.sort()
@@ -123,7 +123,7 @@ def get_netid(db_file):
     if is_7777(db_file):
         return "7777"
     elif is_source_db(db_file=db_file):
-        return "8888"
+        return "8762"
     else:
         return "ALL"
 
@@ -154,21 +154,17 @@ def save_json(fn, data):
     stack = inspect.stack()[1]
     context = get_trace(stack)
     try:
-        with open(fn, "w+") as f:
-            json.dump(data, f, indent=4)
-            resp = {"result": f"Updated {fn}"}
-            return resp, len(data)
+        if len(data) > 0:
+            with open(fn, "w+") as f:
+                json.dump(data, f, indent=4)
+                get_stopwatch(start, error=True, context=context)
+                return data, len(data)
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
         get_stopwatch(start, error=True, context=context)
-        return resp, -1
-
-
-def dict_to_dict_list(data, key):
-    dict_list = []
-    for i in data:
-        item = data[i]
-        item.update({key: i})
-        dict_list.append(item)
-    return dict_list
+        return data, -1
+    error = f"Not saving {fn}, data is empty"
+    context = get_trace(stack, error)
+    get_stopwatch(start, error=True, context=context)
+    return data, -1

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from os.path import basename
 import time
 import inspect
 import logging
@@ -12,7 +13,8 @@ class CustomFormatter(logging.Formatter):
     italic_white = "\x1b[3m"
     underline_white = "\x1b[4m"
 
-    muted = "\x1b[38;2;150;200;150m"
+    muted = "\x1b[38;2;2;20;5m"
+    debug = "\x1b[38;50;2;2;5m"
     black = "\x1b[30m"
     lightgrey = "\x1b[37m"
     grey = "\x1b[38;20m"
@@ -57,7 +59,7 @@ class CustomFormatter(logging.Formatter):
     datefmt = "%d-%b-%y %H:%M:%S"
 
     FORMATS = {
-        logging.DEBUG: black + format + reset,
+        logging.DEBUG: debug + format + reset,
         logging.INFO: lightgreen + format + reset,
         logging.WARNING: red + format + reset,
         logging.ERROR: lightred + format + reset,
@@ -68,54 +70,66 @@ class CustomFormatter(logging.Formatter):
         if record.levelname == "STOPWATCH":
             log_fmt = (
                 self.yellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "QUERY":
             log_fmt = (
                 self.lightyellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "LOOP":
             log_fmt = (
                 self.purple
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "MUTED":
             log_fmt = (
                 self.muted
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "CALC":
             log_fmt = (
                 self.lightcyan
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + self.reset
+            )
+        elif record.levelname == "DEBUG":
+            log_fmt = (
+                self.debug
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "IMPORTED":
             log_fmt = (
                 self.mintgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "DEXRPC":
             log_fmt = (
                 self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + self.reset
+            )
+        elif record.levelname == "REQUEST":
+            log_fmt = (
+                self.lightyellow
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             )
         elif record.levelname == "UPDATED":
             log_fmt = (
                 self.lightgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
             )
         elif record.levelname == "SAVE":
             log_fmt = (
                 self.drabgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
                 + self.reset
             ) + self.reset
         else:
@@ -185,9 +199,9 @@ logger.setLevel("CALC")
 addLoggingLevel("SAVE", logging.DEBUG + 3)
 logger.setLevel("SAVE")
 
-# Shows time taken to run functions
-addLoggingLevel("STOPWATCH", logging.DEBUG + 2)
-logger.setLevel("STOPWATCH")
+# Shows cache loop updates
+addLoggingLevel("REQUEST", logging.DEBUG + 2)
+logger.setLevel("REQUEST")
 
 # Shows generally ignorable errors, e.g. CoinConfigNotFound
 addLoggingLevel("MUTED", logging.DEBUG - 1)
@@ -216,47 +230,58 @@ class StopWatch:
             "loop",
             "calc",
             "save",
+            "request"
         ]
         templates.set_params(self, kwargs, options)
+
+        duration = int(time.time()) - int(self.start_time)
         if self.trigger == 0:
             self.trigger = 10
-            if self.updated or self.imported or self.query or self.dexrpc:
+            if self.updated or self.imported or self.query or self.dexrpc or self.request:
                 self.trigger = 5
             if self.error or self.debug or self.warning or self.loop:
                 self.trigger = 0
         self.trigger = 0
-        duration = int(time.time()) - int(self.start_time)
+
+        # if duration < 5 and not (self.error or self.debug or self.warning or self.loop):
+        #    self.muted = True
+
         if duration > self.trigger:
-            if self.context is None:
-                self.context = get_trace(inspect.stack()[1], "guessed action")
-            if "|" in self.context:
-                x = self.context.split("|")
-                self.context = f"{x[0]:^40}|{x[1]:>80}"
-            msg = f"[{duration:>4} sec] [{self.context}]"
-            if self.updated:
-                logger.updated(f"    {msg}")
+            trace = get_trace(inspect.stack()[2], "guessed action")
+            lineno = trace["stack"]["lineno"]
+            filename = trace["stack"]["file"]
+            func = trace["stack"]["function"]
+            msg = f"|{duration:>4} sec | {func:<24} | {self.context:<110} | {basename(filename)}:{lineno}"
+            print(msg)
+            if self.muted:
+                pass
+                # logger.muted(f"      {msg}")
+            elif self.updated:
+                logger.updated(f"  {msg}")
             elif self.error:
-                logger.error(f"      {msg}")
+                logger.error(f"    {msg}")
             elif self.imported:
-                logger.imported(f"   {msg}")
+                logger.imported(f" {msg}")
             elif self.query:
-                logger.query(f"      {msg}")
+                logger.query(f"    {msg}")
             elif self.debug:
-                logger.debug(f"      {msg}")
+                logger.debug(f"    {msg}")
             elif self.warning:
-                logger.warning(f"    {msg}")
+                logger.warning(f"  {msg}")
             elif self.muted:
-                logger.muted(f"      {msg}")
+                logger.muted(f"    {msg}")
             elif self.info:
-                logger.info(f"       {msg}")
+                logger.info(f"     {msg}")
             elif self.calc:
-                logger.calc(f"       {msg}")
+                logger.calc(f"     {msg}")
             elif self.loop:
-                logger.loop(f"       {msg}")
+                logger.loop(f"     {msg}")
             elif self.save:
-                logger.save(f"       {msg}")
+                logger.save(f"     {msg}")
+            elif self.request:
+                logger.request(f"  {msg}")
             else:
-                logger.stopwatch(f"  {msg}")
+                logger.debug(f"    {msg}")
 
 
 def get_trace(stack, error=None):
@@ -285,3 +310,4 @@ def show_pallete():
     logger.loop("loop")
     logger.muted("muted")
     logger.query("query")
+    logger.request("request")

@@ -67,6 +67,7 @@ class Templates:
                 "loop",
                 "calc",
                 "save",
+                "request"
             ],
             "true": ["wal", "exclude_unpriced", "dict_format"],
             "none": ["endpoint", "reverse", "source_url"],

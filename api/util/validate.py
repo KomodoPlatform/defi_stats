@@ -3,6 +3,7 @@ from util.logger import logger
 from util.helper import valid_coins
 from util.exceptions import CoinNotFoundException, CoinWalletOnlyException
 
+
 def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     if allow_reverse:
         inverse_valid_tickers = [
@@ -20,11 +21,13 @@ def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail
         return "failed"
     raise ValueError(msg)
 
+
 def validate_coin(coin, coins_config):
     if coin not in valid_coins(coins_config):
         raise CoinNotFoundException(f"{coin} is not in coins_config.json!")
     if coin not in valid_coins(coins_config):
         raise CoinWalletOnlyException(f"{coin} is wallet_only!")
+
 
 def validate_positive_numeric(value, name, is_int=False):
     try:

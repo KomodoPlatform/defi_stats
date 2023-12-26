@@ -97,7 +97,7 @@ def setup_urls():
 
 @pytest.fixture
 def setup_time():
-    yield Time()
+    yield Time(from_ts=1700000000)
 
 
 @pytest.fixture
@@ -622,6 +622,23 @@ def dirty_dict():
 @pytest.fixture
 def no_trades_info():
     yield []
+
+@pytest.fixture
+def coins_config():
+    yield {
+        "NOSWAP": {
+            "wallet_only": True,
+            "is_testnet": False
+        },
+        "TEST": {
+            "wallet_only": False,
+            "is_testnet": True
+        },
+        "OK": {
+            "wallet_only": False,
+            "is_testnet": False
+        }
+    }
 
 
 @pytest.fixture

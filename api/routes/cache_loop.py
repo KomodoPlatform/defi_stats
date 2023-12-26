@@ -3,13 +3,14 @@ import time
 import inspect
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
+from util.logger import logger
 from lib.cache import Cache
 from lib.cache_item import CacheItem
-from db.sqlitedb import update_master_sqlite_dbs
 from util.enums import NetId
 from lib.external import FixerAPI, CoinGeckoAPI
 from const import NODE_TYPE
 from util.logger import get_trace, StopWatch
+from db.source.sqlite_merge import import_source_databases
 
 get_stopwatch = StopWatch
 
@@ -32,9 +33,9 @@ def coins():  # pragma: no cover
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=f"CacheLoop.coins | {context}")
+        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(start, loop=True, context="CacheLoop.coins | complete!")
+    get_stopwatch(start, loop=True, context="Coins data update complete!")
 
 
 @router.on_event("startup")
@@ -51,12 +52,12 @@ def gecko_data():  # pragma: no cover
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=f"gecko_data | {context}")
+        get_stopwatch(start, error=True, context=context)
         return
     get_stopwatch(
         start,
         loop=True,
-        context="CacheLoop.gecko_data | complete!",
+        context="Gecko source data update complete!",
     )
 
 
@@ -87,7 +88,7 @@ def prices_service():  # pragma: no cover
     get_stopwatch(
         start,
         loop=True,
-        context="CacheLoop.prices_service | prices service updated",
+        context="Prices service data update complete!",
     )
 
 
@@ -109,7 +110,7 @@ def fixer_rates():  # pragma: no cover
     get_stopwatch(
         start,
         loop=True,
-        context="CacheLoop.fixer_rates | fixer source updated",
+        context="Fixer source data update complete!",
     )
 
 
@@ -135,7 +136,7 @@ def gecko_pairs():
     get_stopwatch(
         start,
         loop=True,
-        context=f"CacheLoop.gecko_pairs | updated with {resp[1]} pairs",
+        context=f"Updated with {resp[1]} pairs on netid 'ALL'",
     )
 
 
@@ -149,7 +150,6 @@ def gecko_tickers():
         gecko_tickers_cache = CacheItem(name="gecko_tickers", netid="ALL")
         data = cache.calc.traded_tickers(pairs_days=7)
         resp = gecko_tickers_cache.save(data)
-        context = f"{resp[1]} pairs"
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
@@ -158,7 +158,7 @@ def gecko_tickers():
     get_stopwatch(
         start,
         loop=True,
-        context=f"CacheLoop.gecko_tickers | updated with {resp[1]} pairs",
+        context=f"Updated with {resp['pairs_count']} pairs on netid 'ALL'",
     )
 
 
@@ -224,25 +224,27 @@ def markets_last_trade():
             cache = Cache(netid=netid.value)
             cache_item = CacheItem("markets_last_trade")
             data = cache.calc.pairs_last_trade()
+            logger.info(data[1])
             resp = cache_item.save(data)
             if resp is None:
                 get_stopwatch(
                     start,
                     warning=True,
-                    context=f"CacheLoop.markets_last_trade | empty resp for {netid.value}",
+                    context=f"empty resp for {netid.value}",
                 )
             else:
-                context = f"{resp[1]} pairs"
                 get_stopwatch(
                     start,
                     loop=True,
-                    context=f"CacheLoop.markets_last_trade | updated for netid {netid.value}",
+                    context=f"updated for {len(data)} pairs netid {netid.value}",
                 )
 
         except Exception as e:
-            error = f"{type(e)}: {e} [CacheLoop.markets_last_trade] ({netid})]"
+            error = f"{type(e)}: {e} ({netid})]"
             context = get_trace(stack, error)
             get_stopwatch(start, error=True, context=context)
+        get_stopwatch(start, error=True, context=f"netid {netid}")
+    get_stopwatch(start, error=True, context="All netids")
 
 
 @router.on_event("startup")
@@ -259,7 +261,7 @@ def markets_pairs(netid):
             get_stopwatch(
                 start,
                 loop=True,
-                context=f"updated markets_pairs_{netid} cache with {resp[1]} pairs",
+                context=f"{resp[1]} pairs ({netid})",
             )
             return
     except Exception as e:
@@ -270,7 +272,7 @@ def markets_pairs(netid):
     get_stopwatch(
         start,
         warning=True,
-        context=f"CacheLoop.markets_pairs_{netid} | No data from cache.calc_markets_pairs()",
+        context=f"No data returned for ({netid})",
     )
 
 
@@ -300,15 +302,12 @@ def markets_tickers(netid):
         cache_item = CacheItem(name="markets_tickers", netid=netid)
         data = cache.calc.traded_tickers(pairs_days=120)
         if data is not None:
-            context = (
-                f"{len(data)} results from cache.calc.markets_tickers() [netid {netid}]"
-            )
+            context = (f"{len(data)} results [netid {netid}]")
         else:
-            context = f"{data} data from cache.calc.markets_tickers() [netid {netid}]"
+            f"No results [netid {netid}]"
             get_stopwatch(start, info=True, context=context)
         resp = cache_item.save(data)
-        context = f"CacheLoop.markets_tickers_{netid} | "
-        context += f"updated markets_tickers_{netid} cache with {resp[1]} pairs"
+        context = f"{data['pairs_count']} results [netid {netid}]"
         get_stopwatch(start, loop=True, context=context)
     except Exception as e:
         error = f"{type(e)}: {e} [netid {netid}]"
@@ -346,20 +345,20 @@ def import_dbs():
     context = get_trace(stack)
     if NODE_TYPE != "serve":
         try:
-            update_master_sqlite_dbs()
+            import_source_databases()
         except Exception as e:
-            error = f"CacheLoop.import_dbs | {type(e)}: {e}"
+            error = f"{type(e)}: {e}"
             context = get_trace(stack, error)
             get_stopwatch(start, error=True, context=context)
             return
         get_stopwatch(
             start,
             loop=True,
-            context="CacheLoop.import_dbs | Source database imports complete!",
+            context="Source database imports complete!",
         )
         return
     get_stopwatch(
         start,
-        muted=True,
-        context="CacheLoop.import_dbs | Node type is serve, not importing databases",
+        loop=True,
+        context="Node type is serve, not importing databases",
     )

@@ -2,6 +2,7 @@
 import os
 from os.path import basename
 import time
+from typing import List
 import sqlite3
 import inspect
 from const import (
@@ -11,12 +12,14 @@ from const import (
     LOCAL_MM2_DB_BACKUP_7777,
     LOCAL_MM2_DB_BACKUP_8762,
     MM2_DB_PATHS,
+    DB_SOURCE_PATH,
     templates,
 )
 from db.sqlitedb_query import SqliteQuery
 from db.sqlitedb_update import SqliteUpdate
-from util.helper import get_sqlite_db_paths, get_netid
+from util.helper import get_sqlite_db_paths, get_netid, is_source_db, is_7777
 from util.logger import logger, get_trace, StopWatch
+from util.enums import NetId
 
 get_stopwatch = StopWatch
 
@@ -74,13 +77,19 @@ def progress(status, remaining, total, show=False):
         logger.debug(f"Copied {total-remaining} of {total} pages...")
 
 
-def backup_db(src_db_path, dest_db_path):
-    src = get_sqlite_db(db_path=src_db_path)
-    dest = get_sqlite_db(db_path=dest_db_path)
-    src.conn.backup(dest.conn, pages=1, progress=progress)
-    # logger.debug(f'Backed up {src_db_path} to {dest_db_path}')
-    dest.close()
-    src.close()
+def backup_db(src_db_path: str, dest_db_path:str) -> None:
+    start = int(time.time())
+    stack = inspect.stack()[1]
+    context = get_trace(stack)
+    try:
+        src = get_sqlite_db(db_path=src_db_path)
+        dest = get_sqlite_db(db_path=dest_db_path)
+        src.conn.backup(dest.conn, pages=1, progress=progress)
+        get_stopwatch(start, updated=True, context=f'Backed up {src_db_path} to {dest_db_path}')
+        dest.close()
+        src.close()
+    except Exception as e:
+        get_stopwatch(start, error=True, context=f'Backed up failed {e} {src.db_file} to {dest.db_file} | {context}')
 
 
 def backup_local_dbs():
@@ -108,219 +117,94 @@ def backup_local_dbs():
         get_stopwatch(start, error=True, context=context)
 
 
-def update_master_sqlite_dbs():
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
-    backup_local_dbs()
-
-    # Get list of supplemental db files
-    db_folder = f"{PROJECT_ROOT_PATH}/DB"
-    sqlite_db_list = list_sqlite_dbs(db_folder)
-    sqlite_db_list.sort()
-
-    # Open master databases
-    db_all = get_sqlite_db(db_path=MM2_DB_PATHS["ALL"])
-    db_temp = get_sqlite_db(db_path=MM2_DB_PATHS["temp_ALL"])
-    db_7777 = get_sqlite_db(db_path=MM2_DB_PATHS["7777"])
-    db_8762 = get_sqlite_db(db_path=MM2_DB_PATHS["8762"])
-    local_db_8762_backup = get_sqlite_db(db_path=LOCAL_MM2_DB_BACKUP_8762)
-    local_db_7777_backup = get_sqlite_db(db_path=LOCAL_MM2_DB_BACKUP_7777)
-
-    update_7777_db = SqliteUpdate(db=db_7777)
-    update_8762_db = SqliteUpdate(db=db_8762)
-    update_all_db = SqliteUpdate(db=db_all)
-    update_temp_db = SqliteUpdate(db=db_temp)
-
-    query_7777_db = SqliteQuery(db=db_7777)
-    query_all_db = SqliteQuery(db=db_all)
-
-    try:
-        # Merge local into master databases. Defer import into 8762.
-        update_7777_db.merge_db_tables(
-            src_db=local_db_7777_backup, table="stats_swaps", column="uuid"
-        )
-        update_all_db.merge_db_tables(
-            src_db=local_db_7777_backup, table="stats_swaps", column="uuid"
-        )
-        update_all_db.merge_db_tables(
-            src_db=local_db_8762_backup, table="stats_swaps", column="uuid"
-        )
-    except Exception as e:
-        logger.warning(f"Backup DB Merge failed: {e}")
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        return get_stopwatch(start, error=True, context=context)
-    get_stopwatch(start, imported=True, context="Backup DB merge complete")
-
-    try:
-        # Handle 7777 first
-        for source_db_file in sqlite_db_list:
-            if not source_db_file.startswith("MM2"):
-                source_db_path = f"{db_folder}/{source_db_file}"
-                src_db = get_sqlite_db(db_path=source_db_path)
-                if source_db_file.startswith("seed"):
-                    # Import into 7777
-                    update_7777_db.merge_db_tables(
-                        src_db=src_db, table="stats_swaps", column="uuid"
-                    )
-                # Import into ALL
-                update_all_db.merge_db_tables(
-                    src_db=src_db, table="stats_swaps", column="uuid"
-                )
-    except Exception as e:
-        logger.warning(f"Source DB Merge failed: {e}")
-
-    inspect_data(db_7777, db_8762, db_all)
-    # import all into temp
-    update_temp_db.merge_db_tables(src_db=db_all, table="stats_swaps", column="uuid")
-    uuids_7777 = query_7777_db.get_uuids()
-    uuids_temp = query_all_db.get_uuids()
-    overlap = set(uuids_temp).intersection(set(uuids_7777))
-    if len(overlap) > 0:
-        update_temp_db.remove_uuids(overlap)
-
-    # Import from temp into 8762 after 7777 removed
-
-    update_8762_db.merge_db_tables(src_db=db_temp, table="stats_swaps", column="uuid")
-
-    # Close master databases
-    db_7777.close()
-    db_8762.close()
-    db_all.close()
-    # Clear the temp database
-    update_temp_db.clear("stats_swaps")
-    db_temp.close()
-    return {"result": "merge to master databases complete"}
-
-
-def inspect_data(db_7777, db_8762, db_all):
+def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):
     start = int(time.time())
     stack = inspect.stack()[1]
     context = get_trace(stack)
     try:
         # Remove from 8762 if in 7777
-        update_7777_db = SqliteUpdate(db=db_7777)
-        update_all_db = SqliteUpdate(db=db_all)
-
-        query_7777_db = SqliteQuery(db=db_7777)
-        query_8762_db = SqliteQuery(db=db_8762)
-        query_all_db = SqliteQuery(db=db_all)
-
-        update_7777_db.remove_overlaps(db_8762)
-
-        uuids_7777 = query_7777_db.get_uuids()
-        uuids_8762 = query_8762_db.get_uuids()
-        uuids_all = query_all_db.get_uuids()
-
-        extras = list(set(uuids_all) - set(uuids_7777) - set(uuids_8762))
-        context = f"{len(extras)} uuids in ALL but not in 8762 or 7777"
-        extras2 = list(set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all))
-        context = f"{len(extras2)} uuids in 8762 or 7777 but not in ALL"
-        inspect_uuids = list(set(extras + extras2))
-        context = f"{len(inspect_uuids)} records with missing info to inspect..."
+        update_a = SqliteUpdate(db=db1)
+        update_b = SqliteUpdate(db=db2)
+        query_a = SqliteQuery(db=db1)
+        query_b = SqliteQuery(db=db2)
+        uuids_a = query_a.get_uuids(success_only=True)
+        uuids_b = query_b.get_uuids(fail_only=True)
+        mismatch_uuids = list(set(uuids_a).intersection(set(uuids_b)))
+        context = f"{len(mismatch_uuids)} Mismatched UUIDS returned"
+        get_stopwatch(start, calc=True, context=context)
+        return list(set(mismatch_uuids))
     except Exception as e:
         error = f"{type(e)}: {e}"
         context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
-    try:
-        if len(inspect_uuids) > 0:
-            inspect_uuids.sort()
-        for i in list(inspect_uuids):
-            try:
-                swap_8762 = query_8762_db.get_swap(i)
-                if "error" in swap_8762:
-                    continue
-
-                swap_7777 = query_7777_db.get_swap(i)
-                if "error" in swap_7777:
-                    continue
-
-                swap_all = query_all_db.get_swap(i)
-                if "error" in swap_all:
-                    continue
-
-                logger.debug(f"Repairing swap {i}")
-                fixed = {}
-                for k, v in swap_7777.items():
-                    if k != "id":
-                        if k in swap_8762:
-                            if swap_8762[k] != v:
-                                logger.debug(
-                                    f"UUID [{i}] duplicate mismatch for {k}: {v} \
-                                        (7777) vs {swap_8762[k]} (8762)"
-                                )
-                                if k in [
-                                    "is_success",
-                                    "started_at",
-                                    "finished_at",
-                                    "maker_coin_usd_price",
-                                    "taker_coin_usd_price",
-                                ]:
-                                    fixed.update({k: max([v, swap_8762[k]])})
-
-                        if k in swap_all:
-                            if swap_all[k] != v:
-                                logger.debug(
-                                    f"UUID [{i}] duplicate mismatch for {k}: {v} \
-                                        (7777) vs {swap_all[k]} (all)"
-                                )
-                                if k in [
-                                    "is_success",
-                                    "started_at",
-                                    "finished_at",
-                                    "maker_coin_usd_price",
-                                    "taker_coin_usd_price",
-                                ]:
-                                    fixed.update({k: max([v, swap_all[k]])})
-                if len(fixed) > 0:
-                    db_7777.update_stats_swap_row(i, fixed)
-                    db_8762.update_stats_swap_row(i, fixed)
-                    db_all.update_stats_swap_row(i, fixed)
-
-            except Exception as e:
-                logger.error(f"Failed to repair swap [{i}]: {e}")
-                logger.debug(f"swap_7777: {swap_7777}")
-                logger.debug(f"swap_8762: {swap_8762}")
-                error = f"{type(e)}: {e}"
-                context = get_trace(stack, error)
-                get_stopwatch(start, error=True, context=context)
-    except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
-    get_stopwatch(start, context="repaired mismatched swaps")
-
-    try:
-        # In case not yet in ALL
-        update_all_db.merge_db_tables(
-            src_db=db_7777, table="stats_swaps", column="uuid"
-        )
-        update_all_db.merge_db_tables(
-            src_db=db_8762, table="stats_swaps", column="uuid"
-        )
-        get_stopwatch(start, context="Importing complete")
-
-        uuids_7777 = query_7777_db.get_uuids()
-        uuids_8762 = query_8762_db.get_uuids()
-        uuids_all = query_all_db.get_uuids()
-
-        extras = list(set(uuids_all) - set(uuids_7777) - set(uuids_8762))
-        context = f"{len(extras)} uuids in ALL but not in 8762 or 7777"
-        get_stopwatch(start, context=context, debug=True)
-        extras2 = list(set(list(uuids_7777) + list(uuids_8762)) - set(uuids_all))
-        context = f"{len(extras2)} uuids in 8762 or 7777 but not in ALL"
-        get_stopwatch(start, context=context, debug=True)
-    except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
+        get_stopwatch(start, error=True, context=f"{context}")
 
 
 def view_locks(cursor):
     sql = "PRAGMA lock_status"
     r = cursor.execute(sql)
     return r.fetchall()
+
+
+def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:
+    start = int(time.time())
+    stack = inspect.stack()[1]
+    context = get_trace(stack)
+    try:
+        db_list = [db1, db2]
+        if len(uuids) > 0:
+            uuids.sort()
+            repaired = 0
+            for uuid in list(uuids):
+                swap_infos = []
+                try:
+                    for db in db_list:
+                        query = SqliteQuery(db=db)
+                        swap_info = query.get_swap(uuid)
+                        if "error" in swap_info:
+                            continue
+                        swap_infos.append(swap_info)
+
+                    # logger.debug(f"Repairing swap {uuid}")
+                    fixed = {}
+                    for i in swap_infos:
+                        for j in swap_infos:
+                            for k, v in i.items():
+                                if k not in['id']:
+                                    for k2, v2 in j.items():
+                                        if k == k2 and v != v2:
+                                            '''
+                                            logger.debug(
+                                                f"Mismatch for {k}: {v} vs {k2}: {v2}"
+                                            )
+                                            '''
+                                            # use higher value for below fields
+                                            if k in [
+                                                "is_success",
+                                                "started_at",
+                                                "finished_at",
+                                                "maker_coin_usd_price",
+                                                "taker_coin_usd_price",
+                                            ]:
+                                                try:
+                                                    fixed.update({k: str(max([float(v), float(v2)]))})
+                                                except Exception as e:
+                                                    print(f"{v} vs {v2} | {type(v)} vs {type(v2)}")
+                                            else:
+                                                logger.warning(f"Unhandled mismatch on {k} for {uuid}")
+
+                    if len(fixed) > 0:
+                        for db in db_list:
+                            update = SqliteUpdate(db=db)
+                            update.update_stats_swap_row(uuid, fixed)
+                except Exception as e:
+                    error = f"{type(e)}: {e}"
+                    get_stopwatch(start, context=error, error=True)
+    except Exception as e:
+        error = f"{type(e)}: {e}"
+        get_stopwatch(start, context=error, error=True)
+        return
+    context = f"repaired {len(uuids)} mismatched swaps"
+    get_stopwatch(start, context=context, query=True)
 
 
 def init_dbs():
@@ -342,7 +226,16 @@ def init_dbs():
 def init_stats_swaps_db(db):
     update = SqliteUpdate(db=db)
     update.create_swap_stats_table()
-    db.close()
 
+
+def setup_temp_dbs():
+    for netid in NetId:
+        db_path = MM2_DB_PATHS[f"temp_{netid.value}"]
+        db = get_sqlite_db(db_path=db_path)
+        query = SqliteQuery(db=db)
+        update = SqliteUpdate(db=db)
+        update.create_swap_stats_table()
+        update.clear("stats_swaps")
+        db.close()
 
 init_dbs()

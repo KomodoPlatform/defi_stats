@@ -51,36 +51,23 @@ class SqliteUpdate:
                 sql += f" AND src_db.{table}.finished_at > {since};"
                 sql += " DETACH DATABASE 'src_db';"
                 self.sql_cursor.executescript(sql)
-                context = f"Imported [{src_db.db_file}] into [{self.db_file}]"
-
-                return get_stopwatch(start, imported=True, context=context)
+                context = f"Imported [{src_db.db_path}] into [{self.db_path}]"
+                get_stopwatch(start, imported=True, context=context)
+                return None
             except sqlite3.OperationalError as e:
+                error = f"{type(e)} for merging {src_db.db_path}"
+                error += f" into {self.db_path}: {e}"
                 if n > 10:
-                    msg = f"Error in [merge_db_tables] for {src_db.db_file}"
-                    msg += f" into {self.db_file}: {e}"
-                    error = f"{type(e)}: {e}"
                     context = get_trace(stack, error)
-                    return get_stopwatch(
-                        start, error=True, context=f"update.merge_db_tables {context}"
-                    )
-                msg = f"Error in [merge_db_tables] for {src_db.db_file}"
-                msg += f" into {self.db_file}: {e}, retrying..."
-                logger.warning(msg)
-                time.sleep(randrange(20))
+                    get_stopwatch(start, error=True, context=f"{context}")
+                    return None
+                context = f"{error}, retrying..."
+                get_stopwatch(start, error=True, context=f"{context}")
             except Exception as e:
-                msg = f"Error in [merge_db_tables] for {src_db.db_file}"
-                msg += f" into {self.db_file}: {e}, retrying..."
-                logger.error(msg)
-                logger.error(
-                    {
-                        "error": str(e),
-                        "type": type(e),
-                        "msg": msg,
-                        "src_db": src_db.db_path,
-                        "dest_db": self.db_path,
-                        "sql": sql,
-                    }
-                )
+                error = f"{type(e)} for merging {src_db.db_path}"
+                error += f" into {self.db_path}: {e}"
+                context = get_trace(stack, error)
+                get_stopwatch(start, error=True, context=f"{context}")
             n += 1
 
     def remove_overlaps(self, remove_db):
@@ -93,7 +80,7 @@ class SqliteUpdate:
             remove_db.remove_uuids(overlap)
             context = f"Removed {len(overlap)} rows"
             context += f"from {remove_db.db_file} where already in {self.db_file}"
-            get_stopwatch(start, context=context)
+            get_stopwatch(start, context=context, calc=True)
 
     def update_stats_swap_row(self, uuid, data):
         n = 0
@@ -223,13 +210,13 @@ class SqliteUpdate:
                 return
             except sqlite3.OperationalError as e:
                 if n > 10:
-                    logger.error(f"Error in [denullify_table] for {self.db_file}: {e}")
+                    logger.error(f"Error in [denullify_table] for {self.db_path}: {e}")
                     return
                 n += 1
                 logger.warning(
-                    f"Error in [denullify_table] for {self.db_file}: {e}, retrying..."
+                    f"Error in [denullify_table] for {self.db_path}: {e}, retrying..."
                 )
                 time.sleep(randrange(30))
             except Exception as e:
-                logger.error(f"Error in [denullify_table] for {self.db_file}: {e}")
+                logger.error(f"Error in [denullify_table] for {self.db_path}: {e}")
                 return
