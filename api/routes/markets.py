@@ -173,10 +173,15 @@ def swaps24(ticker, netid: NetId = NetId.ALL):
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
 
-
-@router.get("/orderbook/{market_pair}")
+@router.get("/orderbook/{market_pair}",
+    description="Get Orderbook for a market pair in `KMD_LTC` format.",
+    status_code=200)
 def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
     try:
+        if "_" not in market_pair:
+            return {
+                "error": "Market pair should be in `KMD_LTC-segwit` format"
+            }
         market_pairs = cache.load_markets_pairs(netid=netid.value)
         valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
         ticker_type = validate_ticker_id(
