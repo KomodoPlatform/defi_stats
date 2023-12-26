@@ -205,6 +205,7 @@ class Pair:
         """Liquidity for pair from current orderbook & usd price."""
         x = isinstance(self.orderbook_data, dict)
         if not x:
+            
             logger.warning(f"{self.as_str} {x}")
             logger.warning(type(self.orderbook_data))
         if "total_asks_base_vol" in self.orderbook_data:

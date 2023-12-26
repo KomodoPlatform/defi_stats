@@ -183,30 +183,42 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
             return {
                 "error": "Market pair should be in `KMD_LTC-segwit` format"
             }
-        market_pairs = cache.load.load_markets_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
-        ticker_type = validate_ticker_id(
-            market_pair, valid_tickers, allow_reverse=True, allow_fail=True
-        )
+        #market_pairs = cache.load.load_markets_pairs(netid=netid.value)
+        #valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
+        #ticker_type = validate_ticker_id(
+        #    market_pair, valid_tickers, allow_reverse=True, allow_fail=True
+        #)
         resp = {
             "market_pair": market_pair,
             "timestamp": f"{int(time.time())}",
             "asks": [],
             "bids": [],
         }
-        if ticker_type == "reversed":
-            reverse = True
-        elif ticker_type == "failed":
-            return resp
-        else:
-            reverse = False
-        if netid.value == "all":
+        resp["liquidity_usd"] = 0
+        resp["total_asks_base_vol"] = 0
+        resp["total_bids_base_vol"] = 0
+        resp["total_asks_quote_vol"] = 0
+        resp["total_bids_quote_vol"] = 0
+        resp["total_asks_base_usd"] = 0
+        resp["total_bids_quote_usd"] = 0
+        #if ticker_type == "reversed":
+        #    reverse = True
+        #elif ticker_type == "failed":
+        #    return resp
+        #else:
+        #    reverse = False
+        reverse = False
+        if netid.value in ["all", "ALL"]:
             for x in NetId:
-                if x.value != "all":
+                if x.value not in ["all", "ALL"]:
                     mm2_port = get_mm2_rpc_port(netid=x.value)
+                    pair = Pair(market_pair)
+                    liquidity = pair.get_liquidity()
                     data = Orderbook(
-                        pair=Pair(market_pair), mm2_port=mm2_port
-                    ).for_pair(endpoint=True, reverse=reverse)
+                    pair=pair, mm2_port=mm2_port
+                    ).for_pair(endpoint=True, reverse=False)
+                    r = {**data, **liquidity}
+                    liquidity = pair.get_liquidity()
                     resp["asks"] += data["asks"]
                     resp["bids"] += data["bids"]
                     resp["liquidity_usd"] += data["liquidity_usd"]
@@ -220,12 +232,23 @@ def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
             resp["asks"] = resp["asks"][::-1]
         else:
             mm2_port = get_mm2_rpc_port(netid=netid.value)
-            data = Orderbook(pair=Pair(market_pair), mm2_port=mm2_port).for_pair(
+            pair = Pair(market_pair)
+            liquidity = pair.get_liquidity()
+            data = Orderbook(pair=pair, mm2_port=mm2_port).for_pair(
                 endpoint=True, reverse=reverse
             )
+            r = {**data, **liquidity}
             resp["asks"] += data["asks"]
             resp["bids"] += data["bids"]
-        return resp
+            resp["liquidity_usd"] += data["liquidity_usd"]
+            resp["total_asks_base_vol"] += data["total_asks_base_vol"]
+            resp["total_bids_base_vol"] += data["total_bids_base_vol"]
+            resp["total_asks_quote_vol"] += data["total_asks_quote_vol"]
+            resp["total_bids_quote_vol"] += data["total_bids_quote_vol"]
+            resp["total_asks_base_usd"] += data["total_asks_base_usd"]
+            resp["total_bids_quote_usd"] += data["total_bids_quote_usd"]
+            
+        return r
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

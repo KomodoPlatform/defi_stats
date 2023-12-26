@@ -105,6 +105,7 @@ class Orderbook:
                 orderbook_data["total_bids_base_vol"] = 0
                 orderbook_data["total_asks_quote_vol"] = 0
                 orderbook_data["total_bids_quote_vol"] = 0
+                orderbook_data["liquidity_usd"] = 0
 
             return orderbook_data
         except Exception as e:  # pragma: no cover
@@ -120,6 +121,7 @@ class Orderbook:
             orderbook_data["total_asks_base_usd"] = 0
             orderbook_data["total_asks_quote_usd"] = 0
             orderbook_data["total_bids_base_usd"] = 0
+            orderbook_data["liquidity_usd"] = 0
             orderbook_data["total_bids_quote_usd"] = 0
             return orderbook_data
 
