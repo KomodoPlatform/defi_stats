@@ -24,11 +24,11 @@ def get_swap(
     netid: NetId = NetId.ALL
 ):
     try:
-        db = get_sqlite_db(netid=netid.value)
-        resp = db.get_swap(uuid)
-        if "error" in resp:
-            raise UuidNotFoundException(resp["error"])
-        return db.get_swap(uuid)
+        with get_sqlite_db(netid=netid.value)as db:
+            resp = db.get_swap(uuid)
+            if "error" in resp:
+                raise UuidNotFoundException(resp["error"])
+            return db.get_swap(uuid)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

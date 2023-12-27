@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-from os.path import basename
+from os.path import basename, dirname, abspath
 import time
-import inspect
 import logging
 import functools
 from util.templates import Templates
 
 templates = Templates()
-
+PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
 
 class CustomFormatter(logging.Formatter):
     white = "\x1b[m"
@@ -212,6 +211,16 @@ def send_log(loglevel, msg):
     match loglevel:
         case "info":
             logger.info(f"    {msg}")
+        case "muted":
+            pass
+        case "save":
+            logger.save(f"    {msg}")
+        case "imported":
+            logger.imported(f"{msg}")
+        case "updated":
+            logger.updated(f" {msg}")
+        case "calc":
+            logger.calc(f"    {msg}")
         case "warning":
             logger.warning(f" {msg}")
         case "error":
@@ -241,7 +250,7 @@ class StopWatch:
         options = [
             "testing",
             "trigger",
-            "context",
+            "msg",
             "loglevel"
         ]
         templates.set_params(self, kwargs, options)
@@ -254,46 +263,19 @@ class StopWatch:
         #    self.muted = True
 
         if duration >= self.trigger:
+            if not isinstance(self.msg, str):
+                self.msg = str(self.msg)
             lineno = self.trace["lineno"]
             filename = self.trace["file"]
             func = self.trace["function"]
-            msg = f"|{duration:>4} sec | {func:<24} | {str(self.context):<110} | {basename(filename)}:{lineno}"
-            send_log(loglevel=self.loglevel, msg=msg)
-            '''
-            if self.muted:
-                logger.muted(f"    {msg}")
-            elif self.updated:
-                logger.updated(f"  {msg}")
-            elif self.error:
-                logger.error(f"    {msg}")
-            elif self.imported:
-                logger.imported(f" {msg}")
-            elif self.query:
-                logger.query(f"    {msg}")
-            elif self.warning:
-                logger.warning(f"  {msg}")
-            elif self.muted:
-                logger.muted(f"    {msg}")
-            elif self.info:
-                logger.info(f"     {msg}")
-            elif self.calc:
-                logger.calc(f"     {msg}")
-            elif self.loop:
-                logger.loop(f"     {msg}")
-            elif self.save:
-                logger.save(f"     {msg}")
-            elif self.request:
-                logger.request(f"  {msg}")
-            elif self.debug:
-                logger.debug(f"    {msg}")
-            else:
-                logger.debug(f"    {msg}")
-            '''
-        else:
-            logger.calc(f"in getstopwatch {duration}")
+            if PROJECT_ROOT_PATH in self.msg:
+                self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
+            self.msg = f"|{duration:>4} sec | {func:<24} | {str(self.msg):<120} | {basename(filename)}:{lineno}"
+
+            send_log(loglevel=self.loglevel, msg=self.msg)
 
 def get_trace(func, error=None):
-    context = {
+    msg = {
         "function": func.__name__,
         "file": func.__code__.co_firstlineno,
         "file": func.__code__.co_filename,
@@ -301,8 +283,8 @@ def get_trace(func, error=None):
         "vars": func.__code__.co_varnames
     }
     if error is not None:
-        context.update({"error": error})
-    return context
+        msg.update({"error": error})
+    return msg
 
 # Returns console colors for customising
 def show_pallete():
@@ -321,15 +303,15 @@ def show_pallete():
     logger.request("request")
 
 # Contecxt Manager for 'timed' decorator
-class TimedContext:
+class Timedmsg:
     def __init__(self):
-        print("Init context")
+        logger.info("Init msg")
 
     def __enter__(self):
-        print("Entering context")
+        logger.info("Entering msg")
 
     def __exit__(self, exc_type, exc_value, exc_traceback):        
-        print("Exiting context")
+        logger.info("Exiting msg")
 
 
 # A decorator for returning runtime of functions:def timed(func):
@@ -337,43 +319,37 @@ def timed(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         start_time = int(time.time())
-        # print(f"func dir {dir(func)}")
-        #print(func.__annotations__)
-        #print(func.__class__)
-        # print(func.__code__.co_filename)      # Full path of filename
-        # print(func.__code__.co_name)          # Function name
-        # print(func.__code__.co_varnames)      # Function variables
-        # print(func.__code__.co_firstlineno)   # First line number of function       
-        # print(dir(func.__code__))
-        #print(func.__str__)
+        duration = int(time.time()) - start_time
         trace = get_trace(func)
+        msg = "<<< no msg provided >>>"
         try:
-            loglevel = "green"
             result = func(*args, **kwargs)
-            if isinstance(result, dict):
-                if 'loglevel' in result:
-                    loglevel = result["loglevel"]
-                if 'message' in result:
-                    msg = result["message"]
-                
-                print(result.keys())
-                
-            elif isinstance(result, list):
-                if len(list) > 0:
-                    if isinstance(result[0], dict):
-                        print(list(result.keys())[:5])
-                    else:
-                        print(result[:5])
-            else:
-                msg = result
         except Exception as e:
-            loglevel = "warning"
+            ignore_until = 0
+            loglevel = "error"
             if isinstance(e, ValueError):
                 # Custom logic here
                 pass
             msg = f"{type(e)}: {e}"
-            StopWatch(start_time, trace=trace, loglevel=loglevel, context=msg)
+            StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
         else:
-            StopWatch(start_time, trace=trace, loglevel=loglevel, context=msg)
+            if isinstance(result, dict):
+                send = False
+                msg=""
+                ignore_until = 0
+                loglevel = "info"
+                
+                
+                if 'loglevel' in result:
+                    loglevel = result["loglevel"]
+                    send = True
+                if 'message' in result:
+                    msg = result["message"]
+                    send = True
+                if 'ignore_until' in result:
+                    ignore_until = result["ignore_until"]
+                    send = True
+                if duration >= ignore_until and send:
+                    StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
             return result
     return wrapper

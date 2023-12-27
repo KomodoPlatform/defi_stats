@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-import inspect
 from os.path import basename
-import sys
 import time
 import sqlite3
-from typing import List, Optional, Any
+from typing import List
 
 from decimal import Decimal
 from datetime import datetime, timedelta
-from random import randrange
 from const import templates
 from lib.cache_load import load_gecko_source
 from lib.cache_item import CacheItem
@@ -16,15 +13,15 @@ from util.helper import (
     order_pair_by_market_cap,
     sort_dict,
     get_all_coin_pairs,
-    valid_coins,
-    get_netid,
-    apply_decorator
+    get_valid_coins,
+    get_netid
 )
 from util.files import Files
 from util.utils import Utils
-from util.enums import TradeType
+from util.enums import TradeType, TablesEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
-from util.logger import logger, get_trace, StopWatch, timed
+from util.logger import logger, timed, StopWatch, get_trace
+from util.templates import default_error
 
 # apply_decorator(sys.modules[__name__], timed)
 
@@ -36,31 +33,24 @@ class SqliteQuery:
             self.options = ["testing", "dict_format"]
             templates.set_params(self, self.kwargs, self.options)
             self.db = db
-            self.db_path = db.db_path
-            self.db_file = basename(db.db_path)
-            self.netid = get_netid(db.db_file)
-            self.conn = db.conn
-            if self.dict_format:
-                self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = db.conn.cursor()
             self.utils = Utils(testing=self.testing)
             self.files = Files(testing=self.testing)
             self.gecko_source = load_gecko_source()
         except Exception as e:
-            error = f"{type(e)}: Failed to init SqliteQuery: {e}"
-            return
+            logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
     @property
     def tables(self):
-        self.sql_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        return [i[0] for i in self.sql_cursor.fetchall()]
+        self.db.sql_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        return [i[0] for i in self.db.sql_cursor.fetchall()]
 
     def get_table_columns(self, table):
         sql = f"SELECT * FROM '{table}' LIMIT 1;"
-        r = self.sql_cursor.execute(sql)
+        r = self.db.sql_cursor.execute(sql)
         r.fetchone()
         return [i[0] for i in r.description]
 
+    @timed
     def get_pairs(self, days: int = 7, include_all_kmd=True) -> list:
         """
         Returns an alphabetically sorted list of pairs
@@ -69,12 +59,21 @@ class SqliteQuery:
         are sorted by market cap to conform to CEX standards.
         """
         try:
+            logger.info("Getting pairs")
             timestamp = int(time.time() - 86400 * days)
+            sql = f"SELECT COUNT(*) FROM stats_swaps;"
+            logger.info(self.db.db_path)
+            logger.info(sql)
+            self.db.sql_cursor.execute(sql)
+            logger.info(self.db.sql_cursor.fetchall())
             sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
                     taker_coin_ticker, taker_coin_platform FROM stats_swaps \
                     WHERE finished_at > {timestamp} AND is_success=1;"
-            self.sql_cursor.execute(sql)
-            data = self.sql_cursor.fetchall()
+            logger.info(self.db.db_path)
+            logger.info(sql)
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
+            logger.info(data)
             # Cover the variants
             pairs = [
                 (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
@@ -97,7 +96,7 @@ class SqliteQuery:
                 if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
             ]
             if include_all_kmd:
-                coins = valid_coins(CacheItem("coins_config").data)
+                coins = get_valid_coins(CacheItem("coins_config").data)
                 pairs += get_all_coin_pairs("KMD", coins)
             # Sort pair by ticker to expose base-rel & rel-base duplicates
             sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
@@ -108,7 +107,7 @@ class SqliteQuery:
                 [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
             )
         except Exception as e:
-            return
+            return default_error
         return data
 
 
@@ -152,7 +151,7 @@ class SqliteQuery:
 
                 swaps_for_pair = []
                 self.conn.row_factory = sqlite3.Row
-                self.sql_cursor = self.conn.cursor()
+                self.db.sql_cursor = self.conn.cursor()
                 for i in base:
                     for j in quote:
                         base_ticker = i.split("-")[0]
@@ -176,8 +175,8 @@ class SqliteQuery:
                             sql += f" LIMIT {limit}"
                         sql += ";"
 
-                        self.sql_cursor.execute(sql)
-                        data = self.sql_cursor.fetchall()
+                        self.db.sql_cursor.execute(sql)
+                        data = self.db.sql_cursor.fetchall()
                         swaps_for_pair_a_b = [dict(row) for row in data]
 
                         for swap in swaps_for_pair_a_b:
@@ -195,8 +194,8 @@ class SqliteQuery:
                             sql += f" LIMIT {limit}"
                         sql += ";"
                         # logger.warning(sql)
-                        self.sql_cursor.execute(sql)
-                        data = self.sql_cursor.fetchall()
+                        self.db.sql_cursor.execute(sql)
+                        data = self.db.sql_cursor.fetchall()
                         swaps_for_pair_b_a = [dict(row) for row in data]
 
                         for swap in swaps_for_pair_b_a:
@@ -232,9 +231,9 @@ class SqliteQuery:
             sql = "SELECT * FROM stats_swaps WHERE"
             sql += f" uuid='{uuid}';"
             self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = self.conn.cursor()
-            self.sql_cursor.execute(sql)
-            data = self.sql_cursor.fetchall()
+            self.db.sql_cursor = self.conn.cursor()
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
             data = [dict(row) for row in data]
             if len(data) == 0:
                 return {"error": f"swap uuid {uuid} not found"}
@@ -247,25 +246,29 @@ class SqliteQuery:
         except Exception as e:
             return
 
+    @timed
     def get_row_count(self, table):
-        self.sql_cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        r = self.sql_cursor.fetchone()
-        return r[0]
+        try:
+            self.db.sql_cursor.execute(f"SELECT COUNT(*) FROM {TablesEnum[table]}")
+            r = self.db.sql_cursor.fetchone()
+            return r[0]
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
 
 
     def get_uuids(self, success_only=True, fail_only=False) -> List:
         try:
             if fail_only:
-                self.sql_cursor.execute(
+                self.db.sql_cursor.execute(
                     "SELECT uuid FROM stats_swaps WHERE is_success = 0"
                 )
             elif success_only:
-                self.sql_cursor.execute(
+                self.db.sql_cursor.execute(
                     "SELECT uuid FROM stats_swaps WHERE is_success = 1"
                 )
             else:
-                self.sql_cursor.execute("SELECT uuid FROM stats_swaps")
-            r = self.sql_cursor.fetchall()
+                self.db.sql_cursor.execute("SELECT uuid FROM stats_swaps")
+            r = self.db.sql_cursor.fetchall()
             data = [i[0] for i in r]
             return data
         except Exception as e:
@@ -291,9 +294,9 @@ class SqliteQuery:
                 sql += f" AND finished_at < {finished_at}"
             sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
                     taker_coin_platform, maker_coin_platform;"
-            self.sql_cursor = self.conn.cursor()
-            self.sql_cursor.execute(sql)
-            resp = self.sql_cursor.fetchall()
+            self.db.sql_cursor = self.conn.cursor()
+            self.db.sql_cursor.execute(sql)
+            resp = self.db.sql_cursor.fetchall()
             resp = [dict(i) for i in resp if i["swap_count"] >= min_swaps]
             by_pair_dict = {}
             for i in resp:
@@ -335,7 +338,7 @@ class SqliteQuery:
         """
         try:
             self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = self.conn.cursor()
+            self.db.sql_cursor = self.conn.cursor()
             swap_price = None
             swap_time = None
             sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{base.split('-')[0]}' \
@@ -349,8 +352,8 @@ class SqliteQuery:
                     platform = quote.split("-")[1]
                     sql += f" AND taker_coin_platform='{platform}'"
             sql += " ORDER BY finished_at DESC LIMIT 1;"
-            self.sql_cursor.execute(sql)
-            resp = self.sql_cursor.fetchone()
+            self.db.sql_cursor.execute(sql)
+            resp = self.db.sql_cursor.fetchone()
             if resp is not None:
                 swap_price = Decimal(resp["taker_amount"]) / Decimal(
                     resp["maker_amount"]
@@ -370,8 +373,8 @@ class SqliteQuery:
                     platform = quote.split("-")[1]
                     sql += f" AND maker_coin_platform='{platform}'"
             sql += " ORDER BY finished_at DESC LIMIT 1;"
-            self.sql_cursor.execute(sql)
-            resp2 = self.sql_cursor.fetchone()
+            self.db.sql_cursor.execute(sql)
+            resp2 = self.db.sql_cursor.fetchone()
             if resp2 is not None:
                 swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
                     resp2["taker_amount"]
@@ -407,22 +410,20 @@ class SqliteQuery:
             timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
             timestamp_30d_ago = int((datetime.now() - timedelta(30)).strftime("%s"))
 
-            self.sql_cursor
-            self.sql_cursor.execute(
+            db.sql_cursor.execute(
                 "SELECT COUNT(*) FROM stats_swaps WHERE is_success=1;"
             )
-            swaps_all_time = self.sql_cursor.fetchone()[0]
-            self.sql_cursor.execute(
+            swaps_all_time = db.sql_cursor.fetchone()[0]
+            db.sql_cursor.execute(
                 "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
                 (timestamp_24h_ago,),
             )
-            swaps_24h = self.sql_cursor.fetchone()[0]
-            self.sql_cursor.execute(
+            swaps_24h = db.sql_cursor.fetchone()[0]
+            db.sql_cursor.execute(
                 "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
                 (timestamp_30d_ago,),
             )
-            swaps_30d = self.sql_cursor.fetchone()[0]
-            self.conn.close()
+            swaps_30d = db.sql_cursor.fetchone()[0]
             data = {
                 "swaps_all_time": swaps_all_time,
                 "swaps_30d": swaps_30d,
@@ -430,11 +431,7 @@ class SqliteQuery:
             }
             return data
         except Exception as e:
-            
-            error = (
-                f" failed, returning template {type(e)}: {e}"
-            )
-            return templates.swap_counts()
+            return default_error(e)
 
     def get_swaps_for_ticker(
         self,
@@ -462,7 +459,7 @@ class SqliteQuery:
 
             swaps_for_ticker = []
             self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = self.conn.cursor()
+            self.db.sql_cursor = self.conn.cursor()
             for i in tickers:
                 base_ticker = i.split("-")[0]
                 base_platform = ""
@@ -479,8 +476,8 @@ class SqliteQuery:
                     sql += f" LIMIT {limit}"
                 sql += ";"
 
-                self.sql_cursor.execute(sql)
-                data = self.sql_cursor.fetchall()
+                self.db.sql_cursor.execute(sql)
+                data = self.db.sql_cursor.fetchall()
                 swaps_as_maker = [dict(row) for row in data]
 
                 for swap in swaps_as_maker:
@@ -496,8 +493,8 @@ class SqliteQuery:
                     sql += f" LIMIT {limit}"
                 sql += ";"
                 # logger.warning(sql)
-                self.sql_cursor.execute(sql)
-                data = self.sql_cursor.fetchall()
+                self.db.sql_cursor.execute(sql)
+                data = self.db.sql_cursor.fetchall()
                 swaps_as_taker = [dict(row) for row in data]
 
                 for swap in swaps_as_taker:
@@ -546,7 +543,7 @@ class SqliteQuery:
                 tickers.append(f"{ticker}-segwit")
 
             volume_for_ticker = 0
-            self.sql_cursor = self.conn.cursor()
+            self.db.sql_cursor = self.conn.cursor()
             for i in tickers:
                 base_ticker = i.split("-")[0]
                 base_platform = ""
@@ -561,8 +558,8 @@ class SqliteQuery:
                     sql += f" AND maker_coin_ticker='{base_ticker}'"
                     sql += f" AND maker_coin_platform='{base_platform}'"
                     sql += " AND is_success=1 ORDER BY finished_at DESC;"
-                    self.sql_cursor.execute(sql)
-                    data = self.sql_cursor.fetchone()
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchone()
                     if data[0] is not None:
                         volume_as_maker = data[0]
 
@@ -574,8 +571,8 @@ class SqliteQuery:
                     sql += f" AND taker_coin_ticker='{base_ticker}'"
                     sql += f" AND taker_coin_platform='{base_platform}'"
                     sql += " AND is_success=1 ORDER BY finished_at DESC;"
-                    self.sql_cursor.execute(sql)
-                    data = self.sql_cursor.fetchone()
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchone()
                     if data[0] is not None:
                         volume_as_taker = data[0]
 
@@ -641,7 +638,7 @@ class SqliteQuery:
                 sql += " AND is_success=0"
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
-            context = f"complete for netid {self.netid}"
+            msg = f"complete for netid {self.netid}"
             return sql
         except Exception as e:
             return sql
@@ -652,9 +649,9 @@ class SqliteQuery:
         """
         try:
             sql = self.build_query(**kwargs)
-            self.sql_cursor.execute(sql)
-            data = self.sql_cursor.fetchall()
-            context = f"{len(data)} swaps for netid {self.netid}"
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
+            msg = f"{len(data)} swaps for netid {self.netid}"
             return data
         except Exception as e:
             return []

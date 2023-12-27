@@ -59,7 +59,7 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
-def valid_coins(coins_config):
+def get_valid_coins(coins_config):
     return [
         i
         for i in list(coins_config.keys())
@@ -115,7 +115,6 @@ def is_7777(db_file: str) -> bool:
     return False
 
 def get_netid(db_file):
-    loglevel = "calc"
     for netid in NetId:
         if netid.value in db_file:
             return netid.value

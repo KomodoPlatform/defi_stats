@@ -47,3 +47,9 @@ class CacheFilenameNotFound(Exception):
 class CacheItemNotFound(Exception):
     "Raised when a cache item is not found in the 'Cache' class"
     pass
+
+
+class DataStructureError(Exception):
+    "Raised when a returned data is an unexpected structure"
+    pass
+

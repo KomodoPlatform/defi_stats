@@ -49,7 +49,7 @@ def test_sort_dict(historical_data):
 
 def test_valid_coins(coins_config):
     config = coins_config
-    coins = valid_coins(config)
+    coins = get_valid_coins(config)
     assert len(coins) == 1
     assert coins[0] == "OK"
     assert "TEST" not in coins

@@ -54,7 +54,7 @@ class Templates:
             "false": [
                 "testing",
                 "include_all_kmd",
-                "context",
+                "msg",
                 "updated",
                 "query",
                 "imported",
@@ -114,17 +114,23 @@ class Templates:
         # Then process kwargs
         [setattr(object, k, v) for k, v in kwargs.items()]
 
-def default_error(e, msg, loglevel='error'):
+def default_error(e, msg=None, loglevel='error', ignore_until=0):
+    if msg is None:
+        msg = e
+    else:
+        msg = f"{e}: {msg}"
     r = {
         "result": "error",
-        "message": f"{type(e)}: {e}",
+        "message": msg,
         "loglevel": loglevel
     }
     if msg is not None:
         r.update({"message": msg})
+    if ignore_until is not None:
+        r.update({"ignore_until": ignore_until})
     return r
 
-def default_result(msg, loglevel='debug'):
+def default_result(msg="No Message", loglevel='debug', ignore_until=0):
     r = {
         "result": "success",
         "message": msg,
@@ -132,4 +138,6 @@ def default_result(msg, loglevel='debug'):
     }
     if msg is not None:
         r.update({"message": msg})
+    if ignore_until is not None:
+        r.update({"ignore_until": ignore_until})
     return r

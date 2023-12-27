@@ -53,18 +53,18 @@ def update_master_sqlite_dbs():
         for source_db_file in sqlite_db_list:
             if not source_db_file.startswith("MM2"):
                 source_db_path = f"{db_folder}/{source_db_file}"
-                src_db = get_sqlite_db(db_path=source_db_path)
-                if source_db_file.startswith("seed"):
-                    # Import into 7777
-                    update_7777_db.merge_db_tables(
-                        src_db=src_db, table="stats_swaps", column="uuid"
-                    )
+                with get_sqlite_db(db_path=source_db_path) as src_db:
+                    if source_db_file.startswith("seed"):
+                        # Import into 7777
+                        update_7777_db.merge_db_tables(
+                            src_db=src_db, table="stats_swaps", column="uuid"
+                        )
                 # Import into ALL
                 update_all_db.merge_db_tables(
                     src_db=src_db, table="stats_swaps", column="uuid"
                 )
     except Exception as e:
-        logger.warning(f"Source DB Merge failed: {e}")
+        logger.warning(f"Source Importing failed: {e}")
 
     inspect_data(db_7777, db_8762, db_all)
     # import all into temp

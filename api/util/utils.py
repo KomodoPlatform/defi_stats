@@ -34,7 +34,7 @@ class Utils:
     def download_json(self, url):
         try:
             data = requests.get(url).json()
-            context = f"{url} response recieved"
+            msg = f"{url} response recieved"
             return data
         except Exception as e:  # pragma: no cover
             return None

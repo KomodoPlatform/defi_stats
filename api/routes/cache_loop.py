@@ -10,8 +10,9 @@ from util.enums import NetId
 from lib.external import FixerAPI, CoinGeckoAPI
 from const import NODE_TYPE
 from db.sqlitedb_merge import import_source_databases
-from util.logger import logger, get_trace, StopWatch, timed
-
+from util.logger import logger, timed
+from util.templates import default_error, default_result
+from util.exceptions import DataStructureError
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ router = APIRouter()
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
+@timed
 def coins():  # pragma: no cover
     try:
         coins_cache = CacheItem("coins")
@@ -27,7 +29,8 @@ def coins():  # pragma: no cover
         coins_config_cache = CacheItem("coins_config")
         coins_config_cache.save()
     except Exception as e:
-        return
+        return default_error(e)
+    return default_result("Coins update loop complete!", loglevel='loop')
 
 
 @router.on_event("startup")
@@ -163,6 +166,7 @@ def markets_last_trade():
         except Exception as e:
             pass
 
+@timed
 @router.on_event("startup")
 @repeat_every(seconds=10)
 def markets_pairs(netid):
@@ -170,11 +174,15 @@ def markets_pairs(netid):
         cache = Cache(netid=netid)
         cache_item = CacheItem(name="markets_pairs", netid=netid)
         data = cache.calc.traded_pairs(days=120)
-        if len(data) > 0:
-            resp = cache_item.save(data)
-            return
+        if "error" not in data:
+            if len(data) > 0:
+                resp = cache_item.save(data)
+                return default_result(msg=f"Markets pairs updated ({netid})")
+        else:
+            raise DataStructureError("Unexpected data structure returned")
+        return default_result(msg=f"Markets pairs not, updated because input data was empty ({netid})")
     except Exception as e:
-        return
+        return default_result(msg=f"Markets pairs update failed! ({netid})")
 
 @router.on_event("startup")
 @repeat_every(seconds=10)

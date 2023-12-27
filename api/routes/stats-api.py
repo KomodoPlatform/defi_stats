@@ -159,7 +159,6 @@ def trades(pair="KMD_LTC"):
         DB = models.SqliteDB(const.MM2_DB_PATH, dict_format=True)
         pair = models.Pair(pair)
         trades_data = pair.trades(days=1)
-        DB.close()
         return trades_data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/trades/{pair}]: {e}")
@@ -173,7 +172,6 @@ def last_price_for_pair(pair="KMD_LTC"):
         pair = models.Pair(pair)
         DB = models.SqliteDB(const.MM2_DB_PATH, dict_format=True)
         last_price = DB.get_last_price_for_pair(pair.base, pair.quote)
-        DB.close()
         return last_price
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")

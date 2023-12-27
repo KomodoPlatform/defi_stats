@@ -300,8 +300,8 @@ def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.AL
     response_model=AdexIo,
 )
 def atomicdex_info_api(netid: NetId = NetId.ALL):
-    db = get_sqlite_db(netid=netid.value)
-    return db.swap_counts()
+    with get_sqlite_db(netid=netid.value)as db:
+        return db.swap_counts()
 
 
 @router.get("/pairs_last_trade", description="Returns the last trade for all pairs")
@@ -332,23 +332,23 @@ def volumes_history_ticker(
     netid: NetId = NetId.ALL,
 ):
     start = int(time.time())
-    db = get_sqlite_db(netid=netid.value)
-    volumes_dict = {}
-    for i in range(0, int(days_in_past)):
-        db = get_sqlite_db(netid=netid.value)
-        d = datetime.today() - timedelta(days=i)
-        d_str = d.strftime("%Y-%m-%d")
-        day_ts = int(int(d.strftime("%s")) / 86400) * 86400
-        # TODO: Align with midnight
-        start_time = int(day_ts) - 86400
-        end_time = int(day_ts)
-        volumes_dict[d_str] = db.get_volume_for_ticker(
-            ticker=ticker,
-            trade_type=trade_type.value,
-            start_time=start_time,
-            end_time=end_time,
-        )
-    return volumes_dict
+    with get_sqlite_db(netid=netid.value)as db:
+        volumes_dict = {}
+        for i in range(0, int(days_in_past)):
+            with get_sqlite_db(netid=netid.value)as db:
+                d = datetime.today() - timedelta(days=i)
+                d_str = d.strftime("%Y-%m-%d")
+                day_ts = int(int(d.strftime("%s")) / 86400) * 86400
+                # TODO: Align with midnight
+                start_time = int(day_ts) - 86400
+                end_time = int(day_ts)
+                volumes_dict[d_str] = db.get_volume_for_ticker(
+                    ticker=ticker,
+                    trade_type=trade_type.value,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
+            return volumes_dict
 
 
 @router.get(
