@@ -11,9 +11,6 @@ def dict_to_dict_list(data, key):
 
 
 def update_master_sqlite_dbs():
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     backup_local_dbs()
 
     # Get list of supplemental db files
@@ -49,15 +46,7 @@ def update_master_sqlite_dbs():
             src_db=local_db_8762_backup, table="stats_swaps", column="uuid"
         )
     except Exception as e:
-        logger.warning(f"Backup DB Merge failed: {e}")
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        return get_stopwatch(start, error=True, context=context)
-    get_stopwatch(
-        start,
-        imported=True,
-        context="SqliteDB.update_master_sqlite_dbs | Backup DB merge complete",
-    )
+        pass
 
     try:
         # Handle 7777 first

@@ -11,7 +11,7 @@ from lib.models import (
     GeckoHistoricalTradesItem,
     ErrorMessage,
 )
-from util.helper import get_sqlite_db_paths, get_stopwatch
+from util.helper import get_sqlite_db_paths
 from lib.cache import Cache
 from lib.pair import Pair
 from lib.orderbook import Orderbook
@@ -43,12 +43,10 @@ async def gecko_pairs(netid: NetId = NetId.ALL):
     description="24-hour price & volume for each market pair traded in last 7 days.",
 )
 def gecko_tickers(netid: NetId = NetId.ALL):
-    start = int(time.time())
     try:
         db_path = get_sqlite_db_paths(netid)
         cache = Cache(db_path=db_path)
         data = cache.load_gecko_tickers(netid=netid.value)
-        get_stopwatch(start, context="/api/v3/gecko/tickers")
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")

@@ -3,6 +3,7 @@ from os.path import basename
 import time
 import inspect
 import logging
+import functools
 from util.templates import Templates
 
 templates = Templates()
@@ -207,55 +208,60 @@ logger.setLevel("REQUEST")
 addLoggingLevel("MUTED", logging.DEBUG - 1)
 logger.setLevel("MUTED")
 
+def send_log(loglevel, msg):
+    match loglevel:
+        case "info":
+            logger.info(f"    {msg}")
+        case "warning":
+            logger.warning(f" {msg}")
+        case "error":
+            logger.error(f"   {msg}")
+        case "debug":
+            logger.debug(f"   {msg}")
+        case "error":
+            logger.error(f"   {msg}")
+        case "loop":
+            logger.loop(f"    {msg}")
+        case "query":
+            logger.query(f"   {msg}")
+        case "request":
+            logger.request(f" {msg}")
+
+        # If an exact match is not confirmed, this last case will be used if provided
+        case _:
+            logger.debug(f"   {msg}")
 
 class StopWatch:
     def __init__(self, start_time, **kwargs) -> None:
         self.start_time = start_time
         self.get_stopwatch(**kwargs)
+        
 
     def get_stopwatch(self, **kwargs):
         options = [
             "testing",
             "trigger",
             "context",
-            "updated",
-            "query",
-            "imported",
-            "error",
-            "warning",
-            "debug",
-            "dexrpc",
-            "muted",
-            "info",
-            "loop",
-            "calc",
-            "save",
-            "request"
+            "loglevel"
         ]
         templates.set_params(self, kwargs, options)
-
         duration = int(time.time()) - int(self.start_time)
         if self.trigger == 0:
             self.trigger = 10
-            if self.updated or self.imported or self.query or self.dexrpc or self.request:
-                self.trigger = 5
-            if self.error or self.debug or self.warning or self.loop:
-                self.trigger = 0
         self.trigger = 0
 
         # if duration < 5 and not (self.error or self.debug or self.warning or self.loop):
         #    self.muted = True
 
-        if duration > self.trigger:
-            trace = get_trace(inspect.stack()[2], "guessed action")
-            lineno = trace["stack"]["lineno"]
-            filename = trace["stack"]["file"]
-            func = trace["stack"]["function"]
-            msg = f"|{duration:>4} sec | {func:<24} | {self.context:<110} | {basename(filename)}:{lineno}"
-            print(msg)
+        if duration >= self.trigger:
+            lineno = self.trace["lineno"]
+            filename = self.trace["file"]
+            func = self.trace["function"]
+            msg = f"|{duration:>4} sec | {func:<24} | {str(self.context):<110} | {basename(filename)}:{lineno}"
+            send_log(loglevel=self.loglevel, msg=msg)
+            '''
             if self.muted:
-                pass
-                # logger.muted(f"      {msg}")
+                logger.muted(f"    {msg}")
             elif self.updated:
                 logger.updated(f"  {msg}")
             elif self.error:
@@ -264,8 +270,6 @@ class StopWatch:
                 logger.imported(f" {msg}")
             elif self.query:
                 logger.query(f"    {msg}")
-            elif self.debug:
-                logger.debug(f"    {msg}")
             elif self.warning:
                 logger.warning(f"  {msg}")
             elif self.muted:
@@ -280,23 +284,27 @@ class StopWatch:
                 logger.save(f"     {msg}")
             elif self.request:
                 logger.request(f"  {msg}")
+            elif self.debug:
+                logger.debug(f"    {msg}")
             else:
                 logger.debug(f"    {msg}")
+            '''
+        else:
+            logger.calc(f"in getstopwatch {duration}")
 
-
-def get_trace(stack, error=None):
+def get_trace(func, error=None):
     context = {
-        "stack": {
-            "function": stack.function,
-            "file": stack.filename,
-            "lineno": stack.lineno,
-        }
+        "function": func.__name__,
+        "file": func.__code__.co_firstlineno,
+        "file": func.__code__.co_filename,
+        "lineno": func.__code__.co_firstlineno,
+        "vars": func.__code__.co_varnames
     }
     if error is not None:
         context.update({"error": error})
     return context
 
-
+# Returns console colors for customising
 def show_pallete():
     logger.info("info")
     logger.debug("debug")
@@ -311,3 +319,61 @@ def show_pallete():
     logger.muted("muted")
     logger.query("query")
     logger.request("request")
+
+# Contecxt Manager for 'timed' decorator
+class TimedContext:
+    def __init__(self):
+        print("Init context")
+
+    def __enter__(self):
+        print("Entering context")
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):        
+        print("Exiting context")
+
+
+# A decorator for returning runtime of functions:def timed(func):
+def timed(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = int(time.time())
+        # print(f"func dir {dir(func)}")
+        #print(func.__annotations__)
+        #print(func.__class__)
+        # print(func.__code__.co_filename)      # Full path of filename
+        # print(func.__code__.co_name)          # Function name
+        # print(func.__code__.co_varnames)      # Function variables
+        # print(func.__code__.co_firstlineno)   # First line number of function       
+        # print(dir(func.__code__))
+        #print(func.__str__)
+        trace = get_trace(func)
+        try:
+            loglevel = "green"
+            result = func(*args, **kwargs)
+            if isinstance(result, dict):
+                if 'loglevel' in result:
+                    loglevel = result["loglevel"]
+                if 'message' in result:
+                    msg = result["message"]
+                
+                print(result.keys())
+                
+            elif isinstance(result, list):
+                if len(list) > 0:
+                    if isinstance(result[0], dict):
+                        print(list(result.keys())[:5])
+                    else:
+                        print(result[:5])
+            else:
+                msg = result
+        except Exception as e:
+            loglevel = "warning"
+            if isinstance(e, ValueError):
+                # Custom logic here
+                pass
+            msg = f"{type(e)}: {e}"
+            StopWatch(start_time, trace=trace, loglevel=loglevel, context=msg)
+        else:
+            StopWatch(start_time, trace=trace, loglevel=loglevel, context=msg)
+            return result
+    return wrapper

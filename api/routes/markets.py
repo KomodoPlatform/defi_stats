@@ -13,7 +13,7 @@ from lib.models import (
     PairTrades,
     AdexIo,
 )
-from util.helper import sort_dict_list, get_stopwatch
+from util.helper import sort_dict_list
 from lib.cache import Cache
 from lib.cache import CacheItem
 from lib.pair import Pair
@@ -348,7 +348,6 @@ def volumes_history_ticker(
             start_time=start_time,
             end_time=end_time,
         )
-    get_stopwatch(start, context=f"/volumes_ticker/{ticker}/{days_in_past} | responded")
     return volumes_dict
 
 
@@ -380,7 +379,6 @@ def tickers_summary(netid: NetId = NetId.ALL):
         for ticker in tickers:
             if resp[ticker]["trades_24h"] > 0:
                 with_action.update({ticker: resp[ticker]})
-        get_stopwatch(start, context="/tickers_summary | responded")
         return with_action
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}")
@@ -396,5 +394,4 @@ def tickers_summary(netid: NetId = NetId.ALL):
 def fiat_rates():
     start = int(time.time())
     data = CacheItem('gecko_source').data
-    get_stopwatch(start, context="/fiat_rates | responded")
     return data

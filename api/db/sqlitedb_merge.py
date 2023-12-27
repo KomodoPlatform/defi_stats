@@ -13,7 +13,6 @@ from const import DB_SOURCE_PATH, DB_CLEAN_PATH, MM2_DB_PATHS
 from util.helper import is_source_db, get_netid
 from util.logger import logger, get_trace, StopWatch
 
-get_stopwatch = StopWatch
 
 
 # This should be run on a separate server
@@ -26,10 +25,7 @@ get_stopwatch = StopWatch
 # Step 4 - Merge cleaned into master
 
 
-def merge_dbs():
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
+def import_source_databases():
     for fn in list_sqlite_dbs(DB_SOURCE_PATH):
         if is_source_db(fn):
             src_db_path = f"{DB_SOURCE_PATH}/{fn}"
@@ -53,7 +49,6 @@ def merge_dbs():
         for fnb in list_sqlite_dbs(DB_CLEAN_PATH):
             if fna != fnb:
                 context = f"Comparing {fna} to {fnb}"
-                get_stopwatch(start, calc=True, context=context)
                 db1 = get_sqlite_db(db_path=fna)
                 db2 = get_sqlite_db(db_path=fnb)
                 uuids = get_mismatched_uuids(db1, db2)
@@ -96,17 +91,14 @@ def merge_dbs():
 
     rows = temp_db_7777_query.get_row_count('stats_swaps')
     context = f"Temp DB 7777 has {rows} rows"
-    get_stopwatch(start, info=True, context=context)
     rows = temp_db_8762_query.get_row_count('stats_swaps')
     context = f"Temp DB 8762 has {rows} rows"
-    get_stopwatch(start, info=True, context=context)
     rows = temp_db_all_query.get_row_count('stats_swaps')
     context = f"Temp DB ALL has {rows} rows"
-    get_stopwatch(start, info=True, context=context)
     
     
             
         
 
 if __name__ == "__main__":
-    merge_dbs()
+    import_source_databases()

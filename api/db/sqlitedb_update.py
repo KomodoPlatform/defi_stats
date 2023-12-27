@@ -8,39 +8,41 @@ from util.files import Files
 from util.utils import Utils
 from const import templates
 from util.helper import get_netid
-from util.logger import logger, get_trace, StopWatch
+from util.logger import logger, get_trace, StopWatch, timed
+from util.templates import default_error, default_result
 
-get_stopwatch = StopWatch
 
 
 class SqliteUpdate:
     def __init__(self, db, **kwargs):
-        self.kwargs = kwargs
-        self.options = ["testing"]
-        templates.set_params(self, self.kwargs, self.options)
-        self.utils = Utils(testing=self.testing)
-        self.files = Files(testing=self.testing)
-        self.db = db
-        self.db_path = db.db_path
-        self.db_file = db.db_file
-        self.netid = get_netid(self.db_file)
-        self.conn = db.conn
-        self.sql_cursor = self.conn.cursor()
-        self.query = SqliteQuery(db=self.db)
+        try:
+            self.kwargs = kwargs
+            self.options = ["testing"]
+            templates.set_params(self, self.kwargs, self.options)
+            self.utils = Utils(testing=self.testing)
+            self.files = Files(testing=self.testing)
+            self.db = db
+            self.db_path = db.db_path
+            self.db_file = db.db_file
+            self.netid = get_netid(self.db_file)
+            self.conn = db.conn
+            self.sql_cursor = self.conn.cursor()
+            self.query = SqliteQuery(db=self.db)
+        except Exception as e:
+            error = f"{type(e)}: Failed to init SqliteQuery: {e}"
+            return
 
     def merge_db_tables(self, src_db, table, column, since=None):
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         if since is None:
             since = int(time.time()) - 86400 * 7
         sql = ""
         n = 0
         while True:
             try:
-                src_db_query = SqliteQuery(db=src_db)
+                src_db_query = SqliteQuery(db = src_db)
                 src_columns = src_db_query.get_table_columns(table)
                 src_columns.pop(src_columns.index("id"))
+                context = f"{src_db.db_path} ==> {self.db_path}"
                 sql = f"ATTACH DATABASE '{src_db.db_path}' AS src_db;"
                 sql += f" INSERT INTO {table} ({','.join(src_columns)})"
                 sql += f" SELECT {','.join(src_columns)}"
@@ -50,37 +52,24 @@ class SqliteUpdate:
                 sql += f" WHERE {table}.{column} = src_db.{table}.{column})"
                 sql += f" AND src_db.{table}.finished_at > {since};"
                 sql += " DETACH DATABASE 'src_db';"
-                self.sql_cursor.executescript(sql)
-                context = f"Imported [{src_db.db_path}] into [{self.db_path}]"
-                get_stopwatch(start, imported=True, context=context)
-                return None
+                self.db.sql_cursor.executescript(sql)
+                msg = f"OK for {src_db.db_path} ==> {self.db_path}"
+                return default_error
             except sqlite3.OperationalError as e:
-                error = f"{type(e)} for merging {src_db.db_path}"
-                error += f" into {self.db_path}: {e}"
-                if n > 10:
-                    context = get_trace(stack, error)
-                    get_stopwatch(start, error=True, context=f"{context}")
-                    return None
-                context = f"{error}, retrying..."
-                get_stopwatch(start, error=True, context=f"{context}")
+                msg = f"OpErr {src_db.db_path} ==> {self.db_path}"
+                return default_error
             except Exception as e:
-                error = f"{type(e)} for merging {src_db.db_path}"
-                error += f" into {self.db_path}: {e}"
-                context = get_trace(stack, error)
-                get_stopwatch(start, error=True, context=f"{context}")
-            n += 1
+                msg = f"{type(e)} {src_db.db_path} ==> {self.db_path} {e}"
+                time.sleep(2)
+                return default_error
 
     def remove_overlaps(self, remove_db):
-        start = int(time.time())
         uuids = self.query.get_uuids()
         query_remove_db = SqliteQuery(db=remove_db)
         uuids_remove = query_remove_db.get_uuids(success_only=False)
         overlap = set(uuids_remove).intersection(set(uuids))
         if len(overlap) > 0:
             remove_db.remove_uuids(overlap)
-            context = f"Removed {len(overlap)} rows"
-            context += f"from {remove_db.db_file} where already in {self.db_file}"
-            get_stopwatch(start, context=context, calc=True)
 
     def update_stats_swap_row(self, uuid, data):
         n = 0
@@ -88,17 +77,9 @@ class SqliteUpdate:
             try:
                 colvals = ",".join([f"{k} = {v}" for k, v in data.items()])
                 sql = f"UPDATE {'stats_swaps'} SET {colvals} WHERE uuid = '{uuid}';"
-                self.sql_cursor.execute(sql)
-                self.conn.commit()
-                logger.info(f"{uuid} repaired for netid {self.db_file}!")
                 return
             except sqlite3.OperationalError as e:
-                logger.error(f"Error in [update_stats_swap_row]: {e}")
-                if n > 10:
-                    return
-                n += 1
-                logger.warning(f"Error in [update_stats_swap_row]: {e}, retrying...")
-                time.sleep(randrange(20))
+                logger.warning(f"Error in [update_stats_swap_row]: {e}...")
             except Exception as e:
                 logger.error(f"Error in [update_stats_swap_row]: {e}")
                 return
@@ -107,25 +88,19 @@ class SqliteUpdate:
         n = 0
         while True:
             try:
-                self.sql_cursor.execute(f"DELETE FROM {table}")
-                self.conn.commit()
+                self.db.sql_cursor.execute(f"DELETE FROM {table}")
+                self.db.conn.commit()
                 return
             except sqlite3.OperationalError as e:
-                if n > 10:
-                    logger.error(f"{type(e)} Error in [clear]: {e}")
-                    return
-                n += 1
-                logger.warning(f"Error in [clear]: {e}, retrying...")
-                time.sleep(randrange(20))
+                return
             except Exception as e:  # pragma: no cover
-                logger.error(f"{type(e)} Error in [clear]: {e}")
                 return
 
     def create_swap_stats_table(self):
         n = 0
         while True:
             try:
-                self.sql_cursor.execute(
+                self.db.sql_cursor.execute(
                     """
                     CREATE TABLE IF NOT EXISTS
                     stats_swaps (
@@ -151,15 +126,11 @@ class SqliteUpdate:
                 )
                 return
             except sqlite3.OperationalError as e:
-                if n > 10:
-                    logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
-                    return
-                n += 1
-                logger.warning(f"Error in [create_swap_stats_table]: {e}, retrying...")
-                time.sleep(randrange(20))
+                msg = f"{type(e)} Error in [create_swap_stats_table]: {e}"
+                return default_error(e, msg)
             except Exception as e:  # pragma: no cover
-                logger.error(f"{type(e)} Error in [create_swap_stats_table]: {e}")
-                return
+                msg = f"{type(e)} Error in [create_swap_stats_table]: {e}"
+                return default_error(e, msg)
 
     def remove_uuids(self, remove_list: set(), table: str = "stats_swaps") -> None:
         n = 0
@@ -170,23 +141,17 @@ class SqliteUpdate:
                     sql = f"DELETE FROM {table} WHERE uuid in {tuple(remove_list)};"
                 else:
                     sql = f"DELETE FROM {table} WHERE uuid = '{list(remove_list)[0]}';"
-                self.sql_cursor.execute(sql)
-                self.conn.commit()
-                get_stopwatch(start, context=f"{table} for {self.db_path}")
+                self.db.sql_cursor.execute(sql)
+                self.db.conn.commit()
                 return
             except sqlite3.OperationalError as e:
-                if n > 10:
-                    logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
-                    return
-                logger.warning(f"Error in [remove_uuids]: {e}, retrying...")
-                time.sleep(randrange(20))
+                return
             except Exception as e:  # pragma: no cover
                 logger.error(f"{type(e)} Error in [remove_uuids]: {e}")
                 return
             n += 1
 
     def denullify_stats_swaps(self):
-        start = int(time.time())
         for column in [
             "maker_coin_usd_price",
             "taker_coin_usd_price",
@@ -198,25 +163,23 @@ class SqliteUpdate:
             if column in ["maker_pubkey", "taker_pubkey"]:
                 value = "''"
             self.denullify_table("stats_swaps", column, value)
-        get_stopwatch(start, context=f"{self.db_path} [{column}]")
 
+    @timed
     def denullify_table(self, table, column, value="''"):
         n = 0
         while True:
             try:
                 sql = f"UPDATE {table} SET {column} = {value} WHERE {column} IS NULL"
-                self.sql_cursor.execute(sql)
-                self.conn.commit()
-                return
-            except sqlite3.OperationalError as e:
-                if n > 10:
-                    logger.error(f"Error in [denullify_table] for {self.db_path}: {e}")
-                    return
-                n += 1
-                logger.warning(
-                    f"Error in [denullify_table] for {self.db_path}: {e}, retrying..."
+                with self.db as db:
+                    db.sql_cursor.execute(sql)
+                    db.conn.commit()
+                return default_result(
+                    f"Nullification of {self.db.db_file} complete!",
+                    loglevel='updated'
                 )
-                time.sleep(randrange(30))
+            except sqlite3.OperationalError as e:
+                msg = f"Error in [denullify_table] for {self.db_path}: {e}"
+                return default_error(e, msg)
             except Exception as e:
-                logger.error(f"Error in [denullify_table] for {self.db_path}: {e}")
-                return
+                msg = f"Error in [denullify_table] for {self.db_path}: {e}"
+                return default_error(e, msg)

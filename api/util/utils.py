@@ -9,7 +9,6 @@ from util.helper import format_10f
 from util.files import Files
 from util.logger import logger, get_trace, StopWatch
 
-get_stopwatch = StopWatch
 
 
 class Utils:
@@ -19,7 +18,6 @@ class Utils:
 
     def load_jsonfile(self, path, attempts=5, fallback=None):
         i = 0
-        start = int(time.time())
         while True:
             i += 1
             try:
@@ -30,25 +28,15 @@ class Utils:
                 if i >= attempts:
                     if fallback:
                         return fallback
-                    get_stopwatch(
-                        start, context=f"utils.load_jsonfile | Loading {path}"
-                    )
                     return err
                 time.sleep(0.1)
 
     def download_json(self, url):
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             data = requests.get(url).json()
             context = f"{url} response recieved"
-            get_stopwatch(start, request=True, context=context)
             return data
         except Exception as e:  # pragma: no cover
-            error = f"{type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return None
 
     def round_to_str(self, value: Any, rounding=8):

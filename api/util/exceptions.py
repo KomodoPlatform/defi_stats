@@ -26,6 +26,11 @@ class RequiredQueryParamMissing(Exception):
     pass
 
 
+class InvalidParamCombination(Exception):
+    "Raised when two or more mutually exclusive params were selected"
+    pass
+
+
 class UuidNotFoundException(Exception):
     "Raised when a UUID is not found in the database"
     pass

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import inspect
 from os.path import basename
+import sys
 import time
 import sqlite3
 from typing import List, Optional, Any
@@ -17,21 +18,19 @@ from util.helper import (
     get_all_coin_pairs,
     valid_coins,
     get_netid,
+    apply_decorator
 )
 from util.files import Files
 from util.utils import Utils
 from util.enums import TradeType
-from util.exceptions import RequiredQueryParamMissing
-from util.logger import logger, get_trace, StopWatch
+from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
+from util.logger import logger, get_trace, StopWatch, timed
 
-get_stopwatch = StopWatch
+# apply_decorator(sys.modules[__name__], timed)
 
 
 class SqliteQuery:
     def __init__(self, db, **kwargs):
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             self.kwargs = kwargs
             self.options = ["testing", "dict_format"]
@@ -43,14 +42,12 @@ class SqliteQuery:
             self.conn = db.conn
             if self.dict_format:
                 self.conn.row_factory = sqlite3.Row
-            self.sql_cursor = self.conn.cursor()
+            self.sql_cursor = db.conn.cursor()
             self.utils = Utils(testing=self.testing)
             self.files = Files(testing=self.testing)
             self.gecko_source = load_gecko_source()
         except Exception as e:
             error = f"{type(e)}: Failed to init SqliteQuery: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return
 
     @property
@@ -65,9 +62,6 @@ class SqliteQuery:
         return [i[0] for i in r.description]
 
     def get_pairs(self, days: int = 7, include_all_kmd=True) -> list:
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         """
         Returns an alphabetically sorted list of pairs
         (as a list of tuples) with at least one successful
@@ -114,14 +108,9 @@ class SqliteQuery:
                 [order_pair_by_market_cap(pair, self.gecko_source) for pair in pairs]
             )
         except Exception as e:
-            error = f"{type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=f"{context}")
             return
-
-        context = f"[{len(pairs)} pairs] [{days} days] [netid {self.netid}] ok"
-        get_stopwatch(start, query=True, context=context)
         return data
+
 
     def get_swaps_for_pair(
         self,
@@ -137,11 +126,7 @@ class SqliteQuery:
         If no timestamp is given, returns all swaps for the pair.
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         # logger.warning(pair)
-        n = 0
         while True:
             try:
                 if end_time == 0:
@@ -236,39 +221,13 @@ class SqliteQuery:
                     ]
                 if limit > 0:
                     swaps_for_pair = swaps_for_pair[:limit]
-
-                if len(swaps_for_pair) > 0:
-                    context = f"{len(swaps_for_pair)} {pair} swaps in {self.db_file}"
-                    get_stopwatch(start, query=True, context=context)
-                else:
-                    context = f"0 {pair} swaps in {self.db_file}"
-                    # get_stopwatch(start, muted=True, context=context)
                 return swaps_for_pair
             except sqlite3.OperationalError as e:
-                if n > 10:
-                    
-                    error = f"{type(e)}: Failed to get_swaps_for_pair with {self.db_file}: {e}"
-                    context = get_trace(stack, error)
-                    get_stopwatch(start, error=True, context=context)
-                    return []
-                n += 1
-                logger.warning(
-                    f"Error in [get_swaps_for_pair] with {self.db_file}: {e}, retrying..."
-                )
-                time.sleep(randrange(20))
+                return []
             except Exception as e:  # pragma: no cover
-                
-                error = (
-                    f"{type(e)}: Failed to get_swaps_for_pair with {self.db_file}: {e}"
-                )
-                context = get_trace(stack, error)
-                get_stopwatch(start, error=True, context=context)
                 return []
 
     def get_swap(self, uuid):
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             sql = "SELECT * FROM stats_swaps WHERE"
             sql += f" uuid='{uuid}';"
@@ -284,14 +243,8 @@ class SqliteQuery:
             for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
                 if data[i] is None:
                     data[i] = "0"
-            context = f"returned data for uuid {uuid}"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
-            
-            error = f" failed: {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return
 
     def get_row_count(self, table):
@@ -301,9 +254,6 @@ class SqliteQuery:
 
 
     def get_uuids(self, success_only=True, fail_only=False) -> List:
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             if fail_only:
                 self.sql_cursor.execute(
@@ -317,20 +267,12 @@ class SqliteQuery:
                 self.sql_cursor.execute("SELECT uuid FROM stats_swaps")
             r = self.sql_cursor.fetchall()
             data = [i[0] for i in r]
-            context = f"{len(data)} uuids for netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
-            error = f" failed: {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return []
 
     def get_pairs_last_trade(self, started_at=None, finished_at=None, min_swaps=5):
         # TODO: Filter out test coins
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
                     taker_coin_platform, maker_coin_platform, \
@@ -381,14 +323,8 @@ class SqliteQuery:
                 elif item["last_swap_time"] > by_pair_dict[ticker]["last_swap_time"]:
                     by_pair_dict.update({ticker: item})
             sorted_dict = sort_dict(by_pair_dict)
-            context = f"{len(sorted_dict)} pairs returned for netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return sorted_dict
         except Exception as e:
-            
-            error = f"{type(e)}: Failed: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return []
 
     def get_last_price_for_pair(self, base: str, quote: str) -> float:
@@ -397,9 +333,6 @@ class SqliteQuery:
         last trade price for that pair. Response scans both
         buy and sell swaps (e.g. KMD/BTC and BTC/KMD)
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             self.conn.row_factory = sqlite3.Row
             self.sql_cursor = self.conn.cursor()
@@ -464,21 +397,12 @@ class SqliteQuery:
                 "price": price,
                 "timestamp": last_swap_time,
             }
-            context = f"{base}/{quote}: {data} (netid {self.netid})"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
-            
-            error = f"failed, returning template  {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return templates.last_price_for_pair()
 
     # This was a duplicate of SqliteQuery.get_atomicdexio
     def swap_counts(self):
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
             timestamp_30d_ago = int((datetime.now() - timedelta(30)).strftime("%s"))
@@ -504,16 +428,12 @@ class SqliteQuery:
                 "swaps_30d": swaps_30d,
                 "swaps_24h": swaps_24h,
             }
-            context = f"{data} for netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
             
             error = (
                 f" failed, returning template {type(e)}: {e}"
             )
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return templates.swap_counts()
 
     def get_swaps_for_ticker(
@@ -529,10 +449,6 @@ class SqliteQuery:
         If no timestamp is given, returns all swaps for the ticker.
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
-        # logger.warning(pair)
         try:
             tickers = []
             if end_time == 0:
@@ -598,14 +514,10 @@ class SqliteQuery:
                 data = [swap for swap in data if swap["trade_type"] == "sell"]
             if limit > 0:
                 data = data[:limit]
-            context = f"swaps info for {len(data)} pairs in netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
             
             error = f"failed, returning template: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return []
 
     def get_volume_for_ticker(
@@ -619,9 +531,6 @@ class SqliteQuery:
         Returns volume traded of ticker between two timestamps.
         If no timestamp is given, returns all swaps for the ticker.
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             logger.info(
                 f"Getting volume for {ticker} between {start_time} and {end_time}"
@@ -672,18 +581,13 @@ class SqliteQuery:
 
                 volume_for_ticker += volume_as_maker + volume_as_taker
 
-            context = f"{volume_for_ticker} for {ticker} on netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return volume_for_ticker
         except Exception as e:
-            
-            error = f"failed, returning template: {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return 0
 
     # Post NetId Migration below
 
+    @timed
     def build_query(self, **kwargs) -> str:
         """
         Avaliable filters:
@@ -697,9 +601,6 @@ class SqliteQuery:
             - success_only: only successful swaps (boolean, default true)
             - failed_only: only failed swaps (boolean, default false)
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         sql = ""
         try:
             if "table" in kwargs:
@@ -709,16 +610,14 @@ class SqliteQuery:
                     "You need to specify a value for 'table'"
                 )
             if "sum" in kwargs and "sum_field" in kwargs == "":
-                msg = "If calculating sum, you need to specify the sum_field"
-                context = f"failed, sql = {msg}"
-                get_stopwatch(start, error=True, context=context)
+                raise InvalidParamCombination(
+                    "If calculating sum, you need to specify the sum_field"
+                )
 
-                return []
             if "success_only" in kwargs and "failed_only" in kwargs:
-                msg = "Cant set `success_only` and `failed_only` to true at same time"
-                context = f"failed, sql = {msg}"
-                get_stopwatch(start, error=True, context=context)
-                return []
+                raise InvalidParamCombination(
+                    "Cant set `success_only` and `failed_only` to true at same time"
+                )
 
             if "cols" in kwargs:
                 cols = kwargs["cols"]
@@ -743,31 +642,19 @@ class SqliteQuery:
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
             context = f"complete for netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return sql
         except Exception as e:
-            error = f"failed, sql = {sql}: {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return sql
 
     def get_timespan_swaps(self, **kwargs) -> list:
         """
         Returns a list of swaps between two timestamps
         """
-        start = int(time.time())
-        stack = inspect.stack()[1]
-        context = get_trace(stack)
         try:
             sql = self.build_query(**kwargs)
             self.sql_cursor.execute(sql)
             data = self.sql_cursor.fetchall()
             context = f"{len(data)} swaps for netid {self.netid}"
-            get_stopwatch(start, query=True, context=context)
             return data
         except Exception as e:
-            
-            error = f"failed: {type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
             return []

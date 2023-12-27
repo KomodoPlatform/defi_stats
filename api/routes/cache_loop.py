@@ -9,10 +9,9 @@ from lib.cache_item import CacheItem
 from util.enums import NetId
 from lib.external import FixerAPI, CoinGeckoAPI
 from const import NODE_TYPE
-from util.logger import get_trace, StopWatch
-from db.source.sqlite_merge import import_source_databases
+from db.sqlitedb_merge import import_source_databases
+from util.logger import logger, get_trace, StopWatch, timed
 
-get_stopwatch = StopWatch
 
 router = APIRouter()
 
@@ -22,96 +21,54 @@ router = APIRouter()
 @router.on_event("startup")
 @repeat_every(seconds=60)
 def coins():  # pragma: no cover
-    start = int(time.time())
-    stack = inspect.stack()[0]
-    context = get_trace(stack)
     try:
         coins_cache = CacheItem("coins")
         coins_cache.save()
         coins_config_cache = CacheItem("coins_config")
         coins_config_cache.save()
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(start, loop=True, context="Coins data update complete!")
 
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
 def gecko_data():  # pragma: no cover
-    start = int(time.time())
-    stack = inspect.stack()[0]
-    context = get_trace(stack)
     try:
         cache = Cache()
         gecko_cache = cache.get_item("gecko_source")
         data = CoinGeckoAPI().get_gecko_source()
         gecko_cache.save(data)
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        loop=True,
-        context="Gecko source data update complete!",
-    )
 
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
 def prices_service():  # pragma: no cover
-    start = int(time.time())
-    stack = inspect.stack()[0]
-    context = get_trace(stack)
     try:
         cache = Cache()
         prices_tickers_v1_cache = cache.get_item("prices_tickers_v1")
         prices_tickers_v1_cache.save()
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
     try:
         cache = Cache()
         prices_tickers_v2_cache = cache.get_item("prices_tickers_v2")
         prices_tickers_v2_cache.save()
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        loop=True,
-        context="Prices service data update complete!",
-    )
 
 
 @router.on_event("startup")
 @repeat_every(seconds=600)
 def fixer_rates():  # pragma: no cover
-    start = int(time.time())
-    stack = inspect.stack()[0]
     try:
         cache = Cache()
         fixer = FixerAPI()
         fixer_rates_cache = cache.get_item("fixer_rates")
         fixer_rates_cache.save(fixer.latest())
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        loop=True,
-        context="Fixer source data update complete!",
-    )
 
 
 # Derived Cache data for Gecko endpoints
@@ -120,46 +77,25 @@ def fixer_rates():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=10)
 def gecko_pairs():
-    start = int(time.time())
-    stack = inspect.stack()[0]
     try:
         cache = Cache(netid="ALL")
         gecko_pairs_cache = cache.get_item("gecko_pairs")
         data = cache.calc.traded_pairs(days=7)
         resp = gecko_pairs_cache.save(data)
-
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        loop=True,
-        context=f"Updated with {resp[1]} pairs on netid 'ALL'",
-    )
 
 
 @router.on_event("startup")
 @repeat_every(seconds=10)
 def gecko_tickers():
-    start = int(time.time())
-    stack = inspect.stack()[0]
     try:
         cache = Cache(netid="ALL")
         gecko_tickers_cache = CacheItem(name="gecko_tickers", netid="ALL")
         data = cache.calc.traded_tickers(pairs_days=7)
         resp = gecko_tickers_cache.save(data)
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        loop=True,
-        context=f"Updated with {resp['pairs_count']} pairs on netid 'ALL'",
-    )
 
 
 # Stats-API Cache
@@ -217,8 +153,6 @@ def atomicdex_fortnight():  # pragma: no cover
 @repeat_every(seconds=10)
 def markets_last_trade():
     # This one is fast, so can do all netids in seq in same func
-    start = int(time.time())
-    stack = inspect.stack()[0]
     for netid in NetId:
         try:
             cache = Cache(netid=netid.value)
@@ -226,55 +160,21 @@ def markets_last_trade():
             data = cache.calc.pairs_last_trade()
             logger.info(data[1])
             resp = cache_item.save(data)
-            if resp is None:
-                get_stopwatch(
-                    start,
-                    warning=True,
-                    context=f"empty resp for {netid.value}",
-                )
-            else:
-                get_stopwatch(
-                    start,
-                    loop=True,
-                    context=f"updated for {len(data)} pairs netid {netid.value}",
-                )
-
         except Exception as e:
-            error = f"{type(e)}: {e} ({netid})]"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
-        get_stopwatch(start, error=True, context=f"netid {netid}")
-    get_stopwatch(start, error=True, context="All netids")
-
+            pass
 
 @router.on_event("startup")
 @repeat_every(seconds=10)
 def markets_pairs(netid):
-    start = int(time.time())
-    stack = inspect.stack()[0]
     try:
         cache = Cache(netid=netid)
         cache_item = CacheItem(name="markets_pairs", netid=netid)
         data = cache.calc.traded_pairs(days=120)
         if len(data) > 0:
             resp = cache_item.save(data)
-            get_stopwatch(
-                start,
-                loop=True,
-                context=f"{resp[1]} pairs ({netid})",
-            )
             return
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
-    get_stopwatch(
-        start,
-        warning=True,
-        context=f"No data returned for ({netid})",
-    )
-
 
 @router.on_event("startup")
 @repeat_every(seconds=10)
@@ -293,26 +193,14 @@ def markets_pairs_8762():
 def markets_pairs_ALL():
     markets_pairs("ALL")
 
-
+@timed
 def markets_tickers(netid):
-    start = int(time.time())
-    stack = inspect.stack()[0]
     try:
         cache = Cache(netid=netid)
         cache_item = CacheItem(name="markets_tickers", netid=netid)
         data = cache.calc.traded_tickers(pairs_days=120)
-        if data is not None:
-            context = (f"{len(data)} results [netid {netid}]")
-        else:
-            f"No results [netid {netid}]"
-            get_stopwatch(start, info=True, context=context)
         resp = cache_item.save(data)
-        context = f"{data['pairs_count']} results [netid {netid}]"
-        get_stopwatch(start, loop=True, context=context)
     except Exception as e:
-        error = f"{type(e)}: {e} [netid {netid}]"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
         return
 
 
@@ -340,25 +228,8 @@ def markets_tickers_all():
 @router.on_event("startup")
 @repeat_every(seconds=60)
 def import_dbs():
-    start = int(time.time())
-    stack = inspect.stack()[0]
-    context = get_trace(stack)
     if NODE_TYPE != "serve":
         try:
             import_source_databases()
         except Exception as e:
-            error = f"{type(e)}: {e}"
-            context = get_trace(stack, error)
-            get_stopwatch(start, error=True, context=context)
-            return
-        get_stopwatch(
-            start,
-            loop=True,
-            context="Source database imports complete!",
-        )
-        return
-    get_stopwatch(
-        start,
-        loop=True,
-        context="Node type is serve, not importing databases",
-    )
+            pass

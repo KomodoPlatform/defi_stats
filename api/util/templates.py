@@ -75,6 +75,7 @@ class Templates:
             "all": ["netid"],
             "default_host": ["mm2_host"],
             "zero": ["trigger"],
+            "debug": ["loglevel"],
         }
         args = []
         for v in val_keys.values():
@@ -100,6 +101,8 @@ class Templates:
                     return self.mm2_host
                 if val.lower() == "now":
                     return int(time.time())
+                if val.lower() == "debug":
+                    return "debug"
         raise NoDefaultForKeyError(f"No default value for {key}!")
 
     def set_params(self, object: object(), kwargs: dict(), options: list()) -> None:
@@ -110,3 +113,23 @@ class Templates:
                     setattr(object, arg, self.default_val(arg))
         # Then process kwargs
         [setattr(object, k, v) for k, v in kwargs.items()]
+
+def default_error(e, msg, loglevel='error'):
+    r = {
+        "result": "error",
+        "message": f"{type(e)}: {e}",
+        "loglevel": loglevel
+    }
+    if msg is not None:
+        r.update({"message": msg})
+    return r
+
+def default_result(msg, loglevel='debug'):
+    r = {
+        "result": "success",
+        "message": msg,
+        "loglevel": loglevel
+    }
+    if msg is not None:
+        r.update({"message": msg})
+    return r

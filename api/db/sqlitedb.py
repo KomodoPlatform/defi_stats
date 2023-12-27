@@ -20,19 +20,22 @@ from db.sqlitedb_update import SqliteUpdate
 from util.helper import get_sqlite_db_paths, get_netid, is_source_db, is_7777
 from util.logger import logger, get_trace, StopWatch
 from util.enums import NetId
-
-get_stopwatch = StopWatch
-
+ 
 
 class SqliteDB:
     def __init__(self, db_path, **kwargs):
-        self.kwargs = kwargs
-        self.db_path = db_path
-        self.db_file = basename(self.db_path)
-        self.netid = get_netid(self.db_file)
-        self.start = int(time.time())
-        self.options = ["testing", "wal", "dict_format"]
-        templates.set_params(self, self.kwargs, self.options)
+        try:
+            self.kwargs = kwargs
+            self.db_path = db_path
+            self.db_file = basename(self.db_path)
+            self.netid = get_netid(self.db_file)
+            self.start = int(time.time())
+            self.options = ["testing", "wal", "dict_format"]
+            templates.set_params(self, self.kwargs, self.options)
+        except Exception as e:
+            logger.error(f"Failed to init {self.db_path}")
+
+    def __enter__(self):
         self.conn = self.connect()
         if self.dict_format:
             self.conn.row_factory = sqlite3.Row
@@ -41,15 +44,21 @@ class SqliteDB:
             sql = "PRAGMA journal_mode=WAL;"
             self.sql_cursor.execute(sql)
             self.sql_cursor.fetchall()
+        logger.info(f"connected to {self.db_path}")
+        return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+    
     def close(self):
         self.conn.close()
         runtime = self.start - int(time.time())
+        logger.calc("exit db context")
         if runtime > 10:
             msg = f"Connection to {self.db_file} close after {runtime} sec"
             logger.debug(msg)
-
-    def connect(self, wal=True):
+    
+    def connect(self):
         return sqlite3.connect(self.db_path)
 
 
@@ -78,25 +87,17 @@ def progress(status, remaining, total, show=False):
 
 
 def backup_db(src_db_path: str, dest_db_path:str) -> None:
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     try:
         src = get_sqlite_db(db_path=src_db_path)
         dest = get_sqlite_db(db_path=dest_db_path)
         src.conn.backup(dest.conn, pages=1, progress=progress)
-        get_stopwatch(start, updated=True, context=f'Backed up {src_db_path} to {dest_db_path}')
         dest.close()
         src.close()
     except Exception as e:
-        get_stopwatch(start, error=True, context=f'Backed up failed {e} {src.db_file} to {dest.db_file} | {context}')
-
+        pass
 
 def backup_local_dbs():
     # Backup the local active mm2 instance DBs
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     try:
         backup_db(
             src_db_path=LOCAL_MM2_DB_PATH_7777, dest_db_path=LOCAL_MM2_DB_BACKUP_7777
@@ -112,15 +113,10 @@ def backup_local_dbs():
         update.denullify_stats_swaps()
         return {"result": "backed up local databases"}
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
+        pass
 
 
 def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     try:
         # Remove from 8762 if in 7777
         update_a = SqliteUpdate(db=db1)
@@ -131,12 +127,9 @@ def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):
         uuids_b = query_b.get_uuids(fail_only=True)
         mismatch_uuids = list(set(uuids_a).intersection(set(uuids_b)))
         context = f"{len(mismatch_uuids)} Mismatched UUIDS returned"
-        get_stopwatch(start, calc=True, context=context)
         return list(set(mismatch_uuids))
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=f"{context}")
+        pass
 
 
 def view_locks(cursor):
@@ -146,12 +139,13 @@ def view_locks(cursor):
 
 
 def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     try:
         db_list = [db1, db2]
-        if len(uuids) > 0:
+        if len(uuids) == 0:
+            print("UUid list is empty, no Swaps to repair!")
+            return
+        else:
+            print(f"{len(uuids)} UUids to repair!")
             uuids.sort()
             repaired = 0
             for uuid in list(uuids):
@@ -197,14 +191,9 @@ def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:
                             update = SqliteUpdate(db=db)
                             update.update_stats_swap_row(uuid, fixed)
                 except Exception as e:
-                    error = f"{type(e)}: {e}"
-                    get_stopwatch(start, context=error, error=True)
+                    pass
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        get_stopwatch(start, context=error, error=True)
         return
-    context = f"repaired {len(uuids)} mismatched swaps"
-    get_stopwatch(start, context=context, query=True)
 
 
 def init_dbs():

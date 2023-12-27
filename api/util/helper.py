@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import json
 import time
-import inspect
+import sys
+import types
 from decimal import Decimal
 from util.enums import NetId
 from const import MM2_RPC_PORTS, MM2_DB_PATHS, MM2_NETID
-from util.logger import logger, get_trace, StopWatch
-
-get_stopwatch = StopWatch
+from util.logger import logger, timed, StopWatch
+from util.templates import default_error
 
 
 def format_10f(number: float) -> str:
@@ -96,7 +96,6 @@ def order_pair_by_market_cap(pair, gecko_source):
 def get_mm2_rpc_port(netid=MM2_NETID):
     return MM2_RPC_PORTS[str(netid)]
 
-
 def get_sqlite_db_paths(netid=MM2_NETID):
     return MM2_DB_PATHS[str(netid)]
 
@@ -115,8 +114,8 @@ def is_7777(db_file: str) -> bool:
         return True
     return False
 
-
 def get_netid(db_file):
+    loglevel = "calc"
     for netid in NetId:
         if netid.value in db_file:
             return netid.value
@@ -126,7 +125,6 @@ def get_netid(db_file):
         return "8762"
     else:
         return "ALL"
-
 
 def is_source_db(db_file: str) -> bool:
     if db_file.endswith("MM2.db"):
@@ -148,23 +146,33 @@ def is_pair_priced(pair: tuple, priced_coins: set()) -> bool:
         logger.error(err)
         return False
 
-
+@timed
 def save_json(fn, data):
-    start = int(time.time())
-    stack = inspect.stack()[1]
-    context = get_trace(stack)
     try:
         if len(data) > 0:
             with open(fn, "w+") as f:
                 json.dump(data, f, indent=4)
-                get_stopwatch(start, error=True, context=context)
-                return data, len(data)
+                return {
+                    "result": "success",
+                    "message": f"{fn} saved",
+                    "loglevel": "save"
+                }
+        else:                
+            return {
+                "result": "error",
+                "message": f"Not saving {fn}, data is empty",
+                "loglevel": "warning"
+            }
+
     except Exception as e:
-        error = f"{type(e)}: {e}"
-        context = get_trace(stack, error)
-        get_stopwatch(start, error=True, context=context)
-        return data, -1
-    error = f"Not saving {fn}, data is empty"
-    context = get_trace(stack, error)
-    get_stopwatch(start, error=True, context=context)
-    return data, -1
+        return default_error
+
+
+def apply_decorator(module, decorator):
+    for name, obj in vars(module).items():
+        if isinstance(obj, types.FunctionType):
+            setattr(module, name, decorator(obj))
+        elif isinstance(obj, type):
+            for attr_name, attr_obj in vars(obj).items():
+                if isinstance(attr_obj, types.FunctionType):
+                    setattr(obj, attr_name, decorator(attr_obj))
