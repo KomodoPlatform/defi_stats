@@ -4,14 +4,9 @@ from util.exceptions import NoDefaultForKeyError
 
 def arg_defaults():
     val_keys = {
-        "false": ["testing"],
-        "true": [
-            "wal",
-            "exclude_unpriced",
-            "dict_format",
-            "order_by_mcap"
-        ],
-        "none": ["endpoint", "reverse", "source_url", "db_path"],
+        "false": ["reverse", "testing"],
+        "true": ["wal", "exclude_unpriced", "dict_format", "order_by_mcap"],
+        "none": ["endpoint", "source_url", "db_path"],
         "now": ["end"],
         "all": ["netid"],
         "default_host": ["mm2_host"],
@@ -61,14 +56,14 @@ def set_params(object: object(), kwargs: dict(), options: list()) -> None:
                     setattr(object, arg, default_val(arg))
         # Then process kwargs
         [setattr(object, k, v) for k, v in kwargs.items()]
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"
         return default_error(e.msg)
     msg = "Setting default params complete!"
     return default_result(msg=msg, loglevel="debug", ignore_until=10)
 
 
-def default_error(e, msg=None, loglevel="error", ignore_until=0):
+def default_error(e, msg=None, loglevel="error", ignore_until=0):  # pragma: no cover
     if msg is None:
         msg = e
     else:
