@@ -13,10 +13,8 @@ class NetId(str, Enum):
     ALL = "ALL"
 
 
-
 class TablesEnum(str, Enum):
     stats_swaps = "stats_swaps"
-
 
 
 class ColumnsEnum(str, Enum):

@@ -18,6 +18,7 @@ class NoDefaultForKeyError(Exception):
     Raised when attempting to get the default value of a key
     which has no default value.
     """
+
     pass
 
 
@@ -41,6 +42,7 @@ class CacheFilenameNotFound(Exception):
     Raised when a filename for a cache item is not found
     in the 'File' class"
     """
+
     pass
 
 
@@ -52,4 +54,3 @@ class CacheItemNotFound(Exception):
 class DataStructureError(Exception):
     "Raised when a returned data is an unexpected structure"
     pass
-

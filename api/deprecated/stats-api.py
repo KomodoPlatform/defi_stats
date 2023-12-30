@@ -1,30 +1,8 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
-from decimal import Decimal
-from datetime import datetime, timedelta
 from util.logger import logger
-from lib.models import (
-    UsdVolume,
-    CurrentLiquidity,
-    Swaps24,
-    PairTrades,
-    AdexIo,
-)
 
-from util.helper import get_mm2_rpc_port, sort_dict_list
 from lib.cache import Cache
-from lib.pair import Pair
-from util.utils import Utils
-from lib.orderbook import Orderbook
-from util.enums import TradeType, NetId
-from util.transform import (
-    gecko_ticker_to_market_ticker,
-    gecko_ticker_to_market_ticker_summary,
-)
-from validate import validate_ticker_id
-from const import MM2_DB_PATHS, MM2_RPC_PORTS
-from db.sqlitedb import get_sqlite_db
 
 router = APIRouter()
 cache = Cache()

@@ -1,7 +1,11 @@
 from decimal import Decimal
 from util.logger import logger
-from util.helper import get_valid_coins
-from util.exceptions import CoinNotFoundException, CoinWalletOnlyException
+from lib.cache_load import load_coins_config
+import lib
+
+
+def reverse_ticker(ticker_id):
+    return "_".join(ticker_id.split("_")[::-1])
 
 
 def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
@@ -22,13 +26,6 @@ def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail
     raise ValueError(msg)
 
 
-def validate_coin(coin, coins_config):
-    if coin not in get_valid_coins(coins_config):
-        raise CoinNotFoundException(f"{coin} is not in coins_config.json!")
-    if coin not in get_valid_coins(coins_config):
-        raise CoinWalletOnlyException(f"{coin} is wallet_only!")
-
-
 def validate_positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:
@@ -38,3 +35,26 @@ def validate_positive_numeric(value, name, is_int=False):
     except Exception as e:
         logger.warning(f"{type(e)} Error validating {name}: {e}")
         raise ValueError(f"{name} must be numeric!")
+    return True
+
+
+def validate_orderbook_pair(base, quote):
+    try:
+        logger.muted(f"Validating {base}/{quote}")
+        coins_config = load_coins_config()
+        logger.info([i.ticker for i in lib.COINS.wallet_only])
+        err = None
+        if base not in coins_config.keys():
+            err = {"error": f"CoinConfigNotFound for {base}"}
+        if quote not in coins_config.keys():
+            err = {"error": f"CoinConfigNotFound for {quote}"}
+        if base in [i.ticker for i in lib.COINS.wallet_only]:
+            err = {"error": f"CoinWalletOnlyException for {base}"}
+        if quote in [i.ticker for i in lib.COINS.wallet_only]:
+            err = {"error": f"CoinWalletOnlyException for {quote}"}
+        if err is not None:
+            return False
+        return True
+    except Exception as e:  # pragma: no cover
+        logger.warning(e)
+        return False

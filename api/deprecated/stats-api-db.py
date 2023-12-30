@@ -1,7 +1,6 @@
 
 class SqliteDB:
     def __init__(self, db_path, dict_format=False, testing=False):
-        self.utils = Utils()
         self.files = Files(testing)
         self.testing = testing
         self.conn = sqlite3.connect(db_path)

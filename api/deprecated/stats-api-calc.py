@@ -13,7 +13,7 @@ class StatsAPI:
         try:
             DB = self.utils.get_db(self.db_path, self.DB)
             pairs = DB.get_pairs(days)
-            logger.debug(
+            logger.muted(
                 f"Calculating atomicdexio stats for {len(pairs)} pairs ({days} days)"
             )
             pair_summaries = [
@@ -24,7 +24,7 @@ class StatsAPI:
                 data = query.swap_counts()
             else:
                 swaps = DB.get_timespan_swaps(days)
-                logger.debug(f"{len(swaps)} swaps ({days} days)")
+                logger.muted(f"{len(swaps)} swaps ({days} days)")
                 data = {
                     "days": days,
                     "swaps_count": len(swaps),

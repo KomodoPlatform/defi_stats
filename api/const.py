@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
-from util.logger import logger
 from dotenv import load_dotenv
-from util.templates import Templates
 
 load_dotenv()
 
@@ -27,7 +25,7 @@ API_PASS = os.getenv("API_PASS")  # For HTTPBasicAuth
 # API Keys for 3rd Party Services
 FIXER_API_KEY = os.getenv("FIXER_API_KEY") or ""
 if not FIXER_API_KEY:
-    logger.warning(
+    print(
         "FIXER_API_KEY is not set in .env file. Without this, '/api/v3/rates/fixer_io' will fail."
     )
 
@@ -35,14 +33,14 @@ if not FIXER_API_KEY:
 # in this repos docker container [if NODE_TYPE is not 'process']
 LOCAL_MM2_DB_PATH_7777 = os.getenv("LOCAL_MM2_DB_PATH_7777")
 if LOCAL_MM2_DB_PATH_7777 is None and NODE_TYPE != "process":
-    logger.error("You need to set 'LOCAL_MM2_DB_PATH_7777' in api/.env")
+    print("You need to set 'LOCAL_MM2_DB_PATH_7777' in api/.env")
     sys.exit()
 
 # Path of active MM2.db database for NetId 8762 running
 # in this repos docker container [if NODE_TYPE is not 'process']
 LOCAL_MM2_DB_PATH_8762 = os.getenv("LOCAL_MM2_DB_PATH_8762")
 if LOCAL_MM2_DB_PATH_8762 is None and NODE_TYPE != "process":
-    logger.error("You need to set 'LOCAL_MM2_DB_PATH_8762' in api/.env")
+    print("You need to set 'LOCAL_MM2_DB_PATH_8762' in api/.env")
     sys.exit()
 
 # Paths for backups of mm2 instances running in local docker container
@@ -77,5 +75,3 @@ MM2_NETID = 8762  # The primary active NetId currently supported by KomodoPlatfo
 
 # Some coins may have swaps data, but are not currently in the coins repo.
 CoinConfigNotFoundCoins = ["XEP", "MORTY", "RICK", "SMTF-v2"]
-
-templates = Templates()

@@ -5,11 +5,9 @@ import time
 from util.logger import logger
 from lib.models import ErrorMessage, ApiIds
 from util.files import Files
-from util.utils import Utils
 from lib.cache_item import CacheItem
 
 router = APIRouter()
-utils = Utils()
 files = Files()
 
 

@@ -4,9 +4,11 @@ import time
 import logging
 import functools
 from util.templates import Templates
+from util.defaults import set_params
 
 templates = Templates()
 PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
+
 
 class CustomFormatter(logging.Formatter):
     white = "\x1b[m"
@@ -100,10 +102,10 @@ class CustomFormatter(logging.Formatter):
         elif record.levelname == "DEBUG":
             log_fmt = (
                 self.debug
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
-        elif record.levelname == "IMPORTED":
+        elif record.levelname == "MERGE":
             log_fmt = (
                 self.mintgreen
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
@@ -123,8 +125,7 @@ class CustomFormatter(logging.Formatter):
             )
         elif record.levelname == "UPDATED":
             log_fmt = (
-                self.lightgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                self.lightgreen + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
             )
         elif record.levelname == "SAVE":
             log_fmt = (
@@ -172,8 +173,8 @@ handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
 # Shows DB imports
-addLoggingLevel("IMPORTED", logging.DEBUG + 9)
-logger.setLevel("IMPORTED")
+addLoggingLevel("MERGE", logging.DEBUG + 9)
+logger.setLevel("MERGE")
 
 # Shows cache updates
 addLoggingLevel("UPDATED", logging.DEBUG + 8)
@@ -199,69 +200,67 @@ logger.setLevel("CALC")
 addLoggingLevel("SAVE", logging.DEBUG + 3)
 logger.setLevel("SAVE")
 
-# Shows cache loop updates
-addLoggingLevel("REQUEST", logging.DEBUG + 2)
-logger.setLevel("REQUEST")
 
 # Shows generally ignorable errors, e.g. CoinConfigNotFound
 addLoggingLevel("MUTED", logging.DEBUG - 1)
 logger.setLevel("MUTED")
 
+# Shows cache loop updates
+addLoggingLevel("REQUEST", logging.DEBUG + 2)
+logger.setLevel("REQUEST")
+
+
 def send_log(loglevel, msg):
     match loglevel:
         case "info":
-            logger.info(f"    {msg}")
+            logger.info(f"   {msg}")
         case "muted":
             pass
         case "save":
-            logger.save(f"    {msg}")
-        case "imported":
-            logger.imported(f"{msg}")
+            logger.save(f"   {msg}")
+        case "merge":
+            logger.merge(f"  {msg}")
+        case "merge":
+            logger.merge(f"  {msg}")
         case "updated":
-            logger.updated(f" {msg}")
+            logger.updated(f"{msg}")
         case "calc":
-            logger.calc(f"    {msg}")
+            logger.calc(f"   {msg}")
         case "warning":
-            logger.warning(f" {msg}")
+            logger.warning(f"{msg}")
         case "error":
-            logger.error(f"   {msg}")
+            logger.error(f"  {msg}")
         case "debug":
-            logger.debug(f"   {msg}")
+            logger.debug(f"  {msg}")
         case "error":
-            logger.error(f"   {msg}")
+            logger.error(f"  {msg}")
         case "loop":
-            logger.loop(f"    {msg}")
+            logger.loop(f"   {msg}")
         case "query":
-            logger.query(f"   {msg}")
+            logger.query(f"  {msg}")
         case "request":
-            logger.request(f" {msg}")
-
-        # If an exact match is not confirmed, this last case will be used if provided
+            logger.request(f"{msg}")
         case _:
             logger.debug(f"   {msg}")
+
 
 class StopWatch:
     def __init__(self, start_time, **kwargs) -> None:
         self.start_time = start_time
         self.get_stopwatch(**kwargs)
-        
 
     def get_stopwatch(self, **kwargs):
-        options = [
-            "testing",
-            "trigger",
-            "msg",
-            "loglevel"
-        ]
-        templates.set_params(self, kwargs, options)
+        options = ["testing", "trigger", "msg", "loglevel"]
+        set_params(self, kwargs, options)
         duration = int(time.time()) - int(self.start_time)
         if self.trigger == 0:
             self.trigger = 10
         self.trigger = 0
 
-        # if duration < 5 and not (self.error or self.debug or self.warning or self.loop):
+        # if duration < 5
+        #       and not (self.error
+        #       or self.debug or self.warning or self.loop):
         #    self.muted = True
-
         if duration >= self.trigger:
             if not isinstance(self.msg, str):
                 self.msg = str(self.msg)
@@ -270,21 +269,23 @@ class StopWatch:
             func = self.trace["function"]
             if PROJECT_ROOT_PATH in self.msg:
                 self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-            self.msg = f"|{duration:>4} sec | {func:<24} | {str(self.msg):<120} | {basename(filename)}:{lineno}"
+            self.msg = f"|{duration:>4} sec | {func:<24} | {str(self.msg):<120} "
+            self.msg += f"| {basename(filename)}:{lineno}"
 
             send_log(loglevel=self.loglevel, msg=self.msg)
+
 
 def get_trace(func, error=None):
     msg = {
         "function": func.__name__,
-        "file": func.__code__.co_firstlineno,
         "file": func.__code__.co_filename,
         "lineno": func.__code__.co_firstlineno,
-        "vars": func.__code__.co_varnames
+        "vars": func.__code__.co_varnames,
     }
     if error is not None:
         msg.update({"error": error})
     return msg
+
 
 # Returns console colors for customising
 def show_pallete():
@@ -294,24 +295,13 @@ def show_pallete():
     logger.error("error")
     logger.critical("critical")
     logger.updated("updated")
-    logger.imported("imported")
+    logger.merge("merge")
     logger.save("save")
     logger.calc("calc")
     logger.loop("loop")
     logger.muted("muted")
     logger.query("query")
     logger.request("request")
-
-# Contecxt Manager for 'timed' decorator
-class Timedmsg:
-    def __init__(self):
-        logger.info("Init msg")
-
-    def __enter__(self):
-        logger.info("Entering msg")
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):        
-        logger.info("Exiting msg")
 
 
 # A decorator for returning runtime of functions:def timed(func):
@@ -333,23 +323,22 @@ def timed(func):
             msg = f"{type(e)}: {e}"
             StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
         else:
+            send = False
+            msg = ""
+            ignore_until = 0
+            loglevel = "info"
             if isinstance(result, dict):
-                send = False
-                msg=""
-                ignore_until = 0
-                loglevel = "info"
-                
-                
-                if 'loglevel' in result:
+                if "loglevel" in result:
                     loglevel = result["loglevel"]
                     send = True
-                if 'message' in result:
+                if "message" in result:
                     msg = result["message"]
                     send = True
-                if 'ignore_until' in result:
+                if "ignore_until" in result:
                     ignore_until = result["ignore_until"]
                     send = True
                 if duration >= ignore_until and send:
                     StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
             return result
+
     return wrapper

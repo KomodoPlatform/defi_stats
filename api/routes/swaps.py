@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
 from util.logger import logger
-from lib.models import ErrorMessage, GeckoSwapItem, SwapUuids
+from lib.models import ErrorMessage, SwapUuids, SwapItem
 from util.exceptions import UuidNotFoundException
 from db.sqlitedb import get_sqlite_db
 from lib.pair import Pair
@@ -16,15 +16,12 @@ router = APIRouter()
     "/swap/{uuid}",
     description="Get swap info from a uuid.",
     responses={406: {"model": ErrorMessage}},
-    response_model=GeckoSwapItem,
+    response_model=SwapItem,
     status_code=200,
 )
-def get_swap(
-    uuid: str,
-    netid: NetId = NetId.ALL
-):
+def get_swap(uuid: str, netid: NetId = NetId.ALL):
     try:
-        with get_sqlite_db(netid=netid.value)as db:
+        with get_sqlite_db(netid=netid.value) as db:
             resp = db.get_swap(uuid)
             if "error" in resp:
                 raise UuidNotFoundException(resp["error"])
@@ -46,13 +43,11 @@ def swap_uuids(
     pair: str,
     start_time: int = int(time.time() - 86400),
     end_time: int = int(time.time()),
-    netid: NetId = NetId.ALL
+    netid: NetId = NetId.ALL,
 ):
     try:
-        pair = Pair(
-            pair=pair,
-            netid=netid.value
-        )
+        logger.info("Getting Swap UUIDS")
+        pair = Pair(pair=pair, netid=netid.value)
         uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
         return resp

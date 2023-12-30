@@ -1,11 +1,11 @@
-from const import templates
+from util.defaults import set_params
 
 
 class Urls:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
         self.options = ["testing", "netid"]
-        templates.set_params(self, self.kwargs, self.options)
+        set_params(self, self.kwargs, self.options)
         coins_repo = "https://raw.githubusercontent.com/KomodoPlatform/coins"
         self.coins = f"{coins_repo}/master/coins"
         self.coins_config = f"{coins_repo}/master/utils/coins_config.json"
