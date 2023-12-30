@@ -9,7 +9,6 @@ sys.path.append(API_ROOT_PATH)
 from util.cron import Time
 from lib.external import CoinGeckoAPI
 from lib.dex_api import DexAPI
-from util.utils import Utils
 from util.files import Files
 from util.urls import Urls
 from lib.calc import Calc
@@ -17,42 +16,41 @@ from util.logger import logger
 from lib.cache import Cache
 from lib.cache_item import CacheItem
 from lib.pair import Pair
-from db.sqlitedb import SqliteDB, get_sqlite_db
-from db.sqlitedb_query import SqliteQuery
-from db.sqlitedb_update import SqliteUpdate
+from db.sqlitedb import SqliteDB, SqliteUpdate, SqliteQuery, get_sqlite_db
 from lib.orderbook import Orderbook
 import util.helper as helper
-from const import templates
 
 logger.info("Loading test fixtures...")
+
+files = Files(testing=True)
 
 
 @pytest.fixture
 def setup_fake_db():
     """Fixture to set up the in-memory database with test data"""
-    DB = SqliteDB(db_path=":memory:", testing=True, dict_format=False)
-    DB.sql_cursor.execute(
+    with SqliteDB(db_path=":memory:", testing=True, dict_format=False) as db:
+        db.sql_cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stats_swaps (
+                id INTEGER NOT NULL PRIMARY KEY,
+                maker_coin VARCHAR(255) NOT NULL,
+                taker_coin VARCHAR(255) NOT NULL,
+                uuid VARCHAR(255) NOT NULL UNIQUE,
+                started_at INTEGER NOT NULL,
+                finished_at INTEGER NOT NULL,
+                maker_amount DECIMAL NOT NULL,
+                taker_amount DECIMAL NOT NULL,
+                is_success INTEGER NOT NULL,
+                maker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
+                taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
+                maker_coin_usd_price DECIMAL,
+                taker_coin_usd_price DECIMAL
+            );
         """
-        CREATE TABLE IF NOT EXISTS stats_swaps (
-            id INTEGER NOT NULL PRIMARY KEY,
-            maker_coin VARCHAR(255) NOT NULL,
-            taker_coin VARCHAR(255) NOT NULL,
-            uuid VARCHAR(255) NOT NULL UNIQUE,
-            started_at INTEGER NOT NULL,
-            finished_at INTEGER NOT NULL,
-            maker_amount DECIMAL NOT NULL,
-            taker_amount DECIMAL NOT NULL,
-            is_success INTEGER NOT NULL,
-            maker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
-            maker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
-            taker_coin_ticker VARCHAR(255) NOT NULL DEFAULT '',
-            taker_coin_platform VARCHAR(255) NOT NULL DEFAULT '',
-            maker_coin_usd_price DECIMAL,
-            taker_coin_usd_price DECIMAL
-        );
-    """
-    )
-    yield DB
+        )
+        yield db
 
 
 @pytest.fixture
@@ -112,12 +110,6 @@ def setup_gecko_coin_ids(setup_gecko):
 
 
 @pytest.fixture
-def setup_gecko_info(setup_gecko):
-    gecko = setup_gecko
-    yield gecko.get_gecko_info_dict()
-
-
-@pytest.fixture
 def setup_cache():
     yield Cache(testing=True)
 
@@ -128,39 +120,19 @@ def setup_helper():
 
 
 @pytest.fixture
-def setup_templates():
-    yield templates
-
-
-@pytest.fixture
-def setup_rick_morty_tuple_pair():
-    yield Pair(("RICK", "MORTY"), testing=True)
-
-
-@pytest.fixture
-def setup_rick_morty_str_pair():
-    yield Pair("RICK_MORTY", testing=True)
-
-
-@pytest.fixture
-def setup_dgb_kmd_str_pair(setup_swaps_db_data):
-    yield Pair("DGB_KMD", testing=True)
-
-
-@pytest.fixture
 def setup_dgb_kmd_orderbook(setup_dgb_kmd_str_pair):
     pair = setup_dgb_kmd_str_pair
     yield Orderbook(pair=pair, testing=True)
 
 
 @pytest.fixture
-def setup_kmd_dgb_tuple_pair(setup_swaps_db_data):
-    yield Pair(("KMD", "DGB"), testing=True)
+def setup_kmd_dgb_pair(setup_swaps_db_data):
+    yield Pair("KMD", "DGB", testing=True)
 
 
 @pytest.fixture
-def setup_kmd_dgb_orderbook(setup_kmd_dgb_tuple_pair):
-    pair = setup_kmd_dgb_tuple_pair
+def setup_kmd_dgb_orderbook(setup_kmd_dgb_pair):
+    pair = setup_kmd_dgb_pair
     yield Orderbook(pair=pair, testing=True)
 
 
@@ -207,31 +179,23 @@ def setup_not_existing_pair():
 
 
 @pytest.fixture
-def setup_utils():
-    yield Utils(testing=True)
-
-
-@pytest.fixture
-def setup_kmd_btc_segwit_orderbook_data(setup_utils):
-    utils = setup_utils
+def setup_kmd_btc_segwit_orderbook_data():
     file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC-segwit.json"
-    orderbook = utils.load_jsonfile(file)
+    orderbook = files.load_jsonfile(file)
     yield orderbook
 
 
 @pytest.fixture
-def setup_kmd_btc_bep20_orderbook_data(setup_utils):
-    utils = setup_utils
+def setup_kmd_btc_bep20_orderbook_data():
     file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC-BEP20.json"
-    orderbook = utils.load_jsonfile(file)
+    orderbook = files.load_jsonfile(file)
     yield orderbook
 
 
 @pytest.fixture
-def setup_kmd_btc_orderbook_data(setup_utils):
-    utils = setup_utils
+def setup_kmd_btc_orderbook_data():
     file = f"{API_ROOT_PATH}/tests/fixtures/orderbook/KMD_BTC.json"
-    orderbook = utils.load_jsonfile(file)
+    orderbook = files.load_jsonfile(file)
     yield orderbook
 
 
@@ -623,21 +587,13 @@ def dirty_dict():
 def no_trades_info():
     yield []
 
+
 @pytest.fixture
 def coins_config():
     yield {
-        "NOSWAP": {
-            "wallet_only": True,
-            "is_testnet": False
-        },
-        "TEST": {
-            "wallet_only": False,
-            "is_testnet": True
-        },
-        "OK": {
-            "wallet_only": False,
-            "is_testnet": False
-        }
+        "NOSWAP": {"wallet_only": True, "is_testnet": False},
+        "TEST": {"wallet_only": False, "is_testnet": True},
+        "OK": {"wallet_only": False, "is_testnet": False},
     }
 
 

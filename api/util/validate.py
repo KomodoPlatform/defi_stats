@@ -42,7 +42,6 @@ def validate_orderbook_pair(base, quote):
     try:
         logger.muted(f"Validating {base}/{quote}")
         coins_config = load_coins_config()
-        logger.info([i.ticker for i in lib.COINS.wallet_only])
         err = None
         if base not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {base}"}

@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
 
-class Templates:
-    def __init__(self):
-        pass
+def last_price_for_pair():
+    return {"timestamp": 0, "price": 0}
 
-    def last_price_for_pair(self):
-        return {"timestamp": 0, "price": 0}
 
-    def swap_counts(self):
-        return {"swaps_all_time": 0, "swaps_30d": 0, "swaps_24h": 0}
+def swap_counts():
+    return {"swaps_all_time": 0, "swaps_30d": 0, "swaps_24h": 0}
 
 
 def liquidity():
-    {
+    return {
         "rel_usd_price": 0,
         "rel_liquidity_coins": 0,
         "rel_liquidity_usd": 0,

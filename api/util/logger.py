@@ -3,10 +3,8 @@ from os.path import basename, dirname, abspath
 import time
 import logging
 import functools
-from util.templates import Templates
 from util.defaults import set_params
 
-templates = Templates()
 PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
 
 
