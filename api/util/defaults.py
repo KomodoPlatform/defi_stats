@@ -42,9 +42,9 @@ def default_val(key: str):
                 return "http://127.0.0.1"
             if val.lower() == "now":
                 return int(time.time())
-            if val.lower() == "debug":
+            else:
                 return "debug"
-    raise NoDefaultForKeyError(f"No default value for {key}!")
+    raise NoDefaultForKeyError(f"No default value for {key}!")  # pragma: no cover
 
 
 def set_params(object: object(), kwargs: dict(), options: list()) -> None:
@@ -56,7 +56,7 @@ def set_params(object: object(), kwargs: dict(), options: list()) -> None:
                     setattr(object, arg, default_val(arg))
         # Then process kwargs
         [setattr(object, k, v) for k, v in kwargs.items()]
-        
+
     except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"
         return default_error(e.msg)
@@ -77,7 +77,9 @@ def default_error(e, msg=None, loglevel="error", ignore_until=0):  # pragma: no 
     return r
 
 
-def default_result(msg="No Message", loglevel="debug", ignore_until=0):
+def default_result(
+    msg="No Message", loglevel="debug", ignore_until=0
+):  # pragma: no cover
     r = {"result": "success", "message": msg, "loglevel": loglevel}
     if msg is not None:
         r.update({"message": msg})

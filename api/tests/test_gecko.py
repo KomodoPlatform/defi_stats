@@ -4,21 +4,21 @@ import time
 import sqlite3
 import pytest
 from decimal import Decimal
-from fixtures import (
-    setup_swaps_db_data,
+from fixtures_class import (
     setup_gecko,
     setup_gecko_info,
     setup_gecko_coin_ids,
+)
+
+from fixtures import (
     logger,
+)
+from fixtures_db import (
+    setup_actual_db,
+    setup_swaps_db_data,
 )
 
 
-def test_load_gecko_source(setup_gecko):
-    gecko = setup_gecko
-    r = gecko.load_gecko_source()
-    assert r["KMD"]["usd_price"] == 1
-    assert r["KMD"]["usd_market_cap"] == 777
-    assert r["KMD"]["coingecko_id"] == "komodo"
 
 
 def test_get_gecko_coin_ids_list(setup_gecko):
@@ -40,10 +40,3 @@ def test_get_gecko_coins_dict(setup_gecko, setup_gecko_info, setup_gecko_coin_id
     coins_info = setup_gecko_info
     r = gecko.get_gecko_coins_dict(coins_info, coin_ids)
     assert len(r["komodo"]) == 2
-
-
-def test_get_gecko_source(setup_gecko):
-    gecko = setup_gecko
-    r = gecko.get_gecko_source()
-    if "error" not in r:
-        assert round(r["USDC"]["usd_price"]) == 1

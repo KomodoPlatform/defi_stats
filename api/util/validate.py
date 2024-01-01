@@ -1,7 +1,8 @@
+import json
 from decimal import Decimal
 from util.logger import logger
-from lib.cache_load import load_coins_config
 import lib
+from util.exceptions import DataStructureError
 
 
 def reverse_ticker(ticker_id):
@@ -38,11 +39,33 @@ def validate_positive_numeric(value, name, is_int=False):
     return True
 
 
+def validate_loop_data(data, cache_item, netid=None):
+    try:
+        if "error" in data:
+            raise DataStructureError(
+                f"Unexpected data structure returned for {cache_item.name} ({netid})"
+            )
+        if len(data) > 0:
+            return True
+        else:
+            msg = (
+                f"{cache_item.name} not updated because input data was empty ({netid})"
+            )
+            logger.warning(msg)
+            return False
+    except Exception as e:
+        msg = f"{cache_item.name} not updated because invalid: {e} ({netid})"
+        logger.warning(msg)
+        return False
+
+
 def validate_orderbook_pair(base, quote):
     try:
         logger.muted(f"Validating {base}/{quote}")
-        coins_config = load_coins_config()
+        coins_config = lib.cache_load.load_coins_config()
         err = None
+        if base.replace("-segwit", "") == quote.replace("-segwit", ""):
+            err = {"error": f"BaseQuoteSameError for {base}"}
         if base not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {base}"}
         if quote not in coins_config.keys():
@@ -56,4 +79,24 @@ def validate_orderbook_pair(base, quote):
         return True
     except Exception as e:  # pragma: no cover
         logger.warning(e)
+        return False
+
+def validate_json(data, outer=True):
+    if outer:
+        try:
+            if isinstance(data, list):
+                data = data[0]
+            data.keys()
+        except Exception as e:
+            return False
+    # Recursivety checks nested data
+    if isinstance(data, dict):
+        return all(validate_json(value, False) for value in data.values())
+    elif isinstance(data, list):
+        return all(validate_json(item, False) for item in data)
+    elif isinstance(data, (int, float, str, bool, type(None))):
+        # We can add custom validation here, for exmaple if an error
+        # message string ends up in the json data which should not be there
+        return True
+    else:
         return False

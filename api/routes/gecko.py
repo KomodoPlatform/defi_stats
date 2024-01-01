@@ -16,6 +16,7 @@ from util.enums import TradeType, NetId
 from util.validate import validate_positive_numeric, validate_ticker_id
 from db.sqlitedb import get_sqlite_db_paths
 from lib.generics import Generics
+from util.transform import generic_orderbook_to_gecko
 
 
 router = APIRouter()
@@ -29,11 +30,10 @@ router = APIRouter()
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-async def gecko_pairs(netid: NetId = NetId.ALL):
+def gecko_pairs():
     try:
-        db_path = get_sqlite_db_paths(netid)
-        cache = Cache(db_path=db_path)
-        return cache.load_gecko_pairs(netid=netid.value)
+        cache = Cache(netid="ALL")
+        return cache.get_item(name="gecko_pairs").data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -46,11 +46,11 @@ async def gecko_pairs(netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def gecko_tickers(netid: NetId = NetId.ALL):
+def gecko_tickers():
     try:
-        db_path = get_sqlite_db_paths(netid)
-        cache = Cache(db_path=db_path)
-        data = cache.load_gecko_tickers(netid=netid.value)
+        cache = Cache(netid="ALL")
+        data = cache.get_item(name="gecko_tickers").data
+        logger.calc(data)
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
@@ -72,7 +72,10 @@ def gecko_orderbook(
 ):
     try:
         generics = Generics(netid=netid.value)
-        return generics.get_orderbook(ticker_id, netid)
+        data = generics.get_orderbook(ticker_id, depth)
+        data = generic_orderbook_to_gecko(data)
+        print(data)
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

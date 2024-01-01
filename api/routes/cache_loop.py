@@ -5,14 +5,11 @@ from lib.cache import Cache
 from lib.generics import Generics
 from lib.cache_item import CacheItem
 from util.enums import NetId
-from util.logger import logger
 from lib.external import FixerAPI, CoinGeckoAPI
-from const import NODE_TYPE
 from db.sqlitedb_merge import import_source_databases
 from util.logger import timed
 from util.defaults import default_error, default_result
-from util.exceptions import DataStructureError
-
+from util.validate import validate_loop_data
 
 router = APIRouter()
 
@@ -148,22 +145,6 @@ def markets_pairs(netid):
         return default_error(e, msg)
 
 
-def validate_loop_data(data, cache_item, netid=None):
-    try:
-        if "error" in data:
-            raise DataStructureError(
-                f"Unexpected data structure returned for {cache_item.name} {netid}"
-            )
-        if len(data) > 0:
-            return True
-        else:
-            msg = f"{cache_item.name} not updated because input data was empty {netid}"
-            logger.warning(msg)
-            return False
-    except:
-        return False
-
-
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
@@ -242,6 +223,7 @@ def markets_tickers_all():
 @repeat_every(seconds=600)
 @timed
 def import_dbs():
+    NODE_TYPE = "serve"
     if NODE_TYPE != "serve":
         try:
             import_source_databases()

@@ -191,9 +191,28 @@ swap_item = {
     "maker_coin_platform": "",
     "taker_coin_ticker": "LTC",
     "taker_coin_platform": "segwit",
-    "maker_coin_usd_price": "0.5",
-    "taker_coin_usd_price": "75"
+    "maker_coin_usd_price": "0.45",
+    "taker_coin_usd_price": "75.1",
 }
+
+
+swap_item2 = {
+    "maker_coin": "KMD",
+    "taker_coin": "LTC-segwit",
+    "uuid": "7d36be55-6db3-4662-93af-74dc73a58bfa",
+    "started_at": "1700000776",
+    "finished_at": "1700000000",
+    "maker_amount": "5",
+    "taker_amount": "4",
+    "is_success": "0",
+    "maker_coin_ticker": "KMD",
+    "maker_coin_platform": "",
+    "taker_coin_ticker": "LTC",
+    "taker_coin_platform": "segwit",
+    "maker_coin_usd_price": "0.5",
+    "taker_coin_usd_price": "0",
+}
+
 
 @pytest.fixture
 def setup_kmd_btc_segwit_orderbook_data(setup_files):
@@ -220,3 +239,44 @@ def setup_kmd_btc_orderbook_data(setup_files):
 
 
 valid_tickers = ["KMD_LTC", "KMD_DASH", "KMD_BTC"]
+
+
+orderbook_as_string = {
+    "pair": "KMD_DASH",
+    "base": "KMD",
+    "quote": "DASH",
+    "timestamp": "1704125581",
+    "asks": [
+        {"price": "5", "base_max_volume": "4"},
+        {"price": "4", "base_max_volume": "6"},
+        {"price": "56", "base_max_volume": "335"},
+    ],
+    "bids": [
+        {"price": "10", "base_max_volume": "9"},
+        {"price": "8", "base_max_volume": "7"},
+    ],
+    "liquidity_usd": 3000000,
+    "total_asks_base_vol": 9999.99,
+    "total_bids_base_vol": 200000,
+    "total_asks_quote_vol": 800000,
+    "total_bids_quote_vol": 500000,
+    "total_asks_base_usd": 900000,
+    "total_bids_quote_usd": 800000,
+}
+
+
+orderbook_as_coords = {
+    "pair": "KMD_DASH",
+    "base": "KMD",
+    "quote": "DASH",
+    "timestamp": "1704125581",
+    "asks": [["5", "4"], ["4", "6"], ["56", "335"]],
+    "bids": [["10", "9"], ["8", "7"]],
+    "liquidity_usd": 3000000,
+    "total_asks_base_vol": 9999.99,
+    "total_bids_base_vol": 200000,
+    "total_asks_quote_vol": 800000,
+    "total_bids_quote_vol": 500000,
+    "total_asks_base_usd": 900000,
+    "total_bids_quote_usd": 800000,
+}

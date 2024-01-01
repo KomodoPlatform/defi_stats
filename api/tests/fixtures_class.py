@@ -44,10 +44,22 @@ def setup_urls():
 
 
 @pytest.fixture
+def setup_cache():
+    yield Cache(testing=True)
+
+
+@pytest.fixture
 def setup_gecko():
     yield CoinGeckoAPI(testing=True)
 
 
 @pytest.fixture
-def setup_cache():
-    yield Cache(testing=True)
+def setup_gecko_coin_ids(setup_gecko):
+    gecko = setup_gecko
+    yield gecko.get_gecko_coin_ids_list()
+
+
+@pytest.fixture
+def setup_gecko_info(setup_gecko):
+    gecko = setup_gecko
+    yield gecko.get_gecko_info_dict()

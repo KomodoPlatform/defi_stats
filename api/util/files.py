@@ -3,7 +3,7 @@ import requests
 from const import API_ROOT_PATH
 from util.defaults import default_error, set_params
 from util.logger import timed
-import time
+from util.validate import validate_json
 
 
 class Files:
@@ -13,6 +13,8 @@ class Files:
         set_params(self, self.kwargs, self.options)
         if self.testing:
             folder = f"{API_ROOT_PATH}/tests/fixtures"
+            self.foo = f"{folder}/foo.json"
+            self.bar = f"{folder}/bar.json"
         else:
             folder = f"{API_ROOT_PATH}/cache"
         # Coins repo data
@@ -39,12 +41,19 @@ class Files:
     def save_json(self, fn, data):
         try:
             if len(data) > 0:
-                with open(fn, "w+") as f:
-                    json.dump(data, f, indent=4)
+                if validate_json(data):
+                    with open(fn, "w+") as f:
+                        json.dump(data, f, indent=4)
+                        return {
+                            "result": "success",
+                            "message": f"{fn} saved!",
+                            "loglevel": "save",
+                        }
+                else:
                     return {
-                        "result": "success",
-                        "message": f"{fn} saved!",
-                        "loglevel": "save",
+                        "result": "error",
+                        "message": f"Not saving {fn}, data is not valid json format!",
+                        "loglevel": "warning",
                     }
             else:
                 return {
@@ -55,22 +64,19 @@ class Files:
 
         except Exception as e:
             msg = f"Failed to save {fn}"
-            return default_error(e, msg)
+            return {
+                "result": "error",
+                "message": f"Not saving {fn}, error with the data: {e}",
+                "loglevel": "warning",
+            }
 
-    def load_jsonfile(self, path, attempts=5, fallback=None):
-        i = 0
-        while True:
-            i += 1
-            try:
-                with open(path, "r") as f:
-                    return json.load(f)
-            except Exception as e:  # pragma: no cover
-                if i >= attempts:
-                    if fallback:
-                        return fallback
-                    error = f"Error loading {path}: {e}"
-                    return default_error(e, error)
-                time.sleep(0.1)
+    def load_jsonfile(self, path):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception as e:  # pragma: no cover
+            error = f"Error loading {path}: {e}"
+            return default_error(e, error)
 
     def download_json(self, url):
         try:

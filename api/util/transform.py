@@ -163,3 +163,12 @@ def merge_orderbooks(existing, new):
     existing["total_asks_base_usd"] += new["total_asks_base_usd"]
     existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
     return existing
+
+
+def generic_orderbook_to_gecko(data):
+    bids = [[i['price'], i['base_max_volume']] for i in data["bids"]]
+    asks = [[i['price'], i['base_max_volume']] for i in data["asks"]]
+    data["asks"] = asks
+    data["bids"] = bids
+    data["ticker_id"] = data["pair"]
+    return data

@@ -1,5 +1,6 @@
 import pytest
 from decimal import Decimal
+from lib.cache_item import CacheItem
 from fixtures_validate import (
     setup_reverse_ticker_kmd_ltc,
 )
@@ -9,6 +10,8 @@ from util.validate import (
     validate_ticker_id,
     validate_positive_numeric,
     validate_orderbook_pair,
+    validate_loop_data,
+    validate_json,
 )
 
 
@@ -57,3 +60,22 @@ def test_validate_orderbook_pair():
     assert validate_orderbook_pair("LTC-segwit", "KMD")
     assert not validate_orderbook_pair("XXX", "KMD")
     assert not validate_orderbook_pair("ATOM", "KMD")
+
+
+def test_validate_loop_data():
+    cache_item = CacheItem("test", testing=True)
+    data = {"error": "foo"}
+    assert not validate_loop_data(data, cache_item)
+    data = {}
+    assert not validate_loop_data(data, cache_item)
+    data = {"data": "good"}
+    assert validate_loop_data(data, cache_item)
+
+
+def test_validate_json():
+    data = "string"
+    assert not validate_json(data)
+    data = {"decimal": Decimal(3)}
+    assert not validate_json(data)
+    data = {"decimal": 3}
+    assert validate_json(data)

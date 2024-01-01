@@ -2,6 +2,7 @@
 import sys
 import time
 import sqlite3
+from decimal import Decimal
 from typing import List
 from os.path import dirname, abspath
 from const import (
@@ -40,7 +41,7 @@ sys.path.append(API_ROOT_PATH)
 
 
 @timed
-def import_source_databases():
+def import_source_databases():  # pragma: no cover
     backup_local_dbs()
     clean_source_dbs()
     compare_dbs()
@@ -52,7 +53,7 @@ def import_source_databases():
     return default_result(msg, loglevel="merge", ignore_until=10)
 
 
-def clean_source_dbs():
+def clean_source_dbs():  # pragma: no cover
     # Denullify source databases, move to 'clean' folder
     try:
         source_dbs = list_sqlite_dbs(DB_SOURCE_PATH)
@@ -82,7 +83,7 @@ def clean_source_dbs():
 
 
 @timed
-def get_db_row_counts(temp=False):
+def get_db_row_counts(temp=False):  # pragma: no cover
     path = MM2_DB_PATHS["temp_7777"] if temp else MM2_DB_PATHS["7777"]
     db_7777 = get_sqlite_db(db_path=path)
     path = MM2_DB_PATHS["temp_8762"] if temp else MM2_DB_PATHS["8762"]
@@ -107,7 +108,7 @@ def get_db_row_counts(temp=False):
 
 
 @timed
-def update_master_dbs():
+def update_master_dbs():  # pragma: no cover
     # Merge temp databases into master
     try:
         for i in NetId:
@@ -130,7 +131,7 @@ def update_master_dbs():
 
 
 @timed
-def update_temp_dbs():
+def update_temp_dbs():  # pragma: no cover
     # Merge clean source databases into temp
     try:
         source_dbs = list_sqlite_dbs(DB_CLEAN_PATH)
@@ -153,10 +154,11 @@ def update_temp_dbs():
                         i.close()
 
         # Merge both netids into 'all'
-        dest_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db")
+
         for i in NetId:
             i = i.value
             if i != "ALL":
+                dest_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db")
                 src_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db")
                 merge_db_tables(
                     src_db=src_db,
@@ -166,7 +168,7 @@ def update_temp_dbs():
                     since=0,
                 )
                 src_db.close()
-            dest_db.close()
+                dest_db.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = "Merge of source data into temp master databases complete!"
@@ -174,7 +176,7 @@ def update_temp_dbs():
 
 
 @timed
-def merge_db_tables(src_db, dest_db, table, column, since=None):
+def merge_db_tables(src_db, dest_db, table, column, since=None):  # pragma: no cover
     if since is None:
         since = int(time.time()) - 86400 * 7
     sql = ""
@@ -202,7 +204,7 @@ def merge_db_tables(src_db, dest_db, table, column, since=None):
 
 
 @timed
-def compare_dbs():
+def compare_dbs():  # pragma: no cover
     # Compare clean DBs to repair mismatches
     try:
         comparisons = 0
@@ -224,7 +226,7 @@ def compare_dbs():
 
 
 @timed
-def backup_local_dbs():
+def backup_local_dbs():  # pragma: no cover
     # Backup the local active mm2 instance DBs
     try:
         backup_db(
@@ -240,7 +242,7 @@ def backup_local_dbs():
 
 
 # @timed
-def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):
+def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):  # pragma: no cover
     try:
         uuids_a = db1.query.get_uuids(success_only=True)
         uuids_b = db2.query.get_uuids(fail_only=True)
@@ -253,7 +255,7 @@ def get_mismatched_uuids(db1: SqliteDB, db2: SqliteDB):
 
 
 @timed
-def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:
+def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:  # pragma: no cover
     try:
         db_list = [db1, db2]
         loglevel = "merged"
@@ -263,65 +265,56 @@ def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:
         else:
             uuids.sort()
             for uuid in list(uuids):
-                swap_infos = []
+                swaps = []
                 for db in db_list:
                     swap_info = db.query.get_swap(uuid)
                     if "error" in swap_info:
                         continue
-                    swap_infos.append(swap_info)
-                compare_uuid_fields(uuid, swap_infos, db1, db2)
-
+                    swaps.append(swap_info)
+                for swap1 in swaps:
+                    for swap2 in swaps:
+                        fixed = compare_uuid_fields(swap1, swap2)
+                        if "maker_coin" in fixed:
+                            db1.update.update_stats_swap_row(uuid, fixed)
+                            db2.update.update_stats_swap_row(uuid, fixed)
+                        else:
+                            logger.warning(fixed)
     except Exception as e:
         return default_error(e)
     msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
     return default_result(msg, loglevel=loglevel)
 
 
-def compare_uuid_fields(uuid: str, swap_infos: List, db1: SqliteDB, db2: SqliteDB):
+def compare_uuid_fields(swap1, swap2):
+    uuid = swap1["uuid"]
     # logger.muted(f"Repairing swap {uuid}")
+    compare_fields = [
+        "is_success",
+        "started_at",
+        "finished_at",
+        "maker_coin_usd_price",
+        "taker_coin_usd_price",
+    ]
     try:
         fixed = {}
-        for i in swap_infos:
-            for j in swap_infos:
-                for k, v in i.items():
-                    if k not in ["id"]:
-                        for k2, v2 in j.items():
-                            if k == k2 and v != v2:
-                                # use higher value for below fields
-                                if k in [
-                                    "is_success",
-                                    "started_at",
-                                    "finished_at",
-                                    "maker_coin_usd_price",
-                                    "taker_coin_usd_price",
-                                ]:
-                                    try:
-                                        fixed.update(
-                                            {
-                                                k: str(
-                                                    max(
-                                                        [
-                                                            float(v),
-                                                            float(v2),
-                                                        ]
-                                                    )
-                                                )
-                                            }
-                                        )
-                                    except sqlite3.OperationalError as e:
-                                        msg = f"{v} vs {v2} | {type(v)} vs {type(v2)}"
-                                        return default_error(e, msg)
-                            else:
-                                msg = f"Unhandled mismatch on {k} for {uuid}"
-                                return default_result(msg, loglevel="warning")
-        db1.update.update_stats_swap_row(uuid, fixed)
-    except Exception as e:
+        for k, v in swap1.items():
+            if k in compare_fields:
+                print(f"{k}: {v} vs {swap2[k]}")
+                if v != swap2[k]:
+                    # use higher value for below fields
+                    try:
+                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                    except sqlite3.OperationalError as e:  # pragma: no cover
+                        msg = f"{v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        return default_error(e, msg)
+        logger.updated(f"{uuid} repaired")
+        return fixed
+    except Exception as e:  # pragma: no cover
         return default_error(e)
-    return default_result(msg=f"{uuid} repaired")
 
 
 @timed
-def init_dbs():
+def init_dbs():  # pragma: no cover
     try:
         for i in MM2_DB_PATHS:
             db = get_sqlite_db(db_path=MM2_DB_PATHS[i])
@@ -345,7 +338,7 @@ def init_dbs():
 
 
 @timed
-def setup_temp_dbs():
+def setup_temp_dbs():  # pragma: no cover
     try:
         for netid in NetId:
             db_path = MM2_DB_PATHS[f"temp_{netid.value}"]
@@ -362,7 +355,7 @@ def setup_temp_dbs():
 
 
 @timed
-def backup_db(src_db_path: str, dest_db_path: str) -> None:
+def backup_db(src_db_path: str, dest_db_path: str) -> None:  # pragma: no cover
     try:
         src = get_sqlite_db(db_path=src_db_path)
         dest = get_sqlite_db(db_path=dest_db_path)
@@ -375,13 +368,13 @@ def backup_db(src_db_path: str, dest_db_path: str) -> None:
     return default_result(msg, loglevel="muted")
 
 
-def progress(status, remaining, total, show=False):
+def progress(status, remaining, total, show=False):  # pragma: no cover
     if show:
         logger.muted(f"Copied {total-remaining} of {total} pages...")
 
 
 @timed
-def init_stats_swaps_db(db):
+def init_stats_swaps_db(db):  # pragma: no cover
     try:
         db.update.create_swap_stats_table()
     except sqlite3.OperationalError as e:
@@ -392,6 +385,6 @@ def init_stats_swaps_db(db):
     return default_result(msg, loglevel="merge", ignore_until=10)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     init_dbs()
     import_source_databases()

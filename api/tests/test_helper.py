@@ -36,7 +36,7 @@ def test_get_chunks():
 def test_get_price_at_finish():
     r = get_price_at_finish(swap_item)
     assert "1700000777" in r
-    assert r["1700000777"] == Decimal(4)/Decimal(5)
+    assert r["1700000777"] == Decimal(4) / Decimal(5)
 
 
 def test_is_pair_priced():

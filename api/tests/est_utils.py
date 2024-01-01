@@ -31,18 +31,6 @@ def test_find_highest_bid(setup_kmd_btc_orderbook_data):
     assert r == "24.0000000000"
 
 
-def test_get_suffix():
-    assert utils.get_suffix(1) == "24h"
-    assert utils.get_suffix(8) == "8d"
-
-
-def test_get_chunks():
-    data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    chunks = list(utils.get_chunks(data, 3))
-    assert len(chunks) == 4
-    assert len(chunks[0]) == 3
-    assert len(chunks[3]) == 1
-
 
 def test_get_gecko_usd_price(setup_cache):
     cache = setup_cache
@@ -56,14 +44,6 @@ def test_get_gecko_usd_price(setup_cache):
     assert price1 == price2
 
 
-def test_round_to_str():
-    assert utils.round_to_str(1.23456789, 4) == "1.2346"
-    assert utils.round_to_str("1.23456789", 8) == "1.23456789"
-    assert utils.round_to_str(Decimal(), 2) == "0.00"
-    assert utils.round_to_str("foo", 4) == "0.0000"
-    assert utils.round_to_str({"foo": "bar"}, 1) == "0.0"
-
-
 def test_load_jsonfile():
     assert "error" in utils.load_jsonfile("foo", 2)
 
@@ -73,21 +53,6 @@ def test_download_json():
     assert len(data) > 0
     data = utils.download_json("foo")
     assert data is None
-
-
-def test_clean_decimal_dict(dirty_dict):
-    assert isinstance(dirty_dict["a"], Decimal)
-    r = utils.clean_decimal_dict(dirty_dict.copy())
-    assert isinstance(r["a"], float)
-    r = utils.clean_decimal_dict(dirty_dict.copy())
-    assert r["a"] == 1.23456789
-    r = utils.clean_decimal_dict(dirty_dict.copy(), to_string=True)
-    assert isinstance(r["a"], str)
-    r = utils.clean_decimal_dict(dirty_dict.copy(), to_string=True, rounding=2)
-    assert r["a"] == "1.23"
-
-    for i in ["b", "c", "d", "e"]:
-        assert r[i] == dirty_dict[i]
 
 
 def test_get_related_coins():
@@ -136,12 +101,36 @@ def test_get_related_pairs(
     assert len(r) == 4
 
 
-def test_clean_decimal_dict_list(dirty_dict):
-    x = [dirty_dict.copy(), dirty_dict.copy()]
-    r = utils.clean_decimal_dict_list(x)
-    assert isinstance(r[0]["a"], float)
-    assert isinstance(r[0]["b"], str)
-    assert isinstance(r[0]["c"], int)
-    assert isinstance(r[0]["d"], bool)
-    assert isinstance(r[0]["e"], list)
-    assert isinstance(r[0]["f"], dict)
+
+def test_valid_coins(coins_config):
+    config = coins_config
+    coins = get_valid_coins(config)
+    assert len(coins) == 1
+    assert coins[0] == "OK"
+    assert "TEST" not in coins
+    assert "NOSWAP" not in coins
+
+
+def test_order_pair_by_market_cap(setup_gecko):
+    a = order_pair_by_market_cap(("BTC-segwit_KMD"), setup_gecko.gecko_source)
+    b = order_pair_by_market_cap(("BTC_KMD"), setup_gecko.gecko_source)
+    c = order_pair_by_market_cap(("KMD_BTC-segwit"), setup_gecko.gecko_source)
+    d = order_pair_by_market_cap(("KMD_BTC"), setup_gecko.gecko_source)
+
+    assert a == c
+    assert b == d
+
+
+def test_get_gecko_source(setup_gecko):
+    gecko = setup_gecko
+    r = gecko.get_gecko_source()
+    if "error" not in r:
+        assert round(r["USDC"]["usd_price"]) == 1
+
+
+def test_get_gecko_source(setup_gecko):
+    gecko = setup_gecko
+    r = gecko.get_gecko_source()
+    assert r["KMD"]["usd_price"] == 1
+    assert r["KMD"]["usd_market_cap"] == 777
+    assert r["KMD"]["coingecko_id"] == "komodo"

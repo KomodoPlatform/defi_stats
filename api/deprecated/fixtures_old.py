@@ -31,19 +31,5 @@ logger.info("Loading test fixtures...")
 
 
 @pytest.fixture
-def setup_gecko_coin_ids(setup_gecko):
-    gecko = setup_gecko
-    yield gecko.get_gecko_coin_ids_list()
-
-
-@pytest.fixture
-def setup_gecko_info(setup_gecko):
-    gecko = setup_gecko
-    yield gecko.get_gecko_info_dict()
-
-
-
-
-@pytest.fixture
 def setup_helper():
     yield helper

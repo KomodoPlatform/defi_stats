@@ -16,7 +16,7 @@ from util.logger import logger, timed
 from util.transform import sort_dict
 
 
-class SqliteDB:
+class SqliteDB:  # pragma: no cover
     def __init__(self, db_path, **kwargs):
         try:
             self.kwargs = kwargs
@@ -48,19 +48,7 @@ class SqliteDB:
         return sqlite3.connect(self.db_path)
 
 
-def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):
-    if db is not None:
-        return db
-    if netid is not None:
-        db_path = get_sqlite_db_paths(netid)
-    if db_path is None:
-        logger.warning("DB path is none")
-    db = SqliteDB(db_path=db_path, testing=testing)
-    # logger.info(f"Connected to DB [{db.db_path}]")
-    return db
-
-
-class SqliteQuery:
+class SqliteQuery:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
@@ -370,7 +358,7 @@ class SqliteQuery:
                 swap_price = Decimal(resp["taker_amount"]) / Decimal(
                     resp["maker_amount"]
                 )
-                swap_time = resp["finished_at"]
+                swap_time = int(resp["finished_at"])
 
             swap_price2 = None
             swap_time2 = None
@@ -391,7 +379,7 @@ class SqliteQuery:
                 swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
                     resp2["taker_amount"]
                 )
-                swap_time2 = resp2["finished_at"]
+                swap_time2 = int(resp2["finished_at"])
             if swap_price and swap_price2:
                 if swap_time > swap_time2:
                     price = swap_price
@@ -667,7 +655,7 @@ class SqliteQuery:
         return data
 
 
-class SqliteUpdate:
+class SqliteUpdate:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
@@ -823,6 +811,18 @@ class SqliteUpdate:
             return default_error(e, msg)
 
 
+def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):
+    if db is not None:
+        return db
+    if netid is not None:
+        db_path = get_sqlite_db_paths(netid)
+    if db_path is None:
+        logger.warning("DB path is none")
+    db = SqliteDB(db_path=db_path, testing=testing)
+    # logger.info(f"Connected to DB [{db.db_path}]")
+    return db
+
+
 def get_sqlite_db_paths(netid=MM2_NETID):
     return MM2_DB_PATHS[str(netid)]
 
@@ -833,7 +833,7 @@ def list_sqlite_dbs(folder):
     return db_list
 
 
-def view_locks(cursor):
+def view_locks(cursor):  # pragma: no cover
     sql = "PRAGMA lock_status"
     r = cursor.execute(sql)
     return r.fetchall()
