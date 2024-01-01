@@ -150,3 +150,16 @@ def sort_dict(data: dict, reverse=False) -> dict:
     for i in k:
         resp.update({i: data[i]})
     return resp
+
+
+def merge_orderbooks(existing, new):
+    existing["asks"] += new["asks"]
+    existing["bids"] += new["bids"]
+    existing["liquidity_usd"] += new["liquidity_usd"]
+    existing["total_asks_base_vol"] += new["total_asks_base_vol"]
+    existing["total_bids_base_vol"] += new["total_bids_base_vol"]
+    existing["total_asks_quote_vol"] += new["total_asks_quote_vol"]
+    existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
+    existing["total_asks_base_usd"] += new["total_asks_base_usd"]
+    existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
+    return existing

@@ -2,8 +2,10 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from lib.cache import Cache
+from lib.generics import Generics
 from lib.cache_item import CacheItem
 from util.enums import NetId
+from util.logger import logger
 from lib.external import FixerAPI, CoinGeckoAPI
 from const import NODE_TYPE
 from db.sqlitedb_merge import import_source_databases
@@ -22,10 +24,9 @@ router = APIRouter()
 @timed
 def coins():  # pragma: no cover
     try:
-        coins_cache = CacheItem("coins")
-        coins_cache.save()
-        coins_config_cache = CacheItem("coins_config")
-        coins_config_cache.save()
+        for i in ["coins", "coins_config"]:
+            cache_item = CacheItem("coins")
+            cache_item.save()
     except Exception as e:
         return default_error(e)
     return default_result("Coins update loop complete!", loglevel="loop")
@@ -37,9 +38,9 @@ def coins():  # pragma: no cover
 def gecko_data():  # pragma: no cover
     try:
         cache = Cache()
-        gecko_cache = cache.get_item("gecko_source")
+        cache_item = cache.get_item("gecko_source")
         data = CoinGeckoAPI().get_gecko_source()
-        gecko_cache.save(data)
+        cache_item.save(data)
     except Exception as e:
         return default_error(e)
     msg = "Gecko data update loop complete!"
@@ -51,15 +52,9 @@ def gecko_data():  # pragma: no cover
 @timed
 def prices_service():  # pragma: no cover
     try:
-        cache = Cache()
-        prices_tickers_v1_cache = cache.get_item("prices_tickers_v1")
-        prices_tickers_v1_cache.save()
-    except Exception as e:
-        return default_error(e)
-    try:
-        cache = Cache()
-        prices_tickers_v2_cache = cache.get_item("prices_tickers_v2")
-        prices_tickers_v2_cache.save()
+        for i in ["prices_tickers_v1", "prices_tickers_v2"]:
+            cache_item = CacheItem(i)
+            cache_item.save()
     except Exception as e:
         return default_error(e)
     msg = "Prices update loop complete!"
@@ -73,8 +68,8 @@ def fixer_rates():  # pragma: no cover
     try:
         cache = Cache()
         fixer = FixerAPI()
-        fixer_rates_cache = cache.get_item("fixer_rates")
-        fixer_rates_cache.save(fixer.latest())
+        cache_item = cache.get_item("fixer_rates")
+        cache_item.save(fixer.latest())
     except Exception as e:
         return default_error(e)
     msg = "Fixer rates update loop complete!"
@@ -90,12 +85,14 @@ def fixer_rates():  # pragma: no cover
 def gecko_pairs():
     try:
         cache = Cache(netid="ALL")
-        gecko_pairs_cache = cache.get_item("gecko_pairs")
-        data = cache.calc.traded_pairs(days=7)
-        gecko_pairs_cache.save(data)
+        cache_item = cache.get_item(name="gecko_pairs")
+        generics = Generics(netid="ALL")
+        data = generics.traded_pairs(days=7)
+        if validate_loop_data(data, cache_item, "ALL"):
+            cache_item.save(data)
     except Exception as e:
         return default_error(e)
-    msg = "Gecko pairs loop complete!"
+    msg = "Gecko pairs (ALL) loop complete!"
     return default_result(msg=msg, loglevel="loop")
 
 
@@ -105,62 +102,16 @@ def gecko_pairs():
 def gecko_tickers():
     try:
         cache = Cache(netid="ALL")
-        gecko_tickers_cache = CacheItem(name="gecko_tickers", netid="ALL")
-        data = cache.calc.traded_tickers(pairs_days=7)
-        gecko_tickers_cache.save(data)
+        cache_item = cache.get_item(name="gecko_tickers")
+        generics = Generics(netid="ALL")
+        data = generics.traded_tickers(pairs_days=7)
+        if validate_loop_data(data, cache_item, "ALL"):
+            cache_item.save(data)
     except Exception as e:
         return default_error(e)
     msg = "Gecko tickers (ALL) loop complete!"
     return default_result(msg=msg, loglevel="loop")
 
-
-# Stats-API Cache
-
-"""
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def gecko_data():  # pragma: no cover
-    try:
-        cache.save.gecko_data()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [gecko_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def summary():  # pragma: no cover
-    try:
-        cache.save.summary()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [summary_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def ticker():  # pragma: no cover
-    try:
-        cache.save.ticker()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [ticker_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)  # caching data every 10 minutes
-def atomicdexio():  # pragma: no cover
-    try:
-        cache.save.atomicdexio()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [atomicdex_io]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)  # caching data every 10 minutes
-def atomicdex_fortnight():  # pragma: no cover
-    try:
-        cache.save.atomicdex_fortnight()
-    except Exception as e:
-        logger.warning(f"{type(e)} in [atomicdex_io_fortnight]: {e}")
-"""
 
 # Derived Cache data for Markets endpoints
 
@@ -173,9 +124,10 @@ def markets_last_trade():
     for netid in NetId:
         try:
             cache = Cache(netid=netid.value)
-            cache_item = CacheItem("markets_last_trade")
+            cache_item = cache.get_item(name="markets_last_trade")
             data = cache.calc.pairs_last_trade()
-            cache_item.save(data)
+            if validate_loop_data(data, cache_item, netid):
+                cache_item.save(data)
         except Exception as e:
             return default_error(e)
     msg = "Markets last trade loop complete!"
@@ -186,20 +138,30 @@ def markets_last_trade():
 def markets_pairs(netid):
     try:
         cache = Cache(netid=netid)
-        cache_item = CacheItem(name="markets_pairs", netid=netid)
-        data = cache.calc.markets_pairs(days=120)
-        if "error" in data:
-            raise DataStructureError("Unexpected data structure returned")
-        if len(data) > 0:
+        cache_item = cache.get_item(name="markets_pairs")
+        generics = Generics(netid=netid)
+        data = generics.traded_pairs(days=90)
+        if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
-            msg = f"Markets pairs loop for netid {netid} complete!"
-        else:
-            msg = f"Markets pairs not updated because input data was empty ({netid})"
-            return default_result(msg=msg, loglevel="warning")
     except Exception as e:
         msg = f"Markets pairs update failed! ({netid}): {e}"
         return default_error(e, msg)
-    return default_result(msg=msg, loglevel="muted")
+
+
+def validate_loop_data(data, cache_item, netid=None):
+    try:
+        if "error" in data:
+            raise DataStructureError(
+                f"Unexpected data structure returned for {cache_item.name} {netid}"
+            )
+        if len(data) > 0:
+            return True
+        else:
+            msg = f"{cache_item.name} not updated because input data was empty {netid}"
+            logger.warning(msg)
+            return False
+    except:
+        return False
 
 
 @router.on_event("startup")
@@ -233,12 +195,11 @@ def markets_pairs_ALL():
 def markets_tickers(netid):
     try:
         cache = Cache(netid=netid)
-        cache_item = CacheItem(name="markets_tickers", netid=netid)
-        data = cache.calc.traded_tickers(pairs_days=120)
-        if "error" not in data:
+        cache_item = cache.get_item(name="markets_tickers")
+        generics = Generics(netid=netid)
+        data = generics.traded_tickers(pairs_days=90)
+        if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
-        else:
-            return default_result(msg=data, loglevel="warning")
     except Exception as e:
         msg = f"Failed for netid {netid}!"
         return default_error(e, msg)
@@ -288,3 +249,52 @@ def import_dbs():
             return default_error(e)
         msg = "Import source databases loop complete!"
         return default_result(msg=msg, loglevel="loop")
+
+
+# Stats-API Cache
+
+"""
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def gecko_data():  # pragma: no cover
+    try:
+        cache.save.gecko_data()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [gecko_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def summary():  # pragma: no cover
+    try:
+        cache.save.summary()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [summary_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+def ticker():  # pragma: no cover
+    try:
+        cache.save.ticker()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [ticker_data]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)  # caching data every 10 minutes
+def atomicdexio():  # pragma: no cover
+    try:
+        cache.save.atomicdexio()
+    except Exception as e:
+        logger.warning(f"{type(e)} Error in [atomicdex_io]: {e}")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)  # caching data every 10 minutes
+def atomicdex_fortnight():  # pragma: no cover
+    try:
+        cache.save.atomicdex_fortnight()
+    except Exception as e:
+        logger.warning(f"{type(e)} in [atomicdex_io_fortnight]: {e}")
+"""

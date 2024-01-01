@@ -2,13 +2,13 @@
 import time
 import sqlite3
 from fixtures import (
-    setup_swaps_db_data,
-    setup_time,
     logger,
     helper,
-    setup_actual_db,
-    setup_fake_db,
 )
+
+from fixtures_db import setup_actual_db, setup_swaps_db_data, setup_swaps_db_data
+
+from util.transform import merge_orderbooks, format_10f
 
 now = int(time.time())
 hour_ago = now - 3600
@@ -84,11 +84,11 @@ def get_actual_db_data(setup_actual_db):
 def test_get_last_price_for_pair(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.get_last_price_for_pair("LTC", "DOGE")["price"]
-    assert helper.format_10f(r) == helper.format_10f(0.1)
+    assert format_10f(r) == format_10f(0.1)
     r = DB.get_last_price_for_pair("DOGE", "LTC")["price"]
-    assert helper.format_10f(r) == helper.format_10f(10)
+    assert format_10f(r) == format_10f(10)
     r = DB.get_last_price_for_pair("KMD", "DGB")["price"]
-    assert helper.format_10f(r) == helper.format_10f(1 / 0.0018)
+    assert format_10f(r) == format_10f(1 / 0.0018)
     r = DB.get_last_price_for_pair("KMD", "ETH")["timestamp"]
     assert r == 0
 

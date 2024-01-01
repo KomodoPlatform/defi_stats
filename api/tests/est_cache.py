@@ -4,12 +4,16 @@ import pytest
 from fixtures import (
     setup_cache,
     setup_helper,
-    setup_time,
-    setup_fake_db,
+    setup_swaps_db_data,
     setup_swaps_db_data,
     API_ROOT_PATH,
     logger,
 )
+
+from fixtures_cron import (
+    setup_time,
+)
+from util.transform import merge_orderbooks, format_10f
 
 # /////////////////////// #
 # Cache.calc class tests  #
@@ -100,15 +104,15 @@ def test_calc_traded_tickers(setup_cache, setup_helper, setup_swaps_db_data):
     assert isinstance(r["data"][0], dict)
     assert r["data"][0]["ticker_id"] == "DGB_KMD-BEP20"
     assert r["data"][0]["base_currency"] == "DGB"
-    assert r["data"][0]["last_price"] == helper.format_10f(0.0018000000)
+    assert r["data"][0]["last_price"] == format_10f(0.0018000000)
     assert int(r["data"][0]["last_trade"]) > int(time.time() - 86400)
     assert r["data"][0]["trades_24hr"] == "2"
-    assert r["data"][0]["base_volume"] == helper.format_10f(1500)
-    assert r["data"][0]["target_volume"] == helper.format_10f(1.9)
-    assert r["data"][0]["base_usd_price"] == helper.format_10f(0.01)
-    assert r["data"][0]["target_usd_price"] == helper.format_10f(1)
-    assert r["data"][0]["high"] == helper.format_10f(0.0018)
-    assert r["data"][0]["low"] == helper.format_10f(0.001)
+    assert r["data"][0]["base_volume"] == format_10f(1500)
+    assert r["data"][0]["target_volume"] == format_10f(1.9)
+    assert r["data"][0]["base_usd_price"] == format_10f(0.01)
+    assert r["data"][0]["target_usd_price"] == format_10f(1)
+    assert r["data"][0]["high"] == format_10f(0.0018)
+    assert r["data"][0]["low"] == format_10f(0.001)
     assert "volume_usd_24hr" in r["data"][0]
     assert "ask" in r["data"][0]
     assert "bid" in r["data"][0]

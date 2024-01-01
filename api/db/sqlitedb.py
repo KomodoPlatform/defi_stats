@@ -20,31 +20,23 @@ class SqliteDB:
     def __init__(self, db_path, **kwargs):
         try:
             self.kwargs = kwargs
+            self.start = int(time.time())
             self.db_path = db_path
             self.db_file = basename(self.db_path)
             self.netid = get_netid(self.db_file)
-            self.start = int(time.time())
-            self.query = SqliteQuery(db=self)
-            self.update = SqliteUpdate(db=self)
-            self.options = ["testing", "wal", "dict_format"]
+            self.options = ["testing", "wal", "netid"]
             set_params(self, self.kwargs, self.options)
+            self.conn = self.connect()
+            self.conn.row_factory = sqlite3.Row
+            self.sql_cursor = self.conn.cursor()
+            if self.wal:
+                sql = "PRAGMA journal_mode=WAL;"
+                self.sql_cursor.execute(sql)
+                self.sql_cursor.fetchall()
+            self.query = SqliteQuery(db=self, **self.kwargs)
+            self.update = SqliteUpdate(db=self, **self.kwargs)
         except Exception as e:
             logger.error(f"{type(e)}: Failed to init SqliteDB: {e}")
-
-    def __enter__(self):
-        self.conn = self.connect()
-        if self.dict_format:
-            self.conn.row_factory = sqlite3.Row
-        self.sql_cursor = self.conn.cursor()
-        if self.wal:
-            sql = "PRAGMA journal_mode=WAL;"
-            self.sql_cursor.execute(sql)
-            self.sql_cursor.fetchall()
-        # logger.info(f"connected to {self.db_path}")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
     @timed
     def close(self):
@@ -56,22 +48,23 @@ class SqliteDB:
         return sqlite3.connect(self.db_path)
 
 
-def get_sqlite_db(db_path=None, testing: bool = False, netid=None):
-    try:
-        if netid is not None:
-            db_path = get_sqlite_db_paths(netid)
-        db = SqliteDB(db_path=db_path, testing=testing)
-        # logger.info(f"Connected to DB [{db.db_path}]")
+def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):
+    if db is not None:
         return db
-    except Exception as e:
-        return default_error(e)
+    if netid is not None:
+        db_path = get_sqlite_db_paths(netid)
+    if db_path is None:
+        logger.warning("DB path is none")
+    db = SqliteDB(db_path=db_path, testing=testing)
+    # logger.info(f"Connected to DB [{db.db_path}]")
+    return db
 
 
 class SqliteQuery:
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "dict_format"]
+            self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
             self.db = db
             self.gecko_source = load_gecko_source()
@@ -80,19 +73,17 @@ class SqliteQuery:
 
     @property
     def tables(self):
-        with get_sqlite_db(db_path=self.db.db_path) as db:
-            db.sql_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            return [i[0] for i in db.sql_cursor.fetchall()]
+        self.db.sql_cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        return [i[0] for i in self.db.sql_cursor.fetchall()]
 
     def get_table_columns(self, table):
-        with get_sqlite_db(db_path=self.db.db_path) as db:
-            sql = f"SELECT * FROM '{table}' LIMIT 1;"
-            r = db.sql_cursor.execute(sql)
-            r.fetchone()
-            return [i[0] for i in r.description]
+        sql = f"SELECT * FROM '{table}' LIMIT 1;"
+        r = self.db.sql_cursor.execute(sql)
+        r.fetchone()
+        return [i[0] for i in r.description]
 
     @timed
-    def get_pairs(self, days: int = 7) -> list:
+    def get_pairs(self, days: int = 7, as_str=False) -> list:
         """
         Returns an alphabetically sorted list of pairs
         (as a list of tuples) with at least one successful
@@ -100,44 +91,45 @@ class SqliteQuery:
         are sorted by market cap to conform to CEX standards.
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                timestamp = int(time.time() - 86400 * days)
-                sql = "SELECT COUNT(*) FROM stats_swaps;"
-                db.sql_cursor.execute(sql)
-                sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
-                        taker_coin_ticker, taker_coin_platform FROM stats_swaps \
-                        WHERE finished_at > {timestamp} AND is_success=1;"
-                db.sql_cursor.execute(sql)
-                data = db.sql_cursor.fetchall()
-                # Cover the variants
-                pairs = [
-                    (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
-                    for i in data
-                    if i[1] not in ["", "segwit"] and i[3] not in ["", "segwit"]
-                ]
-                pairs += [
-                    (f"{i[0]}-{i[1]}", f"{i[2]}")
-                    for i in data
-                    if i[1] not in ["", "segwit"] and i[3] in ["", "segwit"]
-                ]
-                pairs += [
-                    (f"{i[0]}", f"{i[2]}-{i[3]}")
-                    for i in data
-                    if i[1] in ["", "segwit"] and i[3] not in ["", "segwit"]
-                ]
-                pairs += [
-                    (f"{i[0]}", f"{i[2]}")
-                    for i in data
-                    if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
-                ]
-                # Sort pair by ticker to expose duplicates
-                sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
-                # Remove the duplicates
-                pairs = list(set(sorted_pairs))
-                # Sort the pair tickers with higher MC second
+            timestamp = int(time.time() - 86400 * days)
+            sql = "SELECT COUNT(*) FROM stats_swaps;"
+            self.db.sql_cursor.execute(sql)
+            sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
+                    taker_coin_ticker, taker_coin_platform FROM stats_swaps \
+                    WHERE finished_at > {timestamp} AND is_success=1;"
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
+            # Cover the variants
+            pairs = [
+                (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
+                for i in data
+                if i[1] not in ["", "segwit"] and i[3] not in ["", "segwit"]
+            ]
+            pairs += [
+                (f"{i[0]}-{i[1]}", f"{i[2]}")
+                for i in data
+                if i[1] not in ["", "segwit"] and i[3] in ["", "segwit"]
+            ]
+            pairs += [
+                (f"{i[0]}", f"{i[2]}-{i[3]}")
+                for i in data
+                if i[1] in ["", "segwit"] and i[3] not in ["", "segwit"]
+            ]
+            pairs += [
+                (f"{i[0]}", f"{i[2]}")
+                for i in data
+                if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
+            ]
+            # Sort pair by ticker to expose duplicates
+            sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
+            # Remove the duplicates
+            pairs = list(set(sorted_pairs))
+            # Sort the pair tickers with higher MC second
 
         except Exception as e:
             return default_error(e)
+        if as_str:
+            return [f"{i[0]}_{i[1]}" for i in pairs]
         return pairs
 
     @timed
@@ -149,7 +141,6 @@ class SqliteQuery:
         limit: int = 0,
         start_time: int = 0,
         end_time: int = 0,
-        reverse=False,
     ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
@@ -157,149 +148,142 @@ class SqliteQuery:
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                if end_time == 0:
-                    end_time = int(time.time())
-                # We stripped segwit from the pairs in get_pairs()
-                # so we need to add it back here if it's present
-                segwit_coins = get_segwit_coins()
-                logger.debug(segwit_coins)
-                if reverse:
-                    bases = [quote]
-                    quotes = [base]
-                    if base in segwit_coins:
-                        quotes.append(f"{quote}-segwit")
-                    if quote in segwit_coins:
-                        bases.append(f"{base}-segwit")
-                else:
-                    bases = [base]
-                    quotes = [quote]
-                    if base in segwit_coins:
-                        bases.append(f"{base}-segwit")
-                    if quote in segwit_coins:
-                        quotes.append(f"{quote}-segwit")
+            if end_time == 0:
+                end_time = int(time.time())
+            # We stripped segwit from the pairs in get_pairs()
+            # so we need to add it back here if it's present
+            segwit_coins = get_segwit_coins()
+            bases = [base]
+            quotes = [quote]
+            if base in segwit_coins:
+                bases.append(f"{base}-segwit")
+            if quote in segwit_coins:
+                quotes.append(f"{quote}-segwit")
+            swaps_for_pair = []
+            for i in bases:
+                for j in quotes:
+                    base_ticker = i.split("-")[0]
+                    quote_ticker = j.split("-")[0]
+                    base_platform = ""
+                    quote_platform = ""
+                    if len(i.split("-")) == 2:
+                        base_platform = i.split("-")[1]
+                    if len(j.split("-")) == 2:
+                        quote_platform = j.split("-")[1]
 
-                swaps_for_pair = []
-                for i in bases:
-                    for j in quotes:
-                        base_ticker = i.split("-")[0]
-                        quote_ticker = j.split("-")[0]
-                        base_platform = ""
-                        quote_platform = ""
-                        if len(i.split("-")) == 2:
-                            base_platform = i.split("-")[1]
-                        if len(j.split("-")) == 2:
-                            quote_platform = j.split("-")[1]
+                    sql = "SELECT * FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND maker_coin_ticker='{base_ticker}'"
+                    sql += f" AND taker_coin_ticker='{quote_ticker}'"
+                    sql += f" AND maker_coin_platform='{base_platform}'"
+                    sql += f" AND taker_coin_platform='{quote_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC"
+                    if limit > 0:
+                        sql += f" LIMIT {limit}"
+                    sql += ";"
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchall()
 
-                        sql = "SELECT * FROM stats_swaps WHERE"
-                        sql += f" finished_at > {start_time}"
-                        sql += f" AND finished_at < {end_time}"
-                        sql += f" AND maker_coin_ticker='{base_ticker}'"
-                        sql += f" AND taker_coin_ticker='{quote_ticker}'"
-                        sql += f" AND maker_coin_platform='{base_platform}'"
-                        sql += f" AND taker_coin_platform='{quote_platform}'"
-                        sql += " AND is_success=1 ORDER BY finished_at DESC"
-                        if limit > 0:
-                            sql += f" LIMIT {limit}"
-                        sql += ";"
-
-                        db.sql_cursor.execute(sql)
-                        data = db.sql_cursor.fetchall()
+                    if len(data) > 0:
                         swaps_for_pair_a_b = [dict(row) for row in data]
+                    else:
+                        swaps_for_pair_a_b = []
 
-                        for swap in swaps_for_pair_a_b:
-                            swap["trade_type"] = "buy"
+                    for swap in swaps_for_pair_a_b:
+                        swap["trade_type"] = "buy"
+                    # logger.info(f"{i}/{j} | {swaps_for_pair_a_b}")
 
-                        sql = "SELECT * FROM stats_swaps WHERE"
-                        sql += f" finished_at > {start_time}"
-                        sql += f" AND finished_at < {end_time}"
-                        sql += f" AND taker_coin_ticker='{base_ticker}'"
-                        sql += f" AND maker_coin_ticker='{quote_ticker}'"
-                        sql += f" AND taker_coin_platform='{base_platform}'"
-                        sql += f" AND maker_coin_platform='{quote_platform}'"
-                        sql += " AND is_success=1 ORDER BY finished_at DESC"
-                        if limit > 0:
-                            sql += f" LIMIT {limit}"
-                        sql += ";"
-                        # logger.warning(sql)
-                        db.sql_cursor.execute(sql)
-                        data = db.sql_cursor.fetchall()
+                    sql = "SELECT * FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND taker_coin_ticker='{base_ticker}'"
+                    sql += f" AND maker_coin_ticker='{quote_ticker}'"
+                    sql += f" AND taker_coin_platform='{base_platform}'"
+                    sql += f" AND maker_coin_platform='{quote_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC"
+                    if limit > 0:
+                        sql += f" LIMIT {limit}"
+                    sql += ";"
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchall()
+                    if len(data) > 0:
                         swaps_for_pair_b_a = [dict(row) for row in data]
+                    else:
+                        swaps_for_pair_b_a = []
+                    # logger.info(f"{i}/{j} | {swaps_for_pair_b_a}")
 
-                        for swap in swaps_for_pair_b_a:
-                            # A little slieght of hand for reverse pairs
-                            temp_maker_amount = swap["maker_amount"]
-                            swap["maker_amount"] = swap["taker_amount"]
-                            swap["taker_amount"] = temp_maker_amount
-                            swap["trade_type"] = "sell"
+                    for swap in swaps_for_pair_b_a:
+                        # A little slieght of hand for reverse pairs
+                        temp_maker_amount = swap["maker_amount"]
+                        swap["maker_amount"] = swap["taker_amount"]
+                        swap["taker_amount"] = temp_maker_amount
+                        swap["trade_type"] = "sell"
 
-                        swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
-                # Sort swaps by timestamp
-                swaps_for_pair = sorted(
-                    swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
-                )
-                if trade_type == TradeType.BUY:
-                    swaps_for_pair = [
-                        swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
-                    ]
-                elif trade_type == TradeType.SELL:
-                    swaps_for_pair = [
-                        swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
-                    ]
-                if limit > 0:
-                    swaps_for_pair = swaps_for_pair[:limit]
-                return swaps_for_pair
+                    swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
+            # Sort swaps by timestamp
+            swaps_for_pair = sorted(
+                swaps_for_pair, key=lambda k: k["finished_at"], reverse=True
+            )
+            if trade_type == TradeType.BUY:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "buy"
+                ]
+            elif trade_type == TradeType.SELL:
+                swaps_for_pair = [
+                    swap for swap in swaps_for_pair if swap["trade_type"] == "sell"
+                ]
+            if limit > 0:
+                swaps_for_pair = swaps_for_pair[:limit]
+            return swaps_for_pair
         except sqlite3.OperationalError as e:
-            return default_error(e)
+            return default_error(f"{e}")
         except Exception as e:
             return default_error(e)
 
     @timed
     def get_swap(self, uuid):
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                sql = "SELECT * FROM stats_swaps WHERE"
-                sql += f" uuid='{uuid}';"
-                db.sql_cursor.execute(sql)
-                data = db.sql_cursor.fetchall()
-                data = [dict(row) for row in data]
-                if len(data) == 0:
-                    return {"error": f"swap uuid {uuid} not found"}
-                else:
-                    data = data[0]
-                for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
-                    if data[i] is None:
-                        data[i] = "0"
-                return data
+            sql = "SELECT * FROM stats_swaps WHERE"
+            sql += f" uuid='{uuid}';"
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
+            data = [dict(row) for row in data]
+            if len(data) == 0:
+                return {"error": f"swap uuid {uuid} not found"}
+            else:
+                data = data[0]
+            for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
+                if data[i] is None:
+                    data[i] = "0"
+            return data
         except Exception as e:
             return default_error(e)
 
     @timed
     def get_row_count(self, table):
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                db.sql_cursor.execute(f"SELECT COUNT(*) FROM {TablesEnum[table]}")
-                r = db.sql_cursor.fetchone()
-                return r[0]
+            self.db.sql_cursor.execute(f"SELECT COUNT(*) FROM {TablesEnum[table]}")
+            r = self.db.sql_cursor.fetchone()
+            return r[0]
         except Exception as e:  # pragma: no cover
             return default_error(e)
 
     def get_uuids(self, success_only=True, fail_only=False) -> List:
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                if fail_only:
-                    db.sql_cursor.execute(
-                        "SELECT uuid FROM stats_swaps WHERE is_success = 0"
-                    )
-                elif success_only:
-                    db.sql_cursor.execute(
-                        "SELECT uuid FROM stats_swaps WHERE is_success = 1"
-                    )
-                else:
-                    db.sql_cursor.execute("SELECT uuid FROM stats_swaps")
-                r = db.sql_cursor.fetchall()
-                data = [i[0] for i in r]
-                return data
+            if fail_only:
+                self.db.sql_cursor.execute(
+                    "SELECT uuid FROM stats_swaps WHERE is_success = 0"
+                )
+            elif success_only:
+                self.db.sql_cursor.execute(
+                    "SELECT uuid FROM stats_swaps WHERE is_success = 1"
+                )
+            else:
+                self.db.sql_cursor.execute("SELECT uuid FROM stats_swaps")
+            r = self.db.sql_cursor.fetchall()
+            data = [i[0] for i in r]
+            return data
         except Exception as e:
             logger.warning(f"{e} in get_uuids with {self.db.db_path}")
             return []
@@ -308,55 +292,54 @@ class SqliteQuery:
     def get_pairs_last_trade(self, started_at=None, finished_at=None, min_swaps=5):
         # TODO: Filter out test coins
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
-                        taker_coin_platform, maker_coin_platform, \
-                        taker_amount AS last_taker_amount, \
-                        maker_amount AS last_maker_amount, \
-                        MAX(finished_at) AS last_swap_time, \
-                        COUNT(uuid) AS swap_count, \
-                        SUM(taker_amount) AS sum_taker_traded, \
-                        SUM(maker_amount) AS sum_maker_traded \
-                        FROM stats_swaps"
+            sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
+                    taker_coin_platform, maker_coin_platform, \
+                    taker_amount AS last_taker_amount, \
+                    maker_amount AS last_maker_amount, \
+                    MAX(finished_at) AS last_swap_time, \
+                    COUNT(uuid) AS swap_count, \
+                    SUM(taker_amount) AS sum_taker_traded, \
+                    SUM(maker_amount) AS sum_maker_traded \
+                    FROM stats_swaps"
 
-                sql += " WHERE is_success=1"
-                if started_at is not None:
-                    sql += f" AND finished_at > {started_at}"
-                if finished_at is not None:
-                    sql += f" AND finished_at < {finished_at}"
-                sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
-                        taker_coin_platform, maker_coin_platform;"
-                db.sql_cursor.execute(sql)
-                resp = db.sql_cursor.fetchall()
-                resp = [dict(i) for i in resp if i["swap_count"] >= min_swaps]
-                by_pair_dict = {}
-                for i in resp:
-                    item = {}
-                    for k, v in i.items():
-                        if k not in [
-                            "taker_coin_ticker",
-                            "maker_coin_ticker",
-                            "taker_coin_platform",
-                            "maker_coin_platform",
-                        ]:
-                            item.update({k: v})
-                    if i["taker_coin_platform"] in ["", "segwit"]:
-                        taker = i["taker_coin_ticker"]
-                    else:
-                        taker = f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}'
-                    if i["maker_coin_platform"] in ["", "segwit"]:
-                        maker = i["maker_coin_ticker"]
-                    else:
-                        maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
+            sql += " WHERE is_success=1"
+            if started_at is not None:
+                sql += f" AND finished_at > {started_at}"
+            if finished_at is not None:
+                sql += f" AND finished_at < {finished_at}"
+            sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
+                    taker_coin_platform, maker_coin_platform;"
+            self.db.sql_cursor.execute(sql)
+            resp = self.db.sql_cursor.fetchall()
+            resp = [dict(i) for i in resp if i["swap_count"] >= min_swaps]
+            by_pair_dict = {}
+            for i in resp:
+                item = {}
+                for k, v in i.items():
+                    if k not in [
+                        "taker_coin_ticker",
+                        "maker_coin_ticker",
+                        "taker_coin_platform",
+                        "maker_coin_platform",
+                    ]:
+                        item.update({k: v})
+                if i["taker_coin_platform"] in ["", "segwit"]:
+                    taker = i["taker_coin_ticker"]
+                else:
+                    taker = f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}'
+                if i["maker_coin_platform"] in ["", "segwit"]:
+                    maker = i["maker_coin_ticker"]
+                else:
+                    maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
 
-                    pair = f"{taker}_{maker}"
-                    # Handle segwit
-                    if pair not in by_pair_dict:
-                        by_pair_dict.update({pair: item})
-                    elif item["last_swap_time"] > by_pair_dict[pair]["last_swap_time"]:
-                        by_pair_dict.update({pair: item})
-                sorted_dict = sort_dict(by_pair_dict)
-                return sorted_dict
+                pair = f"{taker}_{maker}"
+                # Handle segwit
+                if pair not in by_pair_dict:
+                    by_pair_dict.update({pair: item})
+                elif item["last_swap_time"] > by_pair_dict[pair]["last_swap_time"]:
+                    by_pair_dict.update({pair: item})
+            sorted_dict = sort_dict(by_pair_dict)
+            return sorted_dict
         except Exception as e:
             return default_error(e)
 
@@ -368,69 +351,68 @@ class SqliteQuery:
         buy and sell swaps (e.g. KMD/BTC and BTC/KMD)
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                swap_price = None
-                swap_time = None
-                sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{base.split('-')[0]}' \
-                        AND taker_coin_ticker='{quote.split('-')[0]}' AND is_success=1"
-                if len(base.split("-")) == 2:
-                    if base.split("-")[1] != "segwit":
-                        platform = base.split("-")[1]
-                        sql += f" AND maker_coin_platform='{platform}'"
-                if len(quote.split("-")) == 2:
-                    if quote.split("-")[1] != "segwit":
-                        platform = quote.split("-")[1]
-                        sql += f" AND taker_coin_platform='{platform}'"
-                sql += " ORDER BY finished_at DESC LIMIT 1;"
-                db.sql_cursor.execute(sql)
-                resp = db.sql_cursor.fetchone()
-                if resp is not None:
-                    swap_price = Decimal(resp["taker_amount"]) / Decimal(
-                        resp["maker_amount"]
-                    )
-                    swap_time = resp["finished_at"]
+            swap_price = None
+            swap_time = None
+            sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{base.split('-')[0]}' \
+                    AND taker_coin_ticker='{quote.split('-')[0]}' AND is_success=1"
+            if len(base.split("-")) == 2:
+                if base.split("-")[1] != "segwit":
+                    platform = base.split("-")[1]
+                    sql += f" AND maker_coin_platform='{platform}'"
+            if len(quote.split("-")) == 2:
+                if quote.split("-")[1] != "segwit":
+                    platform = quote.split("-")[1]
+                    sql += f" AND taker_coin_platform='{platform}'"
+            sql += " ORDER BY finished_at DESC LIMIT 1;"
+            self.db.sql_cursor.execute(sql)
+            resp = self.db.sql_cursor.fetchone()
+            if resp is not None:
+                swap_price = Decimal(resp["taker_amount"]) / Decimal(
+                    resp["maker_amount"]
+                )
+                swap_time = resp["finished_at"]
 
-                swap_price2 = None
-                swap_time2 = None
-                sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{quote.split('-')[0]}' \
-                        AND taker_coin_ticker='{base.split('-')[0]}' AND is_success=1"
-                if len(base.split("-")) == 2:
-                    if base.split("-")[1] != "segwit":
-                        platform = base.split("-")[1]
-                        sql += f" AND taker_coin_platform='{platform}'"
-                if len(quote.split("-")) == 2:
-                    if quote.split("-")[1] != "segwit":
-                        platform = quote.split("-")[1]
-                        sql += f" AND maker_coin_platform='{platform}'"
-                sql += " ORDER BY finished_at DESC LIMIT 1;"
-                db.sql_cursor.execute(sql)
-                resp2 = db.sql_cursor.fetchone()
-                if resp2 is not None:
-                    swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
-                        resp2["taker_amount"]
-                    )
-                    swap_time2 = resp2["finished_at"]
-                if swap_price and swap_price2:
-                    if swap_time > swap_time2:
-                        price = swap_price
-                        last_swap_time = swap_time
-                    else:
-                        price = swap_price2
-                        last_swap_time = swap_time2
-                elif swap_price:
+            swap_price2 = None
+            swap_time2 = None
+            sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{quote.split('-')[0]}' \
+                    AND taker_coin_ticker='{base.split('-')[0]}' AND is_success=1"
+            if len(base.split("-")) == 2:
+                if base.split("-")[1] != "segwit":
+                    platform = base.split("-")[1]
+                    sql += f" AND taker_coin_platform='{platform}'"
+            if len(quote.split("-")) == 2:
+                if quote.split("-")[1] != "segwit":
+                    platform = quote.split("-")[1]
+                    sql += f" AND maker_coin_platform='{platform}'"
+            sql += " ORDER BY finished_at DESC LIMIT 1;"
+            self.db.sql_cursor.execute(sql)
+            resp2 = self.db.sql_cursor.fetchone()
+            if resp2 is not None:
+                swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
+                    resp2["taker_amount"]
+                )
+                swap_time2 = resp2["finished_at"]
+            if swap_price and swap_price2:
+                if swap_time > swap_time2:
                     price = swap_price
                     last_swap_time = swap_time
-                elif swap_price2:
+                else:
                     price = swap_price2
                     last_swap_time = swap_time2
-                else:
-                    price = 0
-                    last_swap_time = 0
-                data = {
-                    "price": price,
-                    "timestamp": last_swap_time,
-                }
-                return data
+            elif swap_price:
+                price = swap_price
+                last_swap_time = swap_time
+            elif swap_price2:
+                price = swap_price2
+                last_swap_time = swap_time2
+            else:
+                price = 0
+                last_swap_time = 0
+            data = {
+                "price": price,
+                "timestamp": last_swap_time,
+            }
+            return data
         except Exception as e:
             return default_error(e)
 
@@ -440,27 +422,26 @@ class SqliteQuery:
         try:
             timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
             timestamp_30d_ago = int((datetime.now() - timedelta(30)).strftime("%s"))
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                db.sql_cursor.execute(
-                    "SELECT COUNT(*) FROM stats_swaps WHERE is_success=1;"
-                )
-                swaps_all_time = db.sql_cursor.fetchone()[0]
-                db.sql_cursor.execute(
-                    "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
-                    (timestamp_24h_ago,),
-                )
-                swaps_24h = db.sql_cursor.fetchone()[0]
-                db.sql_cursor.execute(
-                    "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
-                    (timestamp_30d_ago,),
-                )
-                swaps_30d = db.sql_cursor.fetchone()[0]
-                data = {
-                    "swaps_all_time": swaps_all_time,
-                    "swaps_30d": swaps_30d,
-                    "swaps_24h": swaps_24h,
-                }
-                return data
+            self.db.sql_cursor.execute(
+                "SELECT COUNT(*) FROM stats_swaps WHERE is_success=1;"
+            )
+            swaps_all_time = self.db.sql_cursor.fetchone()[0]
+            self.db.sql_cursor.execute(
+                "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
+                (timestamp_24h_ago,),
+            )
+            swaps_24h = self.db.sql_cursor.fetchone()[0]
+            self.db.sql_cursor.execute(
+                "SELECT COUNT(*) FROM stats_swaps WHERE started_at > ? AND is_success=1;",
+                (timestamp_30d_ago,),
+            )
+            swaps_30d = self.db.sql_cursor.fetchone()[0]
+            data = {
+                "swaps_all_time": swaps_all_time,
+                "swaps_30d": swaps_30d,
+                "swaps_24h": swaps_24h,
+            }
+            return data
         except Exception as e:
             return default_error(e)
 
@@ -479,70 +460,69 @@ class SqliteQuery:
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                tickers = []
-                if end_time == 0:
-                    end_time = int(time.time())
+            tickers = []
+            if end_time == 0:
+                end_time = int(time.time())
 
-                # We stripped segwit from the pairs in get_pairs()
-                # so we need to add it back here if it's present
-                segwit_coins = get_segwit_coins()
-                if ticker in segwit_coins:
-                    tickers.append(f"{ticker}-segwit")
+            # We stripped segwit from the pairs in get_pairs()
+            # so we need to add it back here if it's present
+            segwit_coins = get_segwit_coins()
+            if ticker in segwit_coins:
+                tickers.append(f"{ticker}-segwit")
 
-                swaps_for_ticker = []
-                for i in tickers:
-                    base_ticker = i.split("-")[0]
-                    base_platform = ""
-                    if len(i.split("-")) == 2:
-                        base_platform = i.split("-")[1]
+            swaps_for_ticker = []
+            for i in tickers:
+                base_ticker = i.split("-")[0]
+                base_platform = ""
+                if len(i.split("-")) == 2:
+                    base_platform = i.split("-")[1]
 
-                    sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" finished_at > {start_time}"
-                    sql += f" AND finished_at < {end_time}"
-                    sql += f" AND maker_coin_ticker='{base_ticker}'"
-                    sql += f" AND maker_coin_platform='{base_platform}'"
-                    sql += " AND is_success=1 ORDER BY finished_at DESC"
-                    if limit > 0:
-                        sql += f" LIMIT {limit}"
-                    sql += ";"
-
-                    db.sql_cursor.execute(sql)
-                    data = db.sql_cursor.fetchall()
-                    swaps_as_maker = [dict(row) for row in data]
-
-                    for swap in swaps_as_maker:
-                        swap["trade_type"] = "sell"
-
-                    sql = "SELECT * FROM stats_swaps WHERE"
-                    sql += f" finished_at > {start_time}"
-                    sql += f" AND finished_at < {end_time}"
-                    sql += f" AND taker_coin_ticker='{base_ticker}'"
-                    sql += f" AND taker_coin_platform='{base_platform}'"
-                    sql += " AND is_success=1 ORDER BY finished_at DESC"
-                    if limit > 0:
-                        sql += f" LIMIT {limit}"
-                    sql += ";"
-                    # logger.warning(sql)
-                    db.sql_cursor.execute(sql)
-                    data = db.sql_cursor.fetchall()
-                    swaps_as_taker = [dict(row) for row in data]
-
-                    for swap in swaps_as_taker:
-                        swap["trade_type"] = "buy"
-
-                    swaps_for_ticker += swaps_as_maker + swaps_as_taker
-                # Sort swaps by timestamp
-                data = sorted(
-                    swaps_for_ticker, key=lambda k: k["finished_at"], reverse=True
-                )
-                if trade_type == TradeType.BUY:
-                    data = [swap for swap in data if swap["trade_type"] == "buy"]
-                elif trade_type == TradeType.SELL:
-                    data = [swap for swap in data if swap["trade_type"] == "sell"]
+                sql = "SELECT * FROM stats_swaps WHERE"
+                sql += f" finished_at > {start_time}"
+                sql += f" AND finished_at < {end_time}"
+                sql += f" AND maker_coin_ticker='{base_ticker}'"
+                sql += f" AND maker_coin_platform='{base_platform}'"
+                sql += " AND is_success=1 ORDER BY finished_at DESC"
                 if limit > 0:
-                    data = data[:limit]
-                return data
+                    sql += f" LIMIT {limit}"
+                sql += ";"
+
+                self.db.sql_cursor.execute(sql)
+                data = self.db.sql_cursor.fetchall()
+                swaps_as_maker = [dict(row) for row in data]
+
+                for swap in swaps_as_maker:
+                    swap["trade_type"] = "sell"
+
+                sql = "SELECT * FROM stats_swaps WHERE"
+                sql += f" finished_at > {start_time}"
+                sql += f" AND finished_at < {end_time}"
+                sql += f" AND taker_coin_ticker='{base_ticker}'"
+                sql += f" AND taker_coin_platform='{base_platform}'"
+                sql += " AND is_success=1 ORDER BY finished_at DESC"
+                if limit > 0:
+                    sql += f" LIMIT {limit}"
+                sql += ";"
+                # logger.warning(sql)
+                self.db.sql_cursor.execute(sql)
+                data = self.db.sql_cursor.fetchall()
+                swaps_as_taker = [dict(row) for row in data]
+
+                for swap in swaps_as_taker:
+                    swap["trade_type"] = "buy"
+
+                swaps_for_ticker += swaps_as_maker + swaps_as_taker
+            # Sort swaps by timestamp
+            data = sorted(
+                swaps_for_ticker, key=lambda k: k["finished_at"], reverse=True
+            )
+            if trade_type == TradeType.BUY:
+                data = [swap for swap in data if swap["trade_type"] == "buy"]
+            elif trade_type == TradeType.SELL:
+                data = [swap for swap in data if swap["trade_type"] == "sell"]
+            if limit > 0:
+                data = data[:limit]
+            return data
         except Exception as e:
             return default_error(e)
 
@@ -559,56 +539,55 @@ class SqliteQuery:
         If no timestamp is given, returns all swaps for the ticker.
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                logger.info(
-                    f"Getting volume for {ticker} between {start_time} and {end_time}"
-                )
-                tickers = [ticker]
-                if end_time == 0:
-                    end_time = int(time.time())
+            logger.info(
+                f"Getting volume for {ticker} between {start_time} and {end_time}"
+            )
+            tickers = [ticker]
+            if end_time == 0:
+                end_time = int(time.time())
 
-                # We stripped segwit from the pairs in get_pairs()
-                # so we need to add it back here if it's present
-                segwit_coins = get_segwit_coins()
-                if ticker in segwit_coins:
-                    tickers.append(f"{ticker}-segwit")
+            # We stripped segwit from the pairs in get_pairs()
+            # so we need to add it back here if it's present
+            segwit_coins = get_segwit_coins()
+            if ticker in segwit_coins:
+                tickers.append(f"{ticker}-segwit")
 
-                volume_for_ticker = 0
-                for i in tickers:
-                    base_ticker = i.split("-")[0]
-                    base_platform = ""
-                    if len(i.split("-")) == 2:
-                        base_platform = i.split("-")[1]
+            volume_for_ticker = 0
+            for i in tickers:
+                base_ticker = i.split("-")[0]
+                base_platform = ""
+                if len(i.split("-")) == 2:
+                    base_platform = i.split("-")[1]
 
-                    volume_as_maker = 0
-                    if trade_type in [TradeType.BUY, TradeType.ALL]:
-                        sql = "SELECT SUM(CAST(maker_amount AS NUMERIC)) FROM stats_swaps WHERE"
-                        sql += f" finished_at > {start_time}"
-                        sql += f" AND finished_at < {end_time}"
-                        sql += f" AND maker_coin_ticker='{base_ticker}'"
-                        sql += f" AND maker_coin_platform='{base_platform}'"
-                        sql += " AND is_success=1 ORDER BY finished_at DESC;"
-                        db.sql_cursor.execute(sql)
-                        data = db.sql_cursor.fetchone()
-                        if data[0] is not None:
-                            volume_as_maker = data[0]
+                volume_as_maker = 0
+                if trade_type in [TradeType.BUY, TradeType.ALL]:
+                    sql = "SELECT SUM(CAST(maker_amount AS NUMERIC)) FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND maker_coin_ticker='{base_ticker}'"
+                    sql += f" AND maker_coin_platform='{base_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC;"
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchone()
+                    if data[0] is not None:
+                        volume_as_maker = data[0]
 
-                    volume_as_taker = 0
-                    if trade_type in [TradeType.SELL, TradeType.ALL]:
-                        sql = "SELECT SUM(CAST(taker_amount as NUMERIC)) FROM stats_swaps WHERE"
-                        sql += f" finished_at > {start_time}"
-                        sql += f" AND finished_at < {end_time}"
-                        sql += f" AND taker_coin_ticker='{base_ticker}'"
-                        sql += f" AND taker_coin_platform='{base_platform}'"
-                        sql += " AND is_success=1 ORDER BY finished_at DESC;"
-                        db.sql_cursor.execute(sql)
-                        data = db.sql_cursor.fetchone()
-                        if data[0] is not None:
-                            volume_as_taker = data[0]
+                volume_as_taker = 0
+                if trade_type in [TradeType.SELL, TradeType.ALL]:
+                    sql = "SELECT SUM(CAST(taker_amount as NUMERIC)) FROM stats_swaps WHERE"
+                    sql += f" finished_at > {start_time}"
+                    sql += f" AND finished_at < {end_time}"
+                    sql += f" AND taker_coin_ticker='{base_ticker}'"
+                    sql += f" AND taker_coin_platform='{base_platform}'"
+                    sql += " AND is_success=1 ORDER BY finished_at DESC;"
+                    self.db.sql_cursor.execute(sql)
+                    data = self.db.sql_cursor.fetchone()
+                    if data[0] is not None:
+                        volume_as_taker = data[0]
 
-                    volume_for_ticker += volume_as_maker + volume_as_taker
+                volume_for_ticker += volume_as_maker + volume_as_taker
 
-                return volume_for_ticker
+            return volume_for_ticker
         except Exception as e:
             return default_error(e)
 
@@ -678,10 +657,9 @@ class SqliteQuery:
         Returns a list of swaps between two timestamps
         """
         try:
-            with get_sqlite_db(db_path=self.db.db_path) as db:
-                sql = self.build_query(**kwargs)
-                db.sql_cursor.execute(sql)
-                data = db.sql_cursor.fetchall()
+            sql = self.build_query(**kwargs)
+            self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchall()
         except Exception as e:
             return default_error(e)
         msg = f"{len(data)} swaps for netid {self.netid}"
@@ -693,40 +671,13 @@ class SqliteUpdate:
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
             self.files = Files(testing=self.testing)
             self.db = db
         except Exception as e:
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
             return
-
-    @timed
-    def merge_db_tables(self, src_db, table, column, since=None):
-        if since is None:
-            since = int(time.time()) - 86400 * 7
-        sql = ""
-        try:
-            src_columns = src_db.query.get_table_columns(table)
-            src_columns.pop(src_columns.index("id"))
-            sql = f"ATTACH DATABASE '{src_db.db_path}' AS src_db;"
-            sql += f" INSERT INTO {table} ({','.join(src_columns)})"
-            sql += f" SELECT {','.join(src_columns)}"
-            sql += f" FROM src_db.{table}"
-            sql += " WHERE NOT EXISTS ("
-            sql += f"SELECT * FROM {table}"
-            sql += f" WHERE {table}.{column} = src_db.{table}.{column})"
-            sql += f" AND src_db.{table}.finished_at > {since};"
-            sql += " DETACH DATABASE 'src_db';"
-            self.db.sql_cursor.executescript(sql)
-        except sqlite3.OperationalError as e:
-            msg = f"OpErr {src_db.db_path} ==> {self.db.db_path}"
-            return default_error(e, msg=msg)
-        except Exception as e:
-            msg = f"{type(e)} {src_db.db_path} ==> {self.db.db_path} {e}"
-            return default_error(e, msg=msg)
-        msg = f"Importing {src_db.db_path} ==> {self.db.db_path} complete"
-        return default_result(msg=msg, loglevel="updated", ignore_until=10)
 
     @timed
     def remove_overlaps(self, remove_db):

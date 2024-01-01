@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import time
 import sqlite3
 from typing import List
 from os.path import dirname, abspath
@@ -58,15 +59,22 @@ def clean_source_dbs():
         for fn in source_dbs:
             if is_source_db(fn):
                 src_db_path = f"{DB_SOURCE_PATH}/{fn}"
-                with get_sqlite_db(db_path=src_db_path) as src_db:
-                    src_db.update.denullify_stats_swaps()
+                src_db = get_sqlite_db(db_path=src_db_path)
+                src_db.update.denullify_stats_swaps()
 
-                    dest_db_path = f"{DB_CLEAN_PATH}/{fn}"
-                    with get_sqlite_db(db_path=dest_db_path) as dest_db:
-                        dest_db.update.create_swap_stats_table()
-                        dest_db.update.merge_db_tables(
-                            src_db=src_db, table="stats_swaps", column="uuid", since=0
-                        )
+                dest_db_path = f"{DB_CLEAN_PATH}/{fn}"
+                dest_db = get_sqlite_db(db_path=dest_db_path)
+                dest_db.update.create_swap_stats_table()
+                merge_db_tables(
+                    src_db=src_db,
+                    dest_db=dest_db,
+                    table="stats_swaps",
+                    column="uuid",
+                    since=0,
+                )
+
+                for i in [src_db, dest_db]:
+                    i.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"{len(source_dbs)} source databases cleaned."
@@ -76,19 +84,23 @@ def clean_source_dbs():
 @timed
 def get_db_row_counts(temp=False):
     path = MM2_DB_PATHS["temp_7777"] if temp else MM2_DB_PATHS["7777"]
-    with get_sqlite_db(db_path=path) as db_7777:
-        path = MM2_DB_PATHS["temp_8762"] if temp else MM2_DB_PATHS["8762"]
-        with get_sqlite_db(db_path=path) as db_8762:
-            path = MM2_DB_PATHS["temp_ALL"] if temp else MM2_DB_PATHS["ALL"]
-            with get_sqlite_db(db_path=path) as db_all:
-                db_8762.update.remove_overlaps(db_7777)
-                rows = db_7777.query.get_row_count("stats_swaps")
-                msg_7777 = f"7777: {rows}"
-                rows = db_8762.query.get_row_count("stats_swaps")
-                msg_8762 = f"8762: {rows}"
-                rows = db_all.query.get_row_count("stats_swaps")
-                msg_ALL = f"ALL: {rows}"
+    db_7777 = get_sqlite_db(db_path=path)
+    path = MM2_DB_PATHS["temp_8762"] if temp else MM2_DB_PATHS["8762"]
+    db_8762 = get_sqlite_db(db_path=path)
+    path = MM2_DB_PATHS["temp_ALL"] if temp else MM2_DB_PATHS["ALL"]
+    db_all = get_sqlite_db(db_path=path)
+
+    db_8762.update.remove_overlaps(db_7777)
+    rows = db_7777.query.get_row_count("stats_swaps")
+    msg_7777 = f"7777: {rows}"
+    rows = db_8762.query.get_row_count("stats_swaps")
+    msg_8762 = f"8762: {rows}"
+    rows = db_all.query.get_row_count("stats_swaps")
+    msg_ALL = f"ALL: {rows}"
     msg = f"Master DB rows: [{msg_7777}] [{msg_8762}] [{msg_ALL}]"
+
+    for i in [db_all, db_8762, db_7777]:
+        i.close()
     if temp:
         msg = f"Temp DB rows: [{msg_7777}] [{msg_8762}] [{msg_ALL}]"
     return default_result(msg, loglevel="merge")
@@ -100,11 +112,17 @@ def update_master_dbs():
     try:
         for i in NetId:
             i = i.value
-            with get_sqlite_db(db_path=MM2_DB_PATHS[f"temp_{i}"]) as src_db:
-                with get_sqlite_db(db_path=MM2_DB_PATHS[f"{i}"]) as dest_db:
-                    dest_db.update.merge_db_tables(
-                        src_db=src_db, table="stats_swaps", column="uuid", since=0
-                    )
+            src_db = get_sqlite_db(db_path=MM2_DB_PATHS[f"temp_{i}"])
+            dest_db = get_sqlite_db(db_path=MM2_DB_PATHS[f"{i}"])
+            merge_db_tables(
+                src_db=src_db,
+                dest_db=dest_db,
+                table="stats_swaps",
+                column="uuid",
+                since=0,
+            )
+            for i in [src_db, dest_db]:
+                i.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = "Merge of source data into master databases complete!"
@@ -120,31 +138,67 @@ def update_temp_dbs():
             if not fn.startswith("temp"):
                 if is_source_db(fn):
                     src_db_path = f"{DB_CLEAN_PATH}/{fn}"
-                    with get_sqlite_db(db_path=src_db_path) as src_db:
-                        netid = get_netid(fn)
-                        dest_db_path = f"{DB_CLEAN_PATH}/temp_MM2_{netid}.db"
-                        with get_sqlite_db(db_path=dest_db_path) as dest_db:
-                            dest_db.update.merge_db_tables(
-                                src_db=src_db,
-                                table="stats_swaps",
-                                column="uuid",
-                                since=0,
-                            )
+                    src_db = get_sqlite_db(db_path=src_db_path)
+                    netid = get_netid(fn)
+                    dest_db_path = f"{DB_CLEAN_PATH}/temp_MM2_{netid}.db"
+                    dest_db = get_sqlite_db(db_path=dest_db_path)
+                    merge_db_tables(
+                        src_db=src_db,
+                        dest_db=dest_db,
+                        table="stats_swaps",
+                        column="uuid",
+                        since=0,
+                    )
+                    for i in [src_db, dest_db]:
+                        i.close()
 
-        with get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db") as dest_db:
-            for i in NetId:
-                i = i.value
-                if i != "ALL":
-                    with get_sqlite_db(
-                        db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db"
-                    ) as src_db:
-                        dest_db.update.merge_db_tables(
-                            src_db=src_db, table="stats_swaps", column="uuid", since=0
-                        )
+        # Merge both netids into 'all'
+        dest_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db")
+        for i in NetId:
+            i = i.value
+            if i != "ALL":
+                src_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db")
+                merge_db_tables(
+                    src_db=src_db,
+                    dest_db=dest_db,
+                    table="stats_swaps",
+                    column="uuid",
+                    since=0,
+                )
+                src_db.close()
+            dest_db.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = "Merge of source data into temp master databases complete!"
     return default_result(msg=msg, loglevel="merge")
+
+
+@timed
+def merge_db_tables(src_db, dest_db, table, column, since=None):
+    if since is None:
+        since = int(time.time()) - 86400 * 7
+    sql = ""
+    try:
+        src_columns = src_db.query.get_table_columns(table)
+        src_columns.pop(src_columns.index("id"))
+        sql = f"ATTACH DATABASE '{src_db.db_path}' AS src_db;"
+        sql += f" INSERT INTO {table} ({','.join(src_columns)})"
+        sql += f" SELECT {','.join(src_columns)}"
+        sql += f" FROM src_db.{table}"
+        sql += " WHERE NOT EXISTS ("
+        sql += f"SELECT * FROM {table}"
+        sql += f" WHERE {table}.{column} = src_db.{table}.{column})"
+        sql += f" AND src_db.{table}.finished_at > {since};"
+        sql += " DETACH DATABASE 'src_db';"
+        dest_db.sql_cursor.executescript(sql)
+    except sqlite3.OperationalError as e:
+        msg = f"OpErr {src_db.db_path} ==> {dest_db.db_path}"
+        return default_error(e, msg=msg)
+    except Exception as e:
+        msg = f"{type(e)} {src_db.db_path} ==> {dest_db.db_path} {e}"
+        return default_error(e, msg=msg)
+    msg = f"Importing {src_db.db_path} ==> {dest_db.db_path} complete"
+    return default_result(msg=msg, loglevel="updated", ignore_until=10)
 
 
 @timed
@@ -156,11 +210,13 @@ def compare_dbs():
         for fna in clean_dbs:
             for fnb in clean_dbs:
                 if fna != fnb:
-                    with get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fna}") as db1:
-                        with get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fnb}") as db2:
-                            uuids = get_mismatched_uuids(db1, db2)
-                            repair_swaps(uuids, db1, db2)
-                            comparisons += 1
+                    db1 = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fna}")
+                    db2 = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fnb}")
+                    uuids = get_mismatched_uuids(db1, db2)
+                    repair_swaps(uuids, db1, db2)
+                    comparisons += 1
+                    db1.close()
+                    db2.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"Comparison of {len(clean_dbs)} databases in {comparisons} combinations complete!"
@@ -268,16 +324,17 @@ def compare_uuid_fields(uuid: str, swap_infos: List, db1: SqliteDB, db2: SqliteD
 def init_dbs():
     try:
         for i in MM2_DB_PATHS:
-            with get_sqlite_db(db_path=MM2_DB_PATHS[i]) as db:
-                init_stats_swaps_db(db)
-            for i in [
-                LOCAL_MM2_DB_BACKUP_7777,
-                LOCAL_MM2_DB_PATH_7777,
-                LOCAL_MM2_DB_BACKUP_8762,
-                LOCAL_MM2_DB_PATH_8762,
-            ]:
-                with get_sqlite_db(db_path=i) as db:
-                    init_stats_swaps_db(db)
+            db = get_sqlite_db(db_path=MM2_DB_PATHS[i])
+            init_stats_swaps_db(db)
+            db.close()
+        for i in [
+            LOCAL_MM2_DB_BACKUP_7777,
+            LOCAL_MM2_DB_PATH_7777,
+            LOCAL_MM2_DB_BACKUP_8762,
+            LOCAL_MM2_DB_PATH_8762,
+        ]:
+            db = get_sqlite_db(db_path=i)
+            init_stats_swaps_db(db)
     except sqlite3.OperationalError as e:
         return default_error(e)
     except Exception as e:  # pragma: no cover
@@ -292,9 +349,10 @@ def setup_temp_dbs():
     try:
         for netid in NetId:
             db_path = MM2_DB_PATHS[f"temp_{netid.value}"]
-            with get_sqlite_db(db_path=db_path) as db:
-                db.update.create_swap_stats_table()
-                db.update.clear("stats_swaps")
+            db = get_sqlite_db(db_path=db_path)
+            db.update.create_swap_stats_table()
+            db.update.clear("stats_swaps")
+            db.close()
     except sqlite3.OperationalError as e:
         return default_error(e)
     except Exception as e:
@@ -306,9 +364,11 @@ def setup_temp_dbs():
 @timed
 def backup_db(src_db_path: str, dest_db_path: str) -> None:
     try:
-        with get_sqlite_db(db_path=src_db_path) as src:
-            with get_sqlite_db(db_path=dest_db_path) as dest:
-                src.conn.backup(dest.conn, pages=1, progress=progress)
+        src = get_sqlite_db(db_path=src_db_path)
+        dest = get_sqlite_db(db_path=dest_db_path)
+        src.conn.backup(dest.conn, pages=1, progress=progress)
+        src.close()
+        dest.close()
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"Backup of {src.db_path} complete..."

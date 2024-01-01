@@ -1,38 +1,42 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from fixtures import (
-    API_ROOT_PATH, setup_utils,
+    API_ROOT_PATH,
+    setup_kmd_ltc_pair,
+    setup_kmd_btc_pair,
+)
+
+from fixtures_data import (
+    dirty_dict,
     setup_kmd_btc_orderbook_data,
-    setup_kmd_ltc_str_pair,
-    setup_kmd_btc_list_pair,
+)
+from fixtures_db import (
     setup_swaps_db_data,
-    setup_fake_db, setup_time,
-    setup_cache, dirty_dict
+    setup_swaps_db_data,
+)
+from fixtures_cron import (
+    setup_time,
 )
 
 
-def test_find_lowest_ask(setup_utils, setup_kmd_btc_orderbook_data):
-    utils = setup_utils
+def test_find_lowest_ask(setup_kmd_btc_orderbook_data):
     orderbook = setup_kmd_btc_orderbook_data
     r = utils.find_lowest_ask(orderbook)
     assert r == "26.0000000000"
 
 
-def test_find_highest_bid(setup_utils, setup_kmd_btc_orderbook_data):
-    utils = setup_utils
+def test_find_highest_bid(setup_kmd_btc_orderbook_data):
     orderbook = setup_kmd_btc_orderbook_data
     r = utils.find_highest_bid(orderbook)
     assert r == "24.0000000000"
 
 
-def test_get_suffix(setup_utils):
-    utils = setup_utils
+def test_get_suffix():
     assert utils.get_suffix(1) == "24h"
     assert utils.get_suffix(8) == "8d"
 
 
-def test_get_chunks(setup_utils):
-    utils = setup_utils
+def test_get_chunks():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     chunks = list(utils.get_chunks(data, 3))
     assert len(chunks) == 4
@@ -40,8 +44,7 @@ def test_get_chunks(setup_utils):
     assert len(chunks[3]) == 1
 
 
-def test_get_gecko_usd_price(setup_utils, setup_cache):
-    utils = setup_utils
+def test_get_gecko_usd_price(setup_cache):
     cache = setup_cache
     source_path = f"{API_ROOT_PATH}/tests/fixtures/gecko/source_cache.json"
     assert cache.files.gecko_source == source_path
@@ -53,8 +56,7 @@ def test_get_gecko_usd_price(setup_utils, setup_cache):
     assert price1 == price2
 
 
-def test_round_to_str(setup_utils):
-    utils = setup_utils
+def test_round_to_str():
     assert utils.round_to_str(1.23456789, 4) == "1.2346"
     assert utils.round_to_str("1.23456789", 8) == "1.23456789"
     assert utils.round_to_str(Decimal(), 2) == "0.00"
@@ -62,21 +64,18 @@ def test_round_to_str(setup_utils):
     assert utils.round_to_str({"foo": "bar"}, 1) == "0.0"
 
 
-def test_load_jsonfile(setup_utils):
-    utils = setup_utils
+def test_load_jsonfile():
     assert "error" in utils.load_jsonfile("foo", 2)
 
 
-def test_download_json(setup_utils):
-    utils = setup_utils
+def test_download_json():
     data = utils.download_json("https://api.coingecko.com/api/v3/coins/list")
     assert len(data) > 0
     data = utils.download_json("foo")
     assert data is None
 
 
-def test_clean_decimal_dict(setup_utils, dirty_dict):
-    utils = setup_utils
+def test_clean_decimal_dict(dirty_dict):
     assert isinstance(dirty_dict["a"], Decimal)
     r = utils.clean_decimal_dict(dirty_dict.copy())
     assert isinstance(r["a"], float)
@@ -91,8 +90,7 @@ def test_clean_decimal_dict(setup_utils, dirty_dict):
         assert r[i] == dirty_dict[i]
 
 
-def test_get_related_coins(setup_utils):
-    utils = setup_utils
+def test_get_related_coins():
 
     coins = utils.get_related_coins("LTC", exclude_segwit=False)
     assert "LTC" in coins
@@ -122,11 +120,10 @@ def test_get_related_coins(setup_utils):
 
 def test_get_related_pairs(
     setup_utils,
-    setup_kmd_ltc_str_pair,
+    setup_kmd_ltc_pair,
     setup_kmd_btc_list_pair
 ):
-    utils = setup_utils
-    pair = setup_kmd_ltc_str_pair
+    pair = setup_kmd_ltc_pair
     r = utils.get_related_pairs(pair)
     assert ('KMD', 'LTC') in r
     assert ('KMD-BEP20', 'LTC') in r
@@ -139,9 +136,8 @@ def test_get_related_pairs(
     assert len(r) == 4
 
 
-def test_clean_decimal_dict_list(setup_utils, dirty_dict):
+def test_clean_decimal_dict_list(dirty_dict):
     x = [dirty_dict.copy(), dirty_dict.copy()]
-    utils = setup_utils
     r = utils.clean_decimal_dict_list(x)
     assert isinstance(r[0]["a"], float)
     assert isinstance(r[0]["b"], str)

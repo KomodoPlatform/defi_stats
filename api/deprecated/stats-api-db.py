@@ -1,11 +1,10 @@
 
 class SqliteDB:
-    def __init__(self, db_path, dict_format=False, testing=False):
+    def __init__(self, db_path, testing=False):
         self.files = Files(testing)
         self.testing = testing
         self.conn = sqlite3.connect(db_path)
-        if dict_format:
-            self.conn.row_factory = sqlite3.Row
+        self.conn.row_factory = sqlite3.Row
         self.sql_cursor = self.conn.cursor()
         self.gecko_data = self.utils.load_jsonfile(self.files.gecko_data)
 

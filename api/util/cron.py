@@ -3,8 +3,7 @@ import time
 
 
 class Time:
-    def __init__(self, from_ts: int = int(time.time()), testing: bool = False):
-        self.testing = testing
+    def __init__(self, from_ts: int = int(time.time())):
         self.from_ts = from_ts
         self.minute = 60
         self.hour = self.minute * 60

@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
-import sys
 import time
 from decimal import Decimal
 from fixtures import (
-    setup_swaps_db_data,
-    setup_time,
-    setup_dgb_kmd_orderbook,
-    setup_kmd_dgb_orderbook,
-    setup_kmd_ltc_orderbook,
-    setup_kmd_ltc_str_pair,
-    setup_kmd_dgb_tuple_pair,
-    setup_dgb_kmd_str_pair,
-    setup_fake_db,
     logger
 )
 
+from fixtures_db import (
+    setup_swaps_db_data,
+    setup_swaps_db_data,
+)
 
-def test_get_and_parse(setup_kmd_ltc_orderbook):
+from fixtures_orderbook import (
+    setup_dgb_kmd_orderbook,
+    setup_kmd_dgb_orderbook,
+    setup_kmd_ltc_orderbook,
+)
+
+
+def test_get_and_parse_orderbook(setup_kmd_ltc_orderbook):
     orderbook = setup_kmd_ltc_orderbook
-    r = orderbook.get_and_parse()
+    r = orderbook.get_and_parse_orderbook()
     assert "asks" in r
     assert "bids" in r
     assert len(r["asks"]) > 0
     assert len(r["bids"]) > 0
     assert "base_max_volume" in r["asks"][0]
     assert "base_max_volume" in r["bids"][0]
-    r = orderbook.get_and_parse(endpoint=True)
+    r = orderbook.get_and_parse_orderbook(endpoint=True)
     assert "asks" in r
     assert "bids" in r
     assert len(r["asks"]) > 0
@@ -41,7 +42,7 @@ def test_for_pair(
     setup_kmd_dgb_orderbook
 ):
     orderbook = setup_dgb_kmd_orderbook
-    r = orderbook.for_pair(endpoint=False)
+    r = orderbook.for_pair()
     logger.info(r)
     assert r["ticker_id"] == "DGB_KMD"
     assert int(r["timestamp"]) > int(time.time()) - 86400
@@ -53,7 +54,7 @@ def test_for_pair(
     assert Decimal(r["total_bids_quote_vol"]) == Decimal(4848)
 
     orderbook = setup_kmd_dgb_orderbook
-    r = orderbook.for_pair(endpoint=False)
+    r = orderbook.for_pair()
     assert r["ticker_id"] == "DGB_KMD"
     assert int(r["timestamp"]) > int(time.time()) - 86400
     assert len(r["asks"]) == 3

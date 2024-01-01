@@ -2,61 +2,63 @@
 import time
 import pytest
 from decimal import Decimal
-from fixtures import (
-    setup_swaps_db_data,
-    setup_fake_db,
+from copy import deepcopy
+
+from fixtures_db import (
     setup_time,
-    setup_kmd_dgb_tuple_pair,
-    setup_dgb_kmd_str_pair,
-    setup_kmd_ltc_str_pair,
-    setup_ltc_kmd_list_pair,
+    setup_swaps_db_data,
+    setup_swaps_db_data,
+    setup_kmd_dgb_pair,
+    setup_dgb_kmd_pair,
+    setup_kmd_ltc_pair,
+    setup_ltc_kmd_pair,
     setup_not_existing_pair,
-    trades_info,
-    no_trades_info,
-    logger,
-    helper
 )
+from fixtures import logger, helper
+from fixtures_data import (
+    trades_info,
+    ticker_item,
+    no_trades_info,
+)
+from util.transform import merge_orderbooks, format_10f
 
 
-def test_get_pairs_type_error():
-    with pytest.raises(TypeError):
-        helper.set_pair_as_tuple(15)
-
-
-def test_get_pairs_value_error():
-    with pytest.raises(ValueError):
-        helper.set_pair_as_tuple("Pair_of_three")
+def test_kmd_ltc_pair(setup_kmd_ltc_pair):
+    pair = setup_kmd_ltc_pair
+    assert pair.is_tradable
+    assert pair.info["ticker_id"] == "KMD_LTC"
 
 
 def test_historical_trades(
-    setup_kmd_ltc_str_pair,
-    setup_ltc_kmd_list_pair,
-    setup_swaps_db_data,
+    setup_kmd_ltc_pair,
+    setup_ltc_kmd_pair,
 ):
-    DB = setup_swaps_db_data
-    pair = setup_kmd_ltc_str_pair
-    r = pair.historical_trades(trade_type='all', DB=DB)["buy"]
-    assert len(r) == 1
-    logger.info(r[0])
-    assert r[0]["type"] == "buy"
-    assert r[0]["base_volume"] == helper.format_10f(1)
-    assert r[0]["target_volume"] == helper.format_10f(5)
-    assert r[0]["price"] == helper.format_10f(5)
+    pair = setup_kmd_ltc_pair
+    r = pair.historical_trades(trade_type="all")
+    r["trades_count"] = len(r["buy"]) + len(r["sell"])
+    logger.info(f"buy: {r['buy']}")
+    logger.info(f"sell: {r['sell']}")
+    assert r["trades_count"] == 3
+    assert r["buy"][0]["type"] == "buy"
+    assert r["buy"][0]["base_volume"] == format_10f(1)
+    assert r["buy"][0]["target_volume"] == format_10f(5)
+    assert r["buy"][0]["price"] == format_10f(5)
 
-    pair = setup_ltc_kmd_list_pair
-    r = pair.historical_trades('all', DB=DB)["buy"]
-    assert len(r) == 1
-    r = pair.historical_trades('all', DB=DB)["sell"]
-    assert len(r) == 2
-    logger.info(r[0])
-    assert r[0]["type"] == "sell"
-    assert r[0]["timestamp"] > r[1]["timestamp"]
-    assert r[0]["base_volume"] == helper.format_10f(1)
-    assert r[0]["target_volume"] == helper.format_10f(10)
-    assert r[0]["price"] == helper.format_10f(10)
+    pair = setup_ltc_kmd_pair
+    r2 = pair.historical_trades("buy")["buy"]
+    assert len(r2) == len(r["buy"])
+    assert len(r2) == 1
+    r3 = pair.historical_trades("all")["sell"]
+    assert len(r3) == len(r["sell"])
+    assert len(r3) == 2
+    assert r3[0]["type"] == "sell"
+    assert r3[0]["timestamp"] > r3[1]["timestamp"]
+    assert r3[0]["base_volume"] == format_10f(1)
+    assert r3[0]["target_volume"] == format_10f(10)
+    assert r3[0]["price"] == format_10f(10)
 
 
-def test_get_average_price(setup_not_existing_pair, trades_info, no_trades_info):
+def test_get_average_price(setup_not_existing_pair):
     pair = setup_not_existing_pair
     r = pair.get_average_price(trades_info)
     assert r == 1
@@ -64,14 +66,9 @@ def test_get_average_price(setup_not_existing_pair, trades_info, no_trades_info)
     assert r == 0
 
 
-def test_get_volumes_and_prices(
-    setup_kmd_ltc_str_pair,
-    setup_not_existing_pair,
-    setup_swaps_db_data
-):
-    pair = setup_kmd_ltc_str_pair
-    r = pair.get_volumes_and_prices(DB=setup_swaps_db_data)
-    logger.info(r)
+def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
+    pair = setup_kmd_ltc_pair
+    r = pair.get_volumes_and_prices()
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price"] == 1
@@ -79,8 +76,8 @@ def test_get_volumes_and_prices(
     assert r["quote_price"] == 100
     assert float(r["base_volume"]) == 3
     assert float(r["quote_volume"]) == 35
-    assert r["base_volume"] == helper.format_10f(3)
-    assert r["quote_volume"] == helper.format_10f(35)
+    assert r["base_volume"] == format_10f(3)
+    assert r["quote_volume"] == format_10f(35)
     assert float(r["highest_price_24h"]) == 20
     assert float(r["last_price"]) == 5
     assert float(r["lowest_price_24h"]) == 5
@@ -93,27 +90,38 @@ def test_get_volumes_and_prices(
     assert float(r["last_trade"]) > int(time.time() - 86400)
 
     pair = setup_not_existing_pair
-    r = pair.get_volumes_and_prices(DB=setup_swaps_db_data)
+    r = pair.get_volumes_and_prices()
     assert float(r["last_price"]) == 0
     assert float(r["trades_24hr"]) == 0
 
 
-def test_pair(
-    setup_ltc_kmd_list_pair,
-    setup_kmd_ltc_str_pair,
-    setup_kmd_dgb_tuple_pair
-):
-    pair = setup_ltc_kmd_list_pair
+def test_pair(setup_ltc_kmd_pair, setup_kmd_dgb_pair):
+    pair = setup_ltc_kmd_pair
     assert pair.base == "KMD"
     assert pair.quote == "LTC"
     assert pair.as_str == "KMD_LTC"
     assert pair.as_tuple == ("KMD", "LTC")
-    pair = setup_kmd_ltc_str_pair
-    assert pair.base == "KMD"
-    assert pair.quote == "LTC"
-    assert pair.as_str == "KMD_LTC"
-    assert pair.as_tuple == ("KMD", "LTC")
-    pair = setup_kmd_dgb_tuple_pair
+    pair = setup_kmd_dgb_pair
     assert pair.as_str == "DGB_KMD"
-    assert pair.base == "DGB"
     assert pair.quote == "KMD"
+    assert pair.base == "DGB"
+
+
+def test_merge_orderbooks(setup_kmd_ltc_pair):
+    orderbook_data = setup_kmd_ltc_pair.orderbook_data
+    book = deepcopy(orderbook_data)
+    book2 = deepcopy(orderbook_data)
+    x = merge_orderbooks(book, book2)
+    assert x["ticker_id"] == orderbook_data["ticker_id"]
+    assert x["base"] == orderbook_data["base"]
+    assert x["quote"] == orderbook_data["quote"]
+    assert x["timestamp"] == orderbook_data["timestamp"]
+    assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
+    assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
+    assert x["liquidity_usd"] == orderbook_data["liquidity_usd"] * 2
+    assert x["total_asks_base_vol"] == orderbook_data["total_asks_base_vol"] * 2
+    assert x["total_bids_base_vol"] == orderbook_data["total_bids_base_vol"] * 2
+    assert x["total_asks_quote_vol"] == orderbook_data["total_asks_quote_vol"] * 2
+    assert x["total_bids_quote_vol"] == orderbook_data["total_bids_quote_vol"] * 2
+    assert x["total_asks_base_usd"] == orderbook_data["total_asks_base_usd"] * 2
+    assert x["total_bids_quote_usd"] == orderbook_data["total_bids_quote_usd"] * 2

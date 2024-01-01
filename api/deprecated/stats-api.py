@@ -134,7 +134,7 @@ def trades(pair="KMD_LTC"):
                 status_code=400,
                 detail="Pair can not be empty. Use the format TICKER1_TICKER2"
             )  # pragma: no cover
-        DB = models.SqliteDB(const.MM2_DB_PATH, dict_format=True)
+        DB = models.SqliteDB(const.MM2_DB_PATH)
         pair = models.Pair(pair)
         trades_data = pair.trades(days=1)
         return trades_data
@@ -148,7 +148,7 @@ def last_price_for_pair(pair="KMD_LTC"):
     '''Last trade price for a given pair.'''
     try:
         pair = models.Pair(pair)
-        DB = models.SqliteDB(const.MM2_DB_PATH, dict_format=True)
+        DB = models.SqliteDB(const.MM2_DB_PATH)
         last_price = DB.get_last_price_for_pair(pair.base, pair.quote)
         return last_price
     except Exception as e:  # pragma: no cover

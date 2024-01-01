@@ -21,11 +21,11 @@ router = APIRouter()
 )
 def get_swap(uuid: str, netid: NetId = NetId.ALL):
     try:
-        with get_sqlite_db(netid=netid.value) as db:
-            resp = db.get_swap(uuid)
-            if "error" in resp:
-                raise UuidNotFoundException(resp["error"])
-            return db.get_swap(uuid)
+        db = get_sqlite_db(netid=netid.value)
+        resp = db.get_swap(uuid)
+        if "error" in resp:
+            raise UuidNotFoundException(resp["error"])
+        return db.get_swap(uuid)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -40,14 +40,14 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
     status_code=200,
 )
 def swap_uuids(
-    pair: str,
+    market_pair: str,
     start_time: int = int(time.time() - 86400),
     end_time: int = int(time.time()),
     netid: NetId = NetId.ALL,
 ):
     try:
         logger.info("Getting Swap UUIDS")
-        pair = Pair(pair=pair, netid=netid.value)
+        pair = Pair(pair_str=market_pair, netid=netid.value)
         uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
         return resp

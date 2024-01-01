@@ -25,6 +25,9 @@ from util.transform import (
 from util.validate import validate_ticker_id
 from db.sqlitedb import get_sqlite_db
 from util.transform import clean_decimal_dict
+import util.templates as template
+from lib.generics import Generics
+
 
 router = APIRouter()
 cache = Cache()
@@ -103,16 +106,14 @@ def summary_for_ticker(ticker: str, netid: NetId = NetId.ALL):
                 if sum([Decimal(v) for k, v in i.items() if k not in ignore]) > 0:
                     item = ticker_to_market_ticker_summary(i)
                     if i["ticker_id"] in last_trade_cache:
-                        last_price = (
-                            last_trade_cache[i["ticker_id"]]["last_taker_amount"]
-                            / last_trade_cache[i["ticker_id"]]["last_maker_amount"]
-                        )
+                        x = last_trade_cache[i["ticker_id"]]["last_taker_amount"]
+                        y = last_trade_cache[i["ticker_id"]]["last_maker_amount"]
+                        z = last_trade_cache[i["ticker_id"]]["last_swap_time"]
+                        last_price = Decimal(x) / Decimal(y)
                         item.update(
                             {
                                 "last_price": str(last_price),
-                                "last_swap_timestamp": last_trade_cache[i["ticker_id"]][
-                                    "last_swap_time"
-                                ],
+                                "last_swap_timestamp": z,
                             }
                         )
                     resp.append(item)
@@ -180,41 +181,8 @@ def swaps24(ticker, netid: NetId = NetId.ALL):
 )
 def orderbook(market_pair="KMD_LTC", netid: NetId = NetId.ALL):
     try:
-        if "_" not in market_pair:
-            return {"error": "Market pair should be in `KMD_LTC-segwit` format"}
-        market_pairs = cache.load_markets_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in market_pairs]
-        validate_ticker_id(
-            market_pair, valid_tickers, allow_reverse=True, allow_fail=True
-        )
-        resp = {
-            "market_pair": market_pair,
-            "timestamp": f"{int(time.time())}",
-            "asks": [],
-            "bids": [],
-        }
-        if netid.value == "all":
-            for x in NetId:
-                if x.value != "all":
-                    pair_tuple = market_pair.split("_")
-                    data = Pair(pair=pair_tuple, netid=x.value).orderbook_data
-                    resp["asks"] += data["asks"]
-                    resp["bids"] += data["bids"]
-                    resp["liquidity_usd"] += data["liquidity_usd"]
-                    resp["total_asks_base_vol"] += data["total_asks_base_vol"]
-                    resp["total_bids_base_vol"] += data["total_bids_base_vol"]
-                    resp["total_asks_quote_vol"] += data["total_asks_quote_vol"]
-                    resp["total_bids_quote_vol"] += data["total_bids_quote_vol"]
-                    resp["total_asks_base_usd"] += data["total_asks_base_usd"]
-                    resp["total_bids_quote_usd"] += data["total_bids_quote_usd"]
-            resp["bids"] = resp["bids"][::-1]
-            resp["asks"] = resp["asks"][::-1]
-        else:
-            pair_tuple = market_pair.split("_")
-            data = Pair(pair=pair_tuple, netid=netid.value).orderbook_data
-            resp["asks"] += data["asks"]
-            resp["bids"] += data["bids"]
-        return resp
+        generics = Generics(netid=netid.value)
+        return generics.get_orderbook(market_pair, netid)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -243,10 +211,9 @@ def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.AL
         if netid.value == "all":
             for x in NetId:
                 if x.value != "all":
-                    pair = Pair(pair=market_pair, netid=x.value)
+                    pair = Pair(pair_str=market_pair, netid=x.value)
                     data = pair.historical_trades(
                         trade_type="all",
-                        netid=netid.value,
                         start_time=int(time.time() - 86400),
                         end_time=int(time.time()),
                         reverse=reverse,
@@ -254,10 +221,9 @@ def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.AL
                     resp += data["buy"]
                     resp += data["sell"]
         else:
-            pair = Pair(pair=market_pair, netid=netid.value)
+            pair = Pair(pair_str=market_pair, netid=netid.value)
             data = pair.historical_trades(
                 trade_type="all",
-                netid=netid.value,
                 start_time=int(time.time() - 86400),
                 end_time=int(time.time()),
                 reverse=reverse,
@@ -279,8 +245,8 @@ def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.AL
     response_model=AdexIo,
 )
 def atomicdex_info_api(netid: NetId = NetId.ALL):
-    with get_sqlite_db(netid=netid.value) as db:
-        return db.swap_counts()
+    db = get_sqlite_db(netid=netid.value)
+    return db.swap_counts()
 
 
 @router.get("/pairs_last_trade", description="Returns the last trade for all pairs")
@@ -307,23 +273,23 @@ def volumes_history_ticker(
     trade_type: TradeType = TradeType.ALL,
     netid: NetId = NetId.ALL,
 ):
-    with get_sqlite_db(netid=netid.value) as db:
-        volumes_dict = {}
-        for i in range(0, int(days_in_past)):
-            with get_sqlite_db(netid=netid.value) as db:
-                d = datetime.today() - timedelta(days=i)
-                d_str = d.strftime("%Y-%m-%d")
-                day_ts = int(int(d.strftime("%s")) / 86400) * 86400
-                # TODO: Align with midnight
-                start_time = int(day_ts) - 86400
-                end_time = int(day_ts)
-                volumes_dict[d_str] = db.get_volume_for_ticker(
-                    ticker=ticker,
-                    trade_type=trade_type.value,
-                    start_time=start_time,
-                    end_time=end_time,
-                )
-            return volumes_dict
+    db = get_sqlite_db(netid=netid.value)
+    volumes_dict = {}
+    for i in range(0, int(days_in_past)):
+        db = get_sqlite_db(netid=netid.value)
+        d = datetime.today() - timedelta(days=i)
+        d_str = d.strftime("%Y-%m-%d")
+        day_ts = int(int(d.strftime("%s")) / 86400) * 86400
+        # TODO: Align with midnight
+        start_time = int(day_ts) - 86400
+        end_time = int(day_ts)
+        volumes_dict[d_str] = db.get_volume_for_ticker(
+            ticker=ticker,
+            trade_type=trade_type.value,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        return volumes_dict
 
 
 @router.get(

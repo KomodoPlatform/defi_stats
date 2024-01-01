@@ -24,7 +24,14 @@ from util.transform import (
     sum_json_key_10f,
     sort_dict_list,
     sort_dict,
+    format_10f,
 )
+
+
+def test_format_10f():
+    assert format_10f(1.234567890123456789) == "1.2345678901"
+    assert format_10f(1) == "1.0000000000"
+    assert format_10f(1.23) == "1.2300000000"
 
 
 def test_ticker_to_market_ticker_summary(setup_ticker_to_market_ticker_summary):
@@ -84,7 +91,6 @@ def test_clean_decimal_dict_list():
 def test_clean_decimal_dict():
     x = dirty_dict.copy()
     r = clean_decimal_dict(x)
-    print(r)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)
@@ -128,3 +134,4 @@ def test_sort_dict_list():
     assert x[0]["trade_id"] == "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d"
     x = sort_dict_list(trades_info.copy(), "trade_id", True)
     assert x[0]["trade_id"] == "d2602fa9-6680-42f9-9cb8-20f76275f587"
+

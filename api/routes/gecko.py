@@ -2,7 +2,6 @@
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-import time
 from util.logger import logger
 from lib.models_gecko import (
     GeckoPairsItem,
@@ -16,6 +15,8 @@ from lib.pair import Pair
 from util.enums import TradeType, NetId
 from util.validate import validate_positive_numeric, validate_ticker_id
 from db.sqlitedb import get_sqlite_db_paths
+from lib.generics import Generics
+
 
 router = APIRouter()
 
@@ -70,47 +71,8 @@ def gecko_orderbook(
     netid: NetId = NetId.ALL,
 ):
     try:
-        db_path = get_sqlite_db_paths(netid)
-        cache = Cache(db_path=db_path)
-        resp = {
-            "ticker_id": ticker_id,
-            "timestamp": f"{int(time.time())}",
-            "asks": [],
-            "bids": [],
-            "liquidity_usd": 0,
-            "total_asks_base_vol": 0,
-            "total_bids_base_vol": 0,
-            "total_asks_quote_vol": 0,
-            "total_bids_quote_vol": 0,
-            "total_asks_base_usd": 0,
-            "total_bids_quote_usd": 0,
-        }
-        if netid.value == "all":
-            for x in NetId:
-                if x.value != "all":
-                    gecko_pairs = cache.load_gecko_pairs(netid=x.value)
-                    valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-                    validate_ticker_id(ticker_id, valid_tickers)
-                    pair_tuple = ticker_id.split("_")
-                    data = Pair(pair=pair_tuple, netid=netid.value).orderbook_data
-                    resp["asks"] += data["asks"]
-                    resp["bids"] += data["bids"]
-                    resp["liquidity_usd"] += data["liquidity_usd"]
-                    resp["total_asks_base_vol"] += data["total_asks_base_vol"]
-                    resp["total_bids_base_vol"] += data["total_bids_base_vol"]
-                    resp["total_asks_quote_vol"] += data["total_asks_quote_vol"]
-                    resp["total_bids_quote_vol"] += data["total_bids_quote_vol"]
-                    resp["total_asks_base_usd"] += data["total_asks_base_usd"]
-                    resp["total_bids_quote_usd"] += data["total_bids_quote_usd"]
-            resp["bids"] = resp["bids"][:depth][::-1]
-            resp["asks"] = resp["asks"][::-1][:depth]
-        else:
-            gecko_pairs = cache.load_gecko_pairs(netid=netid.value)
-            valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-            validate_ticker_id(ticker_id, valid_tickers)
-            pair_tuple = ticker_id.split("_")
-            resp = Pair(pair=pair_tuple, netid=netid.value).orderbook_data
-        return resp
+        generics = Generics(netid=netid.value)
+        return generics.get_orderbook(ticker_id, netid)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -149,7 +111,7 @@ def gecko_historical_trades(
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        pair = Pair(pair=ticker_id)
+        pair = Pair(pair_str=ticker_id)
         return pair.historical_trades(
             trade_type=trade_type,
             limit=limit,

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 
 
 def last_price_for_pair():
@@ -21,30 +22,29 @@ def liquidity():
     }
 
 
-def orderbook(base: str, quote: str, v2=False):
-    data = {
-        "pair": f"{base}_{quote}",
-        "base": base,
-        "quote": quote,
-        "bids": [],
-        "asks": [],
-        "total_asks_base_vol": 0,
-        "total_asks_quote_vol": 0,
-        "total_bids_base_vol": 0,
-        "total_bids_quote_vol": 0,
-    }
-    if v2:  # pragma: no cover
-        data.update({"total_asks_base_vol": {"decimal": 0}})
-        data.update({"total_asks_quote_vol": {"decimal": 0}})
-        data.update({"total_bids_base_vol": {"decimal": 0}})
-        data.update({"total_bids_quote_vol": {"decimal": 0}})
-    return data
-
-
 def pair_info(base, quote):
     return {
         "ticker_id": f"{base}_{quote}",
         "pool_id": f"{base}_{quote}",
         "base": base,
         "target": quote,
+    }
+
+
+def orderbook(pair_str):
+    x = pair_str.split("_")
+    return {
+        "pair": f"{pair_str}",
+        "base": x[0],
+        "quote": x[1],
+        "timestamp": f"{int(time.time())}",
+        "asks": [],
+        "bids": [],
+        "liquidity_usd": 0,
+        "total_asks_base_vol": 0,
+        "total_bids_base_vol": 0,
+        "total_asks_quote_vol": 0,
+        "total_bids_quote_vol": 0,
+        "total_asks_base_usd": 0,
+        "total_bids_quote_usd": 0,
     }

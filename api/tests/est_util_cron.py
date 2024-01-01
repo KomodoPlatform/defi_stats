@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import time
-from fixtures import setup_time
+from fixtures_cron import (
+    setup_time,
+)
+
 
 
 def test_time(setup_time):
