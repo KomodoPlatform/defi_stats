@@ -50,6 +50,7 @@ def test_validate_positive_numeric():
 def test_validate_orderbook_pair():
     assert not validate_orderbook_pair("KMD", "LTC")
     assert validate_orderbook_pair("KMD", "LTC-segwit")
+    assert not validate_orderbook_pair("LTC", "LTC-segwit")
     assert not validate_orderbook_pair("KMD", "XXX")
     assert not validate_orderbook_pair("KMD", "ATOM")
     assert not validate_orderbook_pair("LTC", "KMD")

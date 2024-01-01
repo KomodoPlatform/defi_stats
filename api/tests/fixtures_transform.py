@@ -5,7 +5,6 @@ import pytest
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
-from fixtures_db import setup_swaps_db_data, setup_swaps_db_data, setup_time
 
 
 from util.transform import (

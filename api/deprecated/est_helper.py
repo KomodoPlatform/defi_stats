@@ -70,9 +70,5 @@ def test_is_source_db():
     assert not is_source_db("xyz_MM2x.db")
 
 
-def test_is_pair_priced():
-    pass
-
-
 def test_save_json():
     pass

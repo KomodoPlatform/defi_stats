@@ -12,7 +12,6 @@ from db.sqlitedb import SqliteDB
 from db.sqlitedb import get_sqlite_db
 from util.cron import Time
 from lib.pair import Pair
-from util.logger import logger
 
 
 @pytest.fixture

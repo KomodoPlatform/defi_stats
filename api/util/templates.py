@@ -2,16 +2,16 @@
 import time
 
 
-def last_price_for_pair():
+def last_price_for_pair():   # pragma: no cover
     return {"timestamp": 0, "price": 0}
 
 
-def swap_counts():
+def swap_counts(): # pragma: no cover
     return {"swaps_all_time": 0, "swaps_30d": 0, "swaps_24h": 0}
 
 
 def liquidity():
-    return {
+    return {   # pragma: no cover
         "rel_usd_price": 0,
         "rel_liquidity_coins": 0,
         "rel_liquidity_usd": 0,

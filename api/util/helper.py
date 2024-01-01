@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from const import MM2_RPC_PORTS, MM2_NETID
+from util.logger import logger
 import lib
 
 
@@ -25,7 +26,6 @@ def get_price_at_finish(swap):
     return {end_time: taker_amount / maker_amount}
 
 
-
 def is_pair_priced(base, quote) -> bool:
     """
     Checks if both coins in a pair are priced.
@@ -37,5 +37,6 @@ def is_pair_priced(base, quote) -> bool:
             set([i.ticker for i in lib.COINS.with_price])
         )
         return len(common) == 2
-    except Exception as e:
-        msg = "is_pair_priced failed"
+    except Exception as e:  # pragma: no cover
+        logger.muted(f"Pair {base}/{quote} is unpriced: {e}")
+    return False

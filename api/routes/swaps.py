@@ -22,10 +22,10 @@ router = APIRouter()
 def get_swap(uuid: str, netid: NetId = NetId.ALL):
     try:
         db = get_sqlite_db(netid=netid.value)
-        resp = db.get_swap(uuid)
+        resp = db.query.get_swap(uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
-        return db.get_swap(uuid)
+        return db.query.get_swap(uuid)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

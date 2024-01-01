@@ -5,7 +5,6 @@ import pytest
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
-from util.cron import Time
 from lib.external import CoinGeckoAPI
 from lib.dex_api import DexAPI
 from util.files import Files

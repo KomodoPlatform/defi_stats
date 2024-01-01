@@ -25,7 +25,6 @@ from util.transform import (
 from util.validate import validate_ticker_id
 from db.sqlitedb import get_sqlite_db
 from util.transform import clean_decimal_dict
-import util.templates as template
 from lib.generics import Generics
 
 

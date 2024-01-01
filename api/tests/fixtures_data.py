@@ -5,7 +5,6 @@ from decimal import Decimal
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-
 historical_trades = [
     {
         "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
@@ -178,6 +177,23 @@ ticker_item = {
 
 no_trades_info = []
 
+
+swap_item = {
+    "maker_coin": "KMD",
+    "taker_coin": "LTC-segwit",
+    "uuid": "7d36be55-6db3-4662-93af-74dc73a58bfa",
+    "started_at": "1700000776",
+    "finished_at": "1700000777",
+    "maker_amount": "5",
+    "taker_amount": "4",
+    "is_success": "1",
+    "maker_coin_ticker": "KMD",
+    "maker_coin_platform": "",
+    "taker_coin_ticker": "LTC",
+    "taker_coin_platform": "segwit",
+    "maker_coin_usd_price": "0.5",
+    "taker_coin_usd_price": "75"
+}
 
 @pytest.fixture
 def setup_kmd_btc_segwit_orderbook_data(setup_files):
