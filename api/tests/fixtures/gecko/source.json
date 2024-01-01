@@ -45,7 +45,7 @@
         "coingecko_id": "dogecoin"
     },
     "USDC": {
-        "usd_market_cap": 28896428880.561565,
+        "usd_market_cap": 2000000000,
         "usd_price": 1.0,
         "coingecko_id": "usd-coin"
     }
