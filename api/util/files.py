@@ -63,7 +63,6 @@ class Files:
                 }
 
         except Exception as e:
-            msg = f"Failed to save {fn}"
             return {
                 "result": "error",
                 "message": f"Not saving {fn}, error with the data: {e}",

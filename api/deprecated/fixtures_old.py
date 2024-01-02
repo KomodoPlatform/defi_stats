@@ -13,7 +13,7 @@ from lib.external import CoinGeckoAPI
 from lib.dex_api import DexAPI
 from util.files import Files
 from util.urls import Urls
-from lib.calc import Calc
+from lib.markets import Markets
 from util.logger import logger
 from lib.cache import Cache
 from lib.cache_item import CacheItem

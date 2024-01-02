@@ -60,7 +60,6 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     DB = setup_swaps_db_data
     DB.conn.row_factory = sqlite3.Row
     DB.sql_cursor = DB.conn.cursor()
-    print(DB.db_path)
 
     # Test failed excluded
     swaps = DB.query.get_swaps_for_pair("MCL", "KMD", day_ago)
@@ -118,7 +117,6 @@ def test_is_7777():
 
 def test_compare_uuid_fields():
     r = compare_uuid_fields(swap_item, swap_item2)
-    print(r)
     assert r["taker_coin_usd_price"] == "75.1"
     assert r["maker_coin_usd_price"] == "0.5"
     assert r["is_success"] == "1"
@@ -140,7 +138,7 @@ def test_get_sqlite_db_paths():
 
 def test_list_sqlite_dbs():
     r = list_sqlite_dbs(DB_MASTER_PATH)
-    assert "MM2_all.db"
+    assert "MM2_all.db" in r
 
 
 def test_get_netid():

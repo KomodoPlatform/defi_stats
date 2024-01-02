@@ -9,7 +9,7 @@ from lib.external import CoinGeckoAPI
 from lib.dex_api import DexAPI
 from util.files import Files
 from util.urls import Urls
-from lib.calc import Calc
+from lib.markets import Markets
 from util.logger import logger
 from lib.cache import Cache
 from lib.cache_item import CacheItem
@@ -27,8 +27,8 @@ def setup_dexapi():
 
 
 @pytest.fixture
-def setup_calc():
-    yield Calc(testing=True)
+def setup_markets():
+    yield Markets(testing=True)
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def setup_gecko():
 @pytest.fixture
 def setup_gecko_coin_ids(setup_gecko):
     gecko = setup_gecko
-    yield gecko.get_gecko_coin_ids_list()
+    yield gecko.get_gecko_coin_ids()
 
 
 @pytest.fixture

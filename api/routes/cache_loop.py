@@ -122,7 +122,7 @@ def markets_last_trade():
         try:
             cache = Cache(netid=netid.value)
             cache_item = cache.get_item(name="markets_last_trade")
-            data = cache.calc.pairs_last_trade()
+            data = cache.markets.pairs_last_trade()
             if validate_loop_data(data, cache_item, netid):
                 cache_item.save(data)
         except Exception as e:
@@ -223,7 +223,7 @@ def markets_tickers_all():
 @repeat_every(seconds=600)
 @timed
 def import_dbs():
-    NODE_TYPE = "serve"
+    NODE_TYPE = "noserve"
     if NODE_TYPE != "serve":
         try:
             import_source_databases()

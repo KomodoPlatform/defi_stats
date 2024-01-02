@@ -48,3 +48,7 @@ def orderbook(pair_str):
         "total_asks_base_usd": 0,
         "total_bids_quote_usd": 0,
     }
+
+
+def gecko_info(coin_id):
+    return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}

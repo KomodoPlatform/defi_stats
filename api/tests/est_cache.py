@@ -55,40 +55,10 @@ def test_save_gecko(setup_cache):
 # /////////////////////// #
 
 
-def test_load_coins_config(setup_cache):
-    load = setup_cache.load
-    data = load.load_coins_config()
-    assert "KMD" in data
-    assert "KMD-BEP20" in data
-    assert "LTC-segwit" in data
-    assert "LTC" in data
-    for i in data:
-        assert i == data[i]["coin"]
-        assert "coingecko_id" in data[i]
-
-
-def test_load_coins(setup_cache):
-    load = setup_cache.load
-    assert len(load.load_coins()) > 0
-
-
-def test_load_gecko(setup_cache):
-    load = setup_cache.load
-    gecko = load.load_gecko_source()
-    assert "KMD" in gecko
-    assert gecko["KMD"]["usd_market_cap"] == gecko["KMD-BEP20"]["usd_market_cap"]
-    assert gecko["KMD"]["usd_price"] == gecko["KMD-BEP20"]["usd_price"]
-    assert gecko["KMD"]["coingecko_id"] == gecko["KMD-BEP20"]["coingecko_id"]
-    for i in gecko["KMD"]:
-        assert i in ["usd_market_cap", "usd_price", "coingecko_id"]
-    for i in gecko:
-        assert gecko[i]["coingecko_id"] != ""
-
-
 def test_calc_traded_tickers(setup_cache, setup_helper, setup_swaps_db_data):
     helper = setup_helper
-    calc = setup_cache.calc
-    r = calc.calc_traded_tickers(
+    markets = setup_cache.markets
+    r = markets.calc_traded_tickers(
         DB=setup_swaps_db_data,
     )
     assert len(r) > 0

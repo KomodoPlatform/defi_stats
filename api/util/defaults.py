@@ -6,7 +6,7 @@ def arg_defaults():
     val_keys = {
         "false": ["reverse", "testing"],
         "true": ["wal", "exclude_unpriced", "order_by_mcap"],
-        "none": ["endpoint", "source_url", "db_path"],
+        "none": ["endpoint", "source_url", "db_path", "db"],
         "now": ["end"],
         "all": ["netid"],
         "default_host": ["mm2_host"],

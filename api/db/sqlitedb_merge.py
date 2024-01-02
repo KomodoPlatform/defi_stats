@@ -13,6 +13,7 @@ from const import (
     MM2_DB_PATHS,
     DB_SOURCE_PATH,
     DB_CLEAN_PATH,
+    compare_fields
 )
 from db.sqlitedb import (
     get_sqlite_db,
@@ -274,11 +275,10 @@ def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:  # pragma: 
                 for swap1 in swaps:
                     for swap2 in swaps:
                         fixed = compare_uuid_fields(swap1, swap2)
-                        if "maker_coin" in fixed:
+                        if len(set(compare_fields).intersection(set(fixed.keys()))) > 0:
                             db1.update.update_stats_swap_row(uuid, fixed)
                             db2.update.update_stats_swap_row(uuid, fixed)
-                        else:
-                            logger.warning(fixed)
+                            logger.updated(f"{uuid} repaired")
     except Exception as e:
         return default_error(e)
     msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
@@ -288,26 +288,17 @@ def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:  # pragma: 
 def compare_uuid_fields(swap1, swap2):
     uuid = swap1["uuid"]
     # logger.muted(f"Repairing swap {uuid}")
-    compare_fields = [
-        "is_success",
-        "started_at",
-        "finished_at",
-        "maker_coin_usd_price",
-        "taker_coin_usd_price",
-    ]
     try:
         fixed = {}
         for k, v in swap1.items():
             if k in compare_fields:
-                print(f"{k}: {v} vs {swap2[k]}")
                 if v != swap2[k]:
                     # use higher value for below fields
                     try:
                         fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
                     except sqlite3.OperationalError as e:  # pragma: no cover
-                        msg = f"{v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
                         return default_error(e, msg)
-        logger.updated(f"{uuid} repaired")
         return fixed
     except Exception as e:  # pragma: no cover
         return default_error(e)

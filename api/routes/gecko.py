@@ -50,7 +50,6 @@ def gecko_tickers():
     try:
         cache = Cache(netid="ALL")
         data = cache.get_item(name="gecko_tickers").data
-        logger.calc(data)
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
@@ -74,7 +73,6 @@ def gecko_orderbook(
         generics = Generics(netid=netid.value)
         data = generics.get_orderbook(ticker_id, depth)
         data = generic_orderbook_to_gecko(data)
-        print(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

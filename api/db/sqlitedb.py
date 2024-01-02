@@ -82,6 +82,7 @@ class SqliteQuery:  # pragma: no cover
             timestamp = int(time.time() - 86400 * days)
             sql = "SELECT COUNT(*) FROM stats_swaps;"
             self.db.sql_cursor.execute(sql)
+            data = self.db.sql_cursor.fetchone()
             sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
                     taker_coin_ticker, taker_coin_platform FROM stats_swaps \
                     WHERE finished_at > {timestamp} AND is_success=1;"
@@ -108,10 +109,20 @@ class SqliteQuery:  # pragma: no cover
                 for i in data
                 if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
             ]
+            logger.calc(f"Pairs: {len(pairs)}")
+            if len(pairs) < 10:
+                logger.calc(pairs)
+
             # Sort pair by ticker to expose duplicates
             sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
+            logger.calc(f"sorted_pairs: {len(pairs)}")
+            if len(sorted_pairs) < 10:
+                logger.calc(sorted_pairs)
             # Remove the duplicates
             pairs = list(set(sorted_pairs))
+            logger.calc(f"sorted_pairs: {len(pairs)}")
+            if len(sorted_pairs) < 10:
+                logger.calc(sorted_pairs)
             # Sort the pair tickers with higher MC second
 
         except Exception as e:
@@ -686,9 +697,12 @@ class SqliteUpdate:  # pragma: no cover
     @timed
     def update_stats_swap_row(self, uuid, data):
         try:
-            colvals = ",".join([f"{k} = {v}" for k, v in data.items()])
-            t = (colvals, uuid)
-            sql = "UPDATE 'stats_swaps' SET ? WHERE uuid = ?;"
+            cols = ", ".join([f"{k} = ?" for k in data.keys()])
+            colvals = tuple(data.values()) + (uuid,)
+            logger.calc(colvals)
+            t = colvals
+            sql = f"UPDATE 'stats_swaps' SET {cols} WHERE uuid = ?;"
+            logger.calc(sql)
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return default_result(msg=f"{uuid} updated in {self.db.db_file}")
@@ -811,7 +825,7 @@ class SqliteUpdate:  # pragma: no cover
             return default_error(e, msg)
 
 
-def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):
+def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):  # pragma: no cover
     if db is not None:
         return db
     if netid is not None:

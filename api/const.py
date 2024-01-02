@@ -75,3 +75,11 @@ MM2_NETID = 8762  # The primary active NetId currently supported by KomodoPlatfo
 
 # Some coins may have swaps data, but are not currently in the coins repo.
 CoinConfigNotFoundCoins = ["XEP", "MORTY", "RICK", "SMTF-v2"]
+
+compare_fields = [
+    "is_success",
+    "started_at",
+    "finished_at",
+    "maker_coin_usd_price",
+    "taker_coin_usd_price",
+]

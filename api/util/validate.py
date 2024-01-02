@@ -1,4 +1,3 @@
-import json
 from decimal import Decimal
 from util.logger import logger
 import lib
@@ -81,13 +80,14 @@ def validate_orderbook_pair(base, quote):
         logger.warning(e)
         return False
 
+
 def validate_json(data, outer=True):
     if outer:
         try:
             if isinstance(data, list):
                 data = data[0]
             data.keys()
-        except Exception as e:
+        except Exception:
             return False
     # Recursivety checks nested data
     if isinstance(data, dict):
@@ -95,8 +95,8 @@ def validate_json(data, outer=True):
     elif isinstance(data, list):
         return all(validate_json(item, False) for item in data)
     elif isinstance(data, (int, float, str, bool, type(None))):
-        # We can add custom validation here, for exmaple if an error
-        # message string ends up in the json data which should not be there
+        # We can add custom validation here, for example if an error
+        # message ends up in the json data which should not be there
         return True
     else:
         return False
