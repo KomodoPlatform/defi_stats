@@ -42,4 +42,7 @@ def test_get_price_at_finish():
 def test_is_pair_priced():
     assert is_pair_priced("KMD", "LTC")
     assert is_pair_priced("KMD", "LTC-segwit")
+    assert is_pair_priced("LTC-segwit", "KMD-BEP20")
     assert not is_pair_priced("KMD", "DOC")
+    assert not is_pair_priced("MARTY", "KMD")
+

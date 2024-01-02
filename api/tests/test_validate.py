@@ -79,3 +79,5 @@ def test_validate_json():
     assert not validate_json(data)
     data = {"decimal": 3}
     assert validate_json(data)
+    data = {"list": [3, 9, 7]}
+    assert validate_json(data)

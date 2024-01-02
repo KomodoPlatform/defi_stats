@@ -685,7 +685,7 @@ class SqliteUpdate:  # pragma: no cover
             uuids_remove = remove_db.query.get_uuids(success_only=False)
             overlap = set(uuids_remove).intersection(set(uuids))
             if len(overlap) > 0:
-                remove_db.remove_uuids(overlap)
+                remove_db.update.remove_uuids(overlap)
                 msg = f"{len(overlap)} uuids removed from {remove_db.db_path}"
             else:
                 msg = f"No UUIDs to remove from {remove_db.db_path}"
@@ -759,6 +759,7 @@ class SqliteUpdate:  # pragma: no cover
     @timed
     def remove_uuids(self, remove_list: set(), table: str = "stats_swaps") -> None:
         try:
+            sql = ""
             if len(remove_list) > 1:
                 uuid_list = tuple(remove_list)
             else:
@@ -769,9 +770,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.conn.commit()
             return
         except sqlite3.OperationalError as e:
-            return default_error(e)
+            return default_error(e, sql)
         except Exception as e:
-            return default_error(e)
+            return default_error(e, sql)
 
     @timed
     def denullify_stats_swaps(self):
