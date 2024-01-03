@@ -51,7 +51,7 @@ def import_source_databases():  # pragma: no cover
     update_master_dbs()
     get_db_row_counts()
     msg = "Souce database import completed!"
-    return default_result(msg, loglevel="merge", ignore_until=10)
+    return default_result(msg=msg, loglevel="merge", ignore_until=10)
 
 
 def clean_source_dbs():  # pragma: no cover
@@ -80,7 +80,7 @@ def clean_source_dbs():  # pragma: no cover
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"{len(source_dbs)} source databases cleaned."
-    return default_result(msg, loglevel="merge")
+    return default_result(msg=msg, loglevel="merge")
 
 
 @timed
@@ -105,7 +105,7 @@ def get_db_row_counts(temp=False):  # pragma: no cover
         i.close()
     if temp:
         msg = f"Temp DB rows: [{msg_7777}] [{msg_8762}] [{msg_ALL}]"
-    return default_result(msg, loglevel="merge")
+    return default_result(msg=msg, loglevel="merge")
 
 
 @timed
@@ -154,7 +154,7 @@ def update_temp_dbs():  # pragma: no cover
                     for i in [src_db, dest_db]:
                         i.close()
 
-        # Merge both netids into 'all'
+        # Merge both netids into 'ALL'
 
         for i in NetId:
             i = i.value
@@ -239,7 +239,7 @@ def backup_local_dbs():  # pragma: no cover
     except Exception as e:
         return default_error(e)
     msg = "Merge of local source data into backup databases complete!"
-    return default_result(msg, loglevel="merge")
+    return default_result(msg=msg, loglevel="merge")
 
 
 # @timed
@@ -282,7 +282,7 @@ def repair_swaps(uuids: List, db1: SqliteDB, db2: SqliteDB) -> None:  # pragma: 
     except Exception as e:
         return default_error(e)
     msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
-    return default_result(msg, loglevel=loglevel)
+    return default_result(msg=msg, loglevel=loglevel)
 
 
 def compare_uuid_fields(swap1, swap2):
@@ -324,7 +324,7 @@ def init_dbs():  # pragma: no cover
     except Exception as e:  # pragma: no cover
         return default_error(e)
     return default_result(
-        "Database Initialisation complete!", loglevel="merge", ignore_until=10
+        msg="Database Initialisation complete!", loglevel="merge", ignore_until=10
     )
 
 
@@ -342,7 +342,7 @@ def setup_temp_dbs():  # pragma: no cover
     except Exception as e:
         return default_error(e)
     msg = "Temp DBs setup complete..."
-    return default_result(msg, "info")
+    return default_result(msg=msg, loglevel="info")
 
 
 @timed
@@ -356,7 +356,7 @@ def backup_db(src_db_path: str, dest_db_path: str) -> None:  # pragma: no cover
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"Backup of {src.db_path} complete..."
-    return default_result(msg, loglevel="muted")
+    return default_result(msg=msg, loglevel="muted")
 
 
 def progress(status, remaining, total, show=False):  # pragma: no cover
@@ -373,7 +373,7 @@ def init_stats_swaps_db(db):  # pragma: no cover
     except Exception as e:  # pragma: no cover
         return default_error(e)
     msg = f"Table 'stats_swaps' init for {db.db_file} complete..."
-    return default_result(msg, loglevel="merge", ignore_until=10)
+    return default_result(msg=msg, loglevel="merge", ignore_until=10)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -21,6 +21,10 @@ urls = Urls(testing=True, netid="7777")
 def test_save_json():
     fn = files.get_cache_fn("foo")
 
+    data = []
+    resp = files.save_json(fn, data)
+    assert resp["result"] == "error"
+
     data = 4311080719
     resp = files.save_json(fn, data)
     assert resp["result"] == "error"

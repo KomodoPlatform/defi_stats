@@ -9,14 +9,11 @@ from fixtures_class import (
     setup_gecko_info,
     setup_gecko_coin_ids,
 )
-
-from fixtures import (
-    logger,
-)
 from fixtures_db import (
     setup_actual_db,
     setup_swaps_db_data,
 )
+from util.logger import logger
 
 
 def test_get_gecko_coin_ids(setup_gecko):

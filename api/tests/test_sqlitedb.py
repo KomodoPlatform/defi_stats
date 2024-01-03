@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import time
 import sqlite3
-from fixtures import (
-    logger,
+from fixtures_class import (
     helper,
 )
+from util.logger import logger
 
 from fixtures_data import swap_item, swap_item2
 from fixtures_db import (
@@ -36,23 +36,13 @@ two_months_ago = now - 5184000
 def test_get_pairs(setup_swaps_db_data):
     DB = setup_swaps_db_data
     pairs = DB.query.get_pairs()
-    assert ("KMD", "LTC") in pairs
-    assert ("DOGE", "LTC") not in pairs
+    logger.info(pairs)
+    assert ("KMD_LTC") in pairs
+    assert ("LTC_KMD") not in pairs
     assert len(pairs) == 7
-    pairs = DB.query.get_pairs(as_str=True)
-    assert ("DGB_KMD-BEP20") in pairs
-    assert ("DOGE_LTC") not in pairs
-    assert len(pairs) == 7
-    pairs = DB.query.get_pairs(45)
-    assert ("BTC", "LTC") in pairs
-    assert ("DGB", "LTC") in pairs
-    assert ("DOGE", "LTC") not in pairs
-    assert len(pairs) == 7
+    assert ("DGB_KMD-BEP20") not in pairs
+    assert ("KMD-BEP20_DGB") in pairs
     pairs = DB.query.get_pairs(90)
-    assert ("BTC", "LTC") in pairs
-    assert ("DGB", "LTC") in pairs
-    assert ("DOGE", "LTC") in pairs
-    assert ("LTC", "DOGE") not in pairs
     assert len(pairs) == 8
 
 
@@ -62,11 +52,11 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     DB.sql_cursor = DB.conn.cursor()
 
     # Test failed excluded
-    swaps = DB.query.get_swaps_for_pair("MCL", "KMD", day_ago)
+    swaps = DB.query.get_swaps_for_pair("MCL", "KMD", start_time=day_ago)
     assert len(swaps) == 0
 
-    swaps1 = DB.query.get_swaps_for_pair("LTC", "KMD", day_ago)
-    swaps2 = DB.query.get_swaps_for_pair("KMD", "LTC", day_ago)
+    swaps1 = DB.query.get_swaps_for_pair("LTC", "KMD", start_time=day_ago)
+    swaps2 = DB.query.get_swaps_for_pair("KMD", "LTC", start_time=day_ago)
     assert len(swaps1) == len(swaps2)
     for i in swaps1:
         logger.info(i)
@@ -77,7 +67,7 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     assert len(swaps2) == 3
     assert swaps2[2]["trade_type"] == "sell"
 
-    swaps = DB.query.get_swaps_for_pair("DGB", "LTC", two_months_ago)
+    swaps = DB.query.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago)
     for i in swaps:
         logger.info(i)
     assert len(swaps) == 3

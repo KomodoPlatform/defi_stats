@@ -6,9 +6,9 @@ def arg_defaults():
     val_keys = {
         "false": ["reverse", "testing"],
         "true": ["wal", "exclude_unpriced", "order_by_mcap"],
-        "none": ["endpoint", "source_url", "db_path", "db"],
+        "none": ["source_url", "db_path", "db"],
         "now": ["end"],
-        "all": ["netid"],
+        "ALL": ["netid"],
         "default_host": ["mm2_host"],
         "zero": ["trigger"],
         "kmd": ["coin"],
@@ -64,25 +64,32 @@ def set_params(object: object(), kwargs: dict(), options: list()) -> None:
     return default_result(msg=msg, loglevel="debug", ignore_until=10)
 
 
-def default_error(e, msg=None, loglevel="error", ignore_until=0):  # pragma: no cover
+def default_error(
+    e, msg=None, loglevel="error", ignore_until=0, data=None
+):  # pragma: no cover
     if msg is None:
         msg = e
     else:
         msg = f"{e}: {msg}"
-    r = {"result": "error", "message": msg, "error": str(type(e)), "loglevel": loglevel}
-    if msg is not None:
-        r.update({"message": msg})
-    if ignore_until is not None:
-        r.update({"ignore_until": ignore_until})
+    r = {
+        "result": "error",
+        "message": msg,
+        "error": str(type(e)),
+        "loglevel": loglevel,
+        "ignore_until": ignore_until,
+        "data": data,
+    }
     return r
 
 
 def default_result(
-    msg="No Message", loglevel="debug", ignore_until=0
+    data=None, msg=None, loglevel="debug", ignore_until=0
 ):  # pragma: no cover
-    r = {"result": "success", "message": msg, "loglevel": loglevel}
-    if msg is not None:
-        r.update({"message": msg})
-    if ignore_until is not None:
-        r.update({"ignore_until": ignore_until})
+    r = {
+        "result": "success",
+        "message": msg,
+        "data": data,
+        "loglevel": loglevel,
+        "ignore_until": ignore_until,
+    }
     return r

@@ -7,13 +7,13 @@ from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID
-from lib.cache_load import load_gecko_source, get_segwit_coins
+from lib.cache_load import load_gecko_source, get_segwit_coins, get_gecko_price_and_mcap
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sort_dict
+from util.transform import sort_dict, order_pair_by_market_cap
 
 
 class SqliteDB:  # pragma: no cover
@@ -42,7 +42,7 @@ class SqliteDB:  # pragma: no cover
     def close(self):
         self.conn.close()
         msg = f"Connection to {self.db_file} closed"
-        return default_result(msg, loglevel="debug", ignore_until=10)
+        return default_result(msg=msg, loglevel="debug", ignore_until=10)
 
     def connect(self):
         return sqlite3.connect(self.db_path)
@@ -71,7 +71,7 @@ class SqliteQuery:  # pragma: no cover
         return [i[0] for i in r.description]
 
     @timed
-    def get_pairs(self, days: int = 7, as_str=False) -> list:
+    def get_pairs(self, days: int = 7, exclude_unpriced=True) -> list:
         """
         Returns an alphabetically sorted list of pairs
         (as a list of tuples) with at least one successful
@@ -97,39 +97,34 @@ class SqliteQuery:  # pragma: no cover
             pairs += [
                 (f"{i[0]}-{i[1]}", f"{i[2]}")
                 for i in data
-                if i[1] not in ["", "segwit"] and i[3] in ["", "segwit"]
+                if i[1] not in ["", "segwit"]
             ]
             pairs += [
                 (f"{i[0]}", f"{i[2]}-{i[3]}")
                 for i in data
-                if i[1] in ["", "segwit"] and i[3] not in ["", "segwit"]
+                if i[3] not in ["", "segwit"]
             ]
-            pairs += [
-                (f"{i[0]}", f"{i[2]}")
-                for i in data
-                if i[1] in ["", "segwit"] and i[3] in ["", "segwit"]
-            ]
-            logger.calc(f"Pairs: {len(pairs)}")
-            if len(pairs) < 10:
-                logger.calc(pairs)
+            pairs += [(f"{i[0]}", f"{i[2]}") for i in data]
+            if exclude_unpriced:
+                _pairs = [
+                    i
+                    for i in pairs
+                    if get_gecko_price_and_mcap(i[0])[0] > 0
+                    and get_gecko_price_and_mcap(i[1])[0] > 0
+                ]
+                pairs = _pairs
 
             # Sort pair by ticker to expose duplicates
-            sorted_pairs = [tuple(sorted(pair)) for pair in pairs]
-            logger.calc(f"sorted_pairs: {len(pairs)}")
-            if len(sorted_pairs) < 10:
-                logger.calc(sorted_pairs)
+            sorted_pairs = set(
+                [order_pair_by_market_cap(f"{i[0]}_{i[1]}") for i in pairs]
+            )
             # Remove the duplicates
-            pairs = list(set(sorted_pairs))
-            logger.calc(f"sorted_pairs: {len(pairs)}")
-            if len(sorted_pairs) < 10:
-                logger.calc(sorted_pairs)
+            # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
             # Sort the pair tickers with higher MC second
 
         except Exception as e:
             return default_error(e)
-        if as_str:
-            return [f"{i[0]}_{i[1]}" for i in pairs]
-        return pairs
+        return list(sorted_pairs)
 
     @timed
     def get_swaps_for_pair(
@@ -137,9 +132,9 @@ class SqliteQuery:  # pragma: no cover
         base: str,
         quote: str,
         trade_type: TradeType = TradeType.ALL,
-        limit: int = 0,
-        start_time: int = 0,
-        end_time: int = 0,
+        limit: int = 100,
+        start_time: int = int(time.time()) - 86400,
+        end_time: int = int(time.time()),
     ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
@@ -147,8 +142,6 @@ class SqliteQuery:  # pragma: no cover
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         try:
-            if end_time == 0:
-                end_time = int(time.time())
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
             segwit_coins = get_segwit_coins()
@@ -699,10 +692,10 @@ class SqliteUpdate:  # pragma: no cover
         try:
             cols = ", ".join([f"{k} = ?" for k in data.keys()])
             colvals = tuple(data.values()) + (uuid,)
-            logger.calc(colvals)
+            # logger.calc(colvals)
             t = colvals
             sql = f"UPDATE 'stats_swaps' SET {cols} WHERE uuid = ?;"
-            logger.calc(sql)
+            # logger.calc(sql)
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return default_result(msg=f"{uuid} updated in {self.db.db_file}")
@@ -750,7 +743,7 @@ class SqliteUpdate:  # pragma: no cover
                 """
             )
             msg = f"'stats_swaps' table created for {self.db.db_path}"
-            return default_result(msg, loglevel="muted")
+            return default_result(msg=msg, loglevel="muted")
         except sqlite3.OperationalError as e:
             return default_error(e)
         except Exception as e:  # pragma: no cover
@@ -759,13 +752,15 @@ class SqliteUpdate:  # pragma: no cover
     @timed
     def remove_uuids(self, remove_list: set(), table: str = "stats_swaps") -> None:
         try:
-            sql = ""
-            if len(remove_list) > 1:
-                uuid_list = tuple(remove_list)
+            sql = f"SELECT * FROM {TablesEnum[table]}"
+            if len(remove_list) == 1:
+                sql += f" WHERE column_name uuid = '{remove_list[0]}';"
             else:
-                uuid_list = list(remove_list)[0]
-            sql = f"DELETE FROM {TablesEnum[table]} WHERE uuid in ?;"
-            t = (table, uuid_list)
+                uuids = ', '.join(f"'{i}'" for i in remove_list)
+                sql += f" WHERE column_name uuid IN ({uuids});"
+            logger.info(remove_list)
+            logger.info(sql)
+            t = (remove_list,)
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return
@@ -796,7 +791,7 @@ class SqliteUpdate:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
                 return default_error(e, msg)
         return default_result(
-            f"Nullification of {len(columns)} columns in {self.db.db_file} complete!",
+            msg=f"Nullification of {len(columns)} columns in {self.db.db_file} complete!",
             loglevel="updated",
             ignore_until=10,
         )
@@ -814,7 +809,7 @@ class SqliteUpdate:  # pragma: no cover
             )
             self.db.conn.commit()
             return default_result(
-                f"Nullification of {column} in {self.db.db_file} complete!",
+                msg=f"Nullification of {column} in {self.db.db_file} complete!",
                 loglevel="updated",
                 ignore_until=10,
             )
@@ -826,7 +821,9 @@ class SqliteUpdate:  # pragma: no cover
             return default_error(e, msg)
 
 
-def get_sqlite_db(db_path=None, testing: bool = False, netid=None, db=None):  # pragma: no cover
+def get_sqlite_db(
+    db_path=None, testing: bool = False, netid=None, db=None
+):  # pragma: no cover
     if db is not None:
         return db
     if netid is not None:

@@ -10,6 +10,7 @@ from db.sqlitedb_merge import import_source_databases
 from util.logger import timed
 from util.defaults import default_error, default_result
 from util.validate import validate_loop_data
+from lib.markets import Markets
 
 router = APIRouter()
 
@@ -122,7 +123,8 @@ def markets_last_trade():
         try:
             cache = Cache(netid=netid.value)
             cache_item = cache.get_item(name="markets_last_trade")
-            data = cache.markets.pairs_last_trade()
+            markets = Markets(netid=netid.value)
+            data = markets.last_trade()
             if validate_loop_data(data, cache_item, netid):
                 cache_item.save(data)
         except Exception as e:
@@ -136,8 +138,8 @@ def markets_pairs(netid):
     try:
         cache = Cache(netid=netid)
         cache_item = cache.get_item(name="markets_pairs")
-        generics = Generics(netid=netid)
-        data = generics.traded_pairs(days=90)
+        markets = Markets(netid=netid)
+        data = markets.pairs(days=90)
         if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
     except Exception as e:
@@ -177,8 +179,8 @@ def markets_tickers(netid):
     try:
         cache = Cache(netid=netid)
         cache_item = cache.get_item(name="markets_tickers")
-        generics = Generics(netid=netid)
-        data = generics.traded_tickers(pairs_days=90)
+        markets = Markets(netid=netid)
+        data = markets.tickers(pairs_days=90)
         if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
     except Exception as e:

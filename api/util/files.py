@@ -81,5 +81,5 @@ class Files:
         try:
             data = requests.get(url).json()
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)

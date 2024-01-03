@@ -1,7 +1,9 @@
 from decimal import Decimal, InvalidOperation
-from util.logger import logger
+from util.logger import logger, timed
 from typing import Any
 from util.defaults import default_error
+from lib.cache_load import get_gecko_price_and_mcap
+from util.validate import reverse_ticker
 
 
 def ticker_to_market_ticker_summary(i):
@@ -166,9 +168,27 @@ def merge_orderbooks(existing, new):
 
 
 def generic_orderbook_to_gecko(data):
-    bids = [[i['price'], i['base_max_volume']] for i in data["bids"]]
-    asks = [[i['price'], i['base_max_volume']] for i in data["asks"]]
+    bids = [[i["price"], i["base_max_volume"]] for i in data["bids"]]
+    asks = [[i["price"], i["base_max_volume"]] for i in data["asks"]]
     data["asks"] = asks
     data["bids"] = bids
     data["ticker_id"] = data["pair"]
     return data
+
+
+@timed
+def order_pair_by_market_cap(pair_str: str, testing=False) -> str:
+    try:
+        pair_list = pair_str.split("_")
+        base = pair_list[0]
+        quote = pair_list[1]
+        base_price, base_mc = get_gecko_price_and_mcap(base, testing=testing)
+        quote_price, quote_mc = get_gecko_price_and_mcap(quote, testing=testing)
+        if quote_mc < base_mc:
+            pair_str = reverse_ticker(pair_str)
+        elif quote_mc == base_mc:
+            pair_str = "_".join(sorted(pair_list))
+    except Exception as e:  # pragma: no cover
+        msg = f"order_pair_by_market_cap failed: {e}"
+        logger.warning(msg)
+    return pair_str

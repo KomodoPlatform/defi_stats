@@ -70,31 +70,31 @@ class CustomFormatter(logging.Formatter):
         if record.levelname == "STOPWATCH":
             log_fmt = (
                 self.yellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "QUERY":
             log_fmt = (
                 self.lightyellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "LOOP":
             log_fmt = (
                 self.purple
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "MUTED":
             log_fmt = (
                 self.muted
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "CALC":
             log_fmt = (
                 self.lightcyan
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "DEBUG":
@@ -106,29 +106,30 @@ class CustomFormatter(logging.Formatter):
         elif record.levelname == "MERGE":
             log_fmt = (
                 self.mintgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "DEXRPC":
             log_fmt = (
                 self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "REQUEST":
             log_fmt = (
                 self.lightyellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "UPDATED":
             log_fmt = (
-                self.lightgreen + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                self.lightgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
             )
         elif record.levelname == "SAVE":
             log_fmt = (
                 self.drabgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             ) + self.reset
         else:
@@ -329,6 +330,9 @@ def timed(func):
                 if "loglevel" in result:
                     loglevel = result["loglevel"]
                     send = True
+                else:
+                    # if not using `default_result`
+                    return result
                 if "message" in result:
                     msg = result["message"]
                     send = True
@@ -337,6 +341,10 @@ def timed(func):
                     send = True
                 if duration >= ignore_until and send:
                     StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
+                # Using `default_result`, with actual data to return
+                if "data" in result:
+                    if result["data"] is not None:
+                        result = result["data"]
             return result
 
     return wrapper

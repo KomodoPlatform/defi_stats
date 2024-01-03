@@ -89,7 +89,7 @@ def gecko_orderbook(
 )
 def gecko_historical_trades(
     response: Response,
-    trade_type: TradeType = "all",
+    trade_type: TradeType = "ALL",
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
     start_time: int = 0,

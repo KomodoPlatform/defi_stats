@@ -5,6 +5,8 @@ from fixtures_transform import (
     setup_ticker_to_market_ticker_summary,
     setup_historical_trades_to_market_trades,
 )
+from fixtures_db import setup_swaps_db_data, setup_time
+from fixtures_class import setup_gecko
 
 from fixtures_data import (
     historical_data,
@@ -28,6 +30,7 @@ from util.transform import (
     sort_dict,
     format_10f,
     generic_orderbook_to_gecko,
+    order_pair_by_market_cap,
 )
 
 
@@ -144,3 +147,13 @@ def test_generic_orderbook_to_gecko():
     assert len(r["bids"]) == len(orderbook_as_coords["bids"])
     assert len(r["bids"][0][1]) == len(orderbook_as_coords["bids"][0][1])
     assert len(r["asks"][0][1]) == len(orderbook_as_coords["asks"][0][1])
+
+
+def test_order_pair_by_market_cap(setup_gecko):
+    a = order_pair_by_market_cap(("BTC-segwit_KMD"), setup_gecko.gecko_source)
+    b = order_pair_by_market_cap(("BTC_KMD"), setup_gecko.gecko_source)
+    c = order_pair_by_market_cap(("KMD_BTC-segwit"), setup_gecko.gecko_source)
+    d = order_pair_by_market_cap(("KMD_BTC"), setup_gecko.gecko_source)
+
+    assert a == c
+    assert b == d

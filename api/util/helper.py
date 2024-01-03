@@ -31,14 +31,8 @@ def is_pair_priced(base, quote) -> bool:
     Checks if both coins in a pair are priced.
     """
     try:
-        if "-" in base:
-            base = base.split("-")[0]
-        if "-" in quote:
-            quote = quote.split("-")[0]
-        common = set((base, quote)).intersection(
-            set([i.ticker for i in lib.COINS.with_price])
-        )
-        return len(common) == 2
+        if base in lib.PRICED_COINS and quote in lib.PRICED_COINS:
+            return True
     except Exception as e:  # pragma: no cover
-        logger.muted(f"Pair {base}/{quote} is unpriced: {e}")
+        logger.warning(f"Pair {base}/{quote} is unpriced: {e}")
     return False

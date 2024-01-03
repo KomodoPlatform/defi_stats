@@ -207,9 +207,9 @@ def trades(market_pair: str = "KMD_LTC", days_in_past=1, netid: NetId = NetId.AL
     else:
         reverse = False
     try:
-        if netid.value == "all":
+        if netid.value == "ALL":
             for x in NetId:
-                if x.value != "all":
+                if x.value != "ALL":
                     pair = Pair(pair_str=market_pair, netid=x.value)
                     data = pair.historical_trades(
                         trade_type="all",

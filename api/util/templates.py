@@ -22,12 +22,12 @@ def liquidity():  # pragma: no cover
     }
 
 
-def pair_info(base, quote):
+def pair_info(pair_str):
     return {
-        "ticker_id": f"{base}_{quote}",
-        "pool_id": f"{base}_{quote}",
-        "base": base,
-        "target": quote,
+        "ticker_id": pair_str,
+        "pool_id": pair_str,
+        "base": pair_str.split("_")[0],
+        "target": pair_str.split("_")[1],
     }
 
 

@@ -7,14 +7,19 @@ from copy import deepcopy
 from fixtures_db import (
     setup_time,
     setup_swaps_db_data,
-    setup_swaps_db_data,
+)
+from fixtures_pair import (
     setup_kmd_dgb_pair,
     setup_dgb_kmd_pair,
     setup_kmd_ltc_pair,
+    setup_kmd_btc_pair,
     setup_ltc_kmd_pair,
     setup_not_existing_pair,
+    setup_1inch_usdc_pair
 )
-from fixtures import logger, helper
+
+from util.logger import logger
+from fixtures_class import helper
 from fixtures_data import (
     trades_info,
     ticker_item,
@@ -69,6 +74,7 @@ def test_get_average_price(setup_not_existing_pair):
 def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     pair = setup_kmd_ltc_pair
     r = pair.get_volumes_and_prices()
+    logger.info(r)
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price"] == 1
@@ -102,9 +108,12 @@ def test_pair(setup_ltc_kmd_pair, setup_kmd_dgb_pair):
     assert pair.as_str == "KMD_LTC"
     assert pair.as_tuple == ("KMD", "LTC")
     pair = setup_kmd_dgb_pair
-    assert pair.as_str == "DGB_KMD"
-    assert pair.quote == "KMD"
-    assert pair.base == "DGB"
+    assert not pair.as_str == "DGB_KMD"
+    assert pair.as_str == "KMD_DGB"
+    assert not pair.quote == "KMD"
+    assert not pair.base == "DGB"
+    assert pair.base == "KMD"
+    assert pair.quote == "DGB"
 
 
 def test_merge_orderbooks(setup_kmd_ltc_pair):
@@ -125,3 +134,24 @@ def test_merge_orderbooks(setup_kmd_ltc_pair):
     assert x["total_bids_quote_vol"] == orderbook_data["total_bids_quote_vol"] * 2
     assert x["total_asks_base_usd"] == orderbook_data["total_asks_base_usd"] * 2
     assert x["total_bids_quote_usd"] == orderbook_data["total_bids_quote_usd"] * 2
+
+
+def test_swap_uuids(setup_kmd_ltc_pair):
+    r = setup_kmd_ltc_pair.swap_uuids()
+    assert "77777777-2762-4633-8add-6ad2e9b1a4e7" in r
+    assert len(r) == 3
+
+
+def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
+    pair = setup_kmd_ltc_pair
+    r = pair.related_pairs
+    assert ("KMD_LTC") in r
+    assert ("KMD-BEP20_LTC") in r
+    assert len(r) == 4
+
+    pair = setup_1inch_usdc_pair
+    r = pair.related_pairs
+    logger.info(pair.related_pairs)
+    assert ("1INCH-AVX20_USDC-ERC20") in r
+    assert ("1INCH-PLG20_USDC-BEP20") in r
+    assert len(r) == 50

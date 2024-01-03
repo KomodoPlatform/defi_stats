@@ -31,10 +31,12 @@ def test_coin(
     assert setup_coin_doc.is_valid
     assert not setup_coin_ltc.is_testnet
     assert setup_coin_ltc.has_segwit
+    assert setup_coin_ltc_segwit.has_segwit
     assert not setup_coin_doc.has_segwit
     assert setup_coin_atom.is_wallet_only
     assert not setup_coin_atom.is_valid
     assert not setup_coin_ltc.is_tradable
+    assert not setup_coin_atom.is_tradable
     assert setup_coin_ltc.is_valid
     assert not setup_coin_doc.is_wallet_only
     assert setup_coin_ltc_segwit.coin == "LTC-segwit"
@@ -47,12 +49,13 @@ def test_coin(
     assert setup_coin_ltc.mcap > 0
     assert setup_coin_ltc.usd_price > 0
     assert setup_coin.usd_price > 0
-    assert "BTC-BEP20" in [i.coin for i in setup_coin_btc.get_related_coins()]
-    assert "BTC-segwit" in [i.coin for i in setup_coin_btc.get_related_coins()]
+    assert "BTC-BEP20" in [i.coin for i in setup_coin_btc.related_coins]
+    assert "BTC-segwit" in [i.coin for i in setup_coin_btc.related_coins]
 
-    assert setup_coin_ltc.validate_coin()
-    assert setup_coin.validate_coin()
-    assert not setup_coin_atom.validate_coin()
+    assert setup_coin_ltc.is_valid
+    assert setup_coin.is_valid
+    assert not setup_coin_atom.is_valid
+    assert not setup_coin_bad.is_valid
 
 
 def test_get_gecko_price_and_mcap(
