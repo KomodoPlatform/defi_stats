@@ -58,7 +58,7 @@ def gecko_tickers():
 
 @router.get(
     "/orderbook/{ticker_id}",
-    description="Returns the live orderbook information for a CoinGecko compatible pair.",
+    description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
     response_model=GeckoOrderbook,
     responses={406: {"model": ErrorMessage}},
     status_code=200,

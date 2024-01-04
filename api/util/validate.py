@@ -4,10 +4,6 @@ import lib
 from util.exceptions import DataStructureError
 
 
-def reverse_ticker(ticker_id):
-    return "_".join(ticker_id.split("_")[::-1])
-
-
 def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     if allow_reverse:
         inverse_valid_tickers = [

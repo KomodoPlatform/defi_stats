@@ -7,8 +7,11 @@ API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 
 from util.validate import (
-    reverse_ticker,
     validate_ticker_id,
+)
+
+from util.transform import (
+    reverse_ticker,
 )
 
 

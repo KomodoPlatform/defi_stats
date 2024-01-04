@@ -219,13 +219,13 @@ orderbook_as_string = {
     "quote": "DASH",
     "timestamp": "1704125581",
     "asks": [
-        {"price": "5", "base_max_volume": "4"},
-        {"price": "4", "base_max_volume": "6"},
-        {"price": "56", "base_max_volume": "335"},
+        {"price": "5", "volume": "4"},
+        {"price": "4", "volume": "6"},
+        {"price": "56", "volume": "335"},
     ],
     "bids": [
-        {"price": "10", "base_max_volume": "9"},
-        {"price": "8", "base_max_volume": "7"},
+        {"price": "10", "volume": "9"},
+        {"price": "8", "volume": "7"},
     ],
     "liquidity_usd": 3000000,
     "total_asks_base_vol": 9999.99,

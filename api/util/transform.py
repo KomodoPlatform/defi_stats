@@ -3,7 +3,6 @@ from util.logger import logger, timed
 from typing import Any
 from util.defaults import default_error
 from lib.cache_load import get_gecko_price_and_mcap
-from util.validate import reverse_ticker
 
 
 def round_to_str(value: Any, rounding=8):
@@ -146,8 +145,8 @@ def merge_orderbooks(existing, new):
 
 
 def generic_orderbook_to_gecko(data):
-    bids = [[i["price"], i["base_max_volume"]] for i in data["bids"]]
-    asks = [[i["price"], i["base_max_volume"]] for i in data["asks"]]
+    bids = [[i["price"], i["volume"]] for i in data["bids"]]
+    asks = [[i["price"], i["volume"]] for i in data["asks"]]
     data["asks"] = asks
     data["bids"] = bids
     data["ticker_id"] = data["pair"]
@@ -215,3 +214,7 @@ def historical_trades_to_market_trades(i):
         "timestamp": i["timestamp"],
         "type": i["type"],
     }
+
+
+def reverse_ticker(ticker_id):
+    return "_".join(ticker_id.split("_")[::-1])

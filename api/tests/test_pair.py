@@ -11,11 +11,11 @@ from fixtures_db import (
 from fixtures_pair import (
     setup_kmd_dgb_pair,
     setup_dgb_kmd_pair,
-    setup_kmd_ltc_pair,
     setup_kmd_btc_pair,
     setup_ltc_kmd_pair,
+    setup_kmd_ltc_pair,
     setup_not_existing_pair,
-    setup_1inch_usdc_pair
+    setup_1inch_usdc_pair,
 )
 
 from util.logger import logger
@@ -28,10 +28,14 @@ from fixtures_data import (
 from util.transform import merge_orderbooks, format_10f
 
 
-def test_kmd_ltc_pair(setup_kmd_ltc_pair):
+def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
     assert pair.is_tradable
     assert pair.info["ticker_id"] == "KMD_LTC"
+    assert not pair.inverse_requested
+
+    pair = setup_ltc_kmd_pair
+    assert pair.inverse_requested
 
 
 def test_historical_trades(
