@@ -13,7 +13,7 @@ from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sort_dict, order_pair_by_market_cap
+from util.transform import sort_dict, order_pair_by_market_cap, format_10f
 
 
 class SqliteDB:  # pragma: no cover
@@ -288,10 +288,11 @@ class SqliteQuery:  # pragma: no cover
                     taker_coin_platform, maker_coin_platform, \
                     taker_amount AS last_taker_amount, \
                     maker_amount AS last_maker_amount, \
-                    MAX(finished_at) AS last_swap_time, \
+                    MAX(finished_at) AS last_swap, \
                     COUNT(uuid) AS swap_count, \
                     SUM(taker_amount) AS sum_taker_traded, \
-                    SUM(maker_amount) AS sum_maker_traded \
+                    SUM(maker_amount) AS sum_maker_traded, \
+                    uuid AS last_swap_uuid \
                     FROM stats_swaps"
 
             sql += " WHERE is_success=1"
@@ -314,7 +315,10 @@ class SqliteQuery:  # pragma: no cover
                         "taker_coin_platform",
                         "maker_coin_platform",
                     ]:
-                        item.update({k: v})
+                        if k == "last_swap":
+                            item.update({k: int(v)})
+                        else:
+                            item.update({k: v})
                 if i["taker_coin_platform"] in ["", "segwit"]:
                     taker = i["taker_coin_ticker"]
                 else:
@@ -324,11 +328,18 @@ class SqliteQuery:  # pragma: no cover
                 else:
                     maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
 
+                item.update(
+                    {
+                        "last_price": format_10f(
+                            item["last_maker_amount"] / item["last_taker_amount"]
+                        )
+                    }
+                )
                 pair = f"{taker}_{maker}"
                 # Handle segwit
                 if pair not in by_pair_dict:
                     by_pair_dict.update({pair: item})
-                elif item["last_swap_time"] > by_pair_dict[pair]["last_swap_time"]:
+                elif item["last_swap"] > by_pair_dict[pair]["last_swap"]:
                     by_pair_dict.update({pair: item})
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
@@ -387,22 +398,22 @@ class SqliteQuery:  # pragma: no cover
             if swap_price and swap_price2:
                 if swap_time > swap_time2:
                     price = swap_price
-                    last_swap_time = swap_time
+                    last_swap = swap_time
                 else:
                     price = swap_price2
-                    last_swap_time = swap_time2
+                    last_swap = swap_time2
             elif swap_price:
                 price = swap_price
-                last_swap_time = swap_time
+                last_swap = swap_time
             elif swap_price2:
                 price = swap_price2
-                last_swap_time = swap_time2
+                last_swap = swap_time2
             else:
                 price = 0
-                last_swap_time = 0
+                last_swap = 0
             data = {
                 "price": price,
-                "timestamp": last_swap_time,
+                "timestamp": last_swap,
             }
             return data
         except Exception as e:
@@ -523,8 +534,8 @@ class SqliteQuery:  # pragma: no cover
         self,
         ticker: str,
         trade_type: str,
-        start_time: int = 0,
-        end_time: int = 0,
+        start_time: int = int(time.time() - 86400),
+        end_time: int = int(time.time()),
     ) -> list:
         """
         Returns volume traded of ticker between two timestamps.
@@ -752,16 +763,17 @@ class SqliteUpdate:  # pragma: no cover
     @timed
     def remove_uuids(self, remove_list: set(), table: str = "stats_swaps") -> None:
         try:
-            sql = f"SELECT * FROM {TablesEnum[table]}"
+            remove_list = list(remove_list)
+            sql = f"DELETE FROM {TablesEnum[table]}"
             if len(remove_list) == 1:
-                sql += f" WHERE column_name uuid = '{remove_list[0]}';"
+                remove_list = remove_list[0]
+                sql += " WHERE uuid = ?;"
+                t = (remove_list,)
+                self.db.sql_cursor.execute(sql, t)
             else:
-                uuids = ', '.join(f"'{i}'" for i in remove_list)
-                sql += f" WHERE column_name uuid IN ({uuids});"
-            logger.info(remove_list)
-            logger.info(sql)
-            t = (remove_list,)
-            self.db.sql_cursor.execute(sql, t)
+                uuids = ", ".join(f"'{i}'" for i in remove_list)
+                sql += f" WHERE uuid IN ({uuids});"
+                self.db.sql_cursor.execute(sql)
             self.db.conn.commit()
             return
         except sqlite3.OperationalError as e:

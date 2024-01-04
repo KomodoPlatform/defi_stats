@@ -6,46 +6,6 @@ from lib.cache_load import get_gecko_price_and_mcap
 from util.validate import reverse_ticker
 
 
-def ticker_to_market_ticker_summary(i):
-    return {
-        "trading_pair": f"{i['base_currency']}_{i['target_currency']}",
-        "last_price": i["last_price"],
-        "base_currency": i["base_currency"],
-        "base_volume": i["base_volume"],
-        "quote_currency": i["target_currency"],
-        "quote_volume": i["target_volume"],
-        "lowest_ask": i["ask"],
-        "highest_bid": i["bid"],
-        "price_change_percent_24h": str(i["price_change_percent_24h"]),
-        "highest_price_24h": i["high"],
-        "lowest_price_24h": i["low"],
-        "trades_24h": int(i["trades_24hr"]),
-        "last_swap_timestamp": int(i["last_trade"]),
-    }
-
-
-def ticker_to_market_ticker(i):
-    return {
-        f"{i['base_currency']}_{i['target_currency']}": {
-            "last_price": i["last_price"],
-            "quote_volume": i["target_volume"],
-            "base_volume": i["base_volume"],
-            "isFrozen": "0",
-        }
-    }
-
-
-def historical_trades_to_market_trades(i):
-    return {
-        "trade_id": i["trade_id"],
-        "price": i["price"],
-        "base_volume": i["base_volume"],
-        "quote_volume": i["target_volume"],
-        "timestamp": i["timestamp"],
-        "type": i["type"],
-    }
-
-
 def round_to_str(value: Any, rounding=8):
     try:
         if isinstance(value, (str, int, float)):
@@ -154,6 +114,24 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
+@timed
+def order_pair_by_market_cap(pair_str: str, testing=False) -> str:
+    try:
+        pair_list = pair_str.split("_")
+        base = pair_list[0]
+        quote = pair_list[1]
+        base_price, base_mc = get_gecko_price_and_mcap(base, testing=testing)
+        quote_price, quote_mc = get_gecko_price_and_mcap(quote, testing=testing)
+        if quote_mc < base_mc:
+            pair_str = reverse_ticker(pair_str)
+        elif quote_mc == base_mc:
+            pair_str = "_".join(sorted(pair_list))
+    except Exception as e:  # pragma: no cover
+        msg = f"order_pair_by_market_cap failed: {e}"
+        logger.warning(msg)
+    return pair_str
+
+
 def merge_orderbooks(existing, new):
     existing["asks"] += new["asks"]
     existing["bids"] += new["bids"]
@@ -176,19 +154,64 @@ def generic_orderbook_to_gecko(data):
     return data
 
 
-@timed
-def order_pair_by_market_cap(pair_str: str, testing=False) -> str:
-    try:
-        pair_list = pair_str.split("_")
-        base = pair_list[0]
-        quote = pair_list[1]
-        base_price, base_mc = get_gecko_price_and_mcap(base, testing=testing)
-        quote_price, quote_mc = get_gecko_price_and_mcap(quote, testing=testing)
-        if quote_mc < base_mc:
-            pair_str = reverse_ticker(pair_str)
-        elif quote_mc == base_mc:
-            pair_str = "_".join(sorted(pair_list))
-    except Exception as e:  # pragma: no cover
-        msg = f"order_pair_by_market_cap failed: {e}"
-        logger.warning(msg)
-    return pair_str
+def to_summary_for_ticker_item(data):  # pragma: no cover
+    return {
+        "pair": data["ticker_id"],
+        "base": data["base_currency"],
+        "liquidity_usd": data["liquidity_in_usd"],
+        "base_volume": data["base_volume"],
+        "base_usd_price": data["base_usd_price"],
+        "quote": data["target_currency"],
+        "quote_volume": data["target_volume"],
+        "quote_usd_price": data["target_usd_price"],
+        "highest_bid": data["bid"],
+        "lowest_ask": data["ask"],
+        "highest_price_24hr": data["high"],
+        "lowest_price_24hr": data["low"],
+        "price_change_24hr": data["price_change_24h"],
+        "price_change_percent_24hr": data["price_change_percent_24h"],
+        "trades_24hr": data["trades_24hr"],
+        "volume_usd_24hr": data["volume_usd_24hr"],
+        "last_price": data["last_price"],
+        "last_trade": data["last_trade"],
+    }
+
+
+def ticker_to_market_ticker_summary(i):
+    return {
+        "trading_pair": f"{i['base_currency']}_{i['target_currency']}",
+        "base_currency": i["base_currency"],
+        "base_volume": i["base_volume"],
+        "quote_currency": i["target_currency"],
+        "quote_volume": i["target_volume"],
+        "lowest_ask": i["ask"],
+        "highest_bid": i["bid"],
+        "price_change_percent_24h": str(i["price_change_percent_24h"]),
+        "highest_price_24hr": i["high"],
+        "lowest_price_24hr": i["low"],
+        "trades_24hr": int(i["trades_24hr"]),
+        "last_swap": int(i["last_trade"]),
+        "last_price": i["last_price"],
+    }
+
+
+def ticker_to_market_ticker(i):
+    return {
+        f"{i['base_currency']}_{i['target_currency']}": {
+            "last_price": i["last_price"],
+            "quote_volume": i["target_volume"],
+            "base_volume": i["base_volume"],
+            "isFrozen": "0",
+        }
+    }
+
+
+def historical_trades_to_market_trades(i):
+    return {
+        "trade_id": i["trade_id"],
+        "price": i["price"],
+        "base_volume": i["base_volume"],
+        "quote_volume": i["target_volume"],
+        "timestamp": i["timestamp"],
+        "type": i["type"],
+    }

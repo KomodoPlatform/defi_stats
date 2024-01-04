@@ -268,7 +268,7 @@ class StopWatch:
             func = self.trace["function"]
             if PROJECT_ROOT_PATH in self.msg:
                 self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-            self.msg = f"|{duration:>4} sec | {func:<24} | {str(self.msg):<120} "
+            self.msg = f"|{duration:>4} sec | {func:<24} | {str(self.msg):<90} "
             self.msg += f"| {basename(filename)}:{lineno}"
 
             send_log(loglevel=self.loglevel, msg=self.msg)
@@ -297,6 +297,7 @@ def show_pallete():
     logger.merge("merge")
     logger.save("save")
     logger.calc("calc")
+    logger.dexrpc("dexrpc")
     logger.loop("loop")
     logger.muted("muted")
     logger.query("query")
@@ -348,3 +349,7 @@ def timed(func):
             return result
 
     return wrapper
+
+
+if __name__ == "__main__":
+    show_pallete()

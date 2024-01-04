@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
@@ -13,8 +14,7 @@ from lib.models import ErrorMessage
 from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType, NetId
-from util.validate import validate_positive_numeric, validate_ticker_id
-from db.sqlitedb import get_sqlite_db_paths
+from util.validate import validate_positive_numeric
 from lib.generics import Generics
 from util.transform import generic_orderbook_to_gecko
 
@@ -71,7 +71,7 @@ def gecko_orderbook(
 ):
     try:
         generics = Generics(netid=netid.value)
-        data = generics.get_orderbook(ticker_id, depth)
+        data = generics.get_orderbook(pair_str=ticker_id, depth=depth)
         data = generic_orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
@@ -82,26 +82,21 @@ def gecko_orderbook(
 
 @router.get(
     "/historical_trades/{ticker_id}",
-    description="Trade history for CoinGecko compatible pairs.",
+    description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
     response_model=GeckoHistoricalTrades,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def gecko_historical_trades(
     response: Response,
-    trade_type: TradeType = "ALL",
+    trade_type: TradeType = TradeType.ALL,
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = 0,
-    end_time: int = 0,
+    start_time: int = int(time.time() - 86400),
+    end_time: int = int(time.time()),
     netid: NetId = NetId.ALL,
 ):
     try:
-        db_path = get_sqlite_db_paths(netid)
-        cache = Cache(db_path=db_path)
-        gecko_pairs = cache.load_gecko_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-        validate_ticker_id(ticker_id, valid_tickers)
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -118,7 +113,6 @@ def gecko_historical_trades(
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-            netid=netid.value,
         )
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

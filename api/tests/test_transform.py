@@ -46,9 +46,9 @@ def test_ticker_to_market_ticker_summary(setup_ticker_to_market_ticker_summary):
     assert x["quote_currency"] == "LTC"
     assert ticker_item["target_volume"] == x["quote_volume"]
     assert ticker_item["ticker_id"] == x["trading_pair"]
-    assert ticker_item["last_trade"] == str(x["last_swap_timestamp"])
-    assert ticker_item["high"] == x["highest_price_24h"]
-    assert ticker_item["low"] == x["lowest_price_24h"]
+    assert ticker_item["last_trade"] == str(x["last_swap"])
+    assert ticker_item["high"] == x["highest_price_24hr"]
+    assert ticker_item["low"] == x["lowest_price_24hr"]
 
 
 def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):

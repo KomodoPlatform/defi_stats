@@ -55,5 +55,5 @@ def test_last_trade():
     logger.info(data)
     assert len(data) > 0
     assert "KMD_LTC" in data.keys()
-    assert data["KMD_LTC"]["last_swap_time"] > time.time() - 86400 * 7
+    assert data["KMD_LTC"]["last_swap"] > time.time() - 86400 * 7
     assert data["KMD_LTC"]["swap_count"] > 0

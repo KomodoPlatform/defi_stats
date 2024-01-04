@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
-from lib.cache import Cache
-from lib.generics import Generics
-from lib.cache_item import CacheItem
-from util.enums import NetId
-from lib.external import FixerAPI, CoinGeckoAPI
+from const import MARKETS_DAYS
 from db.sqlitedb_merge import import_source_databases
-from util.logger import timed
-from util.defaults import default_error, default_result
-from util.validate import validate_loop_data
+from lib.cache import Cache
+from lib.cache_item import CacheItem
+from lib.external import FixerAPI, CoinGeckoAPI
+from lib.generics import Generics
 from lib.markets import Markets
+from util.defaults import default_error, default_result
+from util.enums import NetId
+from util.logger import timed
+from util.validate import validate_loop_data
+
 
 router = APIRouter()
 
@@ -139,7 +141,7 @@ def markets_pairs(netid):
         cache = Cache(netid=netid)
         cache_item = cache.get_item(name="markets_pairs")
         markets = Markets(netid=netid)
-        data = markets.pairs(days=90)
+        data = markets.pairs(days=MARKETS_DAYS)
         if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
     except Exception as e:
@@ -180,7 +182,7 @@ def markets_tickers(netid):
         cache = Cache(netid=netid)
         cache_item = cache.get_item(name="markets_tickers")
         markets = Markets(netid=netid)
-        data = markets.tickers(pairs_days=90)
+        data = markets.tickers(pairs_days=MARKETS_DAYS)
         if validate_loop_data(data, cache_item, netid):
             cache_item.save(data)
     except Exception as e:
