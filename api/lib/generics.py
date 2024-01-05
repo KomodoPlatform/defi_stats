@@ -61,7 +61,6 @@ class Generics:
                     f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
                 )
                 data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
-            logger.loop(data)
             # Standardise values
             for i in ["bids", "asks"]:
                 for j in data[i]:

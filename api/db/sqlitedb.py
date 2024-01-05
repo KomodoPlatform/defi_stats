@@ -184,7 +184,6 @@ class SqliteQuery:  # pragma: no cover
 
                     for swap in swaps_for_pair_a_b:
                         swap["trade_type"] = "buy"
-                    # logger.info(f"{i}/{j} | {swaps_for_pair_a_b}")
 
                     sql = "SELECT * FROM stats_swaps WHERE"
                     sql += f" finished_at > {start_time}"
@@ -203,7 +202,6 @@ class SqliteQuery:  # pragma: no cover
                         swaps_for_pair_b_a = [dict(row) for row in data]
                     else:
                         swaps_for_pair_b_a = []
-                    # logger.info(f"{i}/{j} | {swaps_for_pair_b_a}")
 
                     for swap in swaps_for_pair_b_a:
                         # A little slieght of hand for reverse pairs

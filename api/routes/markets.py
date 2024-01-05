@@ -286,9 +286,9 @@ def tickers_summary(netid: NetId = NetId.ALL):
 def trades(
     market_pair: str = "KMD_LTC", days_in_past: int = 1, netid: NetId = NetId.ALL
 ):
-    cache = Cache(netid=netid.value)
-    data = cache.get_item(name="market_pairs").data
     try:
+        start = int(time.time() - 86400 * days_in_past)
+        end = int(time.time())
         if netid.value == "ALL":
             resp = []
             for x in NetId:
@@ -296,8 +296,8 @@ def trades(
                     pair = Pair(pair_str=market_pair, netid=x.value)
                     data = pair.historical_trades(
                         trade_type="all",
-                        start_time=int(time.time() - 86400) * days_in_past,
-                        end_time=int(time.time()),
+                        start_time=start,
+                        end_time=end,
                     )
                     resp += data["buy"]
                     resp += data["sell"]
@@ -305,12 +305,11 @@ def trades(
             pair = Pair(pair_str=market_pair, netid=netid.value)
             data = pair.historical_trades(
                 trade_type="all",
-                start_time=int(time.time() - 86400) * days_in_past,
-                end_time=int(time.time()),
+                start_time=start,
+                end_time=end,
             )
             resp += data["buy"]
             resp += data["sell"]
-
         sorted_trades = sort_dict_list(resp, "timestamp", reverse=True)
         return sorted_trades
     except Exception as e:

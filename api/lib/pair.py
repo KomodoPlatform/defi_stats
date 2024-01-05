@@ -117,6 +117,10 @@ class Pair:
         """Returns trades for this pair."""
         # Handles reverse pairs
         try:
+            if self.inverse_requested:
+                ticker_id = reverse_ticker(self.as_str)
+            else:
+                ticker_id = self.as_str
             trades_info = []
             swaps_for_pair = self.pair_swaps(
                 limit=limit,
@@ -130,11 +134,9 @@ class Pair:
                 if self.inverse_requested:
                     trade_info["base_ticker"] = self.quote
                     trade_info["target_ticker"] = self.base
-                    ticker_id = reverse_ticker(self.as_str)
                 else:
                     trade_info["base_ticker"] = self.base
                     trade_info["target_ticker"] = self.quote
-                    ticker_id = self.as_str
                 price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
@@ -146,7 +148,7 @@ class Pair:
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {ticker_id} failed for netid {self.netid}!"
             return default_error(e, msg)
-
+        logger.calc(trades_info)
         try:
             average_price = self.get_average_price(trades_info)
             buys = list_json_key(trades_info, "type", "buy")
@@ -334,7 +336,7 @@ class Pair:
         else:
             base = self.base
             quote = self.quote
-        return self.db.query.get_swaps_for_pair(
+        data = self.db.query.get_swaps_for_pair(
             base=base,
             quote=quote,
             limit=limit,
@@ -342,6 +344,7 @@ class Pair:
             start_time=start_time,
             end_time=end_time,
         )
+        return data
 
     @timed
     def swap_uuids(
