@@ -358,10 +358,10 @@ def volumes_history_ticker(
         # TODO: Align with midnight
         start_time = int(day_ts) - 86400
         end_time = int(day_ts)
-        volumes_dict[d_str] = db.get_volume_for_ticker(
+        volumes_dict[d_str] = db.query.get_volume_for_ticker(
             ticker=ticker,
             trade_type=trade_type.value,
             start_time=start_time,
             end_time=end_time,
         )
-        return volumes_dict
+    return volumes_dict
