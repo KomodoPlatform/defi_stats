@@ -24,14 +24,23 @@ class MarketsFiatRatesItem(BaseModel):
     coingecko_id: str = "coin_id"
 
 
+class MarketsOrderbookBid(BaseModel):
+    price: str = "777.777777"
+    volume: str = "777.777777"
+
+
+class MarketsOrderbookAsk(MarketsOrderbookBid):
+    pass
+
+
 # markets/orderbook
 class MarketsOrderbookItem(BaseModel):
     pair: str = "XXX_YYY"
     base: str = "XXX"
     quote: str = "YYY"
     timestamp: str = "1777777777"
-    bids: List[List] = [["777.777777", "777.777777"]]
-    asks: List[List] = [["777.777777", "777.777777"]]
+    bids: List[MarketsOrderbookBid]
+    asks: List[MarketsOrderbookAsk]
     total_asks_base_vol: str = "777.777777"
     total_bids_base_vol: str = "777.777777"
     total_asks_quote_vol: str = "777.777777"

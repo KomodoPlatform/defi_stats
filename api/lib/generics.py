@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 import time
-from util.transform import (
-    sum_json_key,
-    sum_json_key_10f,
-    sort_dict_list,
-    clean_decimal_dict_list,
-)
-
+from decimal import Decimal
+from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
+import lib
 from lib.pair import Pair
 from lib.external import CoinGeckoAPI
-from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
 from util.defaults import default_error, set_params, default_result
 from util.enums import NetId
 from util.exceptions import DataStructureError
 from util.files import Files
 from util.logger import timed, logger
 import util.templates as template
-from util.transform import merge_orderbooks, order_pair_by_market_cap
+from util.transform import (
+    sum_json_key,
+    sum_json_key_10f,
+    sort_dict_list,
+    clean_decimal_dict_list,
+    format_10f,
+    merge_orderbooks,
+    order_pair_by_market_cap
+)
 
-
-import lib
 
 
 class Generics:
@@ -47,20 +48,26 @@ class Generics:
             if self.netid == "ALL":
                 for x in NetId:
                     if x.value != "ALL":
-                        logger.info(pair_str)
                         pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
-                        logger.info(pair_obj.as_str)
+                        logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {pair_obj.inverse_requested})")
+                        logger.calc(pair_obj.orderbook_data)
                         data = merge_orderbooks(
                             orderbook_data, pair_obj.orderbook_data
                         )
             else:
                 pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
-                logger.info(pair_obj.as_str)
+                logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {pair_obj.inverse_requested})")
                 data = merge_orderbooks(
                     orderbook_data, pair_obj.orderbook_data
                 )
-            data["bids"] = data["bids"][: int(depth)][::-1]
-            data["asks"] = data["asks"][::-1][: int(depth)]
+            logger.loop(data)
+            # Standardise values
+            for i in ['bids', 'asks']:
+                for j in data[i]:
+                    for k in ['price', 'volume']:
+                        j[k] = format_10f(Decimal(j[k]))
+            data["bids"] = data["bids"][:int(depth)][::-1]
+            data["asks"] = data["asks"][::-1][:int(depth)]
             return data
         except Exception as e:  # pragma: no cover
             err = {"error": f"{e}"}
