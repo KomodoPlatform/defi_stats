@@ -214,7 +214,8 @@ def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
 )
 def ticker(netid: NetId = NetId.ALL):
     try:
-        data = cache.load_markets_tickers(netid=netid.value)
+        cache = Cache(netid=netid.value)
+        data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
             resp.append(ticker_to_market_ticker(i))
@@ -248,7 +249,8 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
 )
 def tickers_summary(netid: NetId = NetId.ALL):
     try:
-        data = cache.load_markets_tickers(netid=netid.value)
+        cache = Cache(netid=netid.value)
+        data = cache.get_item(name="markets_tickers").data
         resp = {}
         for i in data["data"]:
             base = i["base_currency"]
