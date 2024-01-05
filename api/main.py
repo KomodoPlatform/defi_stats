@@ -4,7 +4,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from const import API_HOST, API_PORT
-from routes import gecko, cache_loop, swaps, rates, coins, markets, prices #  generic
+from routes import gecko, cache_loop, swaps, rates, coins, markets, prices
 from lib.cache_item import CacheItem
 from lib.models import ErrorMessage, HealthCheck
 

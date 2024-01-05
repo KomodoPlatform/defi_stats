@@ -122,7 +122,7 @@ def test_sum_json_key_10f():
 
 
 def test_get_suffix():
-    assert get_suffix(1) == "24h"
+    assert get_suffix(1) == "24hr"
     assert get_suffix(8) == "8d"
 
 

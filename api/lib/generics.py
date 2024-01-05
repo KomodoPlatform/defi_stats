@@ -18,9 +18,8 @@ from util.transform import (
     clean_decimal_dict_list,
     format_10f,
     merge_orderbooks,
-    order_pair_by_market_cap
+    order_pair_by_market_cap,
 )
-
 
 
 class Generics:
@@ -45,29 +44,42 @@ class Generics:
                 orderbook_data = template.orderbook(pair_str, True)
             else:
                 orderbook_data = template.orderbook(pair_str)
+            logger.loop(orderbook_data)
             if self.netid == "ALL":
                 for x in NetId:
                     if x.value != "ALL":
                         pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
-                        logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {pair_obj.inverse_requested})")
-                        logger.calc(pair_obj.orderbook_data)
-                        data = merge_orderbooks(
-                            orderbook_data, pair_obj.orderbook_data
+                        inverse = pair_obj.inverse_requested
+                        logger.info(
+                            f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
                         )
+                        data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
             else:
                 pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
-                logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {pair_obj.inverse_requested})")
-                data = merge_orderbooks(
-                    orderbook_data, pair_obj.orderbook_data
+                inverse = pair_obj.inverse_requested
+                logger.info(
+                    f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
                 )
+                data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
             logger.loop(data)
             # Standardise values
-            for i in ['bids', 'asks']:
+            for i in ["bids", "asks"]:
                 for j in data[i]:
-                    for k in ['price', 'volume']:
+                    for k in ["price", "volume"]:
                         j[k] = format_10f(Decimal(j[k]))
-            data["bids"] = data["bids"][:int(depth)][::-1]
-            data["asks"] = data["asks"][::-1][:int(depth)]
+            data["bids"] = data["bids"][: int(depth)][::-1]
+            data["asks"] = data["asks"][::-1][: int(depth)]
+            for i in [
+                "total_asks_base_vol",
+                "total_bids_base_vol",
+                "total_asks_quote_vol",
+                "total_bids_quote_vol",
+                "total_asks_base_usd",
+                "total_bids_quote_usd",
+                "liquidity_usd",
+                "volume_usd_24hr",
+            ]:
+                data[i] = format_10f(Decimal(data[i]))
             return data
         except Exception as e:  # pragma: no cover
             err = {"error": f"{e}"}

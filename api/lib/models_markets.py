@@ -9,7 +9,7 @@ from lib.models import GenericTickersInfo, GenericTickersItem
 class MarketsAtomicdexIo(BaseModel):
     swaps_all_time: int = 999999999
     swaps_30d: int = 999999999
-    swaps_24h: int = 999999999
+    swaps_24hr: int = 999999999
 
 
 # markets/current_liquidity
@@ -50,7 +50,6 @@ class MarketsOrderbookItem(BaseModel):
     liquidity_usd: str = "777.777777"
     trades_24hr: str = "777"
     volume_usd_24hr: str = "777.777777"
-    price_change_percent_24h: str = "777.777777"
 
 
 # markets/pairs_last_trade
@@ -75,23 +74,23 @@ class MarketsSummaryItem(BaseModel):
     quote_volume: str = "777.777777"
     lowest_ask: str = "777.777777"
     highest_bid: str = "777.777777"
-    lowest_price_24h: str = "777.777777"
-    highest_price_24h: str = "777.777777"
-    price_change_percent_24h: str = "777.777777"
+    lowest_price_24hr: str = "777.777777"
+    highest_price_24hr: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_swapstamp: int = 1777777777
-    trades_24h: int = 777
+    trades_24hr: int = 777
 
 
 # markets/usd_volume
 class MarketsUsdVolume(BaseModel):
-    usd_volume_24h: float = 777.7777
+    usd_volume_24hr: float = 777.7777
 
 
 # markets/swaps24
 class MarketsSwaps24(BaseModel):
     ticker: str = "XXX"
-    swaps_amount_24h: int = 777
+    swaps_amount_24hr: int = 777
 
 
 # markets/summary_for_ticker
@@ -163,7 +162,7 @@ class GeckoTickersItem(GenericTickersItem):
     last_trade: str = "1777777777"
     # trades_24hr: str = "123"
     # volume_usd_24hr: str = "777.777777"
-    # price_change_percent_24h: str = "777.777777"
+    # price_change_percent_24hr: str = "777.777777"
 
 
 # wraps gecko/tickers

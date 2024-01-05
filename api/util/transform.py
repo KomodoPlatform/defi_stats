@@ -59,7 +59,7 @@ def clean_decimal_dict(data, to_string=False, rounding=8):
 
 def get_suffix(days: int) -> str:
     if days == 1:
-        return "24h"
+        return "24hr"
     else:
         return f"{days}d"
 
@@ -141,6 +141,8 @@ def merge_orderbooks(existing, new):
     existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
     existing["total_asks_base_usd"] += new["total_asks_base_usd"]
     existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
+    existing["trades_24hr"] += new["trades_24hr"]
+    existing["volume_usd_24hr"] += new["volume_usd_24hr"]
     return existing
 
 
@@ -167,8 +169,8 @@ def to_summary_for_ticker_item(data):  # pragma: no cover
         "lowest_ask": data["ask"],
         "highest_price_24hr": data["high"],
         "lowest_price_24hr": data["low"],
-        "price_change_24hr": data["price_change_24h"],
-        "price_change_percent_24hr": data["price_change_percent_24h"],
+        "price_change_24hr": data["price_change_24hr"],
+        "price_change_percent_24hr": data["price_change_percent_24hr"],
         "trades_24hr": data["trades_24hr"],
         "volume_usd_24hr": data["volume_usd_24hr"],
         "last_price": data["last_price"],
@@ -185,7 +187,7 @@ def ticker_to_market_ticker_summary(i):
         "quote_volume": i["target_volume"],
         "lowest_ask": i["ask"],
         "highest_bid": i["bid"],
-        "price_change_percent_24h": str(i["price_change_percent_24h"]),
+        "price_change_percent_24hr": str(i["price_change_percent_24hr"]),
         "highest_price_24hr": i["high"],
         "lowest_price_24hr": i["low"],
         "trades_24hr": int(i["trades_24hr"]),

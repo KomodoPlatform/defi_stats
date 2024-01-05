@@ -202,7 +202,7 @@ def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
         for i in data["data"]:
             if ticker in [i["base_currency"], i["target_currency"]]:
                 trades += int(i["trades_24hr"])
-        return {"ticker": ticker, "swaps_amount_24h": trades}
+        return {"ticker": ticker, "swaps_amount_24hr": trades}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
@@ -257,18 +257,18 @@ def tickers_summary(netid: NetId = NetId.ALL):
             rel = i["target_currency"]
             for ticker in [base, rel]:
                 if ticker not in resp:
-                    resp.update({ticker: {"trades_24h": 0, "volume_24h": 0}})
-                resp[ticker]["trades_24h"] += int(i["trades_24hr"])
+                    resp.update({ticker: {"trades_24hr": 0, "volume_24hr": 0}})
+                resp[ticker]["trades_24hr"] += int(i["trades_24hr"])
                 if ticker == base:
-                    resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
+                    resp[ticker]["volume_24hr"] += Decimal(i["base_volume"])
                 elif ticker == rel:
-                    resp[ticker]["volume_24h"] += Decimal(i["target_volume"])
+                    resp[ticker]["volume_24hr"] += Decimal(i["target_volume"])
         resp = clean_decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())
         tickers.sort()
         for ticker in tickers:
-            if resp[ticker]["trades_24h"] > 0:
+            if resp[ticker]["trades_24hr"] > 0:
                 with_action.update({ticker: resp[ticker]})
         return with_action
     except Exception as e:  # pragma: no cover
@@ -321,7 +321,7 @@ def trades(
 
 # Migrated from https://stats.testchain.xyz/api/v1/usd_volume_24h
 @router.get(
-    "/usd_volume_24h",
+    "/usd_volume_24hr",
     response_model=MarketsUsdVolume,
     description="24-hour price & volume for each market pair traded in last 7 days.",
     responses={406: {"model": ErrorMessage}},
@@ -331,7 +331,7 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
     try:
         cache = Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
-        return {"usd_volume_24h": data["combined_volume_usd"]}
+        return {"usd_volume_24hr": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}

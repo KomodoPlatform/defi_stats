@@ -166,8 +166,8 @@ ticker_item = {
     "low": "0.0000000000",
     "volume_usd_24hr": "0.0000000000",
     "liquidity_in_usd": "0.0000000000",
-    "price_change_percent_24h": 0,
-    "price_change_24h": 0,
+    "price_change_percent_24hr": 0,
+    "price_change_24hr": 0,
 }
 
 

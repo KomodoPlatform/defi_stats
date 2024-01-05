@@ -11,8 +11,8 @@ class GenericTickersItem(BaseModel):
     target_volume: str = "777.777777"
     highest_bid: str = "777.777777"
     lowest_ask: str = "777.777777"
-    highest_price_24h: str = "777.777777"
-    lowest_price_24h: str = "777.777777"
+    highest_price_24hr: str = "777.777777"
+    lowest_price_24hr: str = "777.777777"
     liquidity_in_usd: str = "777.777777"
     last_trade: str = "1777777777"
 
@@ -42,7 +42,7 @@ class GenericOrderbookItem(BaseModel):
     liquidity_usd: str = "777.777777"
     trades_24hr: str = "777"
     volume_usd_24hr: str = "777.777777"
-    price_change_percent_24h: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
 
 
 class ErrorMessage(BaseModel):
@@ -56,7 +56,7 @@ class ApiIds(BaseModel):
 
 
 class UsdVolume(BaseModel):
-    usd_volume_24h: float = 1234567.89
+    usd_volume_24hr: float = 1234567.89
 
 
 class SwapUuids(BaseModel):

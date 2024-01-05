@@ -442,7 +442,7 @@ class SqliteQuery:  # pragma: no cover
             data = {
                 "swaps_all_time": swaps_all_time,
                 "swaps_30d": swaps_30d,
-                "swaps_24h": swaps_24h,
+                "swaps_24hr": swaps_24h,
             }
             return data
         except Exception as e:

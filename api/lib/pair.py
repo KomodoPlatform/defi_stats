@@ -10,7 +10,7 @@ from util.transform import (
     list_json_key,
     order_pair_by_market_cap,
     get_suffix,
-    reverse_ticker
+    reverse_ticker,
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
@@ -96,7 +96,15 @@ class Pair:
 
     @property
     def orderbook_data(self):
-        return self.orderbook.for_pair()
+        data = self.orderbook.for_pair()
+        volumes_and_prices = self.get_volumes_and_prices()
+        data.update(
+            {
+                "trades_24hr": volumes_and_prices["trades_24hr"],
+                "volume_usd_24hr": volumes_and_prices["combined_volume_usd"],
+            }
+        )
+        return data
 
     @timed
     def historical_trades(
@@ -184,7 +192,7 @@ class Pair:
         """
         try:
             suffix = get_suffix(days)
-            data = self.volumes_and_prices_template(suffix)
+            data = template.volumes_and_prices(suffix)
             timestamp = int(time.time() - 86400 * days)
             try:
                 swaps_for_pair = self.pair_swaps(start_time=timestamp)
@@ -361,20 +369,6 @@ class Pair:
         except Exception as e:  # pragma: no cover
             msg = f"{self.as_str} failed for netid {self.netid}!"
             return default_error(e, msg)
-
-    @timed
-    def volumes_and_prices_template(self, suffix):
-        return {
-            "base_volume": 0,
-            "quote_volume": 0,
-            f"highest_price_{suffix}": 0,
-            f"lowest_price_{suffix}": 0,
-            "last_price": 0,
-            "last_trade": 0,
-            "trades_24hr": 0,
-            f"price_change_percent_{suffix}": 0,
-            f"price_change_{suffix}": 0,
-        }
 
 
 @timed

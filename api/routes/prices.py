@@ -59,7 +59,7 @@ def get_v2_tickers(expire_at: int = 900):
 # Unsure of these params, cant get a response:
 # r.POST("/api/v1/ticker_infos", TickerInfos)
 # r.POST("/api/v1/cex_rates", CexRates)
-# r.POST("/api/v1/volume24h", Volume24h)
+# r.POST("/api/v1/volume24hr", Volume24h)
 
 # No need to mirror these
 # r.GET("/api/v1/ping", Ping)
