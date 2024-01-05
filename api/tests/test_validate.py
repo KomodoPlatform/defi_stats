@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal
 from lib.cache_item import CacheItem
+from util.exceptions import BadPairFormatError
 from fixtures_validate import (
     setup_reverse_ticker_kmd_ltc,
 )
@@ -12,6 +13,7 @@ from util.validate import (
     validate_orderbook_pair,
     validate_loop_data,
     validate_json,
+    validate_pair,
 )
 
 
@@ -19,6 +21,14 @@ def test_reverse_ticker(
     setup_reverse_ticker_kmd_ltc,
 ):
     assert setup_reverse_ticker_kmd_ltc == "LTC_KMD"
+
+
+def test_validate_pair():
+    assert validate_pair("KMD_LTC")
+    with pytest.raises(BadPairFormatError):
+        validate_pair("KMDLTC")
+    with pytest.raises(TypeError):
+        validate_pair(6521)
 
 
 def test_validate_ticker_id():

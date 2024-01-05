@@ -54,3 +54,10 @@ class CacheItemNotFound(Exception):
 class DataStructureError(Exception):
     "Raised when a returned data is an unexpected structure"
     pass
+
+
+class BadPairFormatError(Exception):
+    def __init__(self, msg: str, status_code: int = 400):
+        self.status_code = 400
+        self.msg = msg
+        self.name = "BadPairFormatError"

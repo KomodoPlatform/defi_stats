@@ -19,7 +19,8 @@ cache = Cache()
 )
 def get_fixer_rates():
     try:
-        data = cache.load_fixer_rates()
+        cache = Cache(netid="ALL")
+        data = cache.get_item(name="fixer_rates").data
         if "timestamp" not in data:
             raise ValueError("No timestamp in data!")
         elif data["timestamp"] < time.time() - 900:
@@ -30,4 +31,4 @@ def get_fixer_rates():
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/rates/fixer_io]: {e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)

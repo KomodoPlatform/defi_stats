@@ -2,12 +2,13 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from util.logger import logger
-from lib.models import ErrorMessage, SwapUuids, SwapItem
-from util.exceptions import UuidNotFoundException
 from db.sqlitedb import get_sqlite_db
+from lib.models import ErrorMessage, SwapUuids, SwapItem
 from lib.pair import Pair
+from util.exceptions import UuidNotFoundException, BadPairFormatError
+from util.logger import logger
 from util.enums import NetId
+from util.validate import validate_pair
 
 router = APIRouter()
 
@@ -29,29 +30,33 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 @router.get(
     "/swap_uuids/{pair}",
-    description="Get swap info from a uuid.",
+    description="Get swap uuids for a pair (e.g. `KMD_LTC`).",
     responses={406: {"model": ErrorMessage}},
     response_model=SwapUuids,
     status_code=200,
 )
 def swap_uuids(
-    market_pair: str,
+    pair: str = "KMD_LTC",
     start_time: int = int(time.time() - 86400),
     end_time: int = int(time.time()),
     netid: NetId = NetId.ALL,
 ):
     try:
-        logger.info("Getting Swap UUIDS")
-        pair = Pair(pair_str=market_pair, netid=netid.value)
+        validate_pair(pair)
+        pair = Pair(pair_str=pair, netid=netid.value)
         uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
+        logger.info(resp)
         return resp
+    except BadPairFormatError as e:
+        err = {"error": e.name, "message": e.msg}
+        return JSONResponse(status_code=e.status_code, content=err)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)

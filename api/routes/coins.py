@@ -33,4 +33,4 @@ def get_gecko_ids():
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from util.logger import logger
 import lib
-from util.exceptions import DataStructureError
+from util.exceptions import DataStructureError, BadPairFormatError
 
 
 def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
@@ -96,3 +96,11 @@ def validate_json(data, outer=True):
         return True
     else:
         return False
+
+
+def validate_pair(pair_str):
+    if not isinstance(pair_str, str):
+        raise TypeError
+    if "_" not in pair_str:
+        raise BadPairFormatError(msg="Pair must be in format 'KMD_LTC'!")
+    return True

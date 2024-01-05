@@ -4,7 +4,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from const import API_HOST, API_PORT
-from routes import gecko, cache_loop, swaps, tickers, rates, coins, markets, prices
+from routes import gecko, cache_loop, swaps, rates, coins, markets, prices #  generic
 from lib.cache_item import CacheItem
 from lib.models import ErrorMessage, HealthCheck
 
@@ -71,13 +71,13 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
-app.include_router(
-    tickers.router,
-    prefix="/api/v3/tickers",
-    tags=["Tickers"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
+# app.include_router(
+#     generic.router,
+#     prefix="/api/v3/generic",
+#     tags=["Generic"],
+#     dependencies=[],
+#     responses={418: {"description": "I'm a teapot"}},
+# )
 
 
 @app.get(

@@ -97,7 +97,7 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 @router.get(
@@ -314,7 +314,7 @@ def trades(
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/usd_volume_24h

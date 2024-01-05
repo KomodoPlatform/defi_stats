@@ -22,7 +22,8 @@ def get_v1_tickers(expire_at: int = 900):
     # r.GET("/api/v1/tickers", TickerAllInfos)
     try:
         data = {}
-        resp = cache.load_prices_tickers_v1()
+        cache = Cache(netid="ALL")
+        resp = cache.get_item(name="prices_tickers_v1").data
         for i in resp:
             if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
                 data.update({i: resp[i]})
@@ -30,7 +31,7 @@ def get_v1_tickers(expire_at: int = 900):
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/prices/tickers_v1]: {e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 @router.get(
@@ -43,7 +44,8 @@ def get_v2_tickers(expire_at: int = 900):
     # r.GET("/api/v2/tickers", TickerAllInfosV2)
     try:
         data = {}
-        resp = cache.load_prices_tickers_v2()
+        cache = Cache(netid="ALL")
+        resp = cache.get_item(name="prices_tickers_v2").data
         for i in resp:
             if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
                 data.update({i: resp[i]})
@@ -51,7 +53,7 @@ def get_v2_tickers(expire_at: int = 900):
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/prices/tickers_v2]: {e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 # Unsure of these params, cant get a response:

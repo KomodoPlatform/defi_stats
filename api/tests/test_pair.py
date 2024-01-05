@@ -55,16 +55,16 @@ def test_historical_trades(
 
     pair = setup_ltc_kmd_pair
     r2 = pair.historical_trades("buy")["buy"]
-    assert len(r2) == len(r["buy"])
-    assert len(r2) == 1
+    assert len(r2) == len(r["sell"])
+    assert len(r2) == 2
+    assert r2[0]["timestamp"] > r2[1]["timestamp"]
     r3 = pair.historical_trades("all")["sell"]
-    assert len(r3) == len(r["sell"])
-    assert len(r3) == 2
+    assert len(r3) == len(r["buy"])
+    assert len(r3) == 1
     assert r3[0]["type"] == "sell"
-    assert r3[0]["timestamp"] > r3[1]["timestamp"]
-    assert r3[0]["base_volume"] == format_10f(1)
-    assert r3[0]["target_volume"] == format_10f(10)
-    assert r3[0]["price"] == format_10f(10)
+    assert r3[0]["base_volume"] == format_10f(5)
+    assert r3[0]["target_volume"] == format_10f(1)
+    assert r3[0]["price"] == format_10f(0.2)
 
 
 def test_get_average_price(setup_not_existing_pair):

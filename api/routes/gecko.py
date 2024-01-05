@@ -77,7 +77,7 @@ def gecko_orderbook(
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 @router.get(
@@ -117,4 +117,4 @@ def gecko_historical_trades(
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
