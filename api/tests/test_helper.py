@@ -6,7 +6,6 @@ from util.helper import (
     get_netid_filename,
     get_chunks,
     get_price_at_finish,
-    is_pair_priced,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 
@@ -37,11 +36,3 @@ def test_get_price_at_finish():
     r = get_price_at_finish(swap_item)
     assert "1700000777" in r
     assert r["1700000777"] == Decimal(4) / Decimal(5)
-
-
-def test_is_pair_priced():
-    assert is_pair_priced("KMD", "LTC")
-    assert is_pair_priced("KMD", "LTC-segwit")
-    assert is_pair_priced("LTC-segwit", "KMD-BEP20")
-    assert not is_pair_priced("KMD", "DOC")
-    assert not is_pair_priced("MARTY", "KMD")

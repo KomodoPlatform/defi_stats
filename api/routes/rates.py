@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
 from util.logger import logger
-from lib.models import FixerRates, ErrorMessage
+from models.generic import FixerRates, ErrorMessage
 from lib.cache import Cache
 
 router = APIRouter()

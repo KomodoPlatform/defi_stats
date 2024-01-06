@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
 from util.logger import logger
-from lib.models import ErrorMessage, ApiIds
+from models.generic import ErrorMessage, ApiIds
 from util.files import Files
 from lib.cache_item import CacheItem
 

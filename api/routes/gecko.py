@@ -4,13 +4,13 @@ from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
 from util.logger import logger
-from lib.models_gecko import (
+from models.gecko import (
     GeckoPairsItem,
     GeckoTickers,
     GeckoOrderbook,
     GeckoHistoricalTrades,
 )
-from lib.models import ErrorMessage
+from models.generic import ErrorMessage
 from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType, NetId

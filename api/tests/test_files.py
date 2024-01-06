@@ -8,7 +8,6 @@ from util.helper import (
     get_netid_filename,
     get_chunks,
     get_price_at_finish,
-    is_pair_priced,
 )
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -14,12 +14,13 @@ from util.transform import (
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
+from lib.cache import Cache
 from lib.coin import Coin
 from lib.cache_load import get_gecko_price_and_mcap
 from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
 from util.enums import TradeType
-from util.helper import get_price_at_finish
+from util.helper import get_price_at_finish, get_last_trade_time
 from util.logger import logger, StopWatch, timed
 import util.templates as template
 import lib
@@ -38,7 +39,7 @@ class Pair:
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "mm2_host", "exclude_unpriced"]
+            self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
             self.db = get_sqlite_db(testing=self.testing, netid=self.netid, db=db)
 
@@ -61,6 +62,8 @@ class Pair:
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
+            self.cache = Cache(testing=self.testing, netid=self.netid)
+            self.last_traded_cache = self.cache.get_item("generic_last_trade").data
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} on netid {self.netid} failed!"
@@ -74,8 +77,19 @@ class Pair:
         return False  # pragma: no cover
 
     @property
+    def is_priced(self):
+        if self.base_usd_price > 0 and self.quote_usd_price > 0:
+            return True
+        return False
+
+    @property
     def info(self):
-        return template.pair_info(f"{self.base}_{self.quote}")
+        data = template.pair_info(f"{self.base}_{self.quote}")
+        last_trade = get_last_trade_time(self.as_str, self.last_traded_cache)
+        data.update({
+            "last_trade": last_trade
+        })
+        return data
 
     @property
     def related_pairs(self):
@@ -230,6 +244,7 @@ class Pair:
             if len(swap_prices) > 0:
                 # TODO: using timestamps as an index works for now,
                 # but breaks when two swaps have the same timestamp.
+                # TODO: Use the cache for this
                 last_swap = self.db.query.get_last_price_for_pair(self.base, self.quote)
                 highest_price = max(swap_prices.values())
                 lowest_price = min(swap_prices.values())

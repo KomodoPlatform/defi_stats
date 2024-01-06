@@ -3,14 +3,15 @@ import time
 from decimal import Decimal
 from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
 import lib
-from lib.pair import Pair
+from lib.cache_load import get_gecko_price_and_mcap
 from lib.external import CoinGeckoAPI
+from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
 from util.enums import NetId
 from util.exceptions import DataStructureError
 from util.files import Files
+from util.helper import get_pair_info_sorted
 from util.logger import timed, logger
-import util.templates as template
 from util.transform import (
     sum_json_key,
     sum_json_key_10f,
@@ -20,6 +21,7 @@ from util.transform import (
     merge_orderbooks,
     order_pair_by_market_cap,
 )
+import util.templates as template
 
 
 class Generics:

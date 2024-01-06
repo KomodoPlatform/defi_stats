@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
 from db.sqlitedb import get_sqlite_db
-from lib.models import ErrorMessage, SwapUuids, SwapItem
+from models.generic import ErrorMessage, SwapUuids, SwapItem
 from lib.pair import Pair
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger

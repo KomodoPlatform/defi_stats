@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from lib.cache import Cache
-from lib.models import GenericTickersInfo, ErrorMessage, GenericPairsInfo
+from models.generic import GenericTickersInfo, ErrorMessage, GenericPairsInfo
 from util.enums import NetId
 from util.logger import logger
 from const import MARKETS_DAYS

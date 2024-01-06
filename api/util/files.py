@@ -33,6 +33,8 @@ class Files:
         # For Prices endpoints
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
+        # For Generic Cache
+        self.generic_last_trade = f"{folder}/generic/last_trade_{self.netid}.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)

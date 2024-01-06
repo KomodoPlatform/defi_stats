@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from lib.models import GenericTickersInfo, GenericTickersItem
+from models.generic import GenericTickersInfo, GenericTickersItem
 
 # docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw
 

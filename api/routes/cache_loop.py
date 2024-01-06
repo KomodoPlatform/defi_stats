@@ -284,3 +284,20 @@ def atomicdex_fortnight():  # pragma: no cover
     except Exception as e:
         logger.warning(f"{type(e)} in [atomicdex_io_fortnight]: {e}")
 """
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def generic_tickers():
+    try:
+        cache = Cache(netid="ALL")
+        cache_item = cache.get_item(name="generic_last_trade")
+        generics = Generics(netid="ALL")
+        data = generics.traded_tickers(pairs_days=180)
+        if validate_loop_data(data, cache_item, "ALL"):
+            cache_item.save(data)
+    except Exception as e:
+        return default_error(e)
+    msg = "Generic tickers (ALL) loop complete!"
+    return default_result(msg=msg, loglevel="loop")

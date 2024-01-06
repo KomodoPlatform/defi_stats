@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from decimal import Decimal
+from typing import Dict
 from const import MM2_RPC_PORTS, MM2_NETID
-from util.logger import logger
-import lib
+import util.templates as template
 
 
 def get_mm2_rpc_port(netid=MM2_NETID):
@@ -26,13 +26,13 @@ def get_price_at_finish(swap):
     return {end_time: taker_amount / maker_amount}
 
 
-def is_pair_priced(base, quote) -> bool:
-    """
-    Checks if both coins in a pair are priced.
-    """
-    try:
-        if base in lib.PRICED_COINS and quote in lib.PRICED_COINS:
-            return True
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"Pair {base}/{quote} is unpriced: {e}")
-    return False
+def get_pair_info_sorted(pair_list):
+    return sorted(
+        [template.pair_info(i) for i in pair_list], key=lambda d: d["ticker_id"]
+    )
+
+
+def get_last_trade_time(pair_str: str, last_traded_cache: Dict) -> int:
+    if pair_str in last_traded_cache:
+        return last_traded_cache[pair_str]["last_swap"]
+    return 0

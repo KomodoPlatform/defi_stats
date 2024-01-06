@@ -29,6 +29,7 @@ def pair_info(pair_str):
         "pool_id": pair_str,
         "base": pair_str.split("_")[0],
         "target": pair_str.split("_")[1],
+        "last_trade": 0
     }
 
 

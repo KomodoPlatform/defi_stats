@@ -7,8 +7,8 @@ import time
 from typing import List, Dict
 from const import MARKETS_DAYS
 from db.sqlitedb import get_sqlite_db
-from lib.models import ErrorMessage
-from lib.models_markets import (
+from models.generic import ErrorMessage
+from models.markets import (
     MarketsUsdVolume,
     MarketsCurrentLiquidity,
     MarketsFiatRatesItem,
@@ -287,10 +287,10 @@ def trades(
     market_pair: str = "KMD_LTC", days_in_past: int = 1, netid: NetId = NetId.ALL
 ):
     try:
+        resp = []
         start = int(time.time() - 86400 * days_in_past)
         end = int(time.time())
         if netid.value == "ALL":
-            resp = []
             for x in NetId:
                 if x.value != "ALL":
                     pair = Pair(pair_str=market_pair, netid=x.value)
