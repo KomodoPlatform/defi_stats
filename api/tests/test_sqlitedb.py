@@ -19,7 +19,7 @@ from db.sqlitedb import (
     get_sqlite_db,
     get_sqlite_db_paths,
     list_sqlite_dbs,
-    get_netid
+    get_netid,
 )
 from db.sqlitedb_merge import compare_uuid_fields
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
@@ -34,16 +34,16 @@ two_months_ago = now - 5184000
 
 
 def test_get_pairs(setup_swaps_db_data):
+    # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
     pairs = DB.query.get_pairs()
-    logger.info(pairs)
     assert ("KMD_LTC") in pairs
     assert ("LTC_KMD") not in pairs
-    assert len(pairs) == 7
+    assert len(pairs) == 8
     assert ("DGB_KMD-BEP20") not in pairs
     assert ("KMD-BEP20_DGB") in pairs
     pairs = DB.query.get_pairs(90)
-    assert len(pairs) == 8
+    assert len(pairs) == 9
 
 
 def test_get_swaps_for_pair(setup_swaps_db_data):

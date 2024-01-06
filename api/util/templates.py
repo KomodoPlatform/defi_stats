@@ -23,13 +23,14 @@ def liquidity():  # pragma: no cover
     }
 
 
-def pair_info(pair_str):
+def pair_info(pair_str: str, priced: bool = False) -> dict:
     return {
         "ticker_id": pair_str,
         "pool_id": pair_str,
         "base": pair_str.split("_")[0],
         "target": pair_str.split("_")[1],
-        "last_trade": 0
+        "last_trade": 0,
+        "priced": priced,
     }
 
 

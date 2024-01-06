@@ -22,7 +22,7 @@ class CoinGeckoAPI:
         set_params(self, self.kwargs, self.options)
         self.files = Files(testing=self.testing)
         self.coins_config = load_coins_config()
-        self.gecko_source = load_gecko_source()
+        self.gecko_source = load_gecko_source(testing=self.testing)
         self.priced_coins = set(sorted(list(self.gecko_source.keys())))
 
     def get_gecko_coin_ids(self) -> list:

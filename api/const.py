@@ -84,4 +84,5 @@ compare_fields = [
     "taker_coin_usd_price",
 ]
 
-MARKETS_DAYS = 90
+MARKETS_PAIRS_DAYS = 30
+GENERIC_PAIRS_DAYS = 30

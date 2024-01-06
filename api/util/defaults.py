@@ -5,7 +5,7 @@ from util.exceptions import NoDefaultForKeyError
 def arg_defaults():
     val_keys = {
         "false": ["reverse", "testing"],
-        "true": ["wal", "exclude_unpriced", "order_by_mcap"],
+        "true": ["wal", "order_by_mcap"],
         "none": ["source_url", "db_path", "db"],
         "now": ["end"],
         "ALL": ["netid"],

@@ -16,7 +16,7 @@ from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
 from lib.cache import Cache
 from lib.coin import Coin
-from lib.cache_load import get_gecko_price_and_mcap
+from lib.cache_load import get_gecko_price_and_mcap, load_gecko_source
 from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
 from util.enums import TradeType
@@ -42,9 +42,10 @@ class Pair:
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
             self.db = get_sqlite_db(testing=self.testing, netid=self.netid, db=db)
+            self.gecko_source = load_gecko_source(testing=self.testing)
 
             # Adjust pair order
-            self.as_str = order_pair_by_market_cap(pair_str)
+            self.as_str = order_pair_by_market_cap(pair_str, gecko_source=self.gecko_source)
             self.inverse_requested = self.as_str != pair_str
             self.base = self.as_str.split("_")[0]
             self.quote = self.as_str.split("_")[1]
@@ -53,17 +54,17 @@ class Pair:
 
             # Get price and market cap
             self.base_usd_price, self.base_mcap = get_gecko_price_and_mcap(
-                self.base, testing=self.testing
-            )
-            self.quote_usd_price, self.quote_mcap = get_gecko_price_and_mcap(
-                self.quote, testing=self.testing
+                self.base, self.gecko_source, testing=self.testing
             )
 
+            self.quote_usd_price, self.quote_mcap = get_gecko_price_and_mcap(
+                self.quote, self.gecko_source, testing=self.testing
+            )
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
             self.cache = Cache(testing=self.testing, netid=self.netid)
-            self.last_traded_cache = self.cache.get_item("generic_last_trade").data
+            self.last_traded_cache = self.cache.get_item("generic_last_traded").data
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} on netid {self.netid} failed!"
@@ -86,9 +87,7 @@ class Pair:
     def info(self):
         data = template.pair_info(f"{self.base}_{self.quote}")
         last_trade = get_last_trade_time(self.as_str, self.last_traded_cache)
-        data.update({
-            "last_trade": last_trade
-        })
+        data.update({"last_trade": last_trade})
         return data
 
     @property
@@ -162,7 +161,6 @@ class Pair:
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {ticker_id} failed for netid {self.netid}!"
             return default_error(e, msg)
-        logger.calc(trades_info)
         try:
             average_price = self.get_average_price(trades_info)
             buys = list_json_key(trades_info, "type", "buy")
@@ -206,9 +204,8 @@ class Pair:
         """
         Iterates over list of swaps to get volumes and prices data
         """
+        # TODO: Handle inverse_requested
         try:
-            suffix = get_suffix(days)
-            data = template.volumes_and_prices(suffix)
             timestamp = int(time.time() - 86400 * days)
             try:
                 swaps_for_pair = self.pair_swaps(start_time=timestamp)
@@ -217,17 +214,16 @@ class Pair:
                 logger.error(msg)
                 return default_error(e, msg)
 
+            # Get template in case no swaps returned
+            suffix = get_suffix(days)
+            data = template.volumes_and_prices(suffix)
             data["base"] = self.base
             data["quote"] = self.quote
-            data["base_price"] = get_gecko_price_and_mcap(
-                self.base, testing=self.testing
-            )[0]
-            data["quote_price"] = get_gecko_price_and_mcap(
-                self.quote, testing=self.testing
-            )[0]
-            num_swaps = len(swaps_for_pair)
-            data["trades_24hr"] = num_swaps
-            swap_prices = self.get_swap_prices(swaps_for_pair)
+            data["base_price"] = self.base_usd_price
+            data["quote_price"] = self.quote_usd_price
+            data["trades_24hr"] = len(swaps_for_pair)
+
+            # Get Volumes
             swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
             data["base_volume"] = swaps_volumes[0]
             data["quote_volume"] = swaps_volumes[1]
@@ -237,10 +233,14 @@ class Pair:
             data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(
                 self.quote_usd_price
             )
+            # Halving the combined volume to not double count, and
+            # get average between base and quote
             data["combined_volume_usd"] = (
                 data["base_volume_usd"] + data["quote_volume_usd"]
             ) / 2
 
+            # Get Prices
+            swap_prices = self.get_swap_prices(swaps_for_pair)
             if len(swap_prices) > 0:
                 # TODO: using timestamps as an index works for now,
                 # but breaks when two swaps have the same timestamp.

@@ -48,13 +48,14 @@ def test_get_orderbook(setup_swaps_db_data):
 
 def test_traded_pairs(setup_swaps_db_data):
     generics = Generics(db=setup_swaps_db_data, testing=True)
-    r = generics.traded_pairs(include_all_kmd=False)
-    assert len(r) == 5
+    r = generics.traded_pairs_info()
     assert isinstance(r, list)
     assert isinstance(r[0], dict)
-
-    r2 = generics.traded_pairs(include_all_kmd=True)
-    assert len(r2) > len(r)
+    for i in r:
+        if i['pool_id'] == "MORTY_KMD":
+            assert not i['priced']
+        if i['pool_id'] == "KMD_BTC":
+            assert i['priced']
 
 
 def test_traded_tickers(setup_swaps_db_data):

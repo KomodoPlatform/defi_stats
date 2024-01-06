@@ -26,7 +26,7 @@ class Orderbook:
             self.quote = self.pair.quote
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
-            self.gecko_source = load_gecko_source()
+            self.gecko_source = load_gecko_source(testing=self.testing)
             self.coins_config = load_coins_config()
             self.files = Files(testing=self.testing)
             segwit_coins = get_segwit_coins()
@@ -86,11 +86,11 @@ class Orderbook:
             orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
             orderbook_data["total_asks_base_usd"] = (
                 total_asks_base_vol
-                * get_gecko_price_and_mcap(orderbook_data["base"])[0]
+                * get_gecko_price_and_mcap(orderbook_data["base"], self.gecko_source)[0]
             )
             orderbook_data["total_bids_quote_usd"] = (
                 total_bids_quote_vol
-                * get_gecko_price_and_mcap(orderbook_data["quote"])[0]
+                * get_gecko_price_and_mcap(orderbook_data["quote"], self.gecko_source)[0]
             )
 
             orderbook_data["liquidity_usd"] = (

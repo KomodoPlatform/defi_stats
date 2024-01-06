@@ -2,34 +2,55 @@
 from lib.cache_load import (
     load_coins_config,
     get_gecko_price_and_mcap,
+    load_gecko_source,
 )
+from util.defaults import set_params
+from util.logger import logger
 
 
 class Coin:
-    def __init__(self, coin: str = "KMD"):
-        self.coin = coin
-        self.ticker = self.coin.split("-")[0]
-        # Designate coin
-        if self.coin in self.coins_config_cache:
-            self.type = self.coins_config_cache[self.coin]["type"]
-            self.is_testnet = self.coins_config_cache[self.coin]["is_testnet"]
-            self.is_wallet_only = self.coins_config_cache[self.coin]["wallet_only"]
-        else:
-            self.type = "Delisted"
-            self.is_testnet = False
-            self.is_wallet_only = True
+    def __init__(self, coin: str = "KMD", **kwargs):
+        try:
+            # Set params
+            self.kwargs = kwargs
+            self.options = ["testing"]
+            set_params(self, self.kwargs, self.options)
+
+            self.coin = coin
+            self.ticker = self.coin.split("-")[0]
+            self.gecko_source = load_gecko_source(testing=self.testing)
+            # Designate coin
+            if self.coin in self.coins_config_cache:
+                self.type = self.coins_config_cache[self.coin]["type"]
+                self.is_testnet = self.coins_config_cache[self.coin]["is_testnet"]
+                self.is_wallet_only = self.coins_config_cache[self.coin]["wallet_only"]
+            else:
+                self.type = "Delisted"
+                self.is_testnet = False
+                self.is_wallet_only = True
+        except Exception as e:  # pragma: no cover
+            msg = f"Init Coin for {coin} failed!"
+            logger.error(f"{type(e)} {msg}: {e}")
 
     @property
     def coins_config_cache(self):
-        return load_coins_config()
+        data = load_coins_config()
+        if isinstance(data, dict):
+            if "last_updated" in data:
+                return data["data"]
+        return data
 
     @property
     def usd_price(self):
-        return get_gecko_price_and_mcap(self.coin)[0]
+        return get_gecko_price_and_mcap(
+            ticker=self.coin, gecko_source=self.gecko_source
+        )[0]
 
     @property
     def mcap(self):
-        return get_gecko_price_and_mcap(self.coin)[1]
+        return get_gecko_price_and_mcap(
+            ticker=self.coin, gecko_source=self.gecko_source
+        )[1]
 
     @property
     def is_priced(self):

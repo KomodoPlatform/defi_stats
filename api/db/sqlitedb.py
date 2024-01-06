@@ -7,7 +7,7 @@ from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID
-from lib.cache_load import load_gecko_source, get_segwit_coins, get_gecko_price_and_mcap
+from lib.cache_load import load_gecko_source, get_segwit_coins
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
@@ -55,7 +55,7 @@ class SqliteQuery:  # pragma: no cover
             self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
             self.db = db
-            self.gecko_source = load_gecko_source()
+            self.gecko_source = load_gecko_source(testing=self.testing)
         except Exception as e:
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
@@ -71,7 +71,7 @@ class SqliteQuery:  # pragma: no cover
         return [i[0] for i in r.description]
 
     @timed
-    def get_pairs(self, days: int = 7, exclude_unpriced=True) -> list:
+    def get_pairs(self, days: int = 7) -> list:
         """
         Returns an alphabetically sorted list of pairs
         (as a list of tuples) with at least one successful
@@ -105,14 +105,6 @@ class SqliteQuery:  # pragma: no cover
                 if i[3] not in ["", "segwit"]
             ]
             pairs += [(f"{i[0]}", f"{i[2]}") for i in data]
-            if exclude_unpriced:
-                _pairs = [
-                    i
-                    for i in pairs
-                    if get_gecko_price_and_mcap(i[0])[0] > 0
-                    and get_gecko_price_and_mcap(i[1])[0] > 0
-                ]
-                pairs = _pairs
 
             # Sort pair by ticker to expose duplicates
             sorted_pairs = set(
@@ -279,7 +271,7 @@ class SqliteQuery:  # pragma: no cover
             return []
 
     @timed
-    def get_pairs_last_trade(self, started_at=None, finished_at=None, min_swaps=5):
+    def get_pairs_last_traded(self, started_at=None, finished_at=None, min_swaps=5):
         # TODO: Filter out test coins
         try:
             sql = "SELECT taker_coin_ticker, maker_coin_ticker, \

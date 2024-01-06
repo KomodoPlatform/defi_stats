@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
-from typing import Any
+from typing import Any, List
 from util.defaults import default_error
 from lib.cache_load import get_gecko_price_and_mcap
 
@@ -92,11 +92,12 @@ def sum_json_key_10f(data: dict, key: str) -> str:
     return format_10f(sum_json_key(data, key))
 
 
-def sort_dict_list(data: list(), key: str, reverse=False) -> dict:
+def sort_dict_list(data: List, key: str, reverse=False) -> dict:
     """
     Sort a list of dicts by the value of a key.
     """
-    return sorted(data, key=lambda k: k[key], reverse=reverse)
+    resp = sorted(data, key=lambda k: k[key], reverse=reverse)
+    return resp
 
 
 def sort_dict(data: dict, reverse=False) -> dict:
@@ -114,13 +115,17 @@ def sort_dict(data: dict, reverse=False) -> dict:
 
 
 @timed
-def order_pair_by_market_cap(pair_str: str, testing=False) -> str:
+def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) -> str:
     try:
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_price, base_mc = get_gecko_price_and_mcap(base, testing=testing)
-        quote_price, quote_mc = get_gecko_price_and_mcap(quote, testing=testing)
+        base_price, base_mc = get_gecko_price_and_mcap(
+            base, gecko_source=gecko_source, testing=testing
+        )
+        quote_price, quote_mc = get_gecko_price_and_mcap(
+            quote, gecko_source=gecko_source, testing=testing
+        )
         if quote_mc < base_mc:
             pair_str = reverse_ticker(pair_str)
         elif quote_mc == base_mc:

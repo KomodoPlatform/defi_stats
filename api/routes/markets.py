@@ -5,7 +5,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 import time
 from typing import List, Dict
-from const import MARKETS_DAYS
+from const import MARKETS_PAIRS_DAYS
 from db.sqlitedb import get_sqlite_db
 from models.generic import ErrorMessage
 from models.markets import (
@@ -101,19 +101,19 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
 
 
 @router.get(
-    "/pairs_last_trade",
+    "/pairs_last_traded",
     description="Returns last trade info for all pairs matching the filter",
     response_model=List[MarketsPairLastTradeItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def pairs_last_trade(
+def pairs_last_traded(
     netid: NetId = NetId.ALL,
     start_time: int = 0,
     end_time: int = int(time.time()),
     min_swaps: int = 5,
 ) -> list:
-    data = CacheItem("markets_last_trade", netid=netid.value).data
+    data = CacheItem("markets_last_traded", netid=netid.value).data
     filtered_data = []
     for i in data:
         if data[i]["swap_count"] > min_swaps:
@@ -127,7 +127,7 @@ def pairs_last_trade(
 # Migrated from https://stats.testchain.xyz/api/v1/summary
 @router.get(
     "/summary",
-    description=f"24-hour price & volume for each market pair traded in last {MARKETS_DAYS} days.",
+    description=f"24-hour price & volume for each pair traded in last {MARKETS_PAIRS_DAYS} days.",
     response_model=List[MarketsSummaryItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
@@ -159,15 +159,15 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
         if "_" in coin:
             return {"error": "Coin value '{coin}' looks like a pair."}
         cache = Cache(netid=netid.value)
-        last_trades = cache.get_item(name="markets_last_trade").data
+        last_traded = cache.get_item(name="markets_last_traded").data
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["target_currency"]]:
                 if i["last_trade"] == 0:
-                    if i["ticker_id"] in last_trades:
-                        i["last_trade"] = last_trades[i["ticker_id"]]["last_swap"]
-                        i["last_price"] = last_trades[i["ticker_id"]]["last_swap"]
+                    if i["ticker_id"] in last_traded:
+                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
+                        i["last_price"] = last_traded[i["ticker_id"]]["last_swap"]
 
                 new_data.append(to_summary_for_ticker_item(i))
 

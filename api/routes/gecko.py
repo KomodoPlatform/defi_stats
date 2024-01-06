@@ -17,6 +17,7 @@ from util.enums import TradeType, NetId
 from util.validate import validate_positive_numeric
 from lib.generics import Generics
 from util.transform import generic_orderbook_to_gecko
+from lib.cache_load import load_generic_pairs
 
 
 router = APIRouter()
@@ -32,8 +33,9 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        cache = Cache(netid="ALL")
-        return cache.get_item(name="gecko_pairs").data
+        data = load_generic_pairs()
+        pairs = [i for i in data if i['priced']]
+        return pairs
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
