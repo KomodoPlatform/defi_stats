@@ -36,6 +36,8 @@ def validate_positive_numeric(value, name, is_int=False):
 
 def validate_loop_data(data, cache_item, netid=None):
     try:
+        if data is None:
+            return False
         if "error" in data:
             raise DataStructureError(
                 f"Unexpected data structure returned for {cache_item.name} ({netid})"

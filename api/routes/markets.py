@@ -20,8 +20,7 @@ from models.markets import (
     MarketsSummaryItem,
     MarketsSummaryForTicker,
 )
-from lib.cache import Cache, CacheItem
-from lib.generics import Generics
+from lib.generic import Generic
 from lib.pair import Pair
 from util.enums import TradeType, NetId
 from util.logger import logger
@@ -34,10 +33,9 @@ from util.transform import (
     sum_json_key,
 )
 from util.transform import clean_decimal_dict
-
+import lib
 
 router = APIRouter()
-cache = Cache()
 
 
 @router.get(
@@ -62,7 +60,7 @@ def atomicdex_info_api(netid: NetId = NetId.ALL):
 )
 def current_liquidity(netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         return {"current_liquidity": data["combined_liquidity_usd"]}
 
@@ -79,7 +77,7 @@ def current_liquidity(netid: NetId = NetId.ALL):
     status_code=200,
 )
 def fiat_rates():
-    data = CacheItem("gecko_source").data
+    data = lib.CacheItem("gecko_source").data
     return data
 
 
@@ -92,8 +90,8 @@ def fiat_rates():
 )
 def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int = 100):
     try:
-        generics = Generics(netid=netid.value)
-        return generics.get_orderbook(pair_str=market_pair, depth=depth)
+        generic = Generic(netid=netid.value)
+        return generic.orderbook(pair_str=market_pair, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -113,7 +111,7 @@ def pairs_last_traded(
     end_time: int = int(time.time()),
     min_swaps: int = 5,
 ) -> list:
-    data = CacheItem("markets_last_traded", netid=netid.value).data
+    data = lib.CacheItem("markets_last_traded", netid=netid.value).data
     filtered_data = []
     for i in data:
         if data[i]["swap_count"] > min_swaps:
@@ -134,7 +132,7 @@ def pairs_last_traded(
 )
 def summary(netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -158,7 +156,7 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
     try:
         if "_" in coin:
             return {"error": "Coin value '{coin}' looks like a pair."}
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         last_traded = cache.get_item(name="markets_last_traded").data
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
@@ -196,7 +194,7 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
 )
 def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         trades = 0
         for i in data["data"]:
@@ -214,7 +212,7 @@ def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
 )
 def ticker(netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -231,7 +229,7 @@ def ticker(netid: NetId = NetId.ALL):
 )
 def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -249,7 +247,7 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
 )
 def tickers_summary(netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         resp = {}
         for i in data["data"]:
@@ -328,7 +326,7 @@ def trades(
 )
 def usd_volume_24h(netid: NetId = NetId.ALL):
     try:
-        cache = Cache(netid=netid.value)
+        cache = lib.Cache(netid=netid.value)
         data = cache.get_item(name="markets_tickers").data
         return {"usd_volume_24hr": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover

@@ -6,14 +6,14 @@ import sqlite3
 from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
-from const import MM2_DB_PATHS, MM2_NETID
-from lib.cache_load import get_segwit_coins, load_gecko_source, load_coins_config
+from const import MM2_DB_PATHS, MM2_NETID, compare_fields
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
 from util.transform import sort_dict, order_pair_by_market_cap, format_10f
+import lib
 
 
 class SqliteDB:  # pragma: no cover
@@ -31,13 +31,13 @@ class SqliteDB:  # pragma: no cover
                 self.coins_config = kwargs["coins_config"]
             else:
                 # logger.loop(f"Getting coins_config for db")
-                self.coins_config = load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config(testing=self.testing)
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
                 # logger.loop(f"Getting gecko_source for db")
-                self.gecko_source = load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row
@@ -123,12 +123,14 @@ class SqliteQuery:  # pragma: no cover
             sorted_pairs = set(
                 [
                     order_pair_by_market_cap(
-                        f"{i[0]}_{i[1]}",
-                        gecko_source=self.db.gecko_source
+                        f"{i[0]}_{i[1]}", gecko_source=self.db.gecko_source
                     )
                     for i in pairs
                 ]
             )
+            sorted_pairs = [
+                i for i in list(sorted_pairs) if i.split("_")[0] != i.split("_")[1]
+            ]
             # Remove the duplicates
             # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
             # Sort the pair tickers with higher MC second
@@ -155,7 +157,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             bases = [base]
             quotes = [quote]
             if base in segwit_coins:
@@ -478,7 +480,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -560,7 +562,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -894,3 +896,22 @@ def get_netid(db_file):
         return "8762"
     else:
         return "ALL"
+
+
+def compare_uuid_fields(swap1, swap2):
+    uuid = swap1["uuid"]
+    # logger.muted(f"Repairing swap {uuid}")
+    try:
+        fixed = {}
+        for k, v in swap1.items():
+            if k in compare_fields:
+                if v != swap2[k]:
+                    # use higher value for below fields
+                    try:
+                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                    except sqlite3.OperationalError as e:  # pragma: no cover
+                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        return default_error(e, msg)
+        return fixed
+    except Exception as e:  # pragma: no cover
+        return default_error(e)

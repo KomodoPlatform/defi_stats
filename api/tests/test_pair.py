@@ -28,7 +28,7 @@ from fixtures_data import (
 from util.transform import merge_orderbooks, format_10f
 
 
-from lib.cache_load import (
+from lib.cache import (
     load_gecko_source,
     load_coins_config,
 )

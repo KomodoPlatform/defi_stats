@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 import requests
 import time
-from decimal import Decimal
 from datetime import datetime
 from util.files import Files
 from util.exceptions import ApiKeyNotFoundException
 from const import FIXER_API_KEY
-from lib.cache_load import load_gecko_source, load_coins_config
 from util.logger import StopWatch, logger
 from util.defaults import set_params, default_error
 from util.helper import get_chunks
 import util.templates as template
+import lib
 
 get_stopwatch = StopWatch
 
@@ -27,12 +26,12 @@ class CoinGeckoAPI:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config(testing=self.testing)
             self.priced_coins = set(sorted(list(self.gecko_source.keys())))
         except Exception as e:  # pragma: no cover
             logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
@@ -111,24 +110,6 @@ class CoinGeckoAPI:
                     return default_error(e, error)
             time.sleep(5)
         return gecko_info
-
-    def get_gecko_price(self, coin) -> float:
-        try:
-            return Decimal(self.gecko_source[coin]["usd_price"])
-        except KeyError:
-            return Decimal(0)
-        except Exception as e:  # pragma: no cover
-            logger.info(f"Falied to get usd_price for {coin}: {e}")
-            return Decimal(0)
-
-    def get_gecko_mcap(self, coin) -> float:
-        try:
-            return Decimal(self.gecko_source[coin]["usd_market_cap"])
-        except KeyError:
-            return Decimal(0)
-        except Exception as e:  # pragma: no cover
-            logger.info(f"Falied to get mcap for {coin}: {e}")
-            return Decimal(0)
 
 
 class FixerAPI:  # pragma: no cover

@@ -14,13 +14,6 @@ from util.transform import (
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
-from lib.cache import Cache
-from lib.coin import Coin
-from lib.cache_load import (
-    get_gecko_price_and_mcap,
-    load_gecko_source,
-    load_coins_config,
-)
 from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
 from util.enums import TradeType
@@ -49,20 +42,20 @@ class Pair:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 logger.loop(f"Getting generic_last_traded source for {pair_str}")
-                self.cache = Cache(testing=self.testing, netid=self.netid)
+                self.cache = lib.Cache(testing=self.testing, netid=self.netid)
                 self.last_traded_cache = self.cache.get_item("generic_last_traded").data
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
                 logger.loop(f"Getting gecko source for {pair_str}")
-                self.gecko_source = load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
                 logger.loop(f"Getting coins_config for {pair_str}")
-                self.coins_config = load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config(testing=self.testing)
             self.db = get_sqlite_db(
                 testing=self.testing,
                 netid=self.netid,
@@ -82,11 +75,11 @@ class Pair:
             self.as_set = set((self.base, self.quote))
 
             # Get price and market cap
-            self.base_usd_price, self.base_mcap = get_gecko_price_and_mcap(
+            self.base_usd_price, self.base_mcap = lib.get_gecko_price_and_mcap(
                 self.base, self.gecko_source, testing=self.testing
             )
 
-            self.quote_usd_price, self.quote_mcap = get_gecko_price_and_mcap(
+            self.quote_usd_price, self.quote_mcap = lib.get_gecko_price_and_mcap(
                 self.quote, self.gecko_source, testing=self.testing
             )
             # Connections to other objects
@@ -124,7 +117,7 @@ class Pair:
                 f"{i}_{j}"
                 for i in [
                     i.coin
-                    for i in Coin(
+                    for i in lib.Coin(
                         coin=self.base,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
@@ -132,7 +125,7 @@ class Pair:
                 ]
                 for j in [
                     i.coin
-                    for i in Coin(
+                    for i in lib.Coin(
                         coin=self.quote,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
@@ -437,7 +430,7 @@ class Pair:
 @timed
 def get_all_coin_pairs(coin, priced_coins):
     try:
-        gecko_source = load_gecko_source()
+        gecko_source = lib.load_gecko_source()
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from lib.coin import Coin
-from lib.cache_load import load_coins_config, load_gecko_source
+from lib.cache import load_coins_config, load_gecko_source
 
 
 @dataclass

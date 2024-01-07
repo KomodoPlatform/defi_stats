@@ -1,6 +1,5 @@
 import pytest
 from decimal import Decimal
-from lib.cache_item import CacheItem
 from util.exceptions import BadPairFormatError
 from fixtures_validate import (
     setup_reverse_ticker_kmd_ltc,
@@ -15,15 +14,10 @@ from util.validate import (
     validate_json,
     validate_pair,
 )
+import lib
 
-from lib.cache_load import (
-    get_gecko_price_and_mcap,
-    load_gecko_source,
-    load_coins_config,
-)
-
-coins_config = load_coins_config(testing=True)
-gecko_source = load_gecko_source(testing=True)
+coins_config = lib.load_coins_config(testing=True)
+gecko_source = lib.load_gecko_source(testing=True)
 
 
 def test_reverse_ticker(
@@ -84,7 +78,7 @@ def test_validate_orderbook_pair():
 
 
 def test_validate_loop_data():
-    cache_item = CacheItem("test", testing=True)
+    cache_item = lib.CacheItem("test", testing=True)
     data = {"error": "foo"}
     assert not validate_loop_data(data, cache_item)
     data = {}

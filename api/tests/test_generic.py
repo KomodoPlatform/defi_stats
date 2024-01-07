@@ -10,14 +10,14 @@ from util.helper import (
     get_price_at_finish,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
-from lib.generics import Generics
+from lib.generic import Generic
 from util.logger import logger
 
 
-def test_get_orderbook(setup_swaps_db_data):
-    generics = Generics(db=setup_swaps_db_data, testing=True, netid="ALL")
-    r_all = generics.get_orderbook("KMD_LTC")
-    r_all2 = generics.get_orderbook("KMD_LTC-segwit")
+def test_orderbook(setup_swaps_db_data):
+    generic = Generic(db=setup_swaps_db_data, testing=True, netid="ALL")
+    r_all = generic.orderbook("KMD_LTC")
+    r_all2 = generic.orderbook("KMD_LTC-segwit")
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert len(r_all["asks"]) == len(r_all2["asks"])
     assert len(r_all["pair"]) != len(r_all2["pair"])
@@ -25,38 +25,37 @@ def test_get_orderbook(setup_swaps_db_data):
     assert len(r_all["base"]) == len(r_all2["base"])
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
-    generics = Generics()
-    r3 = generics.get_orderbook("KMD_DGB", depth=2)
+    generic = Generic()
+    r3 = generic.orderbook("KMD_DGB", depth=2)
     assert len(r3["asks"]) == 2
     assert len(r3["bids"]) == 2
 
-    r5 = generics.get_orderbook("KMD/DGB", depth=2)
+    r5 = generic.orderbook("KMD/DGB", depth=2)
     assert "error" in r5
 
-    r6 = generics.get_orderbook("KMD_XXX", depth=2)
+    r6 = generic.orderbook("KMD_XXX", depth=2)
     assert r6["bids"] == []
 
     with pytest.raises(Exception):
-        r6 = generics.get_orderbook("KMDXX", depth=2)
+        r6 = generic.orderbook("KMDXX", depth=2)
         assert r6["bids"] == []
 
 
 def test_traded_pairs(setup_swaps_db_data):
-    generics = Generics(db=setup_swaps_db_data, testing=True)
-    r = generics.traded_pairs_info()
+    generic = Generic(db=setup_swaps_db_data)
+    r = generic.traded_pairs_info()
     assert isinstance(r, list)
     assert isinstance(r[0], dict)
     for i in r:
-        if i['pool_id'] == "MORTY_KMD":
-            assert not i['priced']
-        if i['pool_id'] == "KMD_BTC":
-            assert i['priced']
+        if i["pool_id"] == "MORTY_KMD":
+            assert not i["priced"]
+        if i["pool_id"] == "KMD_BTC":
+            assert i["priced"]
 
 
 def test_traded_tickers(setup_swaps_db_data):
-    generics = Generics(db=setup_swaps_db_data, testing=True)
-    r = generics.traded_tickers()
-    logger.info(r)
+    generic = Generic(db=setup_swaps_db_data)
+    r = generic.traded_tickers()
     assert r["last_update"] > time.time() - 60
     assert r["pairs_count"] > 0
     assert r["swaps_count"] > 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from lib.cache_load import (
+from decimal import Decimal
+from lib.cache import (
     load_coins_config,
-    get_gecko_price_and_mcap,
     load_gecko_source,
 )
 from util.defaults import set_params
@@ -92,3 +92,18 @@ class Coin:
             if i == self.coin or i.startswith(f"{self.ticker}-")
         ]
         return data
+
+
+def get_gecko_price_and_mcap(ticker, gecko_source=None, testing=False) -> float:
+    try:
+        if gecko_source is None:
+            gecko_source = load_gecko_source()
+        if ticker in gecko_source:
+            price = Decimal(gecko_source[ticker]["usd_price"])
+            mcap = Decimal(gecko_source[ticker]["usd_market_cap"])
+            return price, mcap
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0), Decimal(0)  # pragma: no cover

@@ -3,12 +3,6 @@ import time
 from decimal import Decimal
 from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
 import lib
-from lib.cache import Cache
-from lib.cache_load import (
-    get_gecko_price_and_mcap,
-    load_gecko_source,
-    load_coins_config,
-)
 from lib.external import CoinGeckoAPI
 from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
@@ -30,7 +24,7 @@ import util.templates as template
 from const import GENERIC_PAIRS_DAYS
 
 
-class Generics:
+class Generic:
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
@@ -39,14 +33,13 @@ class Generics:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                logger.loop("Getting gecko source for Generics")
-                self.gecko_source = load_gecko_source(testing=self.testing)
-
+                logger.loop("Getting gecko source for Generic")
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                logger.loop("Getting coins_config for Generics")
-                self.coins_config = load_coins_config(testing=self.testing)
+                logger.loop("Getting coins_config for Generic")
+                self.coins_config = lib.load_coins_config(testing=self.testing)
             self.db_path = get_sqlite_db_paths(netid=self.netid)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(
@@ -54,13 +47,13 @@ class Generics:
                 gecko_source=self.gecko_source,
                 coins_config=self.coins_config,
             )
-            self.cache = Cache(testing=self.testing, netid=self.netid)
+            self.cache = lib.Cache(testing=self.testing, netid=self.netid)
             self.last_traded_cache = self.cache.get_item("generic_last_traded").data
         except Exception as e:  # pragma: no cover
-            logger.error(f"Failed to init Generics: {e}")
+            logger.error(f"Failed to init Generic: {e}")
 
     @timed
-    def get_orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100):
+    def orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100):
         try:
             logger.info(f"Getting orderbook for {pair_str} on {self.netid}")
             if len(pair_str.split("_")) != 2:
@@ -143,10 +136,10 @@ class Generics:
                 for pair_str in pairs:
                     # logger.info(pair_str)
                     pair_split = pair_str.split("_")
-                    base_price = get_gecko_price_and_mcap(
+                    base_price = lib.get_gecko_price_and_mcap(
                         pair_split[0], self.gecko_source
                     )[0]
-                    quote_price = get_gecko_price_and_mcap(
+                    quote_price = lib.get_gecko_price_and_mcap(
                         pair_split[1], self.gecko_source
                     )[0]
                     if base_price > 0 and quote_price > 0:
@@ -155,22 +148,28 @@ class Generics:
                         pairs_dict["unpriced"].append(pair_str)
 
                 for pair_str in lib.KMD_PAIRS:
-                    # logger.info(pair_str)
-                    pair_split = pair_str.split("_")
-                    base_price = get_gecko_price_and_mcap(
-                        pair_split[0], self.gecko_source
-                    )[0]
-                    quote_price = get_gecko_price_and_mcap(
-                        pair_split[1], self.gecko_source
-                    )[0]
-                    if base_price > 0 and quote_price > 0:
-                        pairs_dict["priced_gecko"].append(pair_str)
-                    else:
-                        pairs_dict["unpriced"].append(pair_str)
+                    if pair_str not in pairs:
+                        # logger.info(pair_str)
+                        pair_split = pair_str.split("_")
+                        base_price = lib.get_gecko_price_and_mcap(
+                            pair_split[0], self.gecko_source
+                        )[0]
+                        quote_price = lib.get_gecko_price_and_mcap(
+                            pair_split[1], self.gecko_source
+                        )[0]
+                        if base_price > 0 and quote_price > 0:
+                            pairs_dict["priced_gecko"].append(pair_str)
+                        else:
+                            pairs_dict["unpriced"].append(pair_str)
 
                 priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
                 unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
                 resp = sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
+                last_traded = lib.load_generic_last_traded(testing=self.testing)
+
+                for i in resp:
+                    if i["ticker_id"] in last_traded:
+                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
                 return resp
         except Exception as e:  # pragma: no cover
             msg = f"traded_pairs failed for netid {self.netid}!"

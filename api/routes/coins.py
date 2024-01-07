@@ -5,7 +5,7 @@ import time
 from util.logger import logger
 from models.generic import ErrorMessage, ApiIds
 from util.files import Files
-from lib.cache_item import CacheItem
+import lib
 
 router = APIRouter()
 files = Files()
@@ -24,7 +24,7 @@ def get_gecko_ids():
             "timestamp": int(time.time()),
             "ids": {}
         }
-        coins_config = CacheItem('coins_config').data
+        coins_config = lib.CacheItem('coins_config').data
         for coin in coins_config:
             data["ids"].update({
                 coin: coins_config[coin]["coingecko_id"]

@@ -33,6 +33,7 @@ class Files:
         # For Generic Cache
         self.generic_last_traded = f"{folder}/generic/last_traded_{self.netid}.json"
         self.generic_pairs = f"{folder}/generic/pairs_{self.netid}.json"
+        self.generic_tickers = f"{folder}/generic/tickers_{self.netid}.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)

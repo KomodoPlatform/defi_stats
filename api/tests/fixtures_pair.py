@@ -2,7 +2,7 @@
 import pytest
 from lib.pair import Pair
 
-from lib.cache_load import (
+from lib.cache import (
     load_gecko_source,
     load_coins_config,
 )

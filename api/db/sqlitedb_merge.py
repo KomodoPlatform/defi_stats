@@ -2,7 +2,6 @@
 import sys
 import time
 import sqlite3
-from decimal import Decimal
 from typing import List
 from os.path import dirname, abspath
 from const import (
@@ -22,11 +21,10 @@ from db.sqlitedb import (
     list_sqlite_dbs,
     SqliteDB,
 )
-from lib.cache_load import load_gecko_source, load_coins_config
 from util.defaults import default_error, default_result
 from util.enums import NetId
 from util.logger import logger, timed
-
+import lib
 
 API_ROOT_PATH = dirname(dirname(abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
@@ -45,24 +43,18 @@ sys.path.append(API_ROOT_PATH)
 class SqliteMerge:
     def __init__(self, testing=False):
         self.testing = testing
-        self.gecko_source = load_gecko_source(testing=self.testing)
-        self.coins_config = load_coins_config(testing=self.testing)
+        self.gecko_source = lib.load_gecko_source(testing=self.testing)
+        self.coins_config = lib.load_coins_config(testing=self.testing)
+        self.init_dbs()
 
     @timed
     def import_source_databases(self):  # pragma: no cover
-        logger.info("backup_local_dbs")
         self.backup_local_dbs()
-        logger.info("clean_source_dbs")
         self.clean_source_dbs()
-        logger.info("compare_dbs")
         self.compare_dbs()
-        logger.info("update_temp_dbs")
         self.update_temp_dbs()
-        logger.info("get_db_row_counts")
         self.get_db_row_counts(temp=True)
-        logger.info("update_master_dbs")
         self.update_master_dbs()
-        logger.info("get_db_row_counts")
         self.get_db_row_counts()
         msg = "Souce database import completed!"
         return default_result(msg=msg, loglevel="merge", ignore_until=10)
@@ -343,24 +335,6 @@ class SqliteMerge:
             return default_error(e)
         msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
         return default_result(msg=msg, loglevel=loglevel)
-
-    def compare_uuid_fields(self, swap1, swap2):
-        uuid = swap1["uuid"]
-        # logger.muted(f"Repairing swap {uuid}")
-        try:
-            fixed = {}
-            for k, v in swap1.items():
-                if k in compare_fields:
-                    if v != swap2[k]:
-                        # use higher value for below fields
-                        try:
-                            fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
-                        except sqlite3.OperationalError as e:  # pragma: no cover
-                            msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
-                            return default_error(e, msg)
-            return fixed
-        except Exception as e:  # pragma: no cover
-            return default_error(e)
 
     @timed
     def init_dbs(self):  # pragma: no cover

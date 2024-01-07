@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from models.generic import GenericTickersInfo, GenericTickersItem
+from models.generic import GenericTickersInfo
 
 # docs.google.com/document/d/1v27QFoQq1SKT3Priq3aqPgB70Xd_PnDzbOCiuoCyixw
 
@@ -14,19 +14,22 @@ class GeckoPairsItem(BaseModel):
 
 
 # inside gecko/tickers
-class GeckoTickersItem(GenericTickersItem):
+class GeckoTickersItem(BaseModel):
     ticker_id: str = "XXX_YYY"
+    pool_id: str = "XXX_YYY"
     base_currency: str = "XXX"
     target_currency: str = "YYY"
-    pool_id: str = "XXX_YYY"
-    last_price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    liquidity_in_usd: str = "777.777777"
     bid: str = "777.777777"
     ask: str = "777.777777"
     high: str = "777.777777"
     low: str = "777.777777"
+    trades_24hr: str = "777"
+    last_price: str = "777.777777"
+    last_trade: str = "777.777777"
+    volume_usd_24hr: str = "777.777777"
+    liquidity_in_usd: str = "777.777777"
 
 
 # gecko/tickers
@@ -53,7 +56,7 @@ class GeckoBuyItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    timestamp: str = "1777777777"
+    trade_timestamp: str = "1777777777"
     type: str = "buy"
 
 
@@ -63,7 +66,7 @@ class GeckoSellItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    timestamp: str = "1777777777"
+    trade_timestamp: str = "1777777777"
     type: str = "sell"
 
 
