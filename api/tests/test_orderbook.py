@@ -91,11 +91,11 @@ def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
 
 def test_find_lowest_ask(setup_kmd_btc_orderbook, setup_kmd_btc_pair):
     orderbook = setup_kmd_btc_orderbook
-    r = orderbook.find_lowest_ask(setup_kmd_btc_pair.orderbook_data)
+    r = orderbook.find_lowest_ask(orderbook.for_pair())
     assert r == "26.0000000000"
 
 
 def test_find_highest_bid(setup_kmd_btc_orderbook, setup_kmd_btc_pair):
     orderbook = setup_kmd_btc_orderbook
-    r = orderbook.find_highest_bid(setup_kmd_btc_pair.orderbook_data)
+    r = orderbook.find_highest_bid(orderbook.for_pair())
     assert r == "24.0000000000"

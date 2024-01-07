@@ -38,7 +38,7 @@ class MarketsOrderbookItem(BaseModel):
     pair: str = "XXX_YYY"
     base: str = "XXX"
     quote: str = "YYY"
-    timestamp: str = "1777777777"
+    timestamp: str = 1777777777
     bids: List[MarketsOrderbookBid]
     asks: List[MarketsOrderbookAsk]
     total_asks_base_vol: str = "777.777777"
@@ -48,7 +48,7 @@ class MarketsOrderbookItem(BaseModel):
     total_asks_base_usd: str = "777.777777"
     total_bids_quote_usd: str = "777.777777"
     liquidity_usd: str = "777.777777"
-    trades_24hr: str = "777"
+    trades_24hr: int = 777
     volume_usd_24hr: str = "777.777777"
 
 
@@ -78,7 +78,7 @@ class MarketsSummaryItem(BaseModel):
     highest_price_24hr: str = "777.777777"
     price_change_percent_24hr: str = "777.777777"
     last_price: str = "777.777777"
-    last_swapstamp: int = 1777777777
+    last_swap: int = 1777777777
     trades_24hr: int = 777
 
 
@@ -96,8 +96,8 @@ class MarketsSwaps24(BaseModel):
 # markets/summary_for_ticker
 class MarketsSummaryForTickerItem(BaseModel):
     pair: str = "XXX_YYY"
+    trades_24hr: int = 777
     base: str = "XXX"
-    liquidity_usd: str = "777.777777"
     base_volume: str = "777.777777"
     base_usd_price: str = "777.777777"
     quote: str = "YYY"
@@ -105,12 +105,12 @@ class MarketsSummaryForTickerItem(BaseModel):
     quote_usd_price: str = "777.777777"
     highest_bid: str = "777.777777"
     lowest_ask: str = "777.777777"
+    liquidity_usd: str = "777.777777"
+    volume_usd_24hr: str = "777.777777"
     highest_price_24hr: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     price_change_24hr: str = "777.777777"
     price_change_percent_24hr: str = "777.777777"
-    trades_24hr: str = 777
-    volume_usd_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_trade: int = 1777777777
 
@@ -159,8 +159,8 @@ class GeckoTickersItem(GenericTickersItem):
     ask: str = "777.777777"
     high: str = "777.777777"
     low: str = "777.777777"
-    last_trade: str = "1777777777"
-    # trades_24hr: str = "123"
+    last_trade: int = 1777777777
+    # trades_24hr: int = "123"
     # volume_usd_24hr: str = "777.777777"
     # price_change_percent_24hr: str = "777.777777"
 
@@ -175,7 +175,7 @@ class GeckoBuyItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    timestamp: str = "1777777777"
+    timestamp: int = 1777777777
     type: str = "buy"
 
 
@@ -184,16 +184,16 @@ class GeckoSellItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    timestamp: str = "1777777777"
+    timestamp: int = 1777777777
     type: str = "sell"
 
 
 class GeckoHistoricalTradesItem(BaseModel):
     ticker_id: str = "XXX_YYY"
-    start_time: str = "1777777777"
-    end_time: str = "1777777777"
-    limit: str = "777"
-    trades_count: str = "777"
+    start_time: int = 1777777777
+    end_time: int = 1777777777
+    limit: int = 777
+    trades_count: int = 777
     sum_base_volume_buys: str = "777.777777"
     sum_target_volume_buys: str = "777.777777"
     sum_base_volume_sells: str = "777.777777"
@@ -207,8 +207,8 @@ class GeckoSwapItem(BaseModel):
     maker_coin: str = "XXX"
     taker_coin: str = "YYY"
     uuid: str = "77777777-7777-7777-7777-777777777777"
-    started_at: str = "1777777777"
-    finished_at: str = "1777777777"
+    started_at: int = 1777777777
+    finished_at: int = 1777777777
     maker_amount: str = "777.777777"
     taker_amount: str = "777.777777"
     is_success: str = 1

@@ -4,16 +4,27 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from const import API_HOST, API_PORT
-from routes import gecko, cache_loop, swaps, rates, coins, markets, prices, binance
-from lib.cache_item import CacheItem
+from routes import (
+    gecko,
+    cache_loop,
+    swaps,
+    rates,
+    coins,
+    markets,
+    prices,
+    binance,
+    generic,
+)
+from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
+import lib
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # star up functions
-    for i in ["coins", "coins_config"]:
-        cache_item = CacheItem("coins")
+    # start up functions
+    for i in ["coins", "coins_config", "gecko_source"]:
+        cache_item = lib.CacheItem(i)
         cache_item.save()
     yield
     # shut down functions
@@ -79,13 +90,13 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
-# app.include_router(
-#     generic.router,
-#     prefix="/api/v3/generic",
-#     tags=["Generic"],
-#     dependencies=[],
-#     responses={418: {"description": "I'm a teapot"}},
-# )
+app.include_router(
+    generic.router,
+    prefix="/api/v3/generic",
+    tags=["Generic"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
 
 
 @app.get(
@@ -97,7 +108,12 @@ app.include_router(
     status_code=200,
 )
 def healthcheck():
-    return {"timestamp": int(time.time()), "status": "ok"}
+    cache = Cache()
+    return {
+        "timestamp": int(time.time()),
+        "status": "ok",
+        "cache_age_mins": cache.updated_since(),
+    }
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import time
 from util.logger import logger
 from models.generic import ErrorMessage
 from lib.cache import Cache

@@ -1,4 +1,8 @@
 # from db.sqlitedb import SqliteDB
-from db.sqlitedb_merge import init_dbs
+import os
+
 print("Init DBs...")
-init_dbs()
+if "IS_TESTING" in os.environ:
+    testing = True
+else:
+    testing = False

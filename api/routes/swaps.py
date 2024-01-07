@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.get(
     "/swap/{uuid}",
-    description="Get swap info from a uuid.",
+    description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
     responses={406: {"model": ErrorMessage}},
     response_model=SwapItem,
     status_code=200,

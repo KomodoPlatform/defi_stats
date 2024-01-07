@@ -15,9 +15,15 @@ from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType, NetId
 from util.validate import validate_positive_numeric
-from lib.generics import Generics
-from util.transform import generic_orderbook_to_gecko
-from lib.cache_load import load_generic_pairs
+from lib.generic import Generic
+from util.transform import (
+    orderbook_to_gecko,
+    pairs_to_gecko,
+    historical_trades_to_gecko,
+)
+from lib.cache import load_generic_pairs
+
+import util.transform as transform
 
 
 router = APIRouter()
@@ -33,9 +39,7 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        data = load_generic_pairs()
-        pairs = [i for i in data if i['priced']]
-        return pairs
+        return pairs_to_gecko(load_generic_pairs())
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -51,7 +55,9 @@ def gecko_pairs():
 def gecko_tickers():
     try:
         cache = Cache(netid="ALL")
-        data = cache.get_item(name="gecko_tickers").data
+        data = cache.get_item(name="generic_tickers").data
+        data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
+        logger.info(data)
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
@@ -72,9 +78,9 @@ def gecko_orderbook(
     netid: NetId = NetId.ALL,
 ):
     try:
-        generics = Generics(netid=netid.value)
-        data = generics.get_orderbook(pair_str=ticker_id, depth=depth)
-        data = generic_orderbook_to_gecko(data)
+        generic = Generic(netid=netid.value)
+        data = generic.orderbook(pair_str=ticker_id, depth=depth)
+        data = orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -110,12 +116,16 @@ def gecko_historical_trades(
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         pair = Pair(pair_str=ticker_id)
-        return pair.historical_trades(
+        data = pair.historical_trades(
             trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,
         )
+        logger.info(data)
+        data["buy"] = [historical_trades_to_gecko(i) for i in data["buy"]]
+        data["sell"] = [historical_trades_to_gecko(i) for i in data["sell"]]
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

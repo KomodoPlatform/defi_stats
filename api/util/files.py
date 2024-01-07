@@ -2,7 +2,7 @@ import json
 import requests
 from const import API_ROOT_PATH
 from util.defaults import default_error, set_params
-from util.logger import timed
+from util.logger import timed, logger
 from util.validate import validate_json
 
 
@@ -33,6 +33,7 @@ class Files:
         # For Generic Cache
         self.generic_last_traded = f"{folder}/generic/last_traded_{self.netid}.json"
         self.generic_pairs = f"{folder}/generic/pairs_{self.netid}.json"
+        self.generic_tickers = f"{folder}/generic/tickers_{self.netid}.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)
@@ -72,6 +73,7 @@ class Files:
     def load_jsonfile(self, path):
         try:
             with open(path, "r") as f:
+                logger.calc(f"Loading {path}")
                 return json.load(f)
         except Exception as e:  # pragma: no cover
             error = f"Error loading {path}: {e}"

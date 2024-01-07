@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
 from typing import Any, List
 from util.defaults import default_error
-from lib.cache_load import get_gecko_price_and_mcap
+import lib
 
 
 def round_to_str(value: Any, rounding=8):
@@ -120,10 +120,10 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) ->
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_price, base_mc = get_gecko_price_and_mcap(
+        base_price, base_mc = lib.get_gecko_price_and_mcap(
             base, gecko_source=gecko_source, testing=testing
         )
-        quote_price, quote_mc = get_gecko_price_and_mcap(
+        quote_price, quote_mc = lib.get_gecko_price_and_mcap(
             quote, gecko_source=gecko_source, testing=testing
         )
         if quote_mc < base_mc:
@@ -151,7 +151,7 @@ def merge_orderbooks(existing, new):
     return existing
 
 
-def generic_orderbook_to_gecko(data):
+def orderbook_to_gecko(data):
     bids = [[i["price"], i["volume"]] for i in data["bids"]]
     asks = [[i["price"], i["volume"]] for i in data["asks"]]
     data["asks"] = asks
@@ -212,6 +212,26 @@ def ticker_to_market_ticker(i):
     }
 
 
+def ticker_to_gecko(i):
+    return {
+        "ticker_id": i["ticker_id"],
+        "pool_id": i["ticker_id"],
+        "base_currency": i["base_currency"],
+        "target_currency": i["target_currency"],
+        "bid": i["bid"],
+        "ask": i["ask"],
+        "high": i["high"],
+        "low": i["low"],
+        "base_volume": i["base_volume"],
+        "target_volume": i["target_volume"],
+        "last_price": i["last_price"],
+        "last_trade": i["last_trade"],
+        "trades_24hr": i["trades_24hr"],
+        "volume_usd_24hr": i["volume_usd_24hr"],
+        "liquidity_in_usd": i["liquidity_in_usd"],
+    }
+
+
 def historical_trades_to_market_trades(i):
     return {
         "trade_id": i["trade_id"],
@@ -223,5 +243,21 @@ def historical_trades_to_market_trades(i):
     }
 
 
+def historical_trades_to_gecko(i):
+    return {
+        "trade_id": i["trade_id"],
+        "price": i["price"],
+        "base_volume": i["base_volume"],
+        "target_volume": i["target_volume"],
+        "trade_timestamp": i["timestamp"],
+        "type": i["type"],
+    }
+
+
 def reverse_ticker(ticker_id):
     return "_".join(ticker_id.split("_")[::-1])
+
+
+def pairs_to_gecko(generic_data):
+    # Remove unpriced
+    return [i for i in generic_data if i["priced"]]

@@ -6,14 +6,14 @@ import sqlite3
 from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
-from const import MM2_DB_PATHS, MM2_NETID
-from lib.cache_load import load_gecko_source, get_segwit_coins
+from const import MM2_DB_PATHS, MM2_NETID, compare_fields
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
 from util.transform import sort_dict, order_pair_by_market_cap, format_10f
+import lib
 
 
 class SqliteDB:  # pragma: no cover
@@ -26,6 +26,19 @@ class SqliteDB:  # pragma: no cover
             self.netid = get_netid(self.db_file)
             self.options = ["testing", "wal", "netid"]
             set_params(self, self.kwargs, self.options)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                # logger.loop(f"Getting coins_config for db")
+                self.coins_config = lib.load_coins_config(testing=self.testing)
+
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                # logger.loop(f"Getting gecko_source for db")
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row
             self.sql_cursor = self.conn.cursor()
@@ -35,7 +48,7 @@ class SqliteDB:  # pragma: no cover
                 self.sql_cursor.fetchall()
             self.query = SqliteQuery(db=self, **self.kwargs)
             self.update = SqliteUpdate(db=self, **self.kwargs)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteDB: {e}")
 
     @timed
@@ -55,8 +68,8 @@ class SqliteQuery:  # pragma: no cover
             self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
             self.db = db
-            self.gecko_source = load_gecko_source(testing=self.testing)
-        except Exception as e:
+
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
     @property
@@ -108,13 +121,21 @@ class SqliteQuery:  # pragma: no cover
 
             # Sort pair by ticker to expose duplicates
             sorted_pairs = set(
-                [order_pair_by_market_cap(f"{i[0]}_{i[1]}") for i in pairs]
+                [
+                    order_pair_by_market_cap(
+                        f"{i[0]}_{i[1]}", gecko_source=self.db.gecko_source
+                    )
+                    for i in pairs
+                ]
             )
+            sorted_pairs = [
+                i for i in list(sorted_pairs) if i.split("_")[0] != i.split("_")[1]
+            ]
             # Remove the duplicates
             # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
             # Sort the pair tickers with higher MC second
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
         return list(sorted_pairs)
 
@@ -136,7 +157,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             bases = [base]
             quotes = [quote]
             if base in segwit_coins:
@@ -220,7 +241,7 @@ class SqliteQuery:  # pragma: no cover
             return swaps_for_pair
         except sqlite3.OperationalError as e:
             return default_error(f"{e}")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -239,7 +260,7 @@ class SqliteQuery:  # pragma: no cover
                 if data[i] is None:
                     data[i] = "0"
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -266,7 +287,7 @@ class SqliteQuery:  # pragma: no cover
             r = self.db.sql_cursor.fetchall()
             data = [i[0] for i in r]
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{e} in get_uuids with {self.db.db_path}")
             return []
 
@@ -333,7 +354,7 @@ class SqliteQuery:  # pragma: no cover
                     by_pair_dict.update({pair: item})
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -406,7 +427,7 @@ class SqliteQuery:  # pragma: no cover
                 "timestamp": last_swap,
             }
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     # This was a duplicate of SqliteQuery.get_atomicdexio
@@ -435,7 +456,7 @@ class SqliteQuery:  # pragma: no cover
                 "swaps_24hr": swaps_24h,
             }
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -459,7 +480,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -516,7 +537,7 @@ class SqliteQuery:  # pragma: no cover
             if limit > 0:
                 data = data[:limit]
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -541,7 +562,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -581,7 +602,7 @@ class SqliteQuery:  # pragma: no cover
                 volume_for_ticker += volume_as_maker + volume_as_taker
 
             return volume_for_ticker
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     # Post NetId Migration below
@@ -641,7 +662,7 @@ class SqliteQuery:  # pragma: no cover
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
             return sql
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -653,7 +674,7 @@ class SqliteQuery:  # pragma: no cover
             sql = self.build_query(**kwargs)
             self.db.sql_cursor.execute(sql)
             data = self.db.sql_cursor.fetchall()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
         msg = f"{len(data)} swaps for netid {self.netid}"
         logger.query(msg)
@@ -668,7 +689,7 @@ class SqliteUpdate:  # pragma: no cover
             set_params(self, self.kwargs, self.options)
             self.files = Files(testing=self.testing)
             self.db = db
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
             return
 
@@ -684,7 +705,7 @@ class SqliteUpdate:  # pragma: no cover
             else:
                 msg = f"No UUIDs to remove from {remove_db.db_path}"
             return default_result(msg=msg, loglevel="updated")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} Failed to remove UUIDs from {remove_db.db_path}: {e}"
             return default_error(e, msg=msg)
 
@@ -700,9 +721,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return default_result(msg=f"{uuid} updated in {self.db.db_file}")
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -711,9 +732,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.sql_cursor.execute(f"DELETE FROM {table};")
             self.db.conn.commit()
             return
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -745,7 +766,7 @@ class SqliteUpdate:  # pragma: no cover
             )
             msg = f"'stats_swaps' table created for {self.db.db_path}"
             return default_result(msg=msg, loglevel="muted")
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
         except Exception as e:  # pragma: no cover
             return default_error(e)
@@ -766,9 +787,9 @@ class SqliteUpdate:  # pragma: no cover
                 self.db.sql_cursor.execute(sql)
             self.db.conn.commit()
             return
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e, sql)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e, sql)
 
     @timed
@@ -786,10 +807,10 @@ class SqliteUpdate:  # pragma: no cover
                 if column in ["maker_pubkey", "taker_pubkey"]:
                     value = "''"
                 self.denullify_table_column("stats_swaps", column, value)
-            except sqlite3.OperationalError as e:
+            except sqlite3.OperationalError as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
                 return default_error(e, msg)
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
                 return default_error(e, msg)
         return default_result(
@@ -815,16 +836,16 @@ class SqliteUpdate:  # pragma: no cover
                 loglevel="updated",
                 ignore_until=10,
             )
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
             return default_error(e, msg)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
             return default_error(e, msg)
 
 
 def get_sqlite_db(
-    db_path=None, testing: bool = False, netid=None, db=None
+    db_path=None, testing: bool = False, netid=None, db=None, **kwargs
 ):  # pragma: no cover
     if db is not None:
         return db
@@ -832,7 +853,7 @@ def get_sqlite_db(
         db_path = get_sqlite_db_paths(netid)
     if db_path is None:
         logger.warning("DB path is none")
-    db = SqliteDB(db_path=db_path, testing=testing)
+    db = SqliteDB(db_path=db_path, testing=testing, **kwargs)
     # logger.info(f"Connected to DB [{db.db_path}]")
     return db
 
@@ -875,3 +896,22 @@ def get_netid(db_file):
         return "8762"
     else:
         return "ALL"
+
+
+def compare_uuid_fields(swap1, swap2):
+    uuid = swap1["uuid"]
+    # logger.muted(f"Repairing swap {uuid}")
+    try:
+        fixed = {}
+        for k, v in swap1.items():
+            if k in compare_fields:
+                if v != swap2[k]:
+                    # use higher value for below fields
+                    try:
+                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                    except sqlite3.OperationalError as e:  # pragma: no cover
+                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        return default_error(e, msg)
+        return fixed
+    except Exception as e:  # pragma: no cover
+        return default_error(e)

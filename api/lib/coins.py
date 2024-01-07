@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from lib.coin import Coin
-from lib.cache_load import load_coins_config
+from lib.cache import load_coins_config, load_gecko_source
 
 
 @dataclass
 class Coins:  # pragma: no cover
-    def __init__(self):
-        self.coins = [Coin(coin=i) for i in load_coins_config()]
+    def __init__(self, testing=False):
+        coins_config = load_coins_config(testing=testing)
+        gecko_source = load_gecko_source(testing=testing)
+        self.coins = [
+            Coin(coin=i, gecko_source=gecko_source, coins_config=coins_config)
+            for i in coins_config
+        ]
 
     @property
     def with_price(self):

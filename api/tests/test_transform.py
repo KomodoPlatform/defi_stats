@@ -29,7 +29,7 @@ from util.transform import (
     sort_dict_list,
     sort_dict,
     format_10f,
-    generic_orderbook_to_gecko,
+    orderbook_to_gecko,
     order_pair_by_market_cap,
 )
 
@@ -143,7 +143,7 @@ def test_sort_dict_list():
 
 
 def test_generic_orderbook_to_gecko():
-    r = generic_orderbook_to_gecko(orderbook_as_string)
+    r = orderbook_to_gecko(orderbook_as_string)
     assert len(r["bids"]) == len(orderbook_as_coords["bids"])
     assert len(r["bids"][0][1]) == len(orderbook_as_coords["bids"][0][1])
     assert len(r["asks"][0][1]) == len(orderbook_as_coords["asks"][0][1])

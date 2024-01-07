@@ -20,8 +20,8 @@ from db.sqlitedb import (
     get_sqlite_db_paths,
     list_sqlite_dbs,
     get_netid,
+    compare_uuid_fields
 )
-from db.sqlitedb_merge import compare_uuid_fields
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
 now = int(time.time())

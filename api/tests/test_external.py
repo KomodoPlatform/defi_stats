@@ -35,19 +35,3 @@ def test_get_gecko_coins(setup_gecko, setup_gecko_info, setup_gecko_coin_ids):
     coins_info = setup_gecko_info
     r = gecko.get_gecko_coins(coins_info, coin_ids)
     assert len(r["komodo"]) == 2
-
-
-def test_get_gecko_source(setup_gecko):
-    pass
-
-
-def test_get_gecko_price(setup_gecko):
-    gecko = setup_gecko
-    assert gecko.get_gecko_price("XXX") == Decimal(0)
-    assert gecko.get_gecko_price("KMD") > Decimal(0)
-
-
-def test_get_gecko_mcap(setup_gecko):
-    gecko = setup_gecko
-    assert gecko.get_gecko_mcap("XXX") == Decimal(0)
-    assert gecko.get_gecko_mcap("KMD") > Decimal(0)

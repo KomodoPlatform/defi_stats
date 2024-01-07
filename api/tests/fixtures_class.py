@@ -12,8 +12,8 @@ from util.files import Files
 from util.urls import Urls
 from lib.markets import Markets
 from lib.cache import Cache
-from lib.cache_item import CacheItem
 import util.helper as helper
+import lib
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
@@ -31,7 +31,7 @@ def setup_markets():
 
 @pytest.fixture
 def setup_cache_item():
-    yield CacheItem(testing=True)
+    yield lib.CacheItem(testing=True)
 
 
 @pytest.fixture

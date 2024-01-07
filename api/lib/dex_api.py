@@ -4,7 +4,6 @@ from util.files import Files
 from const import API_ROOT_PATH, MM2_RPC_PORTS
 from util.logger import logger, StopWatch, timed
 from util.defaults import set_params, default_error
-from lib.cache_load import load_coins_config
 import util.templates as template
 
 get_stopwatch = StopWatch
@@ -21,7 +20,6 @@ class DexAPI:
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
             self.files = Files(testing=self.testing)
-            self.coins_config = load_coins_config()
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init DexAPI: {e}")
 

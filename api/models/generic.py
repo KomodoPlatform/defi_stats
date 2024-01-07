@@ -122,3 +122,4 @@ class SwapItem(BaseModel):
 class HealthCheck(BaseModel):
     timestamp: int = 1777777777
     status: str = "ok"
+    cache_age_mins: Dict[str, int]

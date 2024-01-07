@@ -19,7 +19,7 @@ Data is also imported into more robust databases (mySQL, postgresSQL/Timescale &
 - Run `./setup.sh` to install poetry dependencies
 - Create `mm2/.env`, and `mm2_8762/.env` with the following inside (change the userpass)
 ```
-MM2_CONF_PATH=/home/komodian/mm2/MM2.json
+MM_CONF_PATH=/home/komodian/mm2/MM2.json
 MM_COINS_PATH=/home/komodian/mm2/coins
 MM_LOG=/home/komodian/mm2/mm2.log
 USERPASS=RPC_CONTRoL_USERP@SSW0RD

@@ -1,29 +1,40 @@
 #!/usr/bin/env python3
 import requests
 import time
-from decimal import Decimal
 from datetime import datetime
 from util.files import Files
 from util.exceptions import ApiKeyNotFoundException
 from const import FIXER_API_KEY
-from lib.cache_load import load_gecko_source, load_coins_config
 from util.logger import StopWatch, logger
 from util.defaults import set_params, default_error
 from util.helper import get_chunks
 import util.templates as template
+import lib
 
 get_stopwatch = StopWatch
 
 
 class CoinGeckoAPI:
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.options = ["testing"]
-        set_params(self, self.kwargs, self.options)
-        self.files = Files(testing=self.testing)
-        self.coins_config = load_coins_config()
-        self.gecko_source = load_gecko_source(testing=self.testing)
-        self.priced_coins = set(sorted(list(self.gecko_source.keys())))
+        try:
+            self.kwargs = kwargs
+            self.options = ["testing"]
+            set_params(self, self.kwargs, self.options)
+            self.files = Files(testing=self.testing)
+            # logger.loop("Getting gecko_source for CoinGeckoAPI")
+
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                self.coins_config = lib.load_coins_config(testing=self.testing)
+            self.priced_coins = set(sorted(list(self.gecko_source.keys())))
+        except Exception as e:  # pragma: no cover
+            logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 
     def get_gecko_coin_ids(self) -> list:
         coin_ids = list(
@@ -100,24 +111,6 @@ class CoinGeckoAPI:
             time.sleep(5)
         return gecko_info
 
-    def get_gecko_price(self, coin) -> float:
-        try:
-            return Decimal(self.gecko_source[coin]["usd_price"])
-        except KeyError:
-            return Decimal(0)
-        except Exception as e:  # pragma: no cover
-            logger.info(f"Falied to get usd_price for {coin}: {e}")
-            return Decimal(0)
-
-    def get_gecko_mcap(self, coin) -> float:
-        try:
-            return Decimal(self.gecko_source[coin]["usd_market_cap"])
-        except KeyError:
-            return Decimal(0)
-        except Exception as e:  # pragma: no cover
-            logger.info(f"Falied to get mcap for {coin}: {e}")
-            return Decimal(0)
-
 
 class FixerAPI:  # pragma: no cover
     def __init__(self, testing: bool = False):
@@ -155,4 +148,3 @@ class BinanceAPI:  # pragma: no cover
         endpoint = "api/v3/ticker/price"
         r = requests.get(f"{self.base_url}/{endpoint}")
         return r.json()
-
