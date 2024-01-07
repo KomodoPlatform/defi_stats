@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Starting DeFi API
+clear
 cd $(pwd)/api
 source .env
 export PATH="$HOME/.local/bin:$PATH"

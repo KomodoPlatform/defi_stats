@@ -19,7 +19,7 @@ Data is also imported into more robust databases (mySQL, postgresSQL/Timescale &
 - Run `./setup.sh` to install poetry dependencies
 - Create `mm2/.env`, and `mm2_8762/.env` with the following inside (change the userpass)
 ```
-MM2_CONF_PATH=/home/komodian/mm2/MM2.json
+MM_CONF_PATH=/home/komodian/mm2/MM2.json
 MM_COINS_PATH=/home/komodian/mm2/coins
 MM_LOG=/home/komodian/mm2/mm2.log
 USERPASS=RPC_CONTRoL_USERP@SSW0RD
@@ -43,11 +43,6 @@ API_PORT=7068
 API_HOST='0.0.0.0'
 API_USER="komodian"
 API_PASS="api_password"
-
-# AtomicDEX API
-COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
-COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
-
 
 
 # API KEYS
@@ -79,7 +74,7 @@ Edit the values for your paths and passwords etc. Some of these are not curently
 
 # Sourcing data
 
-- To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
+- To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./import_dbs.sh` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/USERNAME/defi_stats/api/db/source/import_dbs.sh`
 
 
 ### Running the API
