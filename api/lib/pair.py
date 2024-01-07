@@ -16,7 +16,11 @@ from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
 from lib.cache import Cache
 from lib.coin import Coin
-from lib.cache_load import get_gecko_price_and_mcap, load_gecko_source
+from lib.cache_load import (
+    get_gecko_price_and_mcap,
+    load_gecko_source,
+    load_coins_config,
+)
 from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
 from util.enums import TradeType
@@ -41,11 +45,29 @@ class Pair:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
-            self.db = get_sqlite_db(testing=self.testing, netid=self.netid, db=db)
-            self.gecko_source = load_gecko_source(testing=self.testing)
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                logger.loop(f"Getting gecko source for {pair_str}")
+                self.gecko_source = load_gecko_source(testing=self.testing)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                logger.loop(f"Getting coins_config for {pair_str}")
+                self.coins_config = load_coins_config(testing=self.testing)
+            self.db = get_sqlite_db(
+                testing=self.testing,
+                netid=self.netid,
+                db=db,
+                coins_config=self.coins_config,
+                gecko_source=self.gecko_source,
+            )
 
             # Adjust pair order
-            self.as_str = order_pair_by_market_cap(pair_str, gecko_source=self.gecko_source)
+            self.as_str = order_pair_by_market_cap(
+                pair_str, gecko_source=self.gecko_source
+            )
             self.inverse_requested = self.as_str != pair_str
             self.base = self.as_str.split("_")[0]
             self.quote = self.as_str.split("_")[1]
@@ -95,8 +117,22 @@ class Pair:
         try:
             return [
                 f"{i}_{j}"
-                for i in [i.coin for i in Coin(coin=self.base).related_coins]
-                for j in [i.coin for i in Coin(coin=self.quote).related_coins]
+                for i in [
+                    i.coin
+                    for i in Coin(
+                        coin=self.base,
+                        coins_config=self.coins_config,
+                        gecko_source=self.gecko_source,
+                    ).related_coins
+                ]
+                for j in [
+                    i.coin
+                    for i in Coin(
+                        coin=self.quote,
+                        coins_config=self.coins_config,
+                        gecko_source=self.gecko_source,
+                    ).related_coins
+                ]
                 if i != j
             ]
         except Exception as e:  # pragma: no cover
@@ -105,7 +141,11 @@ class Pair:
     @property
     def orderbook(self):
         # Handles reverse pairs
-        return Orderbook(pair_obj=self, **self.kwargs)
+        return Orderbook(
+            pair_obj=self,
+            gecko_source=self.gecko_source,
+            coins_config=self.coins_config,
+        )
 
     @property
     def orderbook_data(self):
@@ -392,10 +432,11 @@ class Pair:
 @timed
 def get_all_coin_pairs(coin, priced_coins):
     try:
+        gecko_source = load_gecko_source()
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]
-        sorted_pairs = set([order_pair_by_market_cap(i) for i in pairs])
+        sorted_pairs = set([order_pair_by_market_cap(i, gecko_source) for i in pairs])
         return list(sorted_pairs)
     except Exception as e:  # pragma: no cover
         msg = "get_all_coin_pairs failed"

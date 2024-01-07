@@ -1,9 +1,14 @@
+import os
 from lib.coins import Coins
 from util import templates as template
 from lib.pair import get_all_coin_pairs
 
 print("Init coins...")
-COINS = Coins()
+print(os.environ)
+if os.environ['IS_TESTING'] == "True":
+    COINS = Coins(testing=True)
+else:
+    COINS = Coins()
 PRICED_COINS = [i.coin for i in COINS.with_price]
 KMD_PAIRS = get_all_coin_pairs("KMD", PRICED_COINS)
 KMD_PAIRS_INFO = [

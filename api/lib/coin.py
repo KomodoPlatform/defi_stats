@@ -18,12 +18,21 @@ class Coin:
 
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
-            self.gecko_source = load_gecko_source(testing=self.testing)
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                logger.loop(f"Getting gecko_source for {coin}")
+                self.gecko_source = load_gecko_source(testing=self.testing)
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                self.coins_config = load_coins_config(testing=self.testing)
+
             # Designate coin
-            if self.coin in self.coins_config_cache:
-                self.type = self.coins_config_cache[self.coin]["type"]
-                self.is_testnet = self.coins_config_cache[self.coin]["is_testnet"]
-                self.is_wallet_only = self.coins_config_cache[self.coin]["wallet_only"]
+            if self.coin in self.coins_config:
+                self.type = self.coins_config[self.coin]["type"]
+                self.is_testnet = self.coins_config[self.coin]["is_testnet"]
+                self.is_wallet_only = self.coins_config[self.coin]["wallet_only"]
             else:
                 self.type = "Delisted"
                 self.is_testnet = False
@@ -31,14 +40,6 @@ class Coin:
         except Exception as e:  # pragma: no cover
             msg = f"Init Coin for {coin} failed!"
             logger.error(f"{type(e)} {msg}: {e}")
-
-    @property
-    def coins_config_cache(self):
-        data = load_coins_config()
-        if isinstance(data, dict):
-            if "last_updated" in data:
-                return data["data"]
-        return data
 
     @property
     def usd_price(self):
@@ -58,7 +59,7 @@ class Coin:
 
     @property
     def is_tradable(self):
-        if self.coin in self.coins_config_cache:
+        if self.coin in self.coins_config:
             if self.is_wallet_only:
                 return False
             return True
@@ -68,7 +69,7 @@ class Coin:
     def has_segwit(self):
         if self.coin.endswith("-segwit"):
             return True
-        if f"{self.coin}-segwit" in self.coins_config_cache:
+        if f"{self.coin}-segwit" in self.coins_config:
             return True
         return False
 
@@ -78,16 +79,16 @@ class Coin:
             return True
         if self.has_segwit:  # pragma: no cover
             for i in [self.ticker, f"{self.ticker}-segwit"]:
-                if i in self.coins_config_cache:
-                    if not self.coins_config_cache[i]["wallet_only"]:
+                if i in self.coins_config:
+                    if not self.coins_config[i]["wallet_only"]:
                         return True
         return False
 
     @property
     def related_coins(self):
         data = [
-            Coin(coin=i)
-            for i in self.coins_config_cache
+            Coin(coin=i, gecko_source=self.gecko_source)
+            for i in self.coins_config.keys()
             if i == self.coin or i.startswith(f"{self.ticker}-")
         ]
         return data

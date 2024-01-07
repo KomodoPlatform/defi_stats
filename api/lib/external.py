@@ -21,6 +21,7 @@ class CoinGeckoAPI:
         self.options = ["testing"]
         set_params(self, self.kwargs, self.options)
         self.files = Files(testing=self.testing)
+        # logger.loop("Getting gecko_source for CoinGeckoAPI")
         self.coins_config = load_coins_config()
         self.gecko_source = load_gecko_source(testing=self.testing)
         self.priced_coins = set(sorted(list(self.gecko_source.keys())))

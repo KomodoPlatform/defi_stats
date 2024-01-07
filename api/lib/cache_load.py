@@ -6,6 +6,7 @@ from util.defaults import default_error
 
 def load_gecko_source(testing=False):
     try:
+        # logger.merge("Loading Gecko source")
         return CacheItem("gecko_source", testing=testing).data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_gecko_source]: {e}")
@@ -15,7 +16,8 @@ def load_gecko_source(testing=False):
 def get_gecko_price_and_mcap(ticker, gecko_source=None, testing=False) -> float:
     try:
         if gecko_source is None:
-            gecko_source = CacheItem("gecko_source", testing=testing).data
+            # logger.merge("Loading Gecko get_gecko_price_and_mcap")
+            gecko_source = load_gecko_source()
         if ticker in gecko_source:
             price = Decimal(gecko_source[ticker]["usd_price"])
             mcap = Decimal(gecko_source[ticker]["usd_market_cap"])
@@ -35,11 +37,10 @@ def load_coins_config(testing=False):
         return {}
 
 
-def get_segwit_coins(testing=False) -> list:
+def get_segwit_coins(coins_config, testing=False) -> list:
     try:
-        coins_config_cache = load_coins_config(testing=testing)
-        segwit_coins = [i for i in coins_config_cache if "-segwit" in i]
-        segwit_coins += [i.split("-")[0] for i in coins_config_cache if "-segwit" in i]
+        segwit_coins = [i for i in coins_config if "-segwit" in i]
+        segwit_coins += [i.split("-")[0] for i in coins_config if "-segwit" in i]
         return segwit_coins
     except Exception as e:  # pragma: no cover
         return default_error(e)
@@ -57,7 +58,7 @@ def load_generic_last_traded(testing=False):
     try:
         return CacheItem("generic_last_traded", testing=testing).data
     except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_coins_config]: {e}")
+        logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
         return {}
 
 

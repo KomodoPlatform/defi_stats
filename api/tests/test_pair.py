@@ -28,6 +28,15 @@ from fixtures_data import (
 from util.transform import merge_orderbooks, format_10f
 
 
+from lib.cache_load import (
+    load_gecko_source,
+    load_coins_config,
+)
+
+coins_config = load_coins_config(testing=True)
+gecko_source = load_gecko_source(testing=True)
+
+
 def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
     assert pair.is_tradable
@@ -77,6 +86,7 @@ def test_get_average_price(setup_not_existing_pair):
 
 def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     pair = setup_kmd_ltc_pair
+    logger.calc(pair.testing)
     r = pair.get_volumes_and_prices()
     logger.info(r)
     assert r["base"] == "KMD"
@@ -149,8 +159,9 @@ def test_swap_uuids(setup_kmd_ltc_pair):
 def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
     pair = setup_kmd_ltc_pair
     r = pair.related_pairs
-    assert ("KMD_LTC") in r
-    assert ("KMD-BEP20_LTC") in r
+    logger.warning(r)
+    assert "KMD_LTC" in r
+    assert "KMD-BEP20_LTC" in r
     assert len(r) == 4
 
     pair = setup_1inch_usdc_pair

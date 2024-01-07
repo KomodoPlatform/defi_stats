@@ -7,7 +7,7 @@ from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID
-from lib.cache_load import load_gecko_source, get_segwit_coins
+from lib.cache_load import get_segwit_coins, load_gecko_source, load_coins_config
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
@@ -26,6 +26,19 @@ class SqliteDB:  # pragma: no cover
             self.netid = get_netid(self.db_file)
             self.options = ["testing", "wal", "netid"]
             set_params(self, self.kwargs, self.options)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                # logger.loop(f"Getting coins_config for db")
+                self.coins_config = load_coins_config(testing=self.testing)
+
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                # logger.loop(f"Getting gecko_source for db")
+                self.gecko_source = load_gecko_source(testing=self.testing)
+
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row
             self.sql_cursor = self.conn.cursor()
@@ -55,7 +68,7 @@ class SqliteQuery:  # pragma: no cover
             self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
             self.db = db
-            self.gecko_source = load_gecko_source(testing=self.testing)
+
         except Exception as e:
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
@@ -108,7 +121,13 @@ class SqliteQuery:  # pragma: no cover
 
             # Sort pair by ticker to expose duplicates
             sorted_pairs = set(
-                [order_pair_by_market_cap(f"{i[0]}_{i[1]}") for i in pairs]
+                [
+                    order_pair_by_market_cap(
+                        f"{i[0]}_{i[1]}",
+                        gecko_source=self.db.gecko_source
+                    )
+                    for i in pairs
+                ]
             )
             # Remove the duplicates
             # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
@@ -136,7 +155,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
             bases = [base]
             quotes = [quote]
             if base in segwit_coins:
@@ -459,7 +478,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -541,7 +560,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = get_segwit_coins()
+            segwit_coins = get_segwit_coins(coins_config=self.db.coins_config)
             if ticker in segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
@@ -824,7 +843,7 @@ class SqliteUpdate:  # pragma: no cover
 
 
 def get_sqlite_db(
-    db_path=None, testing: bool = False, netid=None, db=None
+    db_path=None, testing: bool = False, netid=None, db=None, **kwargs
 ):  # pragma: no cover
     if db is not None:
         return db
@@ -832,7 +851,7 @@ def get_sqlite_db(
         db_path = get_sqlite_db_paths(netid)
     if db_path is None:
         logger.warning("DB path is none")
-    db = SqliteDB(db_path=db_path, testing=testing)
+    db = SqliteDB(db_path=db_path, testing=testing, **kwargs)
     # logger.info(f"Connected to DB [{db.db_path}]")
     return db
 

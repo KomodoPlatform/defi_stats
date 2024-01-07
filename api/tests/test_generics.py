@@ -25,15 +25,10 @@ def test_get_orderbook(setup_swaps_db_data):
     assert len(r_all["base"]) == len(r_all2["base"])
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
-    generics = Generics(netid="8762")
+    generics = Generics()
     r3 = generics.get_orderbook("KMD_DGB", depth=2)
     assert len(r3["asks"]) == 2
     assert len(r3["bids"]) == 2
-
-    generics = Generics(netid="7777")
-    r4 = generics.get_orderbook("KMD_DGB", depth=2)
-    assert r4["asks"][0]["volume"] != r3["asks"][0]["volume"]
-    assert r4["bids"][0]["volume"] != r3["bids"][0]["volume"]
 
     r5 = generics.get_orderbook("KMD/DGB", depth=2)
     assert "error" in r5

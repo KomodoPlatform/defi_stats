@@ -11,9 +11,9 @@ from models.generic import ErrorMessage, HealthCheck
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # star up functions
+    # start up functions
     for i in ["coins", "coins_config"]:
-        cache_item = CacheItem("coins")
+        cache_item = CacheItem(i)
         cache_item.save()
     yield
     # shut down functions

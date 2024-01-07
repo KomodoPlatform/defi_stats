@@ -26,10 +26,24 @@ class Orderbook:
             self.quote = self.pair.quote
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
-            self.gecko_source = load_gecko_source(testing=self.testing)
-            self.coins_config = load_coins_config()
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                # pair_str = self.pair.as_str
+                # msg = f"Getting gecko source for {pair_str} orderbook"
+                # logger.loop(msg)
+                self.gecko_source = load_gecko_source(testing=self.testing)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                # pair_str = self.pair.as_str
+                # msg = f"Getting coins_config for {pair_str} orderbook"
+                # logger.loop(msg)
+                self.coins_config = load_coins_config(testing=self.testing)
+
             self.files = Files(testing=self.testing)
-            segwit_coins = get_segwit_coins()
+            segwit_coins = get_segwit_coins(coins_config=self.coins_config)
             self.base_is_segwit_coin = self.base in segwit_coins
             self.quote_is_segwit_coin = self.quote in segwit_coins
             self.dexapi = DexAPI(
@@ -90,7 +104,9 @@ class Orderbook:
             )
             orderbook_data["total_bids_quote_usd"] = (
                 total_bids_quote_vol
-                * get_gecko_price_and_mcap(orderbook_data["quote"], self.gecko_source)[0]
+                * get_gecko_price_and_mcap(orderbook_data["quote"], self.gecko_source)[
+                    0
+                ]
             )
 
             orderbook_data["liquidity_usd"] = (
@@ -116,7 +132,7 @@ class Orderbook:
             if self.quote_is_segwit_coin:
                 quote = f"{self.pair.quote.replace('-segwit', '')}-segwit"
             data = self.orderbook_template
-            if not validate_orderbook_pair(base, quote):
+            if not validate_orderbook_pair(base, quote, self.coins_config):
                 return data
             if self.pair.inverse_requested:
                 x = self.dexapi.orderbook_rpc(quote, base)

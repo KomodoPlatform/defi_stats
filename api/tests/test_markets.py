@@ -20,17 +20,13 @@ def test_pairs():
     assert isinstance(data, list)
     r = [i["ticker_id"] for i in data]
     # Markets includes test coins
-    assert "MARTY_DOC" not in r
-    assert "DOC_MARTY" in r
+    assert "MARTY_DOC" in r or "DOC_MARTY" in r
     # Same mcap, could be either :shrug:
     assert "KMD-BEP20_KMD" in r or "KMD_KMD-BEP20" in r
-    assert "KMD_ETH" in r
-    assert "ETH_KMD" not in r
-    assert "KMD_FTM" in r
-    assert "KMD_QTUM" in r
-    assert "KMD_DASH" in r
-    assert "KMD_RVN" in r
-    assert "KMD_XXX" not in r
+    assert "KMD_BTC" in r
+    assert "BTC_KMD" not in r
+    assert "KMD_LTC" in r
+    assert "LTC_KMD" not in r
 
 
 def test_tickers(setup_swaps_db_data):

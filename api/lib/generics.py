@@ -3,7 +3,7 @@ import time
 from decimal import Decimal
 from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
 import lib
-from lib.cache_load import get_gecko_price_and_mcap, load_gecko_source
+from lib.cache_load import get_gecko_price_and_mcap, load_gecko_source, load_coins_config
 from lib.external import CoinGeckoAPI
 from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
@@ -31,10 +31,20 @@ class Generics:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                # logger.loop("Getting gecko source for Generics")
+                self.gecko_source = load_gecko_source(testing=self.testing)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                # logger.loop("Getting coins_config for Generics")
+                self.coins_config = load_coins_config(testing=self.testing)
             self.db_path = get_sqlite_db_paths(netid=self.netid)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(testing=self.testing)
-            self.gecko_source = load_gecko_source(testing=self.testing)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generics: {e}")
 
@@ -44,7 +54,10 @@ class Generics:
             logger.info(f"Getting orderbook for {pair_str} on {self.netid}")
             if len(pair_str.split("_")) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
-            if order_pair_by_market_cap(pair_str) != pair_str:
+            if (
+                order_pair_by_market_cap(pair_str, gecko_source=self.gecko_source)
+                != pair_str
+            ):
                 orderbook_data = template.orderbook(pair_str, True)
             else:
                 orderbook_data = template.orderbook(pair_str)
@@ -52,14 +65,26 @@ class Generics:
             if self.netid == "ALL":
                 for x in NetId:
                     if x.value != "ALL":
-                        pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
+                        pair_obj = Pair(
+                            pair_str=pair_str,
+                            netid=self.netid,
+                            db=self.db,
+                            gecko_source=self.gecko_source,
+                            coins_config=self.coins_config,
+                        )
                         inverse = pair_obj.inverse_requested
                         logger.info(
                             f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
                         )
                         data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
             else:
-                pair_obj = Pair(pair_str=pair_str, netid=self.netid, db=self.db)
+                pair_obj = Pair(
+                    pair_str=pair_str,
+                    netid=self.netid,
+                    db=self.db,
+                    gecko_source=self.gecko_source,
+                    coins_config=self.coins_config,
+                )
                 inverse = pair_obj.inverse_requested
                 logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})")
                 data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
@@ -145,7 +170,13 @@ class Generics:
                 db = get_sqlite_db(db_path=self.db_path)
             pairs = db.query.get_pairs(pairs_days)
             data = [
-                Pair(pair_str=i, db=self.db).ticker_info(trades_days) for i in pairs
+                Pair(
+                    pair_str=i,
+                    db=self.db,
+                    gecko_source=self.gecko_source,
+                    coins_config=self.coins_config,
+                ).ticker_info(trades_days)
+                for i in pairs
             ]
             data = [i for i in data if i is not None]
             data = clean_decimal_dict_list(data, to_string=True, rounding=10)

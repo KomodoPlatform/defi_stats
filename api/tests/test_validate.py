@@ -16,6 +16,15 @@ from util.validate import (
     validate_pair,
 )
 
+from lib.cache_load import (
+    get_gecko_price_and_mcap,
+    load_gecko_source,
+    load_coins_config,
+)
+
+coins_config = load_coins_config(testing=True)
+gecko_source = load_gecko_source(testing=True)
+
 
 def test_reverse_ticker(
     setup_reverse_ticker_kmd_ltc,
@@ -61,15 +70,15 @@ def test_validate_positive_numeric():
 
 
 def test_validate_orderbook_pair():
-    assert not validate_orderbook_pair("KMD", "LTC")
-    assert validate_orderbook_pair("KMD", "LTC-segwit")
-    assert not validate_orderbook_pair("LTC", "LTC-segwit")
-    assert not validate_orderbook_pair("KMD", "XXX")
-    assert not validate_orderbook_pair("KMD", "ATOM")
-    assert not validate_orderbook_pair("LTC", "KMD")
-    assert validate_orderbook_pair("LTC-segwit", "KMD")
-    assert not validate_orderbook_pair("XXX", "KMD")
-    assert not validate_orderbook_pair("ATOM", "KMD")
+    assert not validate_orderbook_pair("KMD", "LTC", coins_config)
+    assert validate_orderbook_pair("KMD", "LTC-segwit", coins_config)
+    assert not validate_orderbook_pair("LTC", "LTC-segwit", coins_config)
+    assert not validate_orderbook_pair("KMD", "XXX", coins_config)
+    assert not validate_orderbook_pair("KMD", "ATOM", coins_config)
+    assert not validate_orderbook_pair("LTC", "KMD", coins_config)
+    assert validate_orderbook_pair("LTC-segwit", "KMD", coins_config)
+    assert not validate_orderbook_pair("XXX", "KMD", coins_config)
+    assert not validate_orderbook_pair("ATOM", "KMD", coins_config)
 
 
 def test_validate_loop_data():
