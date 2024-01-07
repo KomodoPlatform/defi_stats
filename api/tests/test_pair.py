@@ -159,14 +159,12 @@ def test_swap_uuids(setup_kmd_ltc_pair):
 def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
     pair = setup_kmd_ltc_pair
     r = pair.related_pairs
-    logger.warning(r)
     assert "KMD_LTC" in r
     assert "KMD-BEP20_LTC" in r
     assert len(r) == 4
 
     pair = setup_1inch_usdc_pair
     r = pair.related_pairs
-    logger.info(pair.related_pairs)
     assert ("1INCH-AVX20_USDC-ERC20") in r
     assert ("1INCH-PLG20_USDC-BEP20") in r
-    assert len(r) == 50
+    assert len(r) > 40

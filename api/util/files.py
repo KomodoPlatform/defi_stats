@@ -4,7 +4,6 @@ from const import API_ROOT_PATH
 from util.defaults import default_error, set_params
 from util.logger import timed
 from util.validate import validate_json
-from util.logger import logger
 
 
 class Files:

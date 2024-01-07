@@ -156,4 +156,3 @@ class BinanceAPI:  # pragma: no cover
         endpoint = "api/v3/ticker/price"
         r = requests.get(f"{self.base_url}/{endpoint}")
         return r.json()
-
