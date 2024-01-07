@@ -48,7 +48,7 @@ class SqliteDB:  # pragma: no cover
                 self.sql_cursor.fetchall()
             self.query = SqliteQuery(db=self, **self.kwargs)
             self.update = SqliteUpdate(db=self, **self.kwargs)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteDB: {e}")
 
     @timed
@@ -69,7 +69,7 @@ class SqliteQuery:  # pragma: no cover
             set_params(self, self.kwargs, self.options)
             self.db = db
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
     @property
@@ -135,7 +135,7 @@ class SqliteQuery:  # pragma: no cover
             # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
             # Sort the pair tickers with higher MC second
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
         return list(sorted_pairs)
 
@@ -241,7 +241,7 @@ class SqliteQuery:  # pragma: no cover
             return swaps_for_pair
         except sqlite3.OperationalError as e:
             return default_error(f"{e}")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -260,7 +260,7 @@ class SqliteQuery:  # pragma: no cover
                 if data[i] is None:
                     data[i] = "0"
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -287,7 +287,7 @@ class SqliteQuery:  # pragma: no cover
             r = self.db.sql_cursor.fetchall()
             data = [i[0] for i in r]
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{e} in get_uuids with {self.db.db_path}")
             return []
 
@@ -354,7 +354,7 @@ class SqliteQuery:  # pragma: no cover
                     by_pair_dict.update({pair: item})
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -427,7 +427,7 @@ class SqliteQuery:  # pragma: no cover
                 "timestamp": last_swap,
             }
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     # This was a duplicate of SqliteQuery.get_atomicdexio
@@ -456,7 +456,7 @@ class SqliteQuery:  # pragma: no cover
                 "swaps_24hr": swaps_24h,
             }
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -537,7 +537,7 @@ class SqliteQuery:  # pragma: no cover
             if limit > 0:
                 data = data[:limit]
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -602,7 +602,7 @@ class SqliteQuery:  # pragma: no cover
                 volume_for_ticker += volume_as_maker + volume_as_taker
 
             return volume_for_ticker
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     # Post NetId Migration below
@@ -662,7 +662,7 @@ class SqliteQuery:  # pragma: no cover
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
             return sql
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -674,7 +674,7 @@ class SqliteQuery:  # pragma: no cover
             sql = self.build_query(**kwargs)
             self.db.sql_cursor.execute(sql)
             data = self.db.sql_cursor.fetchall()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
         msg = f"{len(data)} swaps for netid {self.netid}"
         logger.query(msg)
@@ -689,7 +689,7 @@ class SqliteUpdate:  # pragma: no cover
             set_params(self, self.kwargs, self.options)
             self.files = Files(testing=self.testing)
             self.db = db
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
             return
 
@@ -705,7 +705,7 @@ class SqliteUpdate:  # pragma: no cover
             else:
                 msg = f"No UUIDs to remove from {remove_db.db_path}"
             return default_result(msg=msg, loglevel="updated")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} Failed to remove UUIDs from {remove_db.db_path}: {e}"
             return default_error(e, msg=msg)
 
@@ -721,9 +721,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return default_result(msg=f"{uuid} updated in {self.db.db_file}")
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -732,9 +732,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.sql_cursor.execute(f"DELETE FROM {table};")
             self.db.conn.commit()
             return
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
 
     @timed
@@ -766,7 +766,7 @@ class SqliteUpdate:  # pragma: no cover
             )
             msg = f"'stats_swaps' table created for {self.db.db_path}"
             return default_result(msg=msg, loglevel="muted")
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e)
         except Exception as e:  # pragma: no cover
             return default_error(e)
@@ -787,9 +787,9 @@ class SqliteUpdate:  # pragma: no cover
                 self.db.sql_cursor.execute(sql)
             self.db.conn.commit()
             return
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default_error(e, sql)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e, sql)
 
     @timed
@@ -807,10 +807,10 @@ class SqliteUpdate:  # pragma: no cover
                 if column in ["maker_pubkey", "taker_pubkey"]:
                     value = "''"
                 self.denullify_table_column("stats_swaps", column, value)
-            except sqlite3.OperationalError as e:
+            except sqlite3.OperationalError as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
                 return default_error(e, msg)
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
                 return default_error(e, msg)
         return default_result(
@@ -836,10 +836,10 @@ class SqliteUpdate:  # pragma: no cover
                 loglevel="updated",
                 ignore_until=10,
             )
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
             return default_error(e, msg)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
             return default_error(e, msg)
 

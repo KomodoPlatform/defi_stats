@@ -18,7 +18,7 @@ class Cache:  # pragma: no cover
             self.kwargs = kwargs
             self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 
     def get_item(self, name):
@@ -66,7 +66,7 @@ class CacheItem:
             self.urls = Urls()
             self.source_url = self.urls.get_cache_url(name)
             self._data = {}
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init CacheItem '{name}': {e}")
 
     @property
@@ -146,7 +146,7 @@ class CacheItem:
             else:
                 msg = f"failed to save {self.name}, data is 'None'"
                 logger.warning(msg)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default_error(e)
         msg = f"{self.filename} saved."
         return default_result(msg, loglevel="merge")

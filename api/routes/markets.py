@@ -8,6 +8,7 @@ from typing import List, Dict
 from const import MARKETS_PAIRS_DAYS
 from db.sqlitedb import get_sqlite_db
 from models.generic import ErrorMessage
+from util.exceptions import BadPairFormatError
 from models.markets import (
     MarketsUsdVolume,
     MarketsCurrentLiquidity,
@@ -33,6 +34,7 @@ from util.transform import (
     sum_json_key,
 )
 from util.transform import clean_decimal_dict
+from util.validate import validate_pair
 import lib
 
 router = APIRouter()
@@ -99,7 +101,7 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
 
 
 @router.get(
-    "/pairs_last_traded",
+    "/pairs_last_trade",
     description="Returns last trade info for all pairs matching the filter",
     response_model=List[MarketsPairLastTradeItem],
     responses={406: {"model": ErrorMessage}},
@@ -111,7 +113,7 @@ def pairs_last_traded(
     end_time: int = int(time.time()),
     min_swaps: int = 5,
 ) -> list:
-    data = lib.CacheItem("markets_last_traded", netid=netid.value).data
+    data = lib.CacheItem("generic_last_traded", netid=netid.value).data
     filtered_data = []
     for i in data:
         if data[i]["swap_count"] > min_swaps:
@@ -157,7 +159,7 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
         if "_" in coin:
             return {"error": "Coin value '{coin}' looks like a pair."}
         cache = lib.Cache(netid=netid.value)
-        last_traded = cache.get_item(name="markets_last_traded").data
+        last_traded = cache.get_item(name="generic_last_traded").data
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
         for i in resp["data"]:
@@ -279,13 +281,14 @@ def tickers_summary(netid: NetId = NetId.ALL):
 @router.get(
     "/trades/{market_pair}/{days_in_past}",
     response_model=List[PairTrades],
-    description="Summary of trades for the last 'x' days.",
+    description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
     market_pair: str = "KMD_LTC", days_in_past: int = 1, netid: NetId = NetId.ALL
 ):
     try:
         resp = []
+        validate_pair(market_pair)
         start = int(time.time() - 86400 * days_in_past)
         end = int(time.time())
         if netid.value == "ALL":
@@ -297,6 +300,7 @@ def trades(
                         start_time=start,
                         end_time=end,
                     )
+                    logger.info(data)
                     resp += data["buy"]
                     resp += data["sell"]
         else:
@@ -306,21 +310,25 @@ def trades(
                 start_time=start,
                 end_time=end,
             )
+            logger.info(data)
             resp += data["buy"]
             resp += data["sell"]
         sorted_trades = sort_dict_list(resp, "timestamp", reverse=True)
         return sorted_trades
-    except Exception as e:
-        err = {"error": f"{e}"}
+    except BadPairFormatError as e:
+        err = {"error": f"{e.msg}"}
         logger.warning(err)
-        return JSONResponse(status_code=400, content=err)
+    except Exception as e:
+        err = {"error": f"{type(e)}: {e}"}
+        logger.warning(err)
+    return JSONResponse(status_code=400, content=err)
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/usd_volume_24h
 @router.get(
     "/usd_volume_24hr",
     response_model=MarketsUsdVolume,
-    description="24-hour price & volume for each market pair traded in last 7 days.",
+    description="Volume (in USD) traded in last 24hrs.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -337,7 +345,7 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
 # TODO: get volumes for x days for ticker
 @router.get(
     "/volumes_ticker/{ticker}/{days_in_past}",
-    description="Daily volume of a ticker traded for the last 'x' days.",
+    description="Daily volume of a coin (e.g. `KMD`) traded for the last 'x' days.",
 )
 def volumes_history_ticker(
     ticker="KMD",

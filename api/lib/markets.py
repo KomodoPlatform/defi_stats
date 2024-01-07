@@ -28,7 +28,6 @@ class Markets:
         try:
             # Include unpriced, traded in last 30 days
             data = lib.load_generic_pairs()
-
             return data
         except Exception as e:  # pragma: no cover
             msg = f"markets.pairs failed for netid {self.netid}!"
