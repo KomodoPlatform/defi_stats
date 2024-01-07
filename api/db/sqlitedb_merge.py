@@ -19,6 +19,7 @@ from db.sqlitedb import (
     is_source_db,
     get_netid,
     list_sqlite_dbs,
+    compare_uuid_fields,
     SqliteDB,
 )
 from util.defaults import default_error, default_result
@@ -323,7 +324,7 @@ class SqliteMerge:
                         swaps.append(swap_info)
                     for swap1 in swaps:
                         for swap2 in swaps:
-                            fixed = self.compare_uuid_fields(swap1, swap2)
+                            fixed = compare_uuid_fields(swap1, swap2)
                             if (
                                 len(set(compare_fields).intersection(set(fixed.keys())))
                                 > 0
