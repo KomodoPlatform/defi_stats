@@ -145,3 +145,14 @@ class FixerAPI:  # pragma: no cover
 
         except Exception as e:
             return default_error(e)
+
+
+class BinanceAPI:  # pragma: no cover
+    def __init__(self, testing: bool = False):
+        self.base_url = "https://data-api.binance.vision"
+
+    def ticker_price(self):
+        endpoint = "api/v3/ticker/price"
+        r = requests.get(f"{self.base_url}/{endpoint}")
+        return r.json()
+
