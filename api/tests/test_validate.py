@@ -70,15 +70,17 @@ def test_validate_positive_numeric():
 
 
 def test_validate_orderbook_pair():
-    assert not validate_orderbook_pair("KMD", "LTC", coins_config)
-    assert validate_orderbook_pair("KMD", "LTC-segwit", coins_config)
+    assert not validate_orderbook_pair("KMD", "KMD", coins_config)
     assert not validate_orderbook_pair("LTC", "LTC-segwit", coins_config)
     assert not validate_orderbook_pair("KMD", "XXX", coins_config)
-    assert not validate_orderbook_pair("KMD", "ATOM", coins_config)
-    assert not validate_orderbook_pair("LTC", "KMD", coins_config)
-    assert validate_orderbook_pair("LTC-segwit", "KMD", coins_config)
     assert not validate_orderbook_pair("XXX", "KMD", coins_config)
+    assert not validate_orderbook_pair("KMD", "ATOM", coins_config)
     assert not validate_orderbook_pair("ATOM", "KMD", coins_config)
+    assert validate_orderbook_pair("KMD-BEP20", "KMD", coins_config)
+    assert validate_orderbook_pair("KMD", "LTC-segwit", coins_config)
+    assert validate_orderbook_pair("KMD", "LTC", coins_config)
+    assert validate_orderbook_pair("LTC-segwit", "KMD", coins_config)
+    assert validate_orderbook_pair("LTC", "KMD", coins_config)
 
 
 def test_validate_loop_data():

@@ -2,19 +2,43 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import MARKETS_PAIRS_DAYS
-from db.sqlitedb_merge import import_source_databases
+from db.sqlitedb_merge import SqliteMerge
 from lib.cache import Cache
 from lib.cache_item import CacheItem
 from lib.external import FixerAPI, CoinGeckoAPI
 from lib.generics import Generics
 from lib.markets import Markets
 from util.defaults import default_error, default_result
-from util.logger import timed
+from util.logger import timed, logger
 from util.validate import validate_loop_data
 from const import GENERIC_PAIRS_DAYS
 
 
 router = APIRouter()
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def check_cache():  # pragma: no cover
+    try:
+        cache = Cache()
+        for i in [
+            "coins_config",
+            "gecko_source",
+            "coins",
+            "generic_pairs",
+            "generic_last_traded",
+            "fixer_rates",
+            "prices_tickers_v1",
+            "prices_tickers_v2",
+        ]:
+            item = cache.get_item(i)
+            since_updated = item.since_updated_min()
+            logger.loop(f"[{i}] last updated: {since_updated} min")
+    except Exception as e:
+        return default_error(e)
+
 
 # Pure Upstream Data Sourcing
 
@@ -24,6 +48,7 @@ router = APIRouter()
 @timed
 def coins():  # pragma: no cover
     try:
+        logger.loop("Init coins source update")
         for i in ["coins", "coins_config"]:
             cache_item = CacheItem("coins")
             cache_item.save()
@@ -37,6 +62,7 @@ def coins():  # pragma: no cover
 @timed
 def gecko_data():  # pragma: no cover
     try:
+        logger.loop("Init gecko source update")
         cache = Cache()
         cache_item = cache.get_item("gecko_source")
         data = CoinGeckoAPI().get_gecko_source()
@@ -52,6 +78,7 @@ def gecko_data():  # pragma: no cover
 @timed
 def prices_service():  # pragma: no cover
     try:
+        logger.loop("Init prices_service source update")
         for i in ["prices_tickers_v1", "prices_tickers_v2"]:
             cache_item = CacheItem(i)
             cache_item.save()
@@ -62,10 +89,11 @@ def prices_service():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=900)
 @timed
 def fixer_rates():  # pragma: no cover
     try:
+        logger.loop("Init fixer_rates source update")
         cache = Cache()
         fixer = FixerAPI()
         cache_item = cache.get_item("fixer_rates")
@@ -84,6 +112,7 @@ def fixer_rates():  # pragma: no cover
 @timed
 def gecko_tickers():
     try:
+        logger.loop("Init gecko_tickers source update")
         cache = Cache(netid="ALL")
         cache_item = cache.get_item(name="gecko_tickers")
         generics = Generics(netid="ALL")
@@ -161,69 +190,6 @@ def markets_tickers_all():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
-@timed
-def import_dbs():
-    NODE_TYPE = "noserve"
-    if NODE_TYPE != "serve":
-        try:
-            import_source_databases()
-        except Exception as e:
-            return default_error(e)
-        msg = "Import source databases loop complete!"
-        return default_result(msg=msg, loglevel="loop")
-
-
-# Stats-API Cache
-
-"""
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def gecko_data():  # pragma: no cover
-    try:
-        cache.save.gecko_data()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [gecko_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def summary():  # pragma: no cover
-    try:
-        cache.save.summary()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [summary_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-def ticker():  # pragma: no cover
-    try:
-        cache.save.ticker()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [ticker_data]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)  # caching data every 10 minutes
-def atomicdexio():  # pragma: no cover
-    try:
-        cache.save.atomicdexio()
-    except Exception as e:
-        logger.warning(f"{type(e)} Error in [atomicdex_io]: {e}")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=600)  # caching data every 10 minutes
-def atomicdex_fortnight():  # pragma: no cover
-    try:
-        cache.save.atomicdex_fortnight()
-    except Exception as e:
-        logger.warning(f"{type(e)} in [atomicdex_io_fortnight]: {e}")
-"""
-
-
-@router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
 def generic_last_traded():
@@ -255,3 +221,18 @@ def generic_pairs():
         return default_error(e)
     msg = "Generic tickers (ALL) loop complete!"
     return default_result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)
+@timed
+def import_dbs():
+    NODE_TYPE = "noserve"
+    if NODE_TYPE != "serve":
+        try:
+            merge = SqliteMerge()
+            merge.import_source_databases()
+        except Exception as e:
+            return default_error(e)
+        msg = "Import source databases loop complete!"
+        return default_result(msg=msg, loglevel="loop")

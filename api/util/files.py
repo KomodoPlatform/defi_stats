@@ -2,7 +2,7 @@ import json
 import requests
 from const import API_ROOT_PATH
 from util.defaults import default_error, set_params
-from util.logger import timed
+from util.logger import timed, logger
 from util.validate import validate_json
 
 
@@ -72,7 +72,7 @@ class Files:
     def load_jsonfile(self, path):
         try:
             with open(path, "r") as f:
-                # logger.calc(f"Loading {path}")
+                logger.calc(f"Loading {path}")
                 return json.load(f)
         except Exception as e:  # pragma: no cover
             error = f"Error loading {path}: {e}"

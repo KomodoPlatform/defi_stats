@@ -46,7 +46,7 @@ def test_tickers(setup_swaps_db_data):
 
 def test_s():
     markets = Markets(netid="8762", testing=True)
-    data = markets.last_traded()
+    data = markets.last_traded
     logger.info(data)
     assert len(data) > 0
     assert "KMD_LTC" in data.keys()

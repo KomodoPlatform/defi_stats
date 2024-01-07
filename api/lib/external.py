@@ -17,14 +17,25 @@ get_stopwatch = StopWatch
 
 class CoinGeckoAPI:
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.options = ["testing"]
-        set_params(self, self.kwargs, self.options)
-        self.files = Files(testing=self.testing)
-        # logger.loop("Getting gecko_source for CoinGeckoAPI")
-        self.coins_config = load_coins_config()
-        self.gecko_source = load_gecko_source(testing=self.testing)
-        self.priced_coins = set(sorted(list(self.gecko_source.keys())))
+        try:
+            self.kwargs = kwargs
+            self.options = ["testing"]
+            set_params(self, self.kwargs, self.options)
+            self.files = Files(testing=self.testing)
+            # logger.loop("Getting gecko_source for CoinGeckoAPI")
+
+            if "gecko_source" in kwargs:
+                self.gecko_source = kwargs["gecko_source"]
+            else:
+                self.gecko_source = load_gecko_source(testing=self.testing)
+
+            if "coins_config" in kwargs:
+                self.coins_config = kwargs["coins_config"]
+            else:
+                self.coins_config = load_coins_config(testing=self.testing)
+            self.priced_coins = set(sorted(list(self.gecko_source.keys())))
+        except Exception as e:  # pragma: no cover
+            logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 
     def get_gecko_coin_ids(self) -> list:
         coin_ids = list(

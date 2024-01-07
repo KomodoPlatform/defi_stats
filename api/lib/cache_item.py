@@ -25,12 +25,13 @@ class CacheItem:
             self.urls = Urls()
             self.source_url = self.urls.get_cache_url(name)
             self._data = {}
-            self.update_data()
         except Exception as e:
             logger.error(f"Failed to init CacheItem '{name}': {e}")
 
     @property
     def data(self):
+        if len(self._data) == 0:
+            self.update_data()
         return self._data
 
     def get_data(self):
@@ -38,19 +39,31 @@ class CacheItem:
         if "last_updated" in data:
             since_updated = int(time.time()) - data["last_updated"]
             since_updated_min = int(since_updated / 60)
-            if since_updated_min > 600:
+            if since_updated_min > self.cache_expiry:
                 msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
-                logger.muted(msg)
+                logger.warning(msg)
         if "data" in data:
             return data["data"]
         return data
+
+    def since_updated_min(self):
+        data = self.files.load_jsonfile(self.filename)
+        if "last_updated" in data:
+            since_updated = int(time.time()) - data["last_updated"]
+            return int(since_updated / 60)
+        return "unknown"
 
     def update_data(self):
         self._data = self.get_data()  # pragma: no cover
 
     @property
     def cache_expiry(self):
-        expiry_limits = {"coins": 1440, "coins_config": 1440, "generic_last_traded": 1}
+        expiry_limits = {
+            "coins": 1440,
+            "coins_config": 1440,
+            "generic_last_traded": 1,
+            "gecko_source": 15,
+        }
         if self.name in expiry_limits:
             return expiry_limits[self.name]
         return 5

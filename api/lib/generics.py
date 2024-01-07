@@ -3,7 +3,12 @@ import time
 from decimal import Decimal
 from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
 import lib
-from lib.cache_load import get_gecko_price_and_mcap, load_gecko_source, load_coins_config
+from lib.cache import Cache
+from lib.cache_load import (
+    get_gecko_price_and_mcap,
+    load_gecko_source,
+    load_coins_config,
+)
 from lib.external import CoinGeckoAPI
 from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
@@ -34,17 +39,23 @@ class Generics:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                # logger.loop("Getting gecko source for Generics")
+                logger.loop("Getting gecko source for Generics")
                 self.gecko_source = load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                # logger.loop("Getting coins_config for Generics")
+                logger.loop("Getting coins_config for Generics")
                 self.coins_config = load_coins_config(testing=self.testing)
             self.db_path = get_sqlite_db_paths(netid=self.netid)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
-            self.gecko = CoinGeckoAPI(testing=self.testing)
+            self.gecko = CoinGeckoAPI(
+                testing=self.testing,
+                gecko_source=self.gecko_source,
+                coins_config=self.coins_config,
+            )
+            self.cache = Cache(testing=self.testing, netid=self.netid)
+            self.last_traded_cache = self.cache.get_item("generic_last_traded").data
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generics: {e}")
 
@@ -71,6 +82,7 @@ class Generics:
                             db=self.db,
                             gecko_source=self.gecko_source,
                             coins_config=self.coins_config,
+                            last_traded_cache=self.last_traded_cache,
                         )
                         inverse = pair_obj.inverse_requested
                         logger.info(
@@ -84,6 +96,7 @@ class Generics:
                     db=self.db,
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
+                    last_traded_cache=self.last_traded_cache,
                 )
                 inverse = pair_obj.inverse_requested
                 logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})")
@@ -175,6 +188,7 @@ class Generics:
                     db=self.db,
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
+                    last_traded_cache=self.last_traded_cache,
                 ).ticker_info(trades_days)
                 for i in pairs
             ]

@@ -4,8 +4,7 @@ from util import templates as template
 from lib.pair import get_all_coin_pairs
 
 print("Init coins...")
-print(os.environ)
-if os.environ['IS_TESTING'] == "True":
+if 'IS_TESTING' in os.environ:
     COINS = Coins(testing=True)
 else:
     COINS = Coins()

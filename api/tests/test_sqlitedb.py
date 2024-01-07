@@ -21,7 +21,7 @@ from db.sqlitedb import (
     list_sqlite_dbs,
     get_netid,
 )
-from db.sqlitedb_merge import compare_uuid_fields
+from db.sqlitedb_merge import SqliteMerge
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
 now = int(time.time())
@@ -106,7 +106,8 @@ def test_is_7777():
 
 
 def test_compare_uuid_fields():
-    r = compare_uuid_fields(swap_item, swap_item2)
+    merge = SqliteMerge(testing=True)
+    r = merge.compare_uuid_fields(swap_item, swap_item2)
     assert r["taker_coin_usd_price"] == "75.1"
     assert r["maker_coin_usd_price"] == "0.5"
     assert r["is_success"] == "1"

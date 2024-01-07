@@ -11,7 +11,7 @@ class Coins:  # pragma: no cover
         gecko_source = load_gecko_source(testing=testing)
         self.coins = [
             Coin(coin=i, gecko_source=gecko_source, coins_config=coins_config)
-            for i in load_coins_config()
+            for i in coins_config
         ]
 
     @property

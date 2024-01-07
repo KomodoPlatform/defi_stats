@@ -19,6 +19,7 @@ class Markets:
             self.files = Files(netid=self.netid, testing=self.testing)
             self.gecko = CoinGeckoAPI(testing=self.testing)
             self.generics = Generics(**kwargs)
+            self.last_traded = load_generic_last_traded()
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")
 
@@ -40,13 +41,4 @@ class Markets:
             return data
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
-            return default_error(e, msg)
-
-    @timed
-    def last_traded(self):
-        try:
-            data = load_generic_last_traded()
-            return data
-        except Exception as e:  # pragma: no cover
-            msg = f"pairs_last_traded failed for netid {self.netid}!"
             return default_error(e, msg)

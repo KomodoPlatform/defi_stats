@@ -45,6 +45,13 @@ class Pair:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                logger.loop(f"Getting generic_last_traded source for {pair_str}")
+                self.cache = Cache(testing=self.testing, netid=self.netid)
+                self.last_traded_cache = self.cache.get_item("generic_last_traded").data
+
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
@@ -85,8 +92,6 @@ class Pair:
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
-            self.cache = Cache(testing=self.testing, netid=self.netid)
-            self.last_traded_cache = self.cache.get_item("generic_last_traded").data
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} on netid {self.netid} failed!"
