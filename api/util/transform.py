@@ -68,6 +68,8 @@ def format_10f(number: float) -> str:
     """
     Format a float to 10 decimal places.
     """
+    if isinstance(number, str):
+        number = float(number)
     return f"{number:.10f}"
 
 
@@ -249,7 +251,7 @@ def historical_trades_to_gecko(i):
         "price": i["price"],
         "base_volume": i["base_volume"],
         "target_volume": i["target_volume"],
-        "trade_timestamp": i["timestamp"],
+        "timestamp": i["timestamp"],
         "type": i["type"],
     }
 

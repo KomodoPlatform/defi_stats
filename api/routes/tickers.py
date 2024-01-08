@@ -23,12 +23,10 @@ def summary(netid: NetId = NetId.ALL):
     try:
         cache = Cache(netid="ALL")
         data = cache.get_item(name="generic_tickers").data
-
         data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
         tickers = {}
         [tickers.update({i["ticker_id"]: i}) for i in data["data"]]
         data["data"] = tickers
-        logger.info(data)
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/tickers/summary]: {e}")

@@ -5,10 +5,12 @@ from lib.pair import Pair
 from lib.cache import (
     load_gecko_source,
     load_coins_config,
+    load_generic_last_traded
 )
 
 coins_config = load_coins_config(testing=True)
 gecko_source = load_gecko_source(testing=True)
+generic_last_traded = load_generic_last_traded(testing=True)
 
 
 @pytest.fixture
@@ -20,6 +22,7 @@ def setup_kmd_ltc_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -32,6 +35,7 @@ def setup_ltc_kmd_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -44,6 +48,7 @@ def setup_dgb_doge_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -56,6 +61,7 @@ def setup_doge_dgb_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -68,6 +74,7 @@ def setup_kmd_dgb_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -80,6 +87,7 @@ def setup_btc_kmd_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -92,6 +100,7 @@ def setup_kmd_btc_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -104,6 +113,7 @@ def setup_dgb_kmd_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -116,6 +126,7 @@ def setup_1inch_usdc_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -128,6 +139,7 @@ def setup_not_a_real_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -140,6 +152,7 @@ def setup_three_ticker_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
 
 
@@ -152,4 +165,5 @@ def setup_not_existing_pair(setup_swaps_db_data):
         db=db,
         coins_config=coins_config,
         gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
     )
