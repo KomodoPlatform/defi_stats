@@ -58,3 +58,12 @@ class StatsApiOrderbook(BaseModel):
     asks: List[List] = [["777.777777", "777.777777"]]
     total_asks_base_vol: str = "777.777777"
     total_bids_quote_vol: str = "777.777777"
+
+class StatsApiTradeInfo(BaseModel):
+    trade_id: str = "77777777-7777-7777-7777-777777777777"
+    price: float = 777.777777
+    base_volume: float = 777.777777
+    target_volume: float = 777.777777
+    timestamp: int = 1777777777
+    type: str = "buy | sell"
+    

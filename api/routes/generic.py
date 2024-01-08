@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from lib.cache import Cache
 from lib.generic import Generic
+from lib.pair import Pair
+from util.enums import TradeType
+from util.validate import validate_positive_numeric
 from models.generic import (
     ErrorMessage,
 )
@@ -79,6 +83,43 @@ def orderbook(
         generic = Generic(netid="ALL")
         data = generic.orderbook(pair_str=ticker_id, depth=depth)
         data = transform.orderbook_to_gecko(data)
+        return data
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+@router.get(
+    "/historical_trades/{ticker_id}",
+    description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def historical_trades(
+    trade_type: TradeType = TradeType.ALL,
+    ticker_id: str = "KMD_LTC",
+    limit: int = 100,
+    start_time: int = int(time.time() - 86400),
+    end_time: int = int(time.time()),
+):
+    try:
+        for value, name in [
+            (limit, "limit"),
+            (start_time, "start_time"),
+            (end_time, "end_time"),
+        ]:
+            validate_positive_numeric(value, name)
+        if start_time > end_time:
+            raise ValueError("start_time must be less than end_time")
+        if trade_type not in ["all", "buy", "sell"]:
+            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
+        pair = Pair(pair_str=ticker_id)
+        data = pair.historical_trades(
+            trade_type=trade_type,
+            limit=limit,
+            start_time=start_time,
+            end_time=end_time,
+        )
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
