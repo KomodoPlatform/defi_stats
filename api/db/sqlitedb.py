@@ -30,6 +30,7 @@ class SqliteDB:  # pragma: no cover
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
+                logger.loop(f"Getting generic_last_traded source for SqliteDB")
                 self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
 
             if "coins_config" in kwargs:

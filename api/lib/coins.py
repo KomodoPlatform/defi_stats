@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from lib.coin import Coin
-from lib.cache import load_coins_config, load_gecko_source
-
+from lib.cache import load_coins_config, load_gecko_source, load_generic_last_traded
+from util.logger import logger
 
 @dataclass
 class Coins:  # pragma: no cover
     def __init__(self, testing=False):
         coins_config = load_coins_config(testing=testing)
         gecko_source = load_gecko_source(testing=testing)
+        logger.loop(f"Getting generic_last_traded source for Coins")
+        last_traded_cache = load_generic_last_traded(testing=testing)
         self.coins = [
-            Coin(coin=i, gecko_source=gecko_source, coins_config=coins_config)
+            Coin(
+                coin=i,
+                gecko_source=gecko_source,
+                coins_config=coins_config,
+                last_traded_cache=last_traded_cache,
+            )
             for i in coins_config
         ]
 

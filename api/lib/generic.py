@@ -46,6 +46,7 @@ class Generic:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
+                logger.loop(f"Getting generic_last_traded source for generic")
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
@@ -56,6 +57,7 @@ class Generic:
                 testing=self.testing,
                 gecko_source=self.gecko_source,
                 coins_config=self.coins_config,
+                last_traded_cache=self.last_traded_cache,
             )
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
@@ -177,11 +179,10 @@ class Generic:
                 priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
                 unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
                 resp = sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
-                last_traded = lib.load_generic_last_traded(testing=self.testing)
 
                 for i in resp:
-                    if i["ticker_id"] in last_traded:
-                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
+                    if i["ticker_id"] in self.last_traded_cache:
+                        i["last_trade"] = self.last_traded_cache[i["ticker_id"]]["last_swap"]
                 return resp
         except Exception as e:  # pragma: no cover
             msg = f"traded_pairs failed for netid {self.netid}!"

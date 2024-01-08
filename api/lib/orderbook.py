@@ -34,6 +34,7 @@ class Orderbook:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
+                logger.loop(f"Getting generic_last_traded source for {self.pair} Orderbook")
                 self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
 
             self.files = Files(testing=self.testing)

@@ -40,7 +40,6 @@ class Pair:
             set_params(self, self.kwargs, self.options)
 
             if "last_traded_cache" in kwargs:
-                logger.loop(kwargs["last_traded_cache"])
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 logger.loop(f"Getting generic_last_traded source for {pair_str}")
@@ -63,7 +62,9 @@ class Pair:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+                self.last_traded_cache = lib.load_generic_last_traded(
+                    testing=self.testing
+                )
 
             self.db = get_sqlite_db(
                 testing=self.testing,
@@ -71,6 +72,7 @@ class Pair:
                 db=db,
                 coins_config=self.coins_config,
                 gecko_source=self.gecko_source,
+                last_traded_cache=self.last_traded_cache,
             )
 
             # Adjust pair order
@@ -130,6 +132,7 @@ class Pair:
                         coin=self.base,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     ).related_coins
                 ]
                 for j in [
@@ -138,6 +141,7 @@ class Pair:
                         coin=self.quote,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     ).related_coins
                 ]
                 if i != j
@@ -152,6 +156,7 @@ class Pair:
             pair_obj=self,
             gecko_source=self.gecko_source,
             coins_config=self.coins_config,
+            last_traded_cache=self.last_traded_cache,
         )
 
     @property
@@ -286,11 +291,6 @@ class Pair:
                 data["base_volume_usd"] + data["quote_volume_usd"]
             ) / 2
 
-            # TODO: using timestamps as an index works for now,
-            # but breaks when two swaps have the same timestamp.
-            # TODO: Use the cache for this
-            if self.last_traded_cache is None:
-                print(self.last_traded_cache)
             if self.as_str in self.last_traded_cache:
                 last_swap = self.last_traded_cache[self.as_str]
 
@@ -301,9 +301,10 @@ class Pair:
                 last_swap = {"last_swap": 0, "last_price": 0}
 
             # Get Prices
+            # TODO: using timestamps as an index works for now,
+            # but breaks when two swaps have the same timestamp.
             swap_prices = self.get_swap_prices(swaps_for_pair)
             if len(swap_prices) > 0:
-                logger.info(f"swap_prices: {swap_prices}")
                 highest_price = max(swap_prices.values())
                 lowest_price = min(swap_prices.values())
                 newest_price = swap_prices[max(swap_prices.keys())]
