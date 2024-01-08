@@ -38,12 +38,15 @@ class Pair:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
+
             if "last_traded_cache" in kwargs:
+                logger.loop(kwargs["last_traded_cache"])
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 logger.loop(f"Getting generic_last_traded source for {pair_str}")
-                self.cache = lib.Cache(testing=self.testing, netid=self.netid)
-                self.last_traded_cache = self.cache.get_item("generic_last_traded").data
+                self.last_traded_cache = lib.load_generic_last_traded(
+                    testing=self.testing
+                )
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
@@ -56,6 +59,12 @@ class Pair:
             else:
                 logger.loop(f"Getting coins_config for {pair_str}")
                 self.coins_config = lib.load_coins_config(testing=self.testing)
+
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+
             self.db = get_sqlite_db(
                 testing=self.testing,
                 netid=self.netid,
@@ -147,15 +156,19 @@ class Pair:
 
     @property
     def orderbook_data(self):
-        data = self.orderbook.for_pair()
-        volumes_and_prices = self.get_volumes_and_prices()
-        data.update(
-            {
-                "trades_24hr": volumes_and_prices["trades_24hr"],
-                "volume_usd_24hr": volumes_and_prices["combined_volume_usd"],
-            }
-        )
-        return data
+        try:
+            data = self.orderbook.for_pair()
+            volumes_and_prices = self.get_volumes_and_prices()
+            data.update(
+                {
+                    "trades_24hr": volumes_and_prices["trades_24hr"],
+                    "volume_usd_24hr": volumes_and_prices["combined_volume_usd"],
+                }
+            )
+            return data
+        except Exception as e:  # pragma: no cover
+            msg = f"pair.orderbook_data {self.as_str} failed for netid {self.netid}!"
+            return default_error(e, msg)
 
     @timed
     def historical_trades(
@@ -234,7 +247,7 @@ class Pair:
                 return sum_json_key(trades_info, "price") / len(trades_info)
             return 0
         except Exception as e:  # pragma: no cover
-            msg = f"{self.as_str} failed for netid {self.netid}!"
+            msg = f"{self.as_str} get_average_price failed for netid {self.netid}!"
             return default_error(e, msg)
 
     @timed
@@ -245,24 +258,20 @@ class Pair:
         # TODO: Handle inverse_requested
         try:
             timestamp = int(time.time() - 86400 * days)
-            try:
-                swaps_for_pair = self.pair_swaps(start_time=timestamp)
-            except Exception as e:  # pragma: no cover
-                msg = f"get_volumes_and_prices: {self.as_str} failed for netid {self.netid}: {e}"
-                logger.error(msg)
-                return default_error(e, msg)
-
+            swaps_for_pair = self.pair_swaps(start_time=timestamp)
+            # logger.calc(f"swaps_for_pair: {len(swaps_for_pair)}")
             # Get template in case no swaps returned
             suffix = get_suffix(days)
+            # logger.calc(f"suffix: {suffix}")
             data = template.volumes_and_prices(suffix)
             data["base"] = self.base
             data["quote"] = self.quote
             data["base_price"] = self.base_usd_price
             data["quote_price"] = self.quote_usd_price
             data["trades_24hr"] = len(swaps_for_pair)
-
             # Get Volumes
             swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
+            # logger.calc(f"swaps_volumes: {swaps_volumes}")
             data["base_volume"] = swaps_volumes[0]
             data["quote_volume"] = swaps_volumes[1]
             data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(
@@ -277,28 +286,42 @@ class Pair:
                 data["base_volume_usd"] + data["quote_volume_usd"]
             ) / 2
 
+            # TODO: using timestamps as an index works for now,
+            # but breaks when two swaps have the same timestamp.
+            # TODO: Use the cache for this
+            if self.last_traded_cache is None:
+                print(self.last_traded_cache)
+            if self.as_str in self.last_traded_cache:
+                last_swap = self.last_traded_cache[self.as_str]
+
+            elif reverse_ticker(self.as_str) in self.last_traded_cache:
+                last_swap = self.last_traded_cache[reverse_ticker(self.as_str)]
+
+            else:
+                last_swap = {"last_swap": 0, "last_price": 0}
+
             # Get Prices
             swap_prices = self.get_swap_prices(swaps_for_pair)
             if len(swap_prices) > 0:
-                # TODO: using timestamps as an index works for now,
-                # but breaks when two swaps have the same timestamp.
-                # TODO: Use the cache for this
-                last_swap = self.db.query.get_last_price_for_pair(self.base, self.quote)
+                logger.info(f"swap_prices: {swap_prices}")
                 highest_price = max(swap_prices.values())
                 lowest_price = min(swap_prices.values())
                 newest_price = swap_prices[max(swap_prices.keys())]
                 oldest_price = swap_prices[min(swap_prices.keys())]
                 price_change = Decimal(newest_price) - Decimal(oldest_price)
                 pct_change = Decimal(newest_price) / Decimal(oldest_price) - 1
-
                 data[f"highest_price_{suffix}"] = highest_price
                 data[f"lowest_price_{suffix}"] = lowest_price
-                data["last_price"] = last_swap["price"]
-                data["last_trade"] = last_swap["timestamp"]
+                data["last_price"] = last_swap["last_price"]
+                data["last_trade"] = last_swap["last_swap"]
                 data[f"price_change_percent_{suffix}"] = pct_change
                 data[f"price_change_{suffix}"] = price_change
+
             return data
         except Exception as e:  # pragma: no cover
+            logger.loop(f"template.volumes_and_prices: {data}")
+            logger.loop(f"swaps_volumes: {swaps_volumes}")
+            logger.loop(f": {self.last_traded_cache}")
             msg = f"get_volumes_and_prices for {self.as_str} failed for netid {self.netid}! {e}"
             return default_error(e, msg)
 
@@ -382,22 +405,26 @@ class Pair:
         start_time: int = int(time.time()) - 86400,
         end_time: int = int(time.time()),
     ):
-        # Handles reverse pairs
-        if self.inverse_requested:
-            base = self.quote
-            quote = self.base
-        else:
-            base = self.base
-            quote = self.quote
-        data = self.db.query.get_swaps_for_pair(
-            base=base,
-            quote=quote,
-            limit=limit,
-            trade_type=trade_type,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        return data
+        try:
+            # Handles reverse pairs
+            if self.inverse_requested:
+                base = self.quote
+                quote = self.base
+            else:
+                base = self.base
+                quote = self.quote
+            data = self.db.query.get_swaps_for_pair(
+                base=base,
+                quote=quote,
+                limit=limit,
+                trade_type=trade_type,
+                start_time=start_time,
+                end_time=end_time,
+            )
+            return data
+        except Exception as e:  # pragma: no cover
+            msg = f"{self.as_str} pair_swaps failed for netid {self.netid}!"
+            return default_error(e, msg)
 
     @timed
     def swap_uuids(
@@ -418,10 +445,11 @@ class Pair:
     @timed
     def get_swaps_volumes(self, swaps_for_pair):
         try:
-            return [
+            volumes = [
                 sum_json_key_10f(swaps_for_pair, "maker_amount"),
                 sum_json_key_10f(swaps_for_pair, "taker_amount"),
             ]
+            return volumes
         except Exception as e:  # pragma: no cover
             msg = f"{self.as_str} failed for netid {self.netid}!"
             return default_error(e, msg)

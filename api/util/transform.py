@@ -139,17 +139,22 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) ->
 
 
 def merge_orderbooks(existing, new):
-    existing["asks"] += new["asks"]
-    existing["bids"] += new["bids"]
-    existing["liquidity_usd"] += new["liquidity_usd"]
-    existing["total_asks_base_vol"] += new["total_asks_base_vol"]
-    existing["total_bids_base_vol"] += new["total_bids_base_vol"]
-    existing["total_asks_quote_vol"] += new["total_asks_quote_vol"]
-    existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
-    existing["total_asks_base_usd"] += new["total_asks_base_usd"]
-    existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
-    existing["trades_24hr"] += new["trades_24hr"]
-    existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+    try:
+        existing["asks"] += new["asks"]
+        existing["bids"] += new["bids"]
+        existing["liquidity_usd"] += new["liquidity_usd"]
+        existing["total_asks_base_vol"] += new["total_asks_base_vol"]
+        existing["total_bids_base_vol"] += new["total_bids_base_vol"]
+        existing["total_asks_quote_vol"] += new["total_asks_quote_vol"]
+        existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
+        existing["total_asks_base_usd"] += new["total_asks_base_usd"]
+        existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
+        existing["trades_24hr"] += new["trades_24hr"]
+        existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"transform.merge_orderbooks: {e}"}
+        logger.warning(err)
     return existing
 
 

@@ -23,6 +23,11 @@ class CoinGeckoAPI:
             self.files = Files(testing=self.testing)
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:

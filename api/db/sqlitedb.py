@@ -27,6 +27,11 @@ class SqliteDB:  # pragma: no cover
             self.options = ["testing", "wal", "netid"]
             set_params(self, self.kwargs, self.options)
 
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:

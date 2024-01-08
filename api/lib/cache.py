@@ -71,7 +71,9 @@ class CacheItem:
 
     @property
     def data(self):
-        if len(self._data) == 0:
+        if len(self._data) is None:
+            self.update_data()
+        elif len(self._data) == 0:
             self.update_data()
         return self._data
 
@@ -180,8 +182,8 @@ def load_coins(testing=False):  # pragma: no cover
 
 def load_generic_last_traded(testing=False):
     try:
-        data = CacheItem("generic_last_traded", testing=testing).data
-        return data
+        cache_item = CacheItem("generic_last_traded", testing=testing)
+        return cache_item.data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
         return {}

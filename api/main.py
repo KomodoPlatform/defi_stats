@@ -15,6 +15,7 @@ from routes import (
     binance,
     generic,
     tickers,
+    stats_api,
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -95,6 +96,14 @@ app.include_router(
     swaps.router,
     prefix="/api/v3/swaps",
     tags=["Swaps"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    stats_api.router,
+    prefix="/api/v3/stats-api",
+    tags=["Stats-API"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
