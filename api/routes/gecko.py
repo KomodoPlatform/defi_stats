@@ -57,7 +57,6 @@ def gecko_tickers():
         cache = Cache(netid="ALL")
         data = cache.get_item(name="generic_tickers").data
         data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
-        logger.info(data)
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")

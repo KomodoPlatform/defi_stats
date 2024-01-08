@@ -104,6 +104,7 @@ class CacheItem:
             "coins_config": 1440,
             "generic_last_traded": 1,
             "gecko_source": 15,
+            "fixer_rates": 15,
         }
         if self.name in expiry_limits:
             return expiry_limits[self.name]
