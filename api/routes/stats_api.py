@@ -7,7 +7,9 @@ from lib.cache import Cache
 from models.generic import ErrorMessage
 from models.stats_api import StatsApiAtomicdexIo, StatsApiSummary
 from util.logger import logger
+import util.transform as transform
 from lib.stats_api import StatsAPI
+import lib
 
 router = APIRouter()
 cache = Cache()
@@ -64,5 +66,23 @@ def summary():
         stats = StatsAPI()
         return stats.pair_summaries()
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [stats-api/summary]: {e}")
-        return {"error": f"{type(e)} Error in [stats-api/atomicdexio]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats-api/atomicdexio]: {e}"}
+
+
+@router.get(
+    "/ticker",
+    description="Simple last price and liquidity for each market pair, traded in last 7 days.",
+)
+def ticker():
+    try:
+        cache = lib.Cache(netid="ALL")
+        data = cache.get_item(name="markets_tickers").data
+        resp = []
+        for i in data["data"]:
+            resp.append(transform.ticker_to_market_ticker(i))
+        return resp
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}"}
+
