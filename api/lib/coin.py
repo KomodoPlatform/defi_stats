@@ -3,6 +3,7 @@ from decimal import Decimal
 from lib.cache import (
     load_coins_config,
     load_gecko_source,
+    load_generic_last_traded,
 )
 from util.defaults import set_params
 from util.logger import logger
@@ -27,6 +28,12 @@ class Coin:
                 self.coins_config = kwargs["coins_config"]
             else:
                 self.coins_config = load_coins_config(testing=self.testing)
+
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                logger.loop(f"Getting generic_last_traded source for Coin {coin}")
+                self.last_traded_cache = load_generic_last_traded(testing=self.testing)
 
             # Designate coin
             if self.coin in self.coins_config:

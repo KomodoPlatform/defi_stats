@@ -68,6 +68,8 @@ def format_10f(number: float) -> str:
     """
     Format a float to 10 decimal places.
     """
+    if isinstance(number, str):
+        number = float(number)
     return f"{number:.10f}"
 
 
@@ -114,6 +116,11 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
+def get_top_items(data, sort_key, length=5):
+    data.sort(key=lambda x: x[sort_key], reverse=True)
+    return data[:length]
+
+
 @timed
 def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) -> str:
     try:
@@ -137,17 +144,22 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) ->
 
 
 def merge_orderbooks(existing, new):
-    existing["asks"] += new["asks"]
-    existing["bids"] += new["bids"]
-    existing["liquidity_usd"] += new["liquidity_usd"]
-    existing["total_asks_base_vol"] += new["total_asks_base_vol"]
-    existing["total_bids_base_vol"] += new["total_bids_base_vol"]
-    existing["total_asks_quote_vol"] += new["total_asks_quote_vol"]
-    existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
-    existing["total_asks_base_usd"] += new["total_asks_base_usd"]
-    existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
-    existing["trades_24hr"] += new["trades_24hr"]
-    existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+    try:
+        existing["asks"] += new["asks"]
+        existing["bids"] += new["bids"]
+        existing["liquidity_usd"] += new["liquidity_usd"]
+        existing["total_asks_base_vol"] += new["total_asks_base_vol"]
+        existing["total_bids_base_vol"] += new["total_bids_base_vol"]
+        existing["total_asks_quote_vol"] += new["total_asks_quote_vol"]
+        existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
+        existing["total_asks_base_usd"] += new["total_asks_base_usd"]
+        existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
+        existing["trades_24hr"] += new["trades_24hr"]
+        existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"transform.merge_orderbooks: {e}"}
+        logger.warning(err)
     return existing
 
 
@@ -232,6 +244,44 @@ def ticker_to_gecko(i):
     }
 
 
+def ticker_to_statsapi(i, suffix):
+    try:
+        if suffix == "24hr":
+            alt_suffix = "24h"
+        else:
+            alt_suffix = suffix
+        return {
+            "trading_pair": i["ticker_id"],
+            "pair_swaps_count": int(i[f"trades_{suffix}"]),
+            "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
+            "pair_trade_value_usd": Decimal(i[f"volume_usd_{suffix}"]),
+            "base_currency": i["base_currency"],
+            "base_volume": Decimal(i["base_volume"]),
+            "base_price_usd": Decimal(i["base_usd_price"]),
+            "base_trade_value_usd": Decimal(i["base_volume_usd"]),
+            "base_liquidity_coins": Decimal(i["base_liquidity_coins"]),
+            "base_liquidity_usd": Decimal(i["base_liquidity_usd"]),
+            "quote_currency": i["target_currency"],
+            "quote_volume": Decimal(i["target_volume"]),
+            "quote_price_usd": Decimal(i["target_usd_price"]),
+            "quote_trade_value_usd": Decimal(i["quote_volume_usd"]),
+            "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
+            "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
+            "highest_bid": Decimal(i["bid"]),
+            "lowest_ask": Decimal(i["ask"]),
+            f"highest_price_{alt_suffix}": Decimal(i["high"]),
+            f"lowest_price_{alt_suffix}": Decimal(i["low"]),
+            f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
+            f"price_change_percent_{alt_suffix}": Decimal(
+                i[f"price_change_percent_{suffix}"]
+            ),
+            "last_trade": int(i["last_trade"]),
+            "last_price": Decimal(i["last_price"]),
+        }
+    except Exception as e:  # pragma: no cover
+        return default_error(e)
+
+
 def historical_trades_to_market_trades(i):
     return {
         "trade_id": i["trade_id"],
@@ -249,7 +299,7 @@ def historical_trades_to_gecko(i):
         "price": i["price"],
         "base_volume": i["base_volume"],
         "target_volume": i["target_volume"],
-        "trade_timestamp": i["timestamp"],
+        "timestamp": i["timestamp"],
         "type": i["type"],
     }
 

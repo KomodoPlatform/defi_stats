@@ -10,6 +10,8 @@ from lib.cache import (
     Cache,
     load_generic_last_traded,
     load_generic_pairs,
+    load_adex_fortnite,
+    load_statsapi_summary,
 )
 
 

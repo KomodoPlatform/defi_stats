@@ -3,6 +3,7 @@ import time
 from lib.external import FixerAPI, CoinGeckoAPI
 from lib.generic import Generic
 from lib.markets import Markets
+from lib.stats_api import StatsAPI
 from util.defaults import default_error, set_params, default_result
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
@@ -39,6 +40,8 @@ class Cache:  # pragma: no cover
             "fixer_rates",
             "prices_tickers_v1",
             "prices_tickers_v2",
+            "statsapi_adex_fortnite",
+            "statsapi_summary",
         ]:
             item = self.get_item(i)
             since_updated = item.since_updated_min()
@@ -71,7 +74,9 @@ class CacheItem:
 
     @property
     def data(self):
-        if len(self._data) == 0:
+        if len(self._data) is None:
+            self.update_data()
+        elif len(self._data) == 0:
             self.update_data()
         return self._data
 
@@ -123,6 +128,11 @@ class CacheItem:
                     data = CoinGeckoAPI().get_gecko_source()
                 if self.name == "gecko_tickers":
                     data = Generic(netid="ALL").traded_tickers(pairs_days=7)
+
+                if self.name == "statsapi_adex_fortnite":
+                    data = StatsAPI().adex_fortnite()
+                if self.name == "statsapi_summary":
+                    data = StatsAPI().pair_summaries()
 
                 if self.name == "generic_tickers":
                     data = Generic(netid="ALL").traded_tickers()
@@ -180,8 +190,8 @@ def load_coins(testing=False):  # pragma: no cover
 
 def load_generic_last_traded(testing=False):
     try:
-        data = CacheItem("generic_last_traded", testing=testing).data
-        return data
+        cache_item = CacheItem("generic_last_traded", testing=testing)
+        return cache_item.data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
         return {}
@@ -200,4 +210,20 @@ def load_generic_tickers(testing=False):
         return CacheItem("generic_tickers", testing=testing).data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [generic_tickers]: {e}")
+        return {}
+
+
+def load_adex_fortnite(testing=False):
+    try:
+        return CacheItem("statsapi_adex_fortnite", testing=testing).data
+    except Exception as e:  # pragma: no cover
+        logger.error(f"{type(e)} Error in [load_adex_fortnite]: {e}")
+        return {}
+
+
+def load_statsapi_summary(testing=False):
+    try:
+        return CacheItem("statsapi_summary", testing=testing).data
+    except Exception as e:  # pragma: no cover
+        logger.error(f"{type(e)} Error in [load_statsapi_summary]: {e}")
         return {}

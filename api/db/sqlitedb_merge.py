@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import time
 import sqlite3
 from typing import List
-from os.path import dirname, abspath
 from const import (
     LOCAL_MM2_DB_PATH_7777,
     LOCAL_MM2_DB_PATH_8762,
@@ -27,25 +25,13 @@ from util.enums import NetId
 from util.logger import logger, timed
 import lib
 
-API_ROOT_PATH = dirname(dirname(abspath(__file__)))
-sys.path.append(API_ROOT_PATH)
-
-
-# This should be run on a separate server
-# so processing is decoupled from serving.
-
-
-# Step 1 - Merge source/ into cleaned/
-# Step 2 - Denullify dbs in cleaned/
-# Step 3 - Compare/repair in cleaned/
-# Step 4 - Merge cleaned into master
-
 
 class SqliteMerge:
     def __init__(self, testing=False):
         self.testing = testing
         self.gecko_source = lib.load_gecko_source(testing=self.testing)
         self.coins_config = lib.load_coins_config(testing=self.testing)
+        self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
         self.init_dbs()
 
     @timed
@@ -71,6 +57,7 @@ class SqliteMerge:
                         db_path=src_db_path,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     )
                     src_db.update.denullify_stats_swaps()
 
@@ -79,6 +66,7 @@ class SqliteMerge:
                         db_path=dest_db_path,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     )
                     dest_db.update.create_swap_stats_table()
                     self.merge_db_tables(
@@ -100,15 +88,24 @@ class SqliteMerge:
     def get_db_row_counts(self, temp=False):  # pragma: no cover
         path = MM2_DB_PATHS["temp_7777"] if temp else MM2_DB_PATHS["7777"]
         db_7777 = get_sqlite_db(
-            db_path=path, coins_config=self.coins_config, gecko_source=self.gecko_source
+            db_path=path,
+            coins_config=self.coins_config,
+            gecko_source=self.gecko_source,
+            last_traded_cache=self.last_traded_cache,
         )
         path = MM2_DB_PATHS["temp_8762"] if temp else MM2_DB_PATHS["8762"]
         db_8762 = get_sqlite_db(
-            db_path=path, coins_config=self.coins_config, gecko_source=self.gecko_source
+            db_path=path,
+            coins_config=self.coins_config,
+            gecko_source=self.gecko_source,
+            last_traded_cache=self.last_traded_cache,
         )
         path = MM2_DB_PATHS["temp_ALL"] if temp else MM2_DB_PATHS["ALL"]
         db_all = get_sqlite_db(
-            db_path=path, coins_config=self.coins_config, gecko_source=self.gecko_source
+            db_path=path,
+            coins_config=self.coins_config,
+            gecko_source=self.gecko_source,
+            last_traded_cache=self.last_traded_cache,
         )
 
         db_8762.update.remove_overlaps(db_7777)
@@ -136,11 +133,13 @@ class SqliteMerge:
                     db_path=MM2_DB_PATHS[f"temp_{i}"],
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
                 )
                 dest_db = get_sqlite_db(
                     db_path=MM2_DB_PATHS[f"{i}"],
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
                 )
                 self.merge_db_tables(
                     src_db=src_db,
@@ -169,6 +168,7 @@ class SqliteMerge:
                             db_path=src_db_path,
                             coins_config=self.coins_config,
                             gecko_source=self.gecko_source,
+                            last_traded_cache=self.last_traded_cache,
                         )
                         netid = get_netid(fn)
                         dest_db_path = f"{DB_CLEAN_PATH}/temp_MM2_{netid}.db"
@@ -176,6 +176,7 @@ class SqliteMerge:
                             db_path=dest_db_path,
                             coins_config=self.coins_config,
                             gecko_source=self.gecko_source,
+                            last_traded_cache=self.last_traded_cache,
                         )
                         self.merge_db_tables(
                             src_db=src_db,
@@ -196,11 +197,13 @@ class SqliteMerge:
                         db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db",
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     )
                     src_db = get_sqlite_db(
                         db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db",
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        last_traded_cache=self.last_traded_cache,
                     )
                     self.merge_db_tables(
                         src_db=src_db,
@@ -258,11 +261,13 @@ class SqliteMerge:
                             db_path=f"{DB_CLEAN_PATH}/{fna}",
                             coins_config=self.coins_config,
                             gecko_source=self.gecko_source,
+                            last_traded_cache=self.last_traded_cache,
                         )
                         db2 = get_sqlite_db(
                             db_path=f"{DB_CLEAN_PATH}/{fnb}",
                             coins_config=self.coins_config,
                             gecko_source=self.gecko_source,
+                            last_traded_cache=self.last_traded_cache,
                         )
                         uuids = self.get_mismatched_uuids(db1, db2)
                         self.repair_swaps(uuids, db1, db2)
@@ -345,6 +350,7 @@ class SqliteMerge:
                     db_path=MM2_DB_PATHS[i],
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
                 )
                 self.init_stats_swaps_db(db)
                 db.close()
@@ -358,6 +364,7 @@ class SqliteMerge:
                     db_path=i,
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
                 )
                 self.init_stats_swaps_db(db)
         except sqlite3.OperationalError as e:
@@ -373,7 +380,12 @@ class SqliteMerge:
         try:
             for netid in NetId:
                 db_path = MM2_DB_PATHS[f"temp_{netid.value}"]
-                db = get_sqlite_db(db_path=db_path)
+                db = get_sqlite_db(
+                    db_path=db_path,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
+                )
                 db.update.create_swap_stats_table()
                 db.update.clear("stats_swaps")
                 db.close()
@@ -393,11 +405,13 @@ class SqliteMerge:
                 db_path=src_db_path,
                 coins_config=self.coins_config,
                 gecko_source=self.gecko_source,
+                last_traded_cache=self.last_traded_cache,
             )
             dest = get_sqlite_db(
                 db_path=dest_db_path,
                 coins_config=self.coins_config,
                 gecko_source=self.gecko_source,
+                last_traded_cache=self.last_traded_cache,
             )
             src.conn.backup(dest.conn, pages=1, progress=self.progress)
             src.close()

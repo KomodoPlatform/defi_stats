@@ -54,8 +54,6 @@ def test_historical_trades(
     pair = setup_kmd_ltc_pair
     r = pair.historical_trades(trade_type="all")
     r["trades_count"] = len(r["buy"]) + len(r["sell"])
-    logger.info(f"buy: {r['buy']}")
-    logger.info(f"sell: {r['sell']}")
     assert r["trades_count"] == 3
     assert r["buy"][0]["type"] == "buy"
     assert r["buy"][0]["base_volume"] == format_10f(1)
@@ -86,9 +84,7 @@ def test_get_average_price(setup_not_existing_pair):
 
 def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     pair = setup_kmd_ltc_pair
-    logger.calc(pair.testing)
     r = pair.get_volumes_and_prices()
-    logger.info(r)
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price"] == 1

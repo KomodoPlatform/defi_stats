@@ -30,25 +30,34 @@ class Generic:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
+
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
                 logger.loop("Getting gecko source for Generic")
                 self.gecko_source = lib.load_gecko_source(testing=self.testing)
+
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
                 logger.loop("Getting coins_config for Generic")
                 self.coins_config = lib.load_coins_config(testing=self.testing)
+
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                self.last_traded_cache = lib.load_generic_last_traded(
+                    testing=self.testing
+                )
+
             self.db_path = get_sqlite_db_paths(netid=self.netid)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(
                 testing=self.testing,
                 gecko_source=self.gecko_source,
                 coins_config=self.coins_config,
+                last_traded_cache=self.last_traded_cache,
             )
-            self.cache = lib.Cache(testing=self.testing, netid=self.netid)
-            self.last_traded_cache = self.cache.get_item("generic_last_traded").data
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 
@@ -81,7 +90,9 @@ class Generic:
                         logger.info(
                             f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
                         )
+                        logger.calc(pair_obj.orderbook_data.keys())
                         data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
+                        logger.calc(data.keys())
             else:
                 pair_obj = Pair(
                     pair_str=pair_str,
@@ -93,7 +104,9 @@ class Generic:
                 )
                 inverse = pair_obj.inverse_requested
                 logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})")
+                logger.calc(pair_obj.orderbook_data.keys())
                 data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
+                logger.calc(data.keys())
             # Standardise values
             for i in ["bids", "asks"]:
                 for j in data[i]:
@@ -114,7 +127,7 @@ class Generic:
                 data[i] = format_10f(Decimal(data[i]))
             return data
         except Exception as e:  # pragma: no cover
-            err = {"error": f"{e}"}
+            err = {"error": f"Generic.orderbook: {e}"}
             logger.warning(err)
             return template.orderbook(pair_str)
 
@@ -123,7 +136,13 @@ class Generic:
         """Returns basic pair info and tags as priced/unpriced"""
         try:
             # TODO: is segwit is coalesced yet?
-            db = get_sqlite_db(db_path=self.db_path, db=self.db)
+            db = get_sqlite_db(
+                db_path=self.db_path,
+                db=self.db,
+                coins_config=self.coins_config,
+                gecko_source=self.gecko_source,
+                last_traded_cache=self.last_traded_cache,
+            )
             pairs = db.query.get_pairs(days=days)
 
             # logger.info(pairs)
@@ -165,11 +184,12 @@ class Generic:
                 priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
                 unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
                 resp = sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
-                last_traded = lib.load_generic_last_traded(testing=self.testing)
 
                 for i in resp:
-                    if i["ticker_id"] in last_traded:
-                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
+                    if i["ticker_id"] in self.last_traded_cache:
+                        i["last_trade"] = self.last_traded_cache[i["ticker_id"]][
+                            "last_swap"
+                        ]
                 return resp
         except Exception as e:  # pragma: no cover
             msg = f"traded_pairs failed for netid {self.netid}!"
@@ -180,7 +200,7 @@ class Generic:
         try:
             if db is None:  # pragma: no cover
                 db = get_sqlite_db(db_path=self.db_path)
-            pairs = db.query.get_pairs(pairs_days)
+            pairs = db.query.get_pairs(days=pairs_days)
             data = [
                 Pair(
                     pair_str=i,

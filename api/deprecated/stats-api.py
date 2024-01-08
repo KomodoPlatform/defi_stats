@@ -25,16 +25,6 @@ def atomicdexio():
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}
 
 
-@app.get('/api/v1/atomicdex_fortnight')
-def atomicdex_fortnight():
-    '''Extra Summary Statistics over last 2 weeks'''
-    try:
-        return cache.atomicdex_fortnight()
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v1/atomicdex_fortnight]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v1/atomicdex_fortnight]: {e}"}
-
-
 @app.get('/api/v1/summary')
 def summary():
     '''

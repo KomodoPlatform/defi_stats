@@ -24,18 +24,18 @@ class Orderbook:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                # pair_str = self.pair.as_str
-                # msg = f"Getting gecko source for {pair_str} orderbook"
-                # logger.loop(msg)
                 self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                # pair_str = self.pair.as_str
-                # msg = f"Getting coins_config for {pair_str} orderbook"
-                # logger.loop(msg)
                 self.coins_config = lib.load_coins_config(testing=self.testing)
+
+            if "last_traded_cache" in kwargs:
+                self.last_traded_cache = kwargs["last_traded_cache"]
+            else:
+                logger.loop(f"Getting generic_last_traded source for {self.pair} Orderbook")
+                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
 
             self.files = Files(testing=self.testing)
             segwit_coins = [i.coin for i in lib.COINS.with_segwit]
@@ -55,9 +55,6 @@ class Orderbook:
         try:
             orderbook_data = OrderedDict()
             if self.pair.inverse_requested:
-                logger.calc(
-                    f"self.pair.inverse_requested: {self.pair.inverse_requested}"
-                )
                 orderbook_data["ticker_id"] = reverse_ticker(self.pair.as_str)
                 orderbook_data["base"] = self.pair.quote
                 orderbook_data["quote"] = self.pair.base
@@ -95,13 +92,15 @@ class Orderbook:
             orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
             orderbook_data["total_asks_base_usd"] = (
                 total_asks_base_vol
-                * lib.get_gecko_price_and_mcap(orderbook_data["base"], self.gecko_source)[0]
+                * lib.get_gecko_price_and_mcap(
+                    orderbook_data["base"], self.gecko_source
+                )[0]
             )
             orderbook_data["total_bids_quote_usd"] = (
                 total_bids_quote_vol
-                * lib.get_gecko_price_and_mcap(orderbook_data["quote"], self.gecko_source)[
-                    0
-                ]
+                * lib.get_gecko_price_and_mcap(
+                    orderbook_data["quote"], self.gecko_source
+                )[0]
             )
 
             orderbook_data["liquidity_usd"] = (

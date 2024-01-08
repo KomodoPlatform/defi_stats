@@ -152,9 +152,34 @@ def markets_tickers_all():
     return default_result(msg=msg, loglevel="loop")
 
 
-# Processing Loops
+# Stats API Loops
+@router.on_event("startup")
+@repeat_every(seconds=120)
+@timed
+def statsapi_atomicdex_fortnight():
+    try:
+        cache_item = lib.CacheItem(name="statsapi_adex_fortnite")
+        cache_item.save()
+    except Exception as e:
+        logger.info(default_error(e))
+    msg = "Stats API Adex fortnight loop complete!"
+    return default_result(msg=msg, loglevel="loop")
 
 
+@router.on_event("startup")
+@repeat_every(seconds=120)
+@timed
+def statsapi_summary():
+    try:
+        cache_item = lib.CacheItem(name="statsapi_summary")
+        cache_item.save()
+    except Exception as e:
+        return default_error(e)
+    msg = "Stats API summary loop complete!"
+    return default_result(msg=msg, loglevel="loop")
+
+
+# Generic Loops
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
