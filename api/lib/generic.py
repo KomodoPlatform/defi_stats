@@ -34,13 +34,11 @@ class Generic:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                logger.loop("Getting gecko source for Generic")
                 self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                logger.loop("Getting coins_config for Generic")
                 self.coins_config = lib.load_coins_config(testing=self.testing)
 
             if "last_traded_cache" in kwargs:
@@ -64,7 +62,6 @@ class Generic:
     @timed
     def orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100):
         try:
-            logger.info(f"Getting orderbook for {pair_str} on {self.netid}")
             if len(pair_str.split("_")) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
             if (
@@ -74,7 +71,6 @@ class Generic:
                 orderbook_data = template.orderbook(pair_str, True)
             else:
                 orderbook_data = template.orderbook(pair_str)
-            logger.loop(orderbook_data)
             if self.netid == "ALL":
                 for x in NetId:
                     if x.value != "ALL":
@@ -86,13 +82,7 @@ class Generic:
                             coins_config=self.coins_config,
                             last_traded_cache=self.last_traded_cache,
                         )
-                        inverse = pair_obj.inverse_requested
-                        logger.info(
-                            f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})"
-                        )
-                        logger.calc(pair_obj.orderbook_data.keys())
                         data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
-                        logger.calc(data.keys())
             else:
                 pair_obj = Pair(
                     pair_str=pair_str,
@@ -102,11 +92,7 @@ class Generic:
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
                 )
-                inverse = pair_obj.inverse_requested
-                logger.info(f"{pair_str} -> {pair_obj.as_str} (inverse {inverse})")
-                logger.calc(pair_obj.orderbook_data.keys())
                 data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
-                logger.calc(data.keys())
             # Standardise values
             for i in ["bids", "asks"]:
                 for j in data[i]:

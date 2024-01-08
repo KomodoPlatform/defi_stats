@@ -22,7 +22,6 @@ class Coin:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                logger.loop(f"Getting gecko_source for {coin}")
                 self.gecko_source = load_gecko_source(testing=self.testing)
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
@@ -32,7 +31,6 @@ class Coin:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                logger.loop(f"Getting generic_last_traded source for Coin {coin}")
                 self.last_traded_cache = load_generic_last_traded(testing=self.testing)
 
             # Designate coin
