@@ -22,6 +22,9 @@ class Files:
         # Coins repo data
         self.coins = f"{folder}/coins/coins.json"
         self.coins_config = f"{folder}/coins/coins_config.json"
+        # For Stats API endpoints
+        self.statsapi_adex_fortnite = f"{folder}/stats_api/adex_fortnite.json"
+        self.statsapi_summary = f"{folder}/stats_api/summary.json"
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source.json"
         self.gecko_tickers = f"{folder}/gecko/tickers_{self.netid}.json"
@@ -53,7 +56,7 @@ class Files:
                 else:
                     return {
                         "result": "error",
-                        "message": f"Not saving {fn}, data is not valid json format!",
+                        "message": f"Not saving {fn}, data is not valid json format! Data:  {data}",
                         "loglevel": "warning",
                     }
             else:

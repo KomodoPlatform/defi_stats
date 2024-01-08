@@ -87,9 +87,11 @@ class StatsAPI:
                 ).ticker_info(days)
                 for i in pairs
             ]
-            return [
+            data = [
                 transform.ticker_to_statsapi(i, suffix=suffix) for i in ticker_infos
             ]
+            return transform.clean_decimal_dict_list(data)
+            
         except Exception as e:
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
             return None

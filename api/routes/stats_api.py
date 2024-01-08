@@ -18,7 +18,6 @@ from util.logger import logger
 import util.transform as transform
 from util.validate import validate_positive_numeric
 from util.enums import TradeType
-from lib.stats_api import StatsAPI
 from util.helper import get_last_trade_price
 import lib
 
@@ -56,9 +55,7 @@ def atomicdexio():
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
-        # Get swaps for last 14 days
-        stats = StatsAPI()
-        return stats.adex_fortnite()
+        return lib.load_adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
@@ -75,9 +72,7 @@ def atomicdex_fortnight():
 )
 def summary():
     try:
-        # Get swaps for last 14 days
-        stats = StatsAPI()
-        return stats.pair_summaries()
+        return lib.load_statsapi_summary()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats-api/atomicdexio]: {e}"}
