@@ -63,7 +63,7 @@ def get_last_trade_time(pair_str: str, last_traded_cache: Dict) -> int:
             return int(last_traded_cache[pair_str]["last_swap"])
 
     except Exception as e:
-        logger.info(default_error(e))
+        logger.warning(default_error(e))
     return 0
 
 
@@ -73,5 +73,5 @@ def get_last_trade_price(pair_str: str, last_traded_cache: Dict) -> int:
             return Decimal(last_traded_cache[pair_str]["last_price"])
 
     except Exception as e:
-        logger.info(default_error(e))
+        logger.warning(default_error(e))
     return 0

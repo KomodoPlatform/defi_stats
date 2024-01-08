@@ -19,13 +19,11 @@ class StatsAPI:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                logger.loop("Getting gecko source for Generic")
                 self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                logger.loop("Getting coins_config for Generic")
                 self.coins_config = lib.load_coins_config(testing=self.testing)
 
             if "last_traded_cache" in kwargs:
@@ -106,7 +104,6 @@ class StatsAPI:
             swaps_value = transform.sum_json_key(
                 data=summaries, key="pair_trade_value_usd"
             )
-            logger.debug(f"{len(swaps)} swaps ({days} days)")
             data = {
                 "days": days,
                 "swaps_count": len(swaps),

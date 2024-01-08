@@ -40,7 +40,6 @@ class Pair:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                logger.loop(f"Getting generic_last_traded source for {pair_str}")
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
@@ -48,13 +47,11 @@ class Pair:
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                logger.loop(f"Getting gecko source for {pair_str}")
                 self.gecko_source = lib.load_gecko_source(testing=self.testing)
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                logger.loop(f"Getting coins_config for {pair_str}")
                 self.coins_config = lib.load_coins_config(testing=self.testing)
 
             if "last_traded_cache" in kwargs:
@@ -101,7 +98,6 @@ class Pair:
 
     @property
     def is_tradable(self):
-        logger.merge(lib.COINS.tradable_only[0])
         if len(set(lib.COINS.tradable_only).intersection(self.as_set)) != 2:
             return True
         return False  # pragma: no cover
@@ -318,9 +314,6 @@ class Pair:
 
             return data
         except Exception as e:  # pragma: no cover
-            logger.loop(f"template.volumes_and_prices: {data}")
-            logger.loop(f"swaps_volumes: {swaps_volumes}")
-            logger.loop(f": {self.last_traded_cache}")
             msg = f"get_volumes_and_prices for {self.as_str} failed for netid {self.netid}! {e}"
             return default_error(e, msg)
 
@@ -440,7 +433,6 @@ class Pair:
     ) -> list:
         try:
             swaps_for_pair = self.pair_swaps(start_time=start_time, end_time=end_time)
-            logger.debug(swaps_for_pair)
             data = [i["uuid"] for i in swaps_for_pair]
             return data
         except Exception as e:  # pragma: no cover

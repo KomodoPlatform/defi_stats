@@ -558,9 +558,6 @@ class SqliteQuery:  # pragma: no cover
         If no timestamp is given, returns all swaps for the ticker.
         """
         try:
-            logger.info(
-                f"Getting volume for {ticker} between {start_time} and {end_time}"
-            )
             tickers = [ticker]
             if end_time == 0:
                 end_time = int(time.time())
@@ -664,7 +661,6 @@ class SqliteQuery:  # pragma: no cover
                 sql += " AND is_success=0"
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
-            logger.info(sql)
             return sql
         except Exception as e:  # pragma: no cover
             return default_error(e)

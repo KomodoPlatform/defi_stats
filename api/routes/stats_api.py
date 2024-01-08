@@ -36,12 +36,9 @@ def atomicdexio():
     try:
         cache = Cache(netid="ALL")
         tickers_data = cache.get_item(name="generic_tickers").data
-        logger.info(tickers_data["combined_liquidity_usd"])
         db = get_sqlite_db(netid="ALL")
         counts = db.query.swap_counts()
-        logger.info(counts)
         counts.update({"current_liquidity": tickers_data["combined_liquidity_usd"]})
-        logger.info(counts)
         return counts
 
     except Exception as e:  # pragma: no cover

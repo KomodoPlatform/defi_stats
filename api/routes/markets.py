@@ -171,7 +171,6 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
 
                 new_data.append(to_summary_for_ticker_item(i))
 
-        logger.info(new_data[0])
         resp.update(
             {
                 "pairs_count": len(new_data),

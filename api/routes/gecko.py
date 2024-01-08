@@ -121,7 +121,6 @@ def gecko_historical_trades(
             start_time=start_time,
             end_time=end_time,
         )
-        logger.info(data)
         data["buy"] = [historical_trades_to_gecko(i) for i in data["buy"]]
         data["sell"] = [historical_trades_to_gecko(i) for i in data["sell"]]
         return data

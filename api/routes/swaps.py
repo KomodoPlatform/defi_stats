@@ -51,7 +51,6 @@ def swap_uuids(
         pair = Pair(pair_str=pair, netid=netid.value)
         uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
         resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
-        logger.info(resp)
         return resp
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
