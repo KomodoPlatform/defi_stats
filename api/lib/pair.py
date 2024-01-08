@@ -273,7 +273,7 @@ class Pair:
             data["quote"] = self.quote
             data["base_price"] = self.base_usd_price
             data["quote_price"] = self.quote_usd_price
-            data["trades_24hr"] = len(swaps_for_pair)
+            data[f"trades_{suffix}"] = len(swaps_for_pair)
             # Get Volumes
             swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
             # logger.calc(f"swaps_volumes: {swaps_volumes}")
@@ -364,21 +364,27 @@ class Pair:
             resp = {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
+                f"trades_{suffix}": f'{data[f"trades_{suffix}"]}',
                 "base_currency": self.base,
+                "base_volume": data["base_volume"],
+                "base_usd_price": self.base_usd_price,
                 "target_currency": self.quote,
+                "target_volume": data["quote_volume"],
+                "target_usd_price": self.quote_usd_price,
                 "last_price": format_10f(data["last_price"]),
                 "last_trade": f'{data["last_trade"]}',
-                "trades_24hr": f'{data["trades_24hr"]}',
-                "base_volume": data["base_volume"],
-                "target_volume": data["quote_volume"],
-                "base_usd_price": self.base_usd_price,
-                "target_usd_price": self.quote_usd_price,
                 "bid": self.orderbook.find_highest_bid(orderbook_data),
                 "ask": self.orderbook.find_lowest_ask(orderbook_data),
                 "high": format_10f(data[f"highest_price_{suffix}"]),
                 "low": format_10f(data[f"lowest_price_{suffix}"]),
-                "volume_usd_24hr": format_10f(data["combined_volume_usd"]),
+                f"volume_usd_{suffix}": format_10f(data["combined_volume_usd"]),
+                "base_volume_usd": format_10f(data["base_volume_usd"]),
+                "quote_volume_usd": format_10f(data["quote_volume_usd"]),
                 "liquidity_in_usd": format_10f(liquidity["liquidity_usd"]),
+                "base_liquidity_coins": format_10f(liquidity["base_liquidity_coins"]),
+                "base_liquidity_usd": format_10f(liquidity["base_liquidity_usd"]),
+                "quote_liquidity_coins": format_10f(liquidity["rel_liquidity_coins"]),
+                "quote_liquidity_usd": format_10f(liquidity["rel_liquidity_usd"]),
                 f"price_change_percent_{suffix}": data[
                     f"price_change_percent_{suffix}"
                 ],

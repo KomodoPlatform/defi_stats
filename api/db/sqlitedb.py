@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID, compare_fields
 from util.defaults import default_result, set_params, default_error
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
-from util.exceptions import RequiredQueryParamMissing, InvalidParamCombination
+from util.exceptions import InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
 from util.transform import sort_dict, order_pair_by_market_cap, format_10f
@@ -30,7 +30,6 @@ class SqliteDB:  # pragma: no cover
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                logger.loop(f"Getting generic_last_traded source for SqliteDB")
                 self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
 
             if "coins_config" in kwargs:
@@ -632,9 +631,7 @@ class SqliteQuery:  # pragma: no cover
             if "table" in kwargs:
                 sql = f"SELECT * FROM {kwargs['table']}"
             else:
-                raise RequiredQueryParamMissing(
-                    "You need to specify a value for 'table'"
-                )
+                sql = "SELECT * FROM 'stats_swaps'"
             if "sum" in kwargs and "sum_field" in kwargs == "":
                 raise InvalidParamCombination(
                     "If calculating sum, you need to specify the sum_field"
@@ -659,7 +656,7 @@ class SqliteQuery:  # pragma: no cover
                 sql.replace("*", f"SUM({kwargs['sum_field']})")
 
             sql += (
-                f" WHERE started_at > {kwargs['start']} AND finished_at {kwargs['end']}"
+                f" WHERE started_at > {kwargs['start']} AND finished_at < {kwargs['end']}"
             )
             if "success_only" in kwargs:
                 sql += " AND is_success=1"
@@ -667,6 +664,7 @@ class SqliteQuery:  # pragma: no cover
                 sql += " AND is_success=0"
             if "filter_sql" in kwargs:
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
+            logger.info(sql)
             return sql
         except Exception as e:  # pragma: no cover
             return default_error(e)

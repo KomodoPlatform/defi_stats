@@ -6,6 +6,7 @@ from lib.cache import Cache
 from models.generic import ErrorMessage
 from models.stats_api import StatsApiAtomicdexIo
 from util.logger import logger
+from lib.stats_api import StatsAPI
 
 router = APIRouter()
 cache = Cache()
@@ -41,8 +42,8 @@ def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
         # Get swaps for last 14 days
-
-        return cache.load.atomicdex_fortnight()
+        stats = StatsAPI()
+        return stats.adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)

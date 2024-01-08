@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import time
 import sqlite3
 from typing import List
-from os.path import dirname, abspath
 from const import (
     LOCAL_MM2_DB_PATH_7777,
     LOCAL_MM2_DB_PATH_8762,
@@ -26,19 +24,6 @@ from util.defaults import default_error, default_result
 from util.enums import NetId
 from util.logger import logger, timed
 import lib
-
-API_ROOT_PATH = dirname(dirname(abspath(__file__)))
-sys.path.append(API_ROOT_PATH)
-
-
-# This should be run on a separate server
-# so processing is decoupled from serving.
-
-
-# Step 1 - Merge source/ into cleaned/
-# Step 2 - Denullify dbs in cleaned/
-# Step 3 - Compare/repair in cleaned/
-# Step 4 - Merge cleaned into master
 
 
 class SqliteMerge:

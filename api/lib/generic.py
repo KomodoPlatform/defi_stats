@@ -46,7 +46,6 @@ class Generic:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                logger.loop(f"Getting generic_last_traded source for generic")
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
@@ -137,7 +136,13 @@ class Generic:
         """Returns basic pair info and tags as priced/unpriced"""
         try:
             # TODO: is segwit is coalesced yet?
-            db = get_sqlite_db(db_path=self.db_path, db=self.db)
+            db = get_sqlite_db(
+                db_path=self.db_path,
+                db=self.db,
+                coins_config=self.coins_config,
+                gecko_source=self.gecko_source,
+                last_traded_cache=self.last_traded_cache,
+            )
             pairs = db.query.get_pairs(days=days)
 
             # logger.info(pairs)
@@ -182,7 +187,9 @@ class Generic:
 
                 for i in resp:
                     if i["ticker_id"] in self.last_traded_cache:
-                        i["last_trade"] = self.last_traded_cache[i["ticker_id"]]["last_swap"]
+                        i["last_trade"] = self.last_traded_cache[i["ticker_id"]][
+                            "last_swap"
+                        ]
                 return resp
         except Exception as e:  # pragma: no cover
             msg = f"traded_pairs failed for netid {self.netid}!"

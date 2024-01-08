@@ -116,6 +116,11 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
+def get_top_items(data, sort_key, length=5):
+    data.sort(key=lambda x: x[sort_key], reverse=True)
+    return data[:length]
+
+
 @timed
 def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) -> str:
     try:
@@ -236,6 +241,32 @@ def ticker_to_gecko(i):
         "trades_24hr": i["trades_24hr"],
         "volume_usd_24hr": i["volume_usd_24hr"],
         "liquidity_in_usd": i["liquidity_in_usd"],
+    }
+
+
+def ticker_to_statsapi(i, suffix):
+    return {
+        "trading_pair": i["ticker_id"],
+        "pair_swaps_count": int(i[f"trades_{suffix}"]),
+        "base_currency": i["base_currency"],
+        "base_volume": Decimal(i["base_volume"]),
+        "base_price_usd": Decimal(i["base_usd_price"]),
+        "quote_currency": i["target_currency"],
+        "quote_volume": Decimal(i["target_volume"]),
+        "quote_price_usd": Decimal(i["target_usd_price"]),
+        "highest_bid": Decimal(i["bid"]),
+        "lowest_ask": Decimal(i["ask"]),
+        "high": Decimal(i["high"]),
+        "low": Decimal(i["low"]),
+        "pair_trade_value_usd": Decimal(i[f"volume_usd_{suffix}"]),
+        "base_trade_value_usd": Decimal(i["base_volume_usd"]),
+        "rel_trade_value_usd": Decimal(i["quote_volume_usd"]),
+        "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
+        "base_liquidity_coins": Decimal(i["base_liquidity_coins"]),
+        "base_liquidity_usd": Decimal(i["base_liquidity_usd"]),
+        "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
+        "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
+        "last_trade": int(i["last_trade"]),
     }
 
 
