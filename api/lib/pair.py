@@ -318,9 +318,6 @@ class Pair:
 
             return data
         except Exception as e:  # pragma: no cover
-            logger.loop(f"template.volumes_and_prices: {data}")
-            logger.loop(f"swaps_volumes: {swaps_volumes}")
-            logger.loop(f": {self.last_traded_cache}")
             msg = f"get_volumes_and_prices for {self.as_str} failed for netid {self.netid}! {e}"
             return default_error(e, msg)
 
