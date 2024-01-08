@@ -272,7 +272,9 @@ def ticker_to_statsapi(i, suffix):
             f"highest_price_{alt_suffix}": Decimal(i["high"]),
             f"lowest_price_{alt_suffix}": Decimal(i["low"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
-            f"price_change_percent_{alt_suffix}": Decimal(i[f"price_change_percent_{suffix}"]),
+            f"price_change_percent_{alt_suffix}": Decimal(
+                i[f"price_change_percent_{suffix}"]
+            ),
             "last_trade": int(i["last_trade"]),
             "last_price": Decimal(i["last_price"]),
         }

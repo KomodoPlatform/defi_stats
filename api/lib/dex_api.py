@@ -2,11 +2,9 @@
 import requests
 from util.files import Files
 from const import API_ROOT_PATH, MM2_RPC_PORTS
-from util.logger import logger, StopWatch, timed
+from util.logger import logger, timed
 from util.defaults import set_params, default_error
 import util.templates as template
-
-get_stopwatch = StopWatch
 
 
 class DexAPI:

@@ -5,13 +5,11 @@ from datetime import datetime
 from util.files import Files
 from util.exceptions import ApiKeyNotFoundException
 from const import FIXER_API_KEY
-from util.logger import StopWatch, logger
+from util.logger import logger
 from util.defaults import set_params, default_error
 from util.helper import get_chunks
 import util.templates as template
 import lib
-
-get_stopwatch = StopWatch
 
 
 class CoinGeckoAPI:
@@ -26,7 +24,9 @@ class CoinGeckoAPI:
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+                self.last_traded_cache = lib.load_generic_last_traded(
+                    testing=self.testing
+                )
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]

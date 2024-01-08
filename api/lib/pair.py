@@ -18,11 +18,9 @@ from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
 from util.enums import TradeType
 from util.helper import get_price_at_finish, get_last_trade_time
-from util.logger import logger, StopWatch, timed
+from util.logger import logger, timed
 import util.templates as template
 import lib
-
-get_stopwatch = StopWatch
 
 
 class Pair:

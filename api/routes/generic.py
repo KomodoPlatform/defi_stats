@@ -69,6 +69,7 @@ def last_traded():
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
 
+
 @router.get(
     "/orderbook/{ticker_id}",
     description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
@@ -88,6 +89,7 @@ def orderbook(
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
+
 
 @router.get(
     "/historical_trades/{ticker_id}",

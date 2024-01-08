@@ -8,12 +8,18 @@ from db.sqlitedb import get_sqlite_db
 from lib.cache import Cache
 from lib.pair import Pair
 from models.generic import ErrorMessage
-from models.stats_api import StatsApiAtomicdexIo, StatsApiSummary, StatsApiOrderbook, StatsApiTradeInfo
+from models.stats_api import (
+    StatsApiAtomicdexIo,
+    StatsApiSummary,
+    StatsApiOrderbook,
+    StatsApiTradeInfo,
+)
 from util.logger import logger
 import util.transform as transform
 from util.validate import validate_positive_numeric
 from util.enums import TradeType
 from lib.stats_api import StatsAPI
+from util.helper import get_last_trade_price
 import lib
 
 router = APIRouter()
@@ -113,6 +119,7 @@ def orderbook(
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
 
+
 @router.get(
     "/historical_trades/{ticker_id}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
@@ -146,9 +153,20 @@ def historical_trades(
             end_time=end_time,
         )
         resp = data["buy"] + data["sell"]
-        resp = transform.sort_dict_list(resp, 'timestamp', True)
+        resp = transform.sort_dict_list(resp, "timestamp", True)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
+
+
+@router.get("/last_price/{pair}")
+def last_price_for_pair(pair="KMD_LTC"):
+    """Last trade price for a given pair."""
+    try:
+        last_traded_cache = lib.load_generic_last_traded()
+        return get_last_trade_price(pair, last_traded_cache)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

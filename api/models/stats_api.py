@@ -51,6 +51,7 @@ class StatsApiSummary(BaseModel):
     last_price: float = 777.777777
     last_trade: int = 1777777777
 
+
 class StatsApiOrderbook(BaseModel):
     pair: str = "XXX_YYY"
     timestamp: str = "1777777777"
@@ -59,6 +60,7 @@ class StatsApiOrderbook(BaseModel):
     total_asks_base_vol: str = "777.777777"
     total_bids_quote_vol: str = "777.777777"
 
+
 class StatsApiTradeInfo(BaseModel):
     trade_id: str = "77777777-7777-7777-7777-777777777777"
     price: float = 777.777777
@@ -66,4 +68,3 @@ class StatsApiTradeInfo(BaseModel):
     target_volume: float = 777.777777
     timestamp: int = 1777777777
     type: str = "buy | sell"
-    

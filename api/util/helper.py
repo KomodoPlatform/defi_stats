@@ -4,6 +4,7 @@ from typing import Dict
 from const import MM2_RPC_PORTS, MM2_NETID
 import util.templates as template
 from util.defaults import default_error
+from util.logger import logger
 
 
 def get_mm2_rpc_port(netid=MM2_NETID):
@@ -59,7 +60,18 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
 def get_last_trade_time(pair_str: str, last_traded_cache: Dict) -> int:
     try:
         if pair_str in last_traded_cache:
-            return last_traded_cache[pair_str]["last_swap"]
-        return 0
+            return int(last_traded_cache[pair_str]["last_swap"])
+
     except Exception as e:
-        return default_error(e)
+        logger.info(default_error(e))
+    return 0
+
+
+def get_last_trade_price(pair_str: str, last_traded_cache: Dict) -> int:
+    try:
+        if pair_str in last_traded_cache:
+            return Decimal(last_traded_cache[pair_str]["last_price"])
+
+    except Exception as e:
+        logger.info(default_error(e))
+    return 0
