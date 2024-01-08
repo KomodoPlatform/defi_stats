@@ -23,3 +23,30 @@ class StatsApiAtomicdexFortnight(BaseModel):
     swaps_value: int = 777777777777
     current_liquidity: float = 7777777.777
     top_pairs: dict = TopPairs
+
+
+class StatsApiSummary(BaseModel):
+    trading_pair: str = "XXX_YYY"
+    pair_swaps_count: int = 7777
+    base_currency: str = "XXX"
+    base_volume: float = 777.777777
+    base_price_usd: float = 777.777777
+    base_liquidity_coins: float = 777.777777
+    base_liquidity_usd: float = 777.777777
+    base_trade_value_usd: float = 777.777777
+    quote_currency: str = "YYY"
+    quote_volume: float = 777.777777
+    quote_price_usd: float = 777.777777
+    quote_liquidity_coins: float = 777.777777
+    quote_liquidity_usd: float = 777.777777
+    quote_trade_value_usd: float = 777.777777
+    pair_liquidity_usd: float = 777.777777
+    pair_trade_value_usd: float = 777.777777
+    lowest_ask: float = 777.777777
+    highest_bid: float = 777.777777
+    highest_price_24h: float = 777.777777
+    lowest_price_24h: float = 777.777777
+    price_change_24h: float = 777.777777
+    price_change_percent_24h: float = 777.777777
+    last_price: float = 777.777777
+    last_trade: int = 1777777777

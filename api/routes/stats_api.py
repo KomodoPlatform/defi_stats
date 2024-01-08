@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from typing import List
 from db.sqlitedb import get_sqlite_db
 from lib.cache import Cache
 from models.generic import ErrorMessage
-from models.stats_api import StatsApiAtomicdexIo
+from models.stats_api import StatsApiAtomicdexIo, StatsApiSummary
 from util.logger import logger
 from lib.stats_api import StatsAPI
 
@@ -48,3 +49,20 @@ def atomicdex_fortnight():
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
         return {"error": msg}
+
+
+@router.get(
+    "/summary",
+    description="Pair summary for last 24 hours for all pairs traded in last 7 days.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=List[StatsApiSummary],
+    status_code=200,
+)
+def summary():
+    try:
+        # Get swaps for last 14 days
+        stats = StatsAPI()
+        return stats.pair_summaries()
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [stats-api/summary]: {e}")
+        return {"error": f"{type(e)} Error in [stats-api/atomicdexio]: {e}"}

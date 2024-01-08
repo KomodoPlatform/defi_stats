@@ -70,9 +70,11 @@ class StatsAPI:
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
             return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
-    def pair_summaries(self, days=1):
+    def pair_summaries(self, days: int = 1, pairs_days: int = 7):
         try:
-            pairs = self.db.query.get_pairs(days=days)
+            if days > pairs_days:
+                pairs_days = days
+            pairs = self.db.query.get_pairs(days=pairs_days)
             suffix = transform.get_suffix(days)
             ticker_infos = [
                 Pair(

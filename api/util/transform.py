@@ -245,29 +245,39 @@ def ticker_to_gecko(i):
 
 
 def ticker_to_statsapi(i, suffix):
-    return {
-        "trading_pair": i["ticker_id"],
-        "pair_swaps_count": int(i[f"trades_{suffix}"]),
-        "base_currency": i["base_currency"],
-        "base_volume": Decimal(i["base_volume"]),
-        "base_price_usd": Decimal(i["base_usd_price"]),
-        "quote_currency": i["target_currency"],
-        "quote_volume": Decimal(i["target_volume"]),
-        "quote_price_usd": Decimal(i["target_usd_price"]),
-        "highest_bid": Decimal(i["bid"]),
-        "lowest_ask": Decimal(i["ask"]),
-        "high": Decimal(i["high"]),
-        "low": Decimal(i["low"]),
-        "pair_trade_value_usd": Decimal(i[f"volume_usd_{suffix}"]),
-        "base_trade_value_usd": Decimal(i["base_volume_usd"]),
-        "rel_trade_value_usd": Decimal(i["quote_volume_usd"]),
-        "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
-        "base_liquidity_coins": Decimal(i["base_liquidity_coins"]),
-        "base_liquidity_usd": Decimal(i["base_liquidity_usd"]),
-        "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
-        "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
-        "last_trade": int(i["last_trade"]),
-    }
+    try:
+        if suffix == "24hr":
+            alt_suffix = "24h"
+        else:
+            alt_suffix = suffix
+        return {
+            "trading_pair": i["ticker_id"],
+            "pair_swaps_count": int(i[f"trades_{suffix}"]),
+            "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
+            "pair_trade_value_usd": Decimal(i[f"volume_usd_{suffix}"]),
+            "base_currency": i["base_currency"],
+            "base_volume": Decimal(i["base_volume"]),
+            "base_price_usd": Decimal(i["base_usd_price"]),
+            "base_trade_value_usd": Decimal(i["base_volume_usd"]),
+            "base_liquidity_coins": Decimal(i["base_liquidity_coins"]),
+            "base_liquidity_usd": Decimal(i["base_liquidity_usd"]),
+            "quote_currency": i["target_currency"],
+            "quote_volume": Decimal(i["target_volume"]),
+            "quote_price_usd": Decimal(i["target_usd_price"]),
+            "quote_trade_value_usd": Decimal(i["quote_volume_usd"]),
+            "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
+            "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
+            "highest_bid": Decimal(i["bid"]),
+            "lowest_ask": Decimal(i["ask"]),
+            f"highest_price_{alt_suffix}": Decimal(i["high"]),
+            f"lowest_price_{alt_suffix}": Decimal(i["low"]),
+            f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
+            f"price_change_percent_{alt_suffix}": Decimal(i[f"price_change_percent_{suffix}"]),
+            "last_trade": int(i["last_trade"]),
+            "last_price": Decimal(i["last_price"]),
+        }
+    except Exception as e:  # pragma: no cover
+        return default_error(e)
 
 
 def historical_trades_to_market_trades(i):
