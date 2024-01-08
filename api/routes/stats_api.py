@@ -51,6 +51,7 @@ def atomicdexio():
         return JSONResponse(status_code=400, content=err)
 
 
+# TODO: Cache this
 @router.get("/atomicdex_fortnight")
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
@@ -64,6 +65,7 @@ def atomicdex_fortnight():
         return {"error": msg}
 
 
+# TODO: Cache this
 @router.get(
     "/summary",
     description="Pair summary for last 24 hours for all pairs traded in last 7 days.",
@@ -161,7 +163,13 @@ def historical_trades(
         return JSONResponse(status_code=400, content=err)
 
 
-@router.get("/last_price/{pair}")
+@router.get(
+    "/last_price/{pair}",
+    description="Price of last trade for pair. Use format `KMD_LTC`",
+    response_model=float,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
 def last_price_for_pair(pair="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
