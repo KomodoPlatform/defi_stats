@@ -118,13 +118,13 @@ def orderbook(
 
 
 @router.get(
-    "/historical_trades/{ticker_id}",
+    "/trades/{ticker_id}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
     response_model=List[StatsApiTradeInfo],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def historical_trades(
+def trades(
     trade_type: TradeType = TradeType.ALL,
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
