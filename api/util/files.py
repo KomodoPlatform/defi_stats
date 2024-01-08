@@ -56,7 +56,7 @@ class Files:
                 else:
                     return {
                         "result": "error",
-                        "message": f"Not saving {fn}, data is not valid json format! Data:  {data}",
+                        "message": f"Not saving {fn}, data not valid json! Data: {data}",
                         "loglevel": "warning",
                     }
             else:
