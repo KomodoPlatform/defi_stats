@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from lib.generic import Generic
 from typing import List
 from db.sqlitedb import get_sqlite_db
 from lib.cache import Cache
 from models.generic import ErrorMessage
-from models.stats_api import StatsApiAtomicdexIo, StatsApiSummary
+from models.stats_api import StatsApiAtomicdexIo, StatsApiSummary, StatsApiOrderbook
 from util.logger import logger
 import util.transform as transform
 from lib.stats_api import StatsAPI
@@ -86,3 +87,24 @@ def ticker():
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}"}
 
+
+@router.get(
+    "/orderbook/{ticker_id}",
+    description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
+    response_model=StatsApiOrderbook,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def orderbook(
+    ticker_id: str = "KMD_LTC",
+    depth: int = 100,
+):
+    try:
+        generic = Generic(netid="ALL")
+        data = generic.orderbook(pair_str=ticker_id, depth=depth)
+        data = transform.orderbook_to_gecko(data)
+        return data
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)

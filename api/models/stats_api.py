@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, List
 
 
 # stats-api/atomicdexio
@@ -50,3 +50,11 @@ class StatsApiSummary(BaseModel):
     price_change_percent_24h: float = 777.777777
     last_price: float = 777.777777
     last_trade: int = 1777777777
+
+class StatsApiOrderbook(BaseModel):
+    pair: str = "XXX_YYY"
+    timestamp: str = "1777777777"
+    bids: List[List] = [["777.777777", "777.777777"]]
+    asks: List[List] = [["777.777777", "777.777777"]]
+    total_asks_base_vol: str = "777.777777"
+    total_bids_quote_vol: str = "777.777777"
