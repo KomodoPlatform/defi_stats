@@ -14,6 +14,7 @@ from routes import (
     prices,
     binance,
     generic,
+    tickers,
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -59,6 +60,14 @@ app.include_router(
 )
 
 app.include_router(
+    generic.router,
+    prefix="/api/v3/generic",
+    tags=["Generic"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
     markets.router,
     prefix="/api/v3/markets",
     tags=["Markets"],
@@ -90,10 +99,11 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
+
 app.include_router(
-    generic.router,
-    prefix="/api/v3/generic",
-    tags=["Generic"],
+    tickers.router,
+    prefix="/api/v3/tickers",
+    tags=["Tickers"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
