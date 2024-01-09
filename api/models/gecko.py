@@ -56,7 +56,7 @@ class GeckoBuyItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    trade_timestamp: str = "1777777777"
+    timestamp: str = "1777777777"
     type: str = "buy"
 
 
@@ -66,7 +66,7 @@ class GeckoSellItem(BaseModel):
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
-    trade_timestamp: str = "1777777777"
+    timestamp: str = "1777777777"
     type: str = "sell"
 
 
