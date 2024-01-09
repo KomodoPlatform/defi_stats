@@ -19,7 +19,7 @@ cache = Cache()
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def summary(netid: NetId = NetId.ALL):
+def summary():
     try:
         cache = Cache(netid="ALL")
         data = cache.get_item(name="generic_tickers").data
