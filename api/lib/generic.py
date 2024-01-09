@@ -141,12 +141,12 @@ class Generic:
                 for pair_str in pairs:
                     # logger.info(pair_str)
                     pair_split = pair_str.split("_")
-                    base_price = lib.get_gecko_price_and_mcap(
+                    base_price = lib.get_gecko_price(
                         pair_split[0], self.gecko_source
-                    )[0]
-                    quote_price = lib.get_gecko_price_and_mcap(
+                    )
+                    quote_price = lib.get_gecko_price(
                         pair_split[1], self.gecko_source
-                    )[0]
+                    )
                     if base_price > 0 and quote_price > 0:
                         pairs_dict["priced_gecko"].append(pair_str)
                     else:
@@ -156,12 +156,12 @@ class Generic:
                     if pair_str not in pairs:
                         # logger.info(pair_str)
                         pair_split = pair_str.split("_")
-                        base_price = lib.get_gecko_price_and_mcap(
+                        base_price = lib.get_gecko_price(
                             pair_split[0], self.gecko_source
-                        )[0]
-                        quote_price = lib.get_gecko_price_and_mcap(
+                        )
+                        quote_price = lib.get_gecko_price(
                             pair_split[1], self.gecko_source
-                        )[0]
+                        )
                         if base_price > 0 and quote_price > 0:
                             pairs_dict["priced_gecko"].append(pair_str)
                         else:

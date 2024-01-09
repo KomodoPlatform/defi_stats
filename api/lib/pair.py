@@ -81,12 +81,19 @@ class Pair:
             self.as_set = set((self.base, self.quote))
 
             # Get price and market cap
-            self.base_usd_price, self.base_mcap = lib.get_gecko_price_and_mcap(
-                self.base, self.gecko_source, testing=self.testing
+            self.base_usd_price = lib.get_gecko_price(
+                self.base, self.gecko_source
             )
 
-            self.quote_usd_price, self.quote_mcap = lib.get_gecko_price_and_mcap(
-                self.quote, self.gecko_source, testing=self.testing
+            self.quote_usd_price = lib.get_gecko_price(
+                self.quote, self.gecko_source
+            )
+            self.base_mcap = lib.get_gecko_mcap(
+                self.base, self.gecko_source
+            )
+
+            self.quote_mcap = lib.get_gecko_mcap(
+                self.quote, self.gecko_source
             )
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]

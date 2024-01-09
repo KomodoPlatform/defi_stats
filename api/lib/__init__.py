@@ -1,6 +1,6 @@
 import os
 from lib.coins import Coins
-from lib.coin import Coin, get_gecko_price_and_mcap
+from lib.coin import Coin, get_gecko_mcap, get_gecko_price
 from util import templates as template
 from lib.pair import get_all_coin_pairs
 from lib.cache import (
