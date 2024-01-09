@@ -8,10 +8,9 @@ from fixtures_coin import (
     setup_coin,
     setup_coin_doc,
     setup_coin_atom,
-    setup_get_gecko_price_and_mcap_doc,
-    setup_get_gecko_price_and_mcap_ltc,
     setup_coin_bad,
 )
+from lib.coin import get_gecko_price, get_gecko_mcap
 
 
 def test_coin(
@@ -58,17 +57,21 @@ def test_coin(
     assert not setup_coin_bad.is_valid
 
 
-def test_get_gecko_price_and_mcap(
-    setup_get_gecko_price_and_mcap_doc, setup_get_gecko_price_and_mcap_ltc
-):
-    ltc_info = setup_get_gecko_price_and_mcap_ltc
-    assert len(ltc_info) == 2
-    assert ltc_info[0] < ltc_info[1]
-    assert ltc_info[0] > 0
-    assert ltc_info[1] > 0
+def test_get_gecko_price():
+    price = get_gecko_price("LTC", testing=True)
+    assert isinstance(price, Decimal)
+    assert price == Decimal(100)
 
-    doc_info = setup_get_gecko_price_and_mcap_doc
-    assert len(doc_info) == 2
-    assert doc_info[0] == doc_info[1]
-    assert doc_info[0] == 0
-    assert doc_info[1] == 0
+    price = get_gecko_price("DOC", testing=True)
+    assert isinstance(price, Decimal)
+    assert price == Decimal(0)
+
+
+def test_get_gecko_mcap():
+    mcap = get_gecko_mcap("LTC", testing=True)
+    assert isinstance(mcap, Decimal)
+    assert mcap == Decimal(7000000000)
+
+    mcap = get_gecko_mcap("DOC", testing=True)
+    assert isinstance(mcap, Decimal)
+    assert mcap == Decimal(0)

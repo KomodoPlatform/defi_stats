@@ -6,17 +6,7 @@ import pytest
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 
-from lib.coin import Coin, get_gecko_price_and_mcap
-
-
-@pytest.fixture
-def setup_get_gecko_price_and_mcap_ltc():
-    yield get_gecko_price_and_mcap("LTC", testing=True)
-
-
-@pytest.fixture
-def setup_get_gecko_price_and_mcap_doc():
-    yield get_gecko_price_and_mcap("DOC", testing=True)
+from lib.coin import Coin
 
 
 @pytest.fixture

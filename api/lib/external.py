@@ -21,13 +21,6 @@ class CoinGeckoAPI:
             self.files = Files(testing=self.testing)
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
-            if "last_traded_cache" in kwargs:
-                self.last_traded_cache = kwargs["last_traded_cache"]
-            else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
-
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
@@ -37,7 +30,6 @@ class CoinGeckoAPI:
                 self.coins_config = kwargs["coins_config"]
             else:
                 self.coins_config = lib.load_coins_config(testing=self.testing)
-            self.priced_coins = set(sorted(list(self.gecko_source.keys())))
         except Exception as e:  # pragma: no cover
             logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 
@@ -118,7 +110,7 @@ class CoinGeckoAPI:
 
 
 class FixerAPI:  # pragma: no cover
-    def __init__(self, testing: bool = False):
+    def __init__(self):
         self.base_url = "http://data.fixer.io/api"
         self.api_key = FIXER_API_KEY
 
@@ -146,7 +138,7 @@ class FixerAPI:  # pragma: no cover
 
 
 class BinanceAPI:  # pragma: no cover
-    def __init__(self, testing: bool = False):
+    def __init__(self):
         self.base_url = "https://data-api.binance.vision"
 
     def ticker_price(self):

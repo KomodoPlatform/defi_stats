@@ -4,7 +4,6 @@ from util.logger import logger
 from models.tickers import TickersSummary
 from models.generic import ErrorMessage
 from lib.cache import Cache
-from util.enums import NetId
 
 import util.transform as transform
 

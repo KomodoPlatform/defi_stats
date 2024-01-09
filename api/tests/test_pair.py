@@ -95,7 +95,7 @@ def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     assert r["base_volume"] == format_10f(3)
     assert r["quote_volume"] == format_10f(35)
     assert float(r["highest_price_24hr"]) == 20
-    assert float(r["last_price"]) == 5
+    assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert float(r["lowest_price_24hr"]) == 5
     assert float(r["price_change_24hr"]) == -15
     assert float(r["price_change_percent_24hr"]) == -0.75
@@ -164,3 +164,9 @@ def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
     assert ("1INCH-AVX20_USDC-ERC20") in r
     assert ("1INCH-PLG20_USDC-BEP20") in r
     assert len(r) > 40
+
+
+def test_swap_info(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
+    pair = setup_kmd_ltc_pair
+    data = pair.last_swap
+    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"

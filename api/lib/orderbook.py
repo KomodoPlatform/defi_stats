@@ -86,21 +86,23 @@ class Orderbook:
                     for i in orderbook_data["asks"]
                 ]
             )
+            orderbook_data["base_price_usd"] = lib.get_gecko_price(
+                orderbook_data["base"], self.gecko_source
+            )
+            orderbook_data["quote_price_usd"] = lib.get_gecko_price(
+                orderbook_data["quote"], self.gecko_source
+            )
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol
             orderbook_data["total_bids_base_vol"] = total_bids_base_vol
             orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
             orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
             orderbook_data["total_asks_base_usd"] = (
                 total_asks_base_vol
-                * lib.get_gecko_price_and_mcap(
-                    orderbook_data["base"], self.gecko_source
-                )[0]
+                * orderbook_data["base_price_usd"]
             )
             orderbook_data["total_bids_quote_usd"] = (
                 total_bids_quote_vol
-                * lib.get_gecko_price_and_mcap(
-                    orderbook_data["quote"], self.gecko_source
-                )[0]
+                * orderbook_data["quote_price_usd"]
             )
 
             orderbook_data["liquidity_usd"] = (

@@ -48,15 +48,11 @@ class Coin:
 
     @property
     def usd_price(self):
-        return get_gecko_price_and_mcap(
-            ticker=self.coin, gecko_source=self.gecko_source
-        )[0]
+        return get_gecko_price(ticker=self.coin, gecko_source=self.gecko_source)
 
     @property
     def mcap(self):
-        return get_gecko_price_and_mcap(
-            ticker=self.coin, gecko_source=self.gecko_source
-        )[1]
+        return get_gecko_mcap(ticker=self.coin, gecko_source=self.gecko_source)
 
     @property
     def is_priced(self):
@@ -99,16 +95,27 @@ class Coin:
         return data
 
 
-def get_gecko_price_and_mcap(ticker, gecko_source=None, testing=False) -> float:
+def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
     try:
         if gecko_source is None:
-            gecko_source = load_gecko_source()
+            gecko_source = load_gecko_source(testing=testing)
         if ticker in gecko_source:
-            price = Decimal(gecko_source[ticker]["usd_price"])
-            mcap = Decimal(gecko_source[ticker]["usd_market_cap"])
-            return price, mcap
+            return Decimal(gecko_source[ticker]["usd_price"])
     except KeyError as e:  # pragma: no cover
         logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
     except Exception as e:  # pragma: no cover
         logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
-    return Decimal(0), Decimal(0)  # pragma: no cover
+    return Decimal(0)  # pragma: no cover
+
+
+def get_gecko_mcap(ticker, gecko_source=None, testing=False) -> float:
+    try:
+        if gecko_source is None:
+            gecko_source = load_gecko_source(testing=testing)
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_market_cap"])
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0)  # pragma: no cover
