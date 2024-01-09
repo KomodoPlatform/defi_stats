@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 from decimal import Decimal
-from db.sqlitedb import get_sqlite_db_paths, get_sqlite_db
+from db.sqlitedb import get_sqlite_db
 import lib
 from lib.external import CoinGeckoAPI
 from lib.pair import Pair
@@ -47,8 +47,16 @@ class Generic:
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
-
-            self.db_path = get_sqlite_db_paths(netid=self.netid)
+            if self.db is None:
+                self.db = get_sqlite_db(
+                    testing=self.testing,
+                    netid=self.netid,
+                    db=self.db,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
+                )
+            logger.info(self.db.db_path)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(
                 testing=self.testing,
@@ -122,14 +130,7 @@ class Generic:
         """Returns basic pair info and tags as priced/unpriced"""
         try:
             # TODO: is segwit is coalesced yet?
-            db = get_sqlite_db(
-                db_path=self.db_path,
-                db=self.db,
-                coins_config=self.coins_config,
-                gecko_source=self.gecko_source,
-                last_traded_cache=self.last_traded_cache,
-            )
-            pairs = db.query.get_pairs(days=days)
+            pairs = self.db.query.get_pairs(days=days)
 
             # logger.info(pairs)
             if "error" in pairs:  # pragma: no cover
@@ -182,11 +183,9 @@ class Generic:
             return default_error(e, msg)
 
     @timed
-    def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7, db=None):
+    def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7):
         try:
-            if db is None:  # pragma: no cover
-                db = get_sqlite_db(db_path=self.db_path)
-            pairs = db.query.get_pairs(days=pairs_days)
+            pairs = self.db.query.get_pairs(days=pairs_days)
             data = [
                 Pair(
                     pair_str=i,
@@ -208,7 +207,6 @@ class Generic:
                 "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
                 "data": data,
             }
-            db.close()
             msg = f"traded_tickers for netid {self.netid} complete!"
             return default_result(data, msg)
         except Exception as e:  # pragma: no cover
@@ -218,8 +216,7 @@ class Generic:
     @timed
     def last_traded(self):
         try:
-            db = get_sqlite_db(db_path=self.db_path)
-            data = db.query.get_pairs_last_traded()
+            data = self.db.query.get_pairs_last_traded()
             return data
         except Exception as e:  # pragma: no cover
             msg = f"pairs_last_traded failed for netid {self.netid}!"

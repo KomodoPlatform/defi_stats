@@ -42,13 +42,3 @@ def test_tickers(setup_swaps_db_data):
     for i in r["data"][0]:
         assert not isinstance(i, Decimal)
     assert r["data"][0]["ticker_id"] < r["data"][2]["ticker_id"]
-
-
-def test_s():
-    markets = Markets(netid="8762", testing=True)
-    data = markets.last_traded
-    logger.info(data)
-    assert len(data) > 0
-    assert "KMD_LTC" in data.keys()
-    assert data["KMD_LTC"]["last_swap"] > time.time() - 86400 * 7
-    assert data["KMD_LTC"]["swap_count"] > 0

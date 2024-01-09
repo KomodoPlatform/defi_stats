@@ -17,7 +17,7 @@ class Cache:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid"]
+            self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
@@ -36,6 +36,7 @@ class Cache:  # pragma: no cover
             "gecko_source",
             "coins",
             "generic_pairs",
+            "generic_tickers",
             "generic_last_traded",
             "fixer_rates",
             "prices_tickers_v1",
@@ -56,7 +57,7 @@ class CacheItem:
         try:
             self.name = name
             self.kwargs = kwargs
-            self.options = ["testing", "source_url", "netid"]
+            self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
 
             self.files = Files(testing=self.testing, netid=self.netid)
@@ -82,6 +83,8 @@ class CacheItem:
 
     def get_data(self):
         data = self.files.load_jsonfile(self.filename)
+        if data is None:
+            data = self.save()
         if "last_updated" in data:
             since_updated = int(time.time()) - data["last_updated"]
             since_updated_min = int(since_updated / 60)
@@ -126,41 +129,63 @@ class CacheItem:
 
                 if self.name == "gecko_source":
                     data = CoinGeckoAPI().get_gecko_source()
+
                 if self.name == "gecko_tickers":
-                    data = Generic(netid="ALL").traded_tickers(pairs_days=7)
+                    data = Generic(
+                        netid="ALL", db=self.db, testing=self.testing
+                    ).traded_tickers(pairs_days=7)
 
                 if self.name == "statsapi_adex_fortnite":
-                    data = StatsAPI().adex_fortnite()
+                    data = StatsAPI(db=self.db, testing=self.testing).adex_fortnite()
+
                 if self.name == "statsapi_summary":
-                    data = StatsAPI().pair_summaries()
+                    data = StatsAPI(db=self.db, testing=self.testing).pair_summaries()
 
                 if self.name == "generic_tickers":
-                    data = Generic(netid="ALL").traded_tickers()
+                    data = Generic(
+                        netid="ALL", db=self.db, testing=self.testing
+                    ).traded_tickers()
+
                 if self.name == "generic_last_traded":
-                    data = Generic(netid="ALL").last_traded()
+                    data = Generic(
+                        netid="ALL", db=self.db, testing=self.testing
+                    ).last_traded()
+
                 if self.name == "generic_pairs":
-                    data = Generic(netid="ALL").traded_pairs_info()
+                    data = Generic(
+                        netid="ALL", db=self.db, testing=self.testing
+                    ).traded_pairs_info()
 
                 if self.name == "markets_pairs":
-                    data = Markets(netid=self.netid).pairs(days=MARKETS_PAIRS_DAYS)
+                    data = Markets(
+                        netid=self.netid, db=self.db, testing=self.testing
+                    ).pairs(days=MARKETS_PAIRS_DAYS)
+
                 if self.name == "markets_tickers":
-                    data = Markets(netid=self.netid).tickers(
-                        pairs_days=MARKETS_PAIRS_DAYS
-                    )
+                    data = Markets(
+                        netid=self.netid, db=self.db, testing=self.testing
+                    ).tickers(pairs_days=MARKETS_PAIRS_DAYS)
+
             if data is not None:
                 if validate_loop_data(data, self, "ALL"):
                     data = {"last_updated": int(time.time()), "data": data}
                     self.files.save_json(self.filename, data)
                 else:
-                    msg = f"failed to save {self.name}, data failed validation"
+                    msg = {
+                        "error": f"failed to save {self.name}, data failed validation: {data}"
+                    }
                     logger.warning(msg)
+                    return msg
+
             else:
-                msg = f"failed to save {self.name}, data is 'None'"
+                msg = {"error": f"failed to save {self.name}, data is 'None'"}
                 logger.warning(msg)
+                return msg
+
         except Exception as e:  # pragma: no cover
             return default_error(e)
-        msg = f"{self.filename} saved."
-        return default_result(msg, loglevel="merge")
+        msg = {"success": f"{self.filename} saved."}
+        return default_result(data=data, msg=msg, loglevel="merge")
 
 
 def load_gecko_source(testing=False):

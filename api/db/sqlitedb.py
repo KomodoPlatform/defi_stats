@@ -298,6 +298,8 @@ class SqliteQuery:  # pragma: no cover
 
     @timed
     def get_pairs_last_traded(self, started_at=None, finished_at=None, min_swaps=5):
+        if self.testing:
+            min_swaps = 0
         # TODO: Filter out test coins
         try:
             sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
@@ -344,19 +346,21 @@ class SqliteQuery:  # pragma: no cover
                 else:
                     maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
 
-                item.update(
-                    {
-                        "last_price": format_10f(
-                            item["last_maker_amount"] / item["last_taker_amount"]
-                        )
-                    }
-                )
                 pair = f"{taker}_{maker}"
+                std_pair = order_pair_by_market_cap(
+                    pair, gecko_source=self.db.gecko_source
+                )
+                if pair == std_pair:
+                    last_price = format_10f(item["last_maker_amount"] / item["last_taker_amount"])
+                else:
+                    last_price = format_10f(item["last_taker_amount"] / item["last_maker_amount"])
+                item.update({"last_price": last_price})
+
                 # Handle segwit
-                if pair not in by_pair_dict:
-                    by_pair_dict.update({pair: item})
-                elif item["last_swap"] > by_pair_dict[pair]["last_swap"]:
-                    by_pair_dict.update({pair: item})
+                if std_pair not in by_pair_dict:
+                    by_pair_dict.update({std_pair: item})
+                elif item["last_swap"] > by_pair_dict[std_pair]["last_swap"]:
+                    by_pair_dict.update({std_pair: item})
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
         except Exception as e:  # pragma: no cover

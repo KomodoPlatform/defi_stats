@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from db.sqlitedb import get_sqlite_db_paths
+from db.sqlitedb import get_sqlite_db
 from lib.generic import Generic
 from lib.external import CoinGeckoAPI
 from util.files import Files
@@ -13,9 +13,18 @@ class Markets:
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid"]
+            self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
-            self.db_path = get_sqlite_db_paths(netid=self.netid)
+
+            if self.db is None:
+                self.db = get_sqlite_db(
+                    testing=self.testing,
+                    netid=self.netid,
+                    db=self.db,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
+                )
             self.files = Files(netid=self.netid, testing=self.testing)
             self.gecko = CoinGeckoAPI(testing=self.testing)
             self.generic = Generic(**kwargs)

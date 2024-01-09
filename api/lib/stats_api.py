@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from db.sqlitedb import get_sqlite_db, get_sqlite_db_paths
+from db.sqlitedb import get_sqlite_db
 from util.logger import logger
 from lib.pair import Pair
 import time
@@ -13,7 +13,7 @@ class StatsAPI:
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = ["testing", "db"]
             self.netid = "ALL"
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
@@ -32,14 +32,16 @@ class StatsAPI:
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
-            self.db_path = get_sqlite_db_paths(netid="ALL")
-            self.db = get_sqlite_db(
-                testing=self.testing,
-                netid=self.netid,
-                coins_config=self.coins_config,
-                gecko_source=self.gecko_source,
-                last_traded_cache=self.last_traded_cache,
-            )
+
+            if self.db is None:
+                self.db = get_sqlite_db(
+                    testing=self.testing,
+                    netid=self.netid,
+                    db=self.db,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
+                )
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 

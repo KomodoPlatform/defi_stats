@@ -30,11 +30,11 @@ class Pair:
     e.g. DOGE_BTC, not BTC_DOGE
     """
 
-    def __init__(self, pair_str: str, db=None, **kwargs):
+    def __init__(self, pair_str: str, **kwargs):
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "mm2_host"]
+            self.options = ["testing", "netid", "mm2_host", "db"]
             set_params(self, self.kwargs, self.options)
 
             if "last_traded_cache" in kwargs:
@@ -61,14 +61,15 @@ class Pair:
                     testing=self.testing
                 )
 
-            self.db = get_sqlite_db(
-                testing=self.testing,
-                netid=self.netid,
-                db=db,
-                coins_config=self.coins_config,
-                gecko_source=self.gecko_source,
-                last_traded_cache=self.last_traded_cache,
-            )
+            if self.db is None:
+                self.db = get_sqlite_db(
+                    testing=self.testing,
+                    netid=self.netid,
+                    db=self.db,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    last_traded_cache=self.last_traded_cache,
+                )
 
             # Adjust pair order
             self.as_str = order_pair_by_market_cap(
@@ -81,20 +82,12 @@ class Pair:
             self.as_set = set((self.base, self.quote))
 
             # Get price and market cap
-            self.base_usd_price = lib.get_gecko_price(
-                self.base, self.gecko_source
-            )
+            self.base_usd_price = lib.get_gecko_price(self.base, self.gecko_source)
 
-            self.quote_usd_price = lib.get_gecko_price(
-                self.quote, self.gecko_source
-            )
-            self.base_mcap = lib.get_gecko_mcap(
-                self.base, self.gecko_source
-            )
+            self.quote_usd_price = lib.get_gecko_price(self.quote, self.gecko_source)
+            self.base_mcap = lib.get_gecko_mcap(self.base, self.gecko_source)
 
-            self.quote_mcap = lib.get_gecko_mcap(
-                self.quote, self.gecko_source
-            )
+            self.quote_mcap = lib.get_gecko_mcap(self.quote, self.gecko_source)
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
@@ -268,7 +261,7 @@ class Pair:
             # logger.calc(f"swaps_for_pair: {len(swaps_for_pair)}")
             # Get template in case no swaps returned
             suffix = get_suffix(days)
-            # logger.calc(f"suffix: {suffix}")
+
             data = template.volumes_and_prices(suffix)
             data["base"] = self.base
             data["quote"] = self.quote
@@ -277,7 +270,7 @@ class Pair:
             data[f"trades_{suffix}"] = len(swaps_for_pair)
             # Get Volumes
             swaps_volumes = self.get_swaps_volumes(swaps_for_pair)
-            # logger.calc(f"swaps_volumes: {swaps_volumes}")
+
             data["base_volume"] = swaps_volumes[0]
             data["quote_volume"] = swaps_volumes[1]
             data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(
@@ -292,19 +285,11 @@ class Pair:
                 data["base_volume_usd"] + data["quote_volume_usd"]
             ) / 2
 
-            if self.as_str in self.last_traded_cache:
-                last_swap = self.last_traded_cache[self.as_str]
-
-            elif reverse_ticker(self.as_str) in self.last_traded_cache:
-                last_swap = self.last_traded_cache[reverse_ticker(self.as_str)]
-
-            else:
-                last_swap = {"last_swap": 0, "last_price": 0}
-
             # Get Prices
             # TODO: using timestamps as an index works for now,
             # but breaks when two swaps have the same timestamp.
             swap_prices = self.get_swap_prices(swaps_for_pair)
+
             if len(swap_prices) > 0:
                 highest_price = max(swap_prices.values())
                 lowest_price = min(swap_prices.values())
@@ -314,8 +299,9 @@ class Pair:
                 pct_change = Decimal(newest_price) / Decimal(oldest_price) - 1
                 data[f"highest_price_{suffix}"] = highest_price
                 data[f"lowest_price_{suffix}"] = lowest_price
-                data["last_price"] = last_swap["last_price"]
-                data["last_trade"] = last_swap["last_swap"]
+                data["last_price"] = self.last_swap["last_price"]
+                data["last_trade"] = self.last_swap["last_swap"]
+                data["last_swap_uuid"] = self.last_swap["last_swap_uuid"]
                 data[f"price_change_percent_{suffix}"] = pct_change
                 data[f"price_change_{suffix}"] = price_change
 
@@ -323,6 +309,15 @@ class Pair:
         except Exception as e:  # pragma: no cover
             msg = f"get_volumes_and_prices for {self.as_str} failed for netid {self.netid}! {e}"
             return default_error(e, msg)
+
+    @property
+    def last_swap(self):
+        last_swap = {"last_swap": 0, "last_price": 0, "last_swap_uuid": ""}
+        if self.as_str in self.last_traded_cache:
+            last_swap = self.last_traded_cache[self.as_str]
+        elif reverse_ticker(self.as_str) in self.last_traded_cache:
+            last_swap = self.last_traded_cache[reverse_ticker(self.as_str)]
+        return last_swap
 
     @timed
     def get_liquidity(self, orderbook_data):
@@ -371,6 +366,7 @@ class Pair:
                 "target_usd_price": self.quote_usd_price,
                 "last_price": format_10f(data["last_price"]),
                 "last_trade": f'{data["last_trade"]}',
+                "last_swap_uuid": f'{data["last_swap_uuid"]}',
                 "bid": self.orderbook.find_highest_bid(orderbook_data),
                 "ask": self.orderbook.find_lowest_ask(orderbook_data),
                 "high": format_10f(data[f"highest_price_{suffix}"]),
@@ -460,9 +456,9 @@ class Pair:
 
 
 @timed
-def get_all_coin_pairs(coin, priced_coins):
+def get_all_coin_pairs(coin, priced_coins, testing=False):
     try:
-        gecko_source = lib.load_gecko_source()
+        gecko_source = lib.load_gecko_source(testing=testing)
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]

@@ -80,7 +80,8 @@ class Files:
                 return json.load(f)
         except Exception as e:  # pragma: no cover
             error = f"Error loading {path}: {e}"
-            return default_error(e, error)
+            logger.warning(error)
+        return None
 
     def download_json(self, url):
         try:
