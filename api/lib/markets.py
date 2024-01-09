@@ -15,15 +15,11 @@ class Markets:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
-
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,
                     netid=self.netid,
                     db=self.db,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
                 )
             self.files = Files(netid=self.netid, testing=self.testing)
             self.gecko = CoinGeckoAPI(testing=self.testing)

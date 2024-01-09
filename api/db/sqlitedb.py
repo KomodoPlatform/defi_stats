@@ -30,7 +30,9 @@ class SqliteDB:  # pragma: no cover
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+                self.last_traded_cache = lib.load_generic_last_traded(
+                    testing=self.testing
+                )
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
@@ -72,6 +74,7 @@ class SqliteQuery:  # pragma: no cover
             self.kwargs = kwargs
             self.options = ["testing", "netid"]
             set_params(self, self.kwargs, self.options)
+            self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.db = db
 
         except Exception as e:  # pragma: no cover
@@ -106,43 +109,37 @@ class SqliteQuery:  # pragma: no cover
                     WHERE finished_at > {timestamp} AND is_success=1;"
             self.db.sql_cursor.execute(sql)
             data = self.db.sql_cursor.fetchall()
+
             # Cover the variants
-            pairs = [
-                (f"{i[0]}-{i[1]}", f"{i[2]}-{i[3]}")
-                for i in data
-                if i[1] not in ["", "segwit"] and i[3] not in ["", "segwit"]
-            ]
-            pairs += [
-                (f"{i[0]}-{i[1]}", f"{i[2]}")
-                for i in data
-                if i[1] not in ["", "segwit"]
-            ]
-            pairs += [
-                (f"{i[0]}", f"{i[2]}-{i[3]}")
-                for i in data
-                if i[3] not in ["", "segwit"]
-            ]
-            pairs += [(f"{i[0]}", f"{i[2]}") for i in data]
+            pairs = [self.get_std_pair_str(i) for i in data]
 
             # Sort pair by ticker to expose duplicates
             sorted_pairs = set(
                 [
-                    order_pair_by_market_cap(
-                        f"{i[0]}_{i[1]}", gecko_source=self.db.gecko_source
-                    )
+                    order_pair_by_market_cap(i, gecko_source=self.db.gecko_source)
                     for i in pairs
                 ]
             )
-            sorted_pairs = [
-                i for i in list(sorted_pairs) if i.split("_")[0] != i.split("_")[1]
-            ]
-            # Remove the duplicates
-            # logger.calc(f"sorted_pairs: {len(sorted_pairs)}")
-            # Sort the pair tickers with higher MC second
 
         except Exception as e:  # pragma: no cover
             return default_error(e)
         return list(sorted_pairs)
+
+    def get_platform(self, coin):
+        if len(coin.split("-")) == 2:
+            return coin.split("-")[1]
+        return None
+
+    def get_std_pair_str(self, swap):
+        if swap["taker_coin_platform"] in ["", "segwit"]:
+            taker = swap["taker_coin_ticker"]
+        else:
+            taker = f'{swap["taker_coin_ticker"]}-{swap["taker_coin_platform"]}'
+        if swap["maker_coin_platform"] in ["", "segwit"]:
+            maker = swap["maker_coin_ticker"]
+        else:
+            maker = f'{swap["maker_coin_ticker"]}-{swap["maker_coin_platform"]}'
+        return f"{taker}_{maker}"
 
     @timed
     def get_swaps_for_pair(
@@ -162,12 +159,11 @@ class SqliteQuery:  # pragma: no cover
         try:
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             bases = [base]
             quotes = [quote]
-            if base in segwit_coins:
+            if base in self.segwit_coins:
                 bases.append(f"{base}-segwit")
-            if quote in segwit_coins:
+            if quote in self.segwit_coins:
                 quotes.append(f"{quote}-segwit")
             swaps_for_pair = []
             for i in bases:
@@ -337,24 +333,16 @@ class SqliteQuery:  # pragma: no cover
                             item.update({k: int(v)})
                         else:
                             item.update({k: v})
-                if i["taker_coin_platform"] in ["", "segwit"]:
-                    taker = i["taker_coin_ticker"]
-                else:
-                    taker = f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}'
-                if i["maker_coin_platform"] in ["", "segwit"]:
-                    maker = i["maker_coin_ticker"]
-                else:
-                    maker = f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}'
 
-                pair = f"{taker}_{maker}"
+                pair = self.get_std_pair_str(i)
                 std_pair = order_pair_by_market_cap(
                     pair, gecko_source=self.db.gecko_source
                 )
                 if pair == std_pair:
-                    last_price = format_10f(item["last_maker_amount"] / item["last_taker_amount"])
+                    last_price = item["last_maker_amount"] / item["last_taker_amount"]
                 else:
-                    last_price = format_10f(item["last_taker_amount"] / item["last_maker_amount"])
-                item.update({"last_price": last_price})
+                    last_price = item["last_taker_amount"] / item["last_maker_amount"]
+                item.update({"last_price": format_10f(last_price)})
 
                 # Handle segwit
                 if std_pair not in by_pair_dict:
@@ -363,79 +351,6 @@ class SqliteQuery:  # pragma: no cover
                     by_pair_dict.update({std_pair: item})
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
-        except Exception as e:  # pragma: no cover
-            return default_error(e)
-
-    @timed
-    def get_last_price_for_pair(self, base: str, quote: str) -> float:
-        """
-        Takes a pair in the format `KMD_BTC` and returns the
-        last trade price for that pair. Response scans both
-        buy and sell swaps (e.g. KMD/BTC and BTC/KMD)
-        """
-        try:
-            swap_price = None
-            swap_time = None
-            sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{base.split('-')[0]}' \
-                    AND taker_coin_ticker='{quote.split('-')[0]}' AND is_success=1"
-            if len(base.split("-")) == 2:
-                if base.split("-")[1] != "segwit":
-                    platform = base.split("-")[1]
-                    sql += f" AND maker_coin_platform='{platform}'"
-            if len(quote.split("-")) == 2:
-                if quote.split("-")[1] != "segwit":
-                    platform = quote.split("-")[1]
-                    sql += f" AND taker_coin_platform='{platform}'"
-            sql += " ORDER BY finished_at DESC LIMIT 1;"
-            self.db.sql_cursor.execute(sql)
-            resp = self.db.sql_cursor.fetchone()
-            if resp is not None:
-                swap_price = Decimal(resp["taker_amount"]) / Decimal(
-                    resp["maker_amount"]
-                )
-                swap_time = int(resp["finished_at"])
-
-            swap_price2 = None
-            swap_time2 = None
-            sql = f"SELECT * FROM stats_swaps WHERE maker_coin_ticker='{quote.split('-')[0]}' \
-                    AND taker_coin_ticker='{base.split('-')[0]}' AND is_success=1"
-            if len(base.split("-")) == 2:
-                if base.split("-")[1] != "segwit":
-                    platform = base.split("-")[1]
-                    sql += f" AND taker_coin_platform='{platform}'"
-            if len(quote.split("-")) == 2:
-                if quote.split("-")[1] != "segwit":
-                    platform = quote.split("-")[1]
-                    sql += f" AND maker_coin_platform='{platform}'"
-            sql += " ORDER BY finished_at DESC LIMIT 1;"
-            self.db.sql_cursor.execute(sql)
-            resp2 = self.db.sql_cursor.fetchone()
-            if resp2 is not None:
-                swap_price2 = Decimal(resp2["maker_amount"]) / Decimal(
-                    resp2["taker_amount"]
-                )
-                swap_time2 = int(resp2["finished_at"])
-            if swap_price and swap_price2:
-                if swap_time > swap_time2:
-                    price = swap_price
-                    last_swap = swap_time
-                else:
-                    price = swap_price2
-                    last_swap = swap_time2
-            elif swap_price:
-                price = swap_price
-                last_swap = swap_time
-            elif swap_price2:
-                price = swap_price2
-                last_swap = swap_time2
-            else:
-                price = 0
-                last_swap = 0
-            data = {
-                "price": price,
-                "timestamp": last_swap,
-            }
-            return data
         except Exception as e:  # pragma: no cover
             return default_error(e)
 
@@ -489,8 +404,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
-            if ticker in segwit_coins:
+            if ticker in self.segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
             swaps_for_ticker = []
@@ -568,8 +482,7 @@ class SqliteQuery:  # pragma: no cover
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
-            segwit_coins = [i.coin for i in lib.COINS.with_segwit]
-            if ticker in segwit_coins:
+            if ticker in self.segwit_coins:
                 tickers.append(f"{ticker}-segwit")
 
             volume_for_ticker = 0
@@ -656,9 +569,7 @@ class SqliteQuery:  # pragma: no cover
             elif "sum" in kwargs:
                 sql.replace("*", f"SUM({kwargs['sum_field']})")
 
-            sql += (
-                f" WHERE started_at > {kwargs['start']} AND finished_at < {kwargs['end']}"
-            )
+            sql += f" WHERE started_at > {kwargs['start']} AND finished_at < {kwargs['end']}"
             if "success_only" in kwargs:
                 sql += " AND is_success=1"
             elif "failed_only" in kwargs:
