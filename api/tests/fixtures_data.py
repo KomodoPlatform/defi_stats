@@ -148,27 +148,35 @@ trades_info = [
 ]
 
 
-ticker_item = {
-    "ticker_id": "KMD_LTC",
-    "pool_id": "KMD_LTC",
-    "base_currency": "KMD",
-    "target_currency": "LTC",
-    "last_price": "0.0000000000",
-    "last_trade": "0",
-    "trades_24hr": "0",
-    "base_volume": "0.0000000000",
-    "target_volume": "0.0000000000",
-    "base_usd_price": "0.3000000000",
-    "target_usd_price": "75.0000000000",
-    "bid": "0.0000000000",
-    "ask": "0.0000000000",
-    "high": "0.0000000000",
-    "low": "0.0000000000",
-    "volume_usd_24hr": "0.0000000000",
-    "liquidity_in_usd": "0.0000000000",
-    "price_change_percent_24hr": 0,
-    "price_change_24hr": 0,
-}
+def get_ticker_item(suffix="24hr"):
+    return {
+        "ticker_id": "DGB_LTC",
+        "pool_id": "DGB_LTC",
+        f"trades_{suffix}": "1",
+        "base_currency": "DGB",
+        "base_volume": "1.0000000000",
+        "base_usd_price": "0.0100000000",
+        "target_currency": "LTC",
+        "target_volume": "1.0000000000",
+        "target_usd_price": "100.0000000000",
+        "last_price": "1.0000000000",
+        "last_trade": "1704858849",
+        "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
+        "bid": "0.0001184354",
+        "ask": "0.0001217309",
+        "high": "1.0000000000",
+        "low": "1.0000000000",
+        f"volume_usd_{suffix}": "50.0050000000",
+        "base_volume_usd": "0.0100000000",
+        "quote_volume_usd": "100.0000000000",
+        "liquidity_in_usd": "2290.2992432883",
+        "base_liquidity_coins": "145136.4015657607",
+        "base_liquidity_usd": "1451.3640156576",
+        "quote_liquidity_coins": "8.3893522763",
+        "quote_liquidity_usd": "838.9352276307",
+        f"price_change_percent_{suffix}": "0.0000000000",
+        f"price_change_{suffix}": "0.0000000000"
+    }
 
 
 no_trades_info = []

@@ -22,7 +22,6 @@ from util.logger import logger
 from fixtures_class import helper
 from fixtures_data import (
     trades_info,
-    ticker_item,
     no_trades_info,
 )
 from util.transform import merge_orderbooks, format_10f

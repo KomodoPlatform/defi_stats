@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
-from typing import Any, List
+from typing import Any, List, Dict
 from util.defaults import default_error
 import lib
 
@@ -116,7 +116,7 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
-def get_top_items(data, sort_key, length=5):
+def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
     data.sort(key=lambda x: x[sort_key], reverse=True)
     return data[:length]
 

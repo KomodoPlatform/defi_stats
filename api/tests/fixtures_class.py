@@ -35,6 +35,11 @@ def setup_cache_item():
 
 
 @pytest.fixture
+def setup_pairs_cache():
+    yield lib.CacheItem("generic_pairs", testing=True).data
+
+
+@pytest.fixture
 def setup_files():
     yield Files(testing=True)
 

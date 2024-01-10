@@ -85,6 +85,7 @@ def test_validate_loop_data():
     assert not validate_loop_data(data, cache_item)
     data = {"data": "good"}
     assert validate_loop_data(data, cache_item)
+    assert not validate_loop_data(None, cache_item)
 
 
 def test_validate_json():
@@ -96,3 +97,5 @@ def test_validate_json():
     assert validate_json(data)
     data = {"list": [3, 9, 7]}
     assert validate_json(data)
+    data = [1, 2, 3, 4, 5]
+    assert not validate_json(data)
