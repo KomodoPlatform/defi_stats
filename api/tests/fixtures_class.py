@@ -40,6 +40,11 @@ def setup_pairs_cache():
 
 
 @pytest.fixture
+def setup_last_traded_cache():
+    yield lib.CacheItem("generic_last_traded", testing=True).data
+
+
+@pytest.fixture
 def setup_files():
     yield Files(testing=True)
 
