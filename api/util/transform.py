@@ -319,7 +319,7 @@ def deplatform_pair_summary_item(i):
     for k in keys:
         if k == "trading_pair":
             resp.update({k: strip_pair_platforms(i[k])})
-        if k in ["base_currency", "quote_currency"]:
+        elif k in ["base_currency", "quote_currency"]:
             resp.update({k: strip_coin_platform(i[k])})
         else:
             resp.update({k: i[k]})

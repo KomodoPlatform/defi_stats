@@ -9,9 +9,15 @@ from tests.fixtures_class import setup_statsapi
 def test_pair_summaries(setup_statsapi):
     stats = setup_statsapi
     r = stats.pair_summaries(1)
-    assert len(r) == 7
+    assert len(r) == 6
     r = stats.pair_summaries(300)
-    assert len(r) == 8
+    assert len(r) == 7
+    logger.info(r)
+    for i in r:
+        if i["trading_pair"] == "KMD_BTC":
+            assert i["pair_swaps_count"] == 2
+            assert i["quote_volume"] == 2
+            assert i["base_volume"] == 3000000
 
 
 def test_top_pairs(setup_statsapi):
