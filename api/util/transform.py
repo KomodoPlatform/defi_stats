@@ -127,12 +127,8 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) ->
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_mc = lib.get_gecko_mcap(
-            base, gecko_source=gecko_source, testing=testing
-        )
-        quote_mc = lib.get_gecko_mcap(
-            quote, gecko_source=gecko_source, testing=testing
-        )
+        base_mc = lib.get_gecko_mcap(base, gecko_source=gecko_source, testing=testing)
+        quote_mc = lib.get_gecko_mcap(quote, gecko_source=gecko_source, testing=testing)
         if quote_mc < base_mc:
             pair_str = reverse_ticker(pair_str)
         elif quote_mc == base_mc:
@@ -302,6 +298,22 @@ def historical_trades_to_gecko(i):
         "timestamp": i["timestamp"],
         "type": i["type"],
     }
+
+
+def strip_pair_platforms(pair):
+    coins = pair.split("_")
+    return f"{strip_platform(coins[0])}_{strip_platform(coins[1])}"
+
+
+def strip_platform(coin):
+    return coin.split("-")
+
+
+def traded_cache_to_stats_api(traded_cache):
+    resp = {}
+    for i in traded_cache:
+        resp.update({strip_pair_platforms(i): traded_cache[i]})
+    return resp
 
 
 def reverse_ticker(ticker_id):

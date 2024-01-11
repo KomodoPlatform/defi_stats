@@ -3,13 +3,13 @@ import sys
 import time
 import sqlite3
 import pytest
-from decimal import Decimal
-from fixtures_class import (
+
+from tests.fixtures_class import (
     setup_gecko,
     setup_gecko_info,
     setup_gecko_coin_ids,
 )
-from fixtures_db import (
+from tests.fixtures_db import (
     setup_actual_db,
     setup_swaps_db_data,
 )

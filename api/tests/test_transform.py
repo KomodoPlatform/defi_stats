@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal
-from fixtures_transform import (
+from tests.fixtures_transform import (
     setup_pairs_to_gecko,
     setup_ticker_to_statsapi_24h,
     setup_ticker_to_statsapi_7d,
@@ -9,10 +9,10 @@ from fixtures_transform import (
     setup_historical_trades_to_market_trades,
     setup_ticker_to_gecko,
 )
-from fixtures_db import setup_swaps_db_data, setup_time
-from fixtures_class import setup_gecko, setup_pairs_cache
+from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_class import setup_gecko, setup_pairs_cache
 
-from fixtures_data import (
+from tests.fixtures_data import (
     historical_data,
     historical_trades,
     trades_info,

@@ -32,6 +32,7 @@ class StatsAPI:  # pragma: no cover
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
+            self.last_traded_cache = transform.traded_cache_to_stats_api(self.last_traded_cache)
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,

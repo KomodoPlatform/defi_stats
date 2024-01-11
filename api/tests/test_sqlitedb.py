@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 import time
 import sqlite3
-from fixtures_class import (
-    helper,
-)
-from util.logger import logger
-
-from fixtures_data import swap_item, swap_item2
-from fixtures_db import (
-    setup_actual_db,
-    setup_swaps_db_data,
-    setup_time,
-)
-from util.transform import merge_orderbooks, format_10f
-
 from db.sqlitedb import (
     is_source_db,
     get_sqlite_db,
@@ -22,6 +9,18 @@ from db.sqlitedb import (
     get_netid,
     compare_uuid_fields,
 )
+from tests.fixtures_class import (
+    helper,
+)
+from tests.fixtures_data import swap_item, swap_item2
+from tests.fixtures_db import (
+    setup_actual_db,
+    setup_swaps_db_data,
+    setup_time,
+)
+from util.logger import logger
+from util.transform import merge_orderbooks, format_10f
+
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
 now = int(time.time())

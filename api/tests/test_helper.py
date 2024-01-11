@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
-from fixtures_data import swap_item
-from fixtures_class import setup_last_traded_cache
+from tests.fixtures_data import swap_item
+from tests.fixtures_class import setup_last_traded_cache
 from util.helper import (
     get_mm2_rpc_port,
     get_netid_filename,

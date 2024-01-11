@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-from fixtures_class import setup_dexapi
+from tests.fixtures_class import setup_dexapi
 from util.defaults import arg_defaults, set_params
 
 

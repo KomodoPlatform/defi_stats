@@ -3,7 +3,7 @@ import os
 import sys
 import pytest
 
-from fixtures_data import trades_info, get_ticker_item
+from tests.fixtures_data import trades_info, get_ticker_item
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)

@@ -3,12 +3,20 @@ import time
 import pytest
 from decimal import Decimal
 from copy import deepcopy
-
-from fixtures_db import (
+from lib.cache import (
+    load_gecko_source,
+    load_coins_config,
+)
+from tests.fixtures_class import helper
+from tests.fixtures_data import (
+    trades_info,
+    no_trades_info,
+)
+from tests.fixtures_db import (
     setup_time,
     setup_swaps_db_data,
 )
-from fixtures_pair import (
+from tests.fixtures_pair import (
     setup_kmd_dgb_pair,
     setup_dgb_kmd_pair,
     setup_kmd_btc_pair,
@@ -18,20 +26,8 @@ from fixtures_pair import (
     setup_1inch_usdc_pair,
     setup_morty_kmd_pair,
 )
-
 from util.logger import logger
-from fixtures_class import helper
-from fixtures_data import (
-    trades_info,
-    no_trades_info,
-)
 from util.transform import merge_orderbooks, format_10f
-
-
-from lib.cache import (
-    load_gecko_source,
-    load_coins_config,
-)
 
 coins_config = load_coins_config(testing=True)
 gecko_source = load_gecko_source(testing=True)

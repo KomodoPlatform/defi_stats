@@ -2,8 +2,8 @@
 import pytest
 from util.logger import logger
 
-from fixtures_db import setup_swaps_db_data, setup_time
-from fixtures_class import setup_statsapi
+from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_class import setup_statsapi
 
 
 def test_pair_summaries(setup_statsapi):
@@ -33,3 +33,8 @@ def test_adex_fortnite(setup_statsapi):
     assert r["days"] == 14
     assert r["swaps_count"] == 12
     assert "KMD_LTC" in r["top_pairs"]["by_current_liquidity_usd"]
+
+
+def test_last_cache(setup_statsapi):
+    stats = setup_statsapi
+    assert "KMD-BEP20_BTC" not in stats.last_traded_cache

@@ -2,8 +2,8 @@ import time
 import pytest
 from decimal import Decimal
 from util.logger import logger
-from fixtures_data import swap_item
-from fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_data import swap_item
+from tests.fixtures_db import setup_swaps_db_data, setup_time
 from util.helper import (
     get_mm2_rpc_port,
     get_netid_filename,

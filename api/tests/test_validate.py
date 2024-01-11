@@ -1,10 +1,10 @@
 import pytest
 from decimal import Decimal
 from util.exceptions import BadPairFormatError
-from fixtures_validate import (
+from tests.fixtures_validate import (
     setup_reverse_ticker_kmd_ltc,
 )
-from fixtures_data import valid_tickers
+from tests.fixtures_data import valid_tickers
 
 from util.validate import (
     validate_ticker_id,
