@@ -5,7 +5,7 @@
 if [ $(hostname) = 'hound' ]; then
     username='hound'
 else
-    username='admin'
+    username='atomic'
 fi
 
 project_folder="/home/${username}/defi_stats"

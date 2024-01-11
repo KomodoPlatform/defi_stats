@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 # gecko/tickers,
@@ -124,4 +124,4 @@ class SwapItem(BaseModel):
 class HealthCheck(BaseModel):
     timestamp: int = 1777777777
     status: str = "ok"
-    cache_age_mins: Dict[str, int]
+    cache_age_mins: Dict[str, Any]
