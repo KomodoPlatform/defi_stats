@@ -16,6 +16,7 @@ from fixtures_pair import (
     setup_kmd_ltc_pair,
     setup_not_existing_pair,
     setup_1inch_usdc_pair,
+    setup_morty_kmd_pair,
 )
 
 from util.logger import logger
@@ -110,12 +111,18 @@ def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     assert float(r["trades_24hr"]) == 0
 
 
-def test_pair(setup_ltc_kmd_pair, setup_kmd_dgb_pair):
+def test_pair(
+    setup_ltc_kmd_pair,
+    setup_kmd_dgb_pair,
+    setup_not_existing_pair,
+    setup_morty_kmd_pair,
+):
     pair = setup_ltc_kmd_pair
     assert pair.base == "KMD"
     assert pair.quote == "LTC"
     assert pair.as_str == "KMD_LTC"
     assert pair.as_tuple == ("KMD", "LTC")
+    assert pair.is_priced
     pair = setup_kmd_dgb_pair
     assert not pair.as_str == "DGB_KMD"
     assert pair.as_str == "KMD_DGB"
@@ -123,6 +130,11 @@ def test_pair(setup_ltc_kmd_pair, setup_kmd_dgb_pair):
     assert not pair.base == "DGB"
     assert pair.base == "KMD"
     assert pair.quote == "DGB"
+    assert pair.is_priced
+    pair = setup_not_existing_pair
+    assert not pair.is_priced
+    pair = setup_morty_kmd_pair
+    assert not pair.is_priced
 
 
 def test_merge_orderbooks(setup_kmd_ltc_pair):
@@ -165,7 +177,10 @@ def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
     assert len(r) > 40
 
 
-def test_swap_info(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
+def test_swap_info(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
+    data = pair.last_swap
+    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
+    pair = setup_ltc_kmd_pair
     data = pair.last_swap
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"

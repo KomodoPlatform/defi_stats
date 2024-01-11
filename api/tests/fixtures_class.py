@@ -3,6 +3,7 @@ import os
 import sys
 import pytest
 
+
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 
@@ -12,16 +13,20 @@ from util.files import Files
 from util.urls import Urls
 from lib.markets import Markets
 from lib.cache import Cache
+from lib.stats_api import StatsAPI
 import util.helper as helper
 import lib
-
-API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(API_ROOT_PATH)
 
 
 @pytest.fixture
 def setup_dexapi():
     yield DexAPI(testing=True)
+
+
+@pytest.fixture
+def setup_statsapi(setup_swaps_db_data):
+    db = setup_swaps_db_data
+    yield StatsAPI(testing=True, db=db)
 
 
 @pytest.fixture

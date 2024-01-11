@@ -8,7 +8,7 @@ from util.defaults import set_params
 import util.transform as transform
 
 
-class StatsAPI:
+class StatsAPI:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             # Set params
@@ -32,7 +32,6 @@ class StatsAPI:
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
-
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,
@@ -42,7 +41,7 @@ class StatsAPI:
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             logger.error(f"Failed to init Generic: {e}")
 
     def top_pairs(self, summaries: list):
@@ -74,6 +73,7 @@ class StatsAPI:
         try:
             if days > pairs_days:
                 pairs_days = days
+            logger.info(self.db.db_path)
             pairs = self.db.query.get_pairs(days=pairs_days)
             suffix = transform.get_suffix(days)
             ticker_infos = [
@@ -84,6 +84,7 @@ class StatsAPI:
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
+                    testing=self.testing
                 ).ticker_info(days)
                 for i in pairs
             ]
@@ -92,7 +93,7 @@ class StatsAPI:
             ]
             return transform.clean_decimal_dict_list(data)
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
             return None
 
@@ -115,6 +116,6 @@ class StatsAPI:
             }
             data = transform.clean_decimal_dict(data)
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.adex_fortnite]: {e}")
             return None

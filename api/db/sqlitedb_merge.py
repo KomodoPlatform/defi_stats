@@ -450,7 +450,7 @@ class SqliteMerge:
             master_db_path = f"{DB_MASTER_PATH}/{fn}"
             master_db = get_sqlite_db(db_path=master_db_path)
             master_db.truncate_wal()
-        msg = f"Database wal truncation complete..."
+        msg = "Database wal truncation complete..."
         return default_result(msg=msg, loglevel="merge", ignore_until=10)
 
 

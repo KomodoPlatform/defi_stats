@@ -25,6 +25,11 @@ def test_orderbook(setup_swaps_db_data):
     assert len(r_all["base"]) == len(r_all2["base"])
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
+    generic = Generic(db=setup_swaps_db_data, testing=True, netid="8762")
+    r = generic.orderbook("KMD_DOGE")
+    r2 = generic.orderbook("DOGE_KMD")
+    assert r["volume_usd_24hr"] == r2["volume_usd_24hr"]
+
     generic = Generic()
     r3 = generic.orderbook("KMD_DGB", depth=2)
     assert len(r3["asks"]) == 2

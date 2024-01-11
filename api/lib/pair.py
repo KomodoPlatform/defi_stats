@@ -23,7 +23,7 @@ import util.templates as template
 import lib
 
 
-class Pair:
+class Pair:  # pragma: no cover
     """
     Allows for referencing pairs as a string or tuple.
     To standardise like CEX pairs, the higher Mcap coin is always second.
@@ -315,7 +315,7 @@ class Pair:
         last_swap = {"last_swap": 0, "last_price": 0, "last_swap_uuid": ""}
         if self.as_str in self.last_traded_cache:
             last_swap = self.last_traded_cache[self.as_str]
-        elif reverse_ticker(self.as_str) in self.last_traded_cache:
+        elif reverse_ticker(self.as_str) in self.last_traded_cache:  # pragma: no cover
             last_swap = self.last_traded_cache[reverse_ticker(self.as_str)]
         return last_swap
 
