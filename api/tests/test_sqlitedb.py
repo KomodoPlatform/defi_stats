@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 import time
 import sqlite3
-from fixtures import (
+from db.sqlitedb import (
+    is_source_db,
+    get_sqlite_db,
+    get_sqlite_db_paths,
+    list_sqlite_dbs,
+    get_netid,
+    compare_uuid_fields,
+)
+from tests.fixtures_class import (
+    helper,
+)
+from tests.fixtures_data import swap_item, swap_item2
+from tests.fixtures_db import (
+    setup_actual_db,
     setup_swaps_db_data,
     setup_time,
-    logger,
-    helper,
-    setup_actual_db,
-    setup_fake_db,
 )
+from util.logger import logger
+from util.transform import merge_orderbooks, format_10f
+
+from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
 now = int(time.time())
 hour_ago = now - 3600
@@ -20,22 +33,16 @@ two_months_ago = now - 5184000
 
 
 def test_get_pairs(setup_swaps_db_data):
+    # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
-    pairs = DB.get_pairs(include_all_kmd=False)
-    assert ("KMD", "BTC") in pairs
-    assert ("DOGE", "LTC") not in pairs
+    pairs = DB.query.get_pairs()
+    logger.calc(pairs)
+    assert ("KMD_LTC") in pairs
+    assert ("LTC_KMD") not in pairs
     assert len(pairs) == 7
-    pairs = DB.get_pairs(45, include_all_kmd=False)
-    logger.info(pairs)
-    assert ("KMD", "BTC") in pairs
-    assert ("DGB", "LTC") in pairs
-    assert ("DOGE", "LTC") not in pairs
-    assert len(pairs) == 7
-    pairs = DB.get_pairs(90, include_all_kmd=False)
-    assert ("KMD", "BTC") in pairs
-    assert ("DGB", "LTC") in pairs
-    assert ("DOGE", "LTC") in pairs
-    assert ("LTC", "DOGE") not in pairs
+    assert ("DGB_KMD-BEP20") not in pairs
+    assert ("KMD-BEP20_DGB") in pairs
+    pairs = DB.query.get_pairs(90)
     assert len(pairs) == 8
 
 
@@ -45,58 +52,126 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     DB.sql_cursor = DB.conn.cursor()
 
     # Test failed excluded
-    swaps = DB.get_swaps_for_pair(("MCL", "KMD"), day_ago)
+    swaps = DB.query.get_swaps_for_pair("MCL", "KMD", start_time=day_ago)
     assert len(swaps) == 0
 
-    swaps1 = DB.get_swaps_for_pair(("LTC", "KMD"), day_ago)
-    swaps2 = DB.get_swaps_for_pair(("KMD", "LTC"), day_ago)
+    swaps1 = DB.query.get_swaps_for_pair("LTC", "KMD", start_time=day_ago)
+    swaps2 = DB.query.get_swaps_for_pair("KMD", "LTC", start_time=day_ago)
     assert len(swaps1) == len(swaps2)
     for i in swaps1:
         logger.info(i)
     assert len(swaps1) == 3
-    assert swaps1[2]["trade_type"] == "sell"
+    assert swaps1[2]["trade_type"] == "buy"
     for i in swaps2:
         logger.info(i)
     assert len(swaps2) == 3
-    assert swaps2[0]["trade_type"] == "buy"
+    assert swaps2[2]["trade_type"] == "sell"
 
-    swaps = DB.get_swaps_for_pair(("DGB", "LTC"), two_months_ago)
+    swaps = DB.query.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago)
     for i in swaps:
         logger.info(i)
     assert len(swaps) == 3
     assert swaps[0]["trade_type"] == "buy"
 
 
-def get_actual_db_data(setup_actual_db):
-    """
-    This is just here for convienince to get data from
-    actual DB for use in testing fixtures
-    """
-    DB = setup_actual_db
-    DB.sql_cursor.execute('select * from stats_swaps where maker_coin = "KMD" limit 5')
-    data = []
-    for r in DB.sql_cursor.fetchall():
-        data.append(r)
-    DB.close()
-    assert len(data) == 5
-
-
-def test_get_last_price_for_pair(setup_swaps_db_data):
-    DB = setup_swaps_db_data
-    r = DB.get_last_price_for_pair("LTC", "DOGE")["price"]
-    assert helper.format_10f(r) == helper.format_10f(0.1)
-    r = DB.get_last_price_for_pair("DOGE", "LTC")["price"]
-    assert helper.format_10f(r) == helper.format_10f(10)
-    r = DB.get_last_price_for_pair("KMD", "DGB")["price"]
-    assert helper.format_10f(r) == helper.format_10f(1 / 0.0018)
-    r = DB.get_last_price_for_pair("KMD", "ETH")["timestamp"]
-    assert r == 0
-
-
 def test_get_swap(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.get_swap("77777777-2762-4633-8add-6ad2e9b1a4e7")
+    r = DB.query.get_swap("77777777-2762-4633-8add-6ad2e9b1a4e7")
     assert r["maker_coin"] == "LTC-segwit"
     assert r["taker_coin"] == "KMD"
     assert r["maker_amount"] == 10
     assert r["taker_amount"] == 1
+    r = DB.query.get_swap("x")
+    assert "error" in r
+
+
+def test_is_source_db():
+    assert is_source_db("xyz_MM2.db")
+    assert not is_source_db("xyz_MM2x.db")
+
+
+def test_is_7777():
+    assert is_source_db("seed_MM2.db")
+    assert not is_source_db("xyz_seed.db")
+
+
+def test_compare_uuid_fields():
+    r = compare_uuid_fields(swap_item, swap_item2)
+    assert r["taker_coin_usd_price"] == "75.1"
+    assert r["maker_coin_usd_price"] == "0.5"
+    assert r["is_success"] == "1"
+    assert r["finished_at"] == "1700000777"
+
+
+def test_get_sqlite_db():
+    r = get_sqlite_db(netid="7777")
+    assert r.db_file == "MM2_7777.db"
+    r = get_sqlite_db(db=r)
+    assert r.db_file == "MM2_7777.db"
+
+
+def test_get_sqlite_db_paths():
+    assert get_sqlite_db_paths(netid="7777") == MM2_DB_PATH_7777
+    assert get_sqlite_db_paths(netid="8762") == MM2_DB_PATH_8762
+    assert get_sqlite_db_paths(netid="ALL") == MM2_DB_PATH_ALL
+
+
+def test_list_sqlite_dbs():
+    r = list_sqlite_dbs(DB_MASTER_PATH)
+    assert "MM2_all.db" in r
+
+
+def test_get_netid():
+    assert get_netid("file_7777.db") == "7777"
+    assert get_netid("7777_file.db") == "7777"
+    assert get_netid("file_7777_backup.db") == "7777"
+    assert get_netid("file_MM2.db") == "8762"
+    assert get_netid("seed_file.db") == "7777"
+    assert get_netid("node_file.db") == "ALL"
+
+
+def test_get_row_count(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    assert DB.query.get_row_count("stats_swaps") == 15
+
+
+def test_swap_counts(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.swap_counts()
+    assert len(r) == 3
+    assert r["swaps_all_time"] == 14
+    assert r["swaps_30d"] == 11
+    assert r["swaps_24hr"] == 8
+
+
+def test_get_swaps_for_coin(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_swaps_for_coin("KMD")
+    assert len(r) == 5
+
+    r = DB.query.get_swaps_for_coin("LTC")
+    assert len(r) == 4
+
+
+def test_get_volume_for_coin(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_volume_for_coin("LTC", "buy")
+    logger.info(r)
+    assert r == 30
+
+    r = DB.query.get_volume_for_coin("KMD", "sell")
+    logger.info(r)
+    assert r == 2
+
+
+def test_get_uuids(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_uuids(success_only=True)
+    logger.info(r)
+    assert len(r) == 14
+    r = DB.query.get_uuids(fail_only=True)
+    logger.info(r)
+    assert len(r) == 1
+    r = DB.query.get_uuids(success_only=False)
+    logger.info(r)
+    assert len(r) == 15

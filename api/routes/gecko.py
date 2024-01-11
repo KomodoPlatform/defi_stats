@@ -1,36 +1,45 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-import time
-from logger import logger
-from models import (
+from util.logger import logger
+from models.gecko import (
     GeckoPairsItem,
-    GeckoTickersSummary,
-    GeckoOrderbookItem,
-    GeckoHistoricalTradesItem,
-    ErrorMessage,
+    GeckoTickers,
+    GeckoOrderbook,
+    GeckoHistoricalTrades,
 )
-from helper import get_mm2_rpc_port
-from cache import Cache
-from pair import Pair
-from orderbook import Orderbook
-from enums import TradeType, NetId
-from validate import validate_positive_numeric, validate_ticker_id
+from models.generic import ErrorMessage
+from lib.cache import Cache
+from lib.pair import Pair
+from util.enums import TradeType, NetId
+from util.validate import validate_positive_numeric
+from lib.generic import Generic
+from util.transform import (
+    orderbook_to_gecko,
+    pairs_to_gecko,
+    historical_trades_to_gecko,
+)
+from lib.cache import load_generic_pairs
+
+import util.transform as transform
+
 
 router = APIRouter()
-cache = Cache()
 
 
 # Gecko Endpoints
 @router.get(
     "/pairs",
+    description="A list of CoinGecko compatible pairs traded within the last week.",
     response_model=List[GeckoPairsItem],
-    description="a list pairs with price data traded within the week.",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
 )
-async def gecko_pairs(netid: NetId = NetId.ALL):
+def gecko_pairs():
     try:
-        return cache.load.load_gecko_pairs(netid=netid.value)
+        return pairs_to_gecko(load_generic_pairs())
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -38,15 +47,16 @@ async def gecko_pairs(netid: NetId = NetId.ALL):
 
 @router.get(
     "/tickers",
-    response_model=GeckoTickersSummary,
-    description="24-hour price & volume for each market pair traded in last 7 days.",
+    description="24-hour price & volume for each CoinGecko compatible pair traded in last 7 days.",
+    response_model=GeckoTickers,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
 )
-def gecko_tickers(netid: NetId = NetId.ALL):
-    start = int(time.time())
-    logger.stopwatch(f"[/api/v3/gecko/tickers] Request recieved...")
+def gecko_tickers():
     try:
-        data = cache.load.load_gecko_tickers(netid=netid.value)
-        logger.stopwatch(f"[/api/v3/gecko/tickers] Data returned...")
+        cache = Cache(netid="ALL")
+        data = cache.get_item(name="generic_tickers").data
+        data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
@@ -55,8 +65,8 @@ def gecko_tickers(netid: NetId = NetId.ALL):
 
 @router.get(
     "/orderbook/{ticker_id}",
-    description="Provides current order book information for the given market pair.",
-    response_model=GeckoOrderbookItem,
+    description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
+    response_model=GeckoOrderbook,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -67,75 +77,33 @@ def gecko_orderbook(
     netid: NetId = NetId.ALL,
 ):
     try:
-        resp = {
-            "ticker_id": ticker_id,
-            "timestamp": f"{int(time.time())}",
-            "asks": [],
-            "bids": [],
-            "liquidity_usd": 0,
-            "total_asks_base_vol": 0,
-            "total_bids_base_vol": 0,
-            "total_asks_quote_vol": 0,
-            "total_bids_quote_vol": 0,
-            "total_asks_base_usd": 0,
-            "total_bids_quote_usd": 0,
-        }
-        if netid.value == "all":
-            for x in NetId:
-                if x.value != "all":
-                    gecko_pairs = cache.load.load_gecko_pairs(netid=x.value)
-                    valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-                    validate_ticker_id(ticker_id, valid_tickers)
-                    mm2_port = get_mm2_rpc_port(netid=x.value)
-                    data = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
-                        endpoint=True, depth=depth
-                    )
-                    resp["asks"] += data["asks"]
-                    resp["bids"] += data["bids"]
-                    resp["liquidity_usd"] += data["liquidity_usd"]
-                    resp["total_asks_base_vol"] += data["total_asks_base_vol"]
-                    resp["total_bids_base_vol"] += data["total_bids_base_vol"]
-                    resp["total_asks_quote_vol"] += data["total_asks_quote_vol"]
-                    resp["total_bids_quote_vol"] += data["total_bids_quote_vol"]
-                    resp["total_asks_base_usd"] += data["total_asks_base_usd"]
-                    resp["total_bids_quote_usd"] += data["total_bids_quote_usd"]
-            resp["bids"] = resp["bids"][:depth][::-1]
-            resp["asks"] = resp["asks"][::-1][:depth]
-        else:
-            gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
-            valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-            validate_ticker_id(ticker_id, valid_tickers)
-            mm2_port = get_mm2_rpc_port(netid=netid.value)
-            resp = Orderbook(pair=Pair(ticker_id), mm2_port=mm2_port).for_pair(
-                endpoint=True, depth=depth
-            )
-        return resp
+        generic = Generic(netid=netid.value)
+        data = generic.orderbook(pair_str=ticker_id, depth=depth)
+        data = orderbook_to_gecko(data)
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)
 
 
 @router.get(
     "/historical_trades/{ticker_id}",
-    description="Data for completed trades for a given market pair.",
-    response_model=GeckoHistoricalTradesItem,
+    description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
+    response_model=GeckoHistoricalTrades,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def gecko_historical_trades(
     response: Response,
-    trade_type: TradeType = "all",
+    trade_type: TradeType = TradeType.ALL,
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = 0,
-    end_time: int = 0,
+    start_time: int = int(time.time() - 86400),
+    end_time: int = int(time.time()),
     netid: NetId = NetId.ALL,
 ):
     try:
-        gecko_pairs = cache.load.load_gecko_pairs(netid=netid.value)
-        valid_tickers = [ticker["ticker_id"] for ticker in gecko_pairs]
-        validate_ticker_id(ticker_id, valid_tickers)
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -146,15 +114,17 @@ def gecko_historical_trades(
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        pair = Pair(ticker_id)
-        return pair.historical_trades(
+        pair = Pair(pair_str=ticker_id)
+        data = pair.historical_trades(
             trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-            netid=netid.value,
         )
+        data["buy"] = [historical_trades_to_gecko(i) for i in data["buy"]]
+        data["sell"] = [historical_trades_to_gecko(i) for i in data["sell"]]
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)

@@ -21,18 +21,6 @@
             {
                 "coin": "KMD",
                 "price": {
-                    "decimal": "30"
-                },
-                "base_max_volume": {
-                    "decimal": "10"
-                },
-                "rel_max_volume": {
-                    "decimal": "300"
-                }
-            },
-            {
-                "coin": "KMD",
-                "price": {
                     "decimal": "28"
                 },
                 "base_max_volume": {
@@ -40,6 +28,18 @@
                 },
                 "rel_max_volume": {
                     "decimal": "2800"
+                }
+            },
+            {
+                "coin": "KMD",
+                "price": {
+                    "decimal": "30"
+                },
+                "base_max_volume": {
+                    "decimal": "10"
+                },
+                "rel_max_volume": {
+                    "decimal": "300"
                 }
             },
             {
@@ -59,18 +59,6 @@
             {
                 "coin": "BTC",
                 "price": {
-                    "decimal": "24"
-                },
-                "base_max_volume": {
-                    "decimal": "2"
-                },
-                "rel_max_volume": {
-                    "decimal": "48"
-                }
-            },
-            {
-                "coin": "BTC",
-                "price": {
                     "decimal": "22"
                 },
                 "base_max_volume": {
@@ -78,6 +66,18 @@
                 },
                 "rel_max_volume": {
                     "decimal": "4400"
+                }
+            },
+            {
+                "coin": "BTC",
+                "price": {
+                    "decimal": "24"
+                },
+                "base_max_volume": {
+                    "decimal": "2"
+                },
+                "rel_max_volume": {
+                    "decimal": "48"
                 }
             },
             {

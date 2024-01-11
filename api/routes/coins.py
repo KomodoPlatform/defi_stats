@@ -2,13 +2,12 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from logger import logger
-from models import ErrorMessage, ApiIds
-from generics import Files
-from utils import Utils
+from util.logger import logger
+from models.generic import ErrorMessage, ApiIds
+from util.files import Files
+import lib
 
 router = APIRouter()
-utils = Utils()
 files = Files()
 
 
@@ -25,7 +24,7 @@ def get_gecko_ids():
             "timestamp": int(time.time()),
             "ids": {}
         }
-        coins_config = utils.load_jsonfile(files.coins_config_file)
+        coins_config = lib.CacheItem('coins_config').data
         for coin in coins_config:
             data["ids"].update({
                 coin: coins_config[coin]["coingecko_id"]
@@ -34,4 +33,4 @@ def get_gecko_ids():
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
-        return JSONResponse(status_code=406, content=err)
+        return JSONResponse(status_code=400, content=err)

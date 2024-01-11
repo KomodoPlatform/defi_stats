@@ -23,8 +23,6 @@ API_HOST='0.0.0.0'
 API_PORT=7068
 API_HOST='127.0.0.1'
 POETRY_VERSION='1.6.1'
-COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
-COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 ```
 - A maintained MM2.db file, ideally sourced from a long running AtomicDEX-API seed node to ensure all data is included. This is periodically sourced via rsync with `./update_MM2.db` (assuming ssh key access). This should be added to cron to check for updates every minute. E.g. `* * * * * /home/admin/defi_stats/update_MM2_db.sh`
 
@@ -38,19 +36,28 @@ From the `api` folder:
 - To test everything: `pytest -vv`
 - To test a specific file: `pytest -vv tests/test_file.py`
 
-
-## Note
-Alternative APIs are hosted at:
-- https://stats-api.atomicdex.io/docs
-- https://nomics.komodo.earth:8080/api/v1/info
-- https://stats.testchain.xyz:8080/api/v1/summary
-
-These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
-
-
 ## Endpoints
 
 All endpoints for this update will have a `api/v3/` prefix. Swagger docs are available at https://192.168.0.1:7766/docs#/ (replace with domain/IP address when deployed).
 
 For gecko endpoints, we are using the prefix `api/v3/gecko/`
 
+## Repository Branch Structure
+
+To reduce the load of data sourcing and processing, two main branches will be maintained: `main-processing` and `main-serve`, with the associated development branches `dev-processing` and `dev-serve`.
+
+These should be deployed on separate servers
+
+
+## Deprecating API domains
+The following APIs domains have been merged into this repo. They will be (or already have been) deprecated soon. Until then, the data returned from these domains is a mirror of the data in thi repository.
+- https://stats-api.atomicdex.io/docs
+- https://nomics.komodo.earth:8080/api/v1/info
+- https://stats.testchain.xyz:8080/api/v1/summary
+
+These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
+
+## Dashboards using this API
+- https://coinpaprika.com/exchanges/atomicdex/
+- https://www.coingecko.com/en/exchanges/komodo-wallet
+- https://markets.atomicdex.io/

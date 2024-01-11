@@ -18,6 +18,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!api/lib
 lib64/
 parts/
 sdist/
@@ -161,36 +162,5 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
-api/db/drogon_MM2.db
-api/db/rhaegal_MM2.db
-api/db/seed1_MM2.db
-api/db/seed2_MM2.db
-api/db/seed3_MM2.db
-api/db/seed7_MM2.db
-api/db/temp_MM2_7777.db
-api/db/temp_MM2_8762.db
-api/db/temp_MM2_ALL.db
-api/db/viserion_MM2.db
-api/db/cleaned/drogon_MM2.db
-api/db/cleaned/rhaegal_MM2.db
-api/db/cleaned/seed1_MM2.db
-api/db/cleaned/seed2_MM2.db
-api/db/cleaned/seed3_MM2.db
-api/db/cleaned/seed7_MM2.db
-api/db/cleaned/temp_MM2_7777.db
-api/db/cleaned/temp_MM2_8762.db
-api/db/cleaned/temp_MM2_ALL.db
-api/db/cleaned/viserion_MM2.db
-api/db/master/MM2_7777.db
-api/db/master/MM2_8762.db
-api/db/master/MM2_all.db
-api/db/source/drogon_MM2.db
-api/db/source/local_MM2_7777.db
-api/db/source/local_MM2_8762.db
-api/db/source/rhaegal_MM2.db
-api/db/source/seed1_MM2.db
-api/db/source/seed2_MM2.db
-api/db/source/seed3_MM2.db
-api/db/source/seed7_MM2.db
-api/db/source/viserion_MM2.db
-api/db/**/*.db*
+**/*.db*
+
