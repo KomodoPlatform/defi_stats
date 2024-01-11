@@ -72,7 +72,7 @@ class StatsAPI:  # pragma: no cover
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
             return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
-    def pair_summaries(self, days: int = 1, pairs_days: int = 7):
+    def pair_summaries(self, days: int = 1, pairs_days: int = 7, as_dict: bool = False):
         try:
             if days > pairs_days:
                 pairs_days = days
@@ -200,8 +200,6 @@ class StatsAPI:  # pragma: no cover
                     resp_dict[clean_pair]["newest_price"]
                     - resp_dict[clean_pair]["oldest_price"]
                 )
-                logger.info(resp_dict[clean_pair][f"price_change_{alt_suffix}"])
-
                 if resp_dict[clean_pair]["oldest_price"] != 0:
                     resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = (
                         resp_dict[clean_pair]["newest_price"]
@@ -210,7 +208,9 @@ class StatsAPI:  # pragma: no cover
                     )
                 else:
                     resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = 0
-                logger.info(resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"])
+            if as_dict:
+                return resp_dict
+            data = [resp_dict[i] for i in resp_dict]
             return transform.clean_decimal_dict_list(data)
 
         except Exception as e:  # pragma: no cover
