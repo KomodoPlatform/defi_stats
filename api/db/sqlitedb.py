@@ -67,6 +67,10 @@ class SqliteDB:  # pragma: no cover
     def connect(self):
         return sqlite3.connect(self.db_path)
 
+    def truncate_wal(self):  # pragma: no cover
+        sql = "PRAGMA wal_checkpoint(truncate);"
+        self.sql_cursor.execute(sql)
+
 
 class SqliteQuery:  # pragma: no cover
     def __init__(self, db, **kwargs):

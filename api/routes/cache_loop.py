@@ -232,3 +232,16 @@ def import_dbs():
             return default_error(e)
         msg = "Import source databases loop complete!"
         return default_result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def truncate_wal():
+    try:
+        merge = SqliteMerge()
+        merge.truncate_wal()
+    except Exception as e:
+        return default_error(e)
+    msg = "Database wal truncation loop complete!"
+    return default_result(msg=msg, loglevel="loop")
