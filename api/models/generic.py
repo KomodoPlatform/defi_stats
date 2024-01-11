@@ -117,6 +117,8 @@ class SwapItem(BaseModel):
     taker_coin_platform: str = "BEP20"
     maker_coin_usd_price: str = "777.777777"
     taker_coin_usd_price: str = "777.777777"
+    price: float = 777.777777
+    reverse_price: float = 777.777777
 
 
 class HealthCheck(BaseModel):

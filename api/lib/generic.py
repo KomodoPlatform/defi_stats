@@ -56,7 +56,6 @@ class Generic:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-            logger.info(self.db.db_path)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(
                 testing=self.testing,

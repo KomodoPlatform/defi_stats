@@ -291,12 +291,18 @@ class Pair:  # pragma: no cover
             swap_prices = self.get_swap_prices(swaps_for_pair)
 
             if len(swap_prices) > 0:
-                highest_price = max(swap_prices.values())
-                lowest_price = min(swap_prices.values())
+                swap_vals = list(swap_prices.values())
+                swap_keys = list(swap_prices.keys())
+                highest_price = max(swap_vals)
+                lowest_price = min(swap_vals)
                 newest_price = swap_prices[max(swap_prices.keys())]
                 oldest_price = swap_prices[min(swap_prices.keys())]
-                price_change = Decimal(newest_price) - Decimal(oldest_price)
-                pct_change = Decimal(newest_price) / Decimal(oldest_price) - 1
+                data["oldest_price"] = oldest_price
+                data["newest_price"] = newest_price
+                data["oldest_price_time"] = swap_keys[swap_vals.index(oldest_price)]
+                data["newest_price_time"] = swap_keys[swap_vals.index(newest_price)]
+                price_change = newest_price - oldest_price
+                pct_change = newest_price / oldest_price - 1
                 data[f"highest_price_{suffix}"] = highest_price
                 data[f"lowest_price_{suffix}"] = lowest_price
                 data["last_price"] = self.last_swap["last_price"]
@@ -349,7 +355,7 @@ class Pair:  # pragma: no cover
         # DEX has to provide the formula for +2/-2% depth.
         try:
             logger.muted(f"Getting ticker info for {self.as_str} on {self.netid}")
-            data = self.get_volumes_and_prices(days)
+            vol_price_data = self.get_volumes_and_prices(days)
             suffix = get_suffix(days)
             orderbook_data = self.orderbook_data
             liquidity = self.get_liquidity(orderbook_data)
@@ -357,32 +363,36 @@ class Pair:  # pragma: no cover
             resp = {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
-                f"trades_{suffix}": f'{data[f"trades_{suffix}"]}',
+                f"trades_{suffix}": f'{vol_price_data[f"trades_{suffix}"]}',
                 "base_currency": self.base,
-                "base_volume": data["base_volume"],
+                "base_volume": vol_price_data["base_volume"],
                 "base_usd_price": self.base_usd_price,
                 "target_currency": self.quote,
-                "target_volume": data["quote_volume"],
+                "target_volume": vol_price_data["quote_volume"],
                 "target_usd_price": self.quote_usd_price,
-                "last_price": format_10f(data["last_price"]),
-                "last_trade": f'{data["last_trade"]}',
-                "last_swap_uuid": f'{data["last_swap_uuid"]}',
+                "last_price": format_10f(vol_price_data["last_price"]),
+                "last_trade": f'{vol_price_data["last_trade"]}',
+                "last_swap_uuid": f'{vol_price_data["last_swap_uuid"]}',
+                "oldest_price": vol_price_data["oldest_price"],
+                "newest_price": vol_price_data["newest_price"],
+                "oldest_price_time": vol_price_data["oldest_price_time"],
+                "newest_price_time": vol_price_data["newest_price_time"],
                 "bid": self.orderbook.find_highest_bid(orderbook_data),
                 "ask": self.orderbook.find_lowest_ask(orderbook_data),
-                "high": format_10f(data[f"highest_price_{suffix}"]),
-                "low": format_10f(data[f"lowest_price_{suffix}"]),
-                f"volume_usd_{suffix}": format_10f(data["combined_volume_usd"]),
-                "base_volume_usd": format_10f(data["base_volume_usd"]),
-                "quote_volume_usd": format_10f(data["quote_volume_usd"]),
+                "high": format_10f(vol_price_data[f"highest_price_{suffix}"]),
+                "low": format_10f(vol_price_data[f"lowest_price_{suffix}"]),
+                f"volume_usd_{suffix}": format_10f(vol_price_data["combined_volume_usd"]),
+                "base_volume_usd": format_10f(vol_price_data["base_volume_usd"]),
+                "quote_volume_usd": format_10f(vol_price_data["quote_volume_usd"]),
                 "liquidity_in_usd": format_10f(liquidity["liquidity_usd"]),
                 "base_liquidity_coins": format_10f(liquidity["base_liquidity_coins"]),
                 "base_liquidity_usd": format_10f(liquidity["base_liquidity_usd"]),
                 "quote_liquidity_coins": format_10f(liquidity["rel_liquidity_coins"]),
                 "quote_liquidity_usd": format_10f(liquidity["rel_liquidity_usd"]),
-                f"price_change_percent_{suffix}": data[
+                f"price_change_percent_{suffix}": vol_price_data[
                     f"price_change_percent_{suffix}"
                 ],
-                f"price_change_{suffix}": data[f"price_change_{suffix}"],
+                f"price_change_{suffix}": vol_price_data[f"price_change_{suffix}"],
             }
             return resp
         except Exception as e:  # pragma: no cover

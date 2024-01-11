@@ -264,6 +264,9 @@ class SqliteQuery:  # pragma: no cover
             for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
                 if data[i] is None:  # pragma: no cover
                     data[i] = "0"
+            data["price"] = Decimal(data["taker_amount"] / data["maker_amount"])
+            data["reverse_price"] = Decimal(data["maker_amount"] / data["taker_amount"])
+
             return data
         except Exception as e:  # pragma: no cover
             return default_error(e)

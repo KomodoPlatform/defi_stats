@@ -37,6 +37,8 @@ from util.transform import (
     orderbook_to_gecko,
     historical_trades_to_gecko,
     order_pair_by_market_cap,
+    strip_pair_platforms,
+    strip_coin_platform,
 )
 from util.logger import logger
 
@@ -235,3 +237,13 @@ def test_get_top_items():
     ]
     assert get_top_items(data, "name", 2)[1]["name"] == "Jess"
     assert get_top_items(data, "age", 2)[1]["age"] == 4
+
+
+def test_strip_pair_platforms():
+    r = strip_pair_platforms("KMD-BEP20_DGB-segwit")
+    assert r == "KMD_DGB"
+
+
+def test_strip_coin_platform():
+    r = strip_coin_platform("USDC-PLG20")
+    assert r == "USDC"

@@ -263,6 +263,10 @@ def ticker_to_statsapi(i, suffix):
             "quote_trade_value_usd": Decimal(i["quote_volume_usd"]),
             "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
             "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
+            "newest_price": i["newest_price"],
+            "oldest_price": i["oldest_price"],
+            "newest_price_time": i["newest_price_time"],
+            "oldest_price_time": i["oldest_price_time"],
             "highest_bid": Decimal(i["bid"]),
             "lowest_ask": Decimal(i["ask"]),
             f"highest_price_{alt_suffix}": Decimal(i["high"]),
@@ -302,17 +306,35 @@ def historical_trades_to_gecko(i):
 
 def strip_pair_platforms(pair):
     coins = pair.split("_")
-    return f"{strip_platform(coins[0])}_{strip_platform(coins[1])}"
+    return f"{strip_coin_platform(coins[0])}_{strip_coin_platform(coins[1])}"
 
 
-def strip_platform(coin):
-    return coin.split("-")
+def strip_coin_platform(coin):
+    return coin.split("-")[0]
+
+
+def deplatform_pair_summary_item(i):
+    resp = {}
+    keys = i.keys()
+    for k in keys:
+        if k == "trading_pair":
+            resp.update({k: strip_pair_platforms(i[k])})
+        if k in ["base_currency", "quote_currency"]:
+            resp.update({k: strip_coin_platform(i[k])})
+        else:
+            resp.update({k: i[k]})
+    return resp
 
 
 def traded_cache_to_stats_api(traded_cache):
     resp = {}
     for i in traded_cache:
-        resp.update({strip_pair_platforms(i): traded_cache[i]})
+        cleaned_ticker = strip_pair_platforms(i)
+        if cleaned_ticker not in resp:
+            resp.update({cleaned_ticker: traded_cache[i]})
+        else:
+            if resp[cleaned_ticker]["last_swap"] < traded_cache[i]["last_swap"]:
+                resp.update({cleaned_ticker: traded_cache[i]})
     return resp
 
 
@@ -323,3 +345,17 @@ def reverse_ticker(ticker_id):
 def pairs_to_gecko(generic_data):
     # Remove unpriced
     return [i for i in generic_data if i["priced"]]
+
+
+def update_if_greater(existing, new, key, secondary_key=None):
+    if existing[key] < new[key]:
+        existing[key] = new[key]
+        if secondary_key is not None:
+            existing[secondary_key] = new[secondary_key]
+
+
+def update_if_lesser(existing, new, key, secondary_key=None):
+    if existing[key] > new[key]:
+        existing[key] = new[key]
+        if secondary_key is not None:
+            existing[secondary_key] = new[secondary_key]
