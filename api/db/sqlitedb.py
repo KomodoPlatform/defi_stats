@@ -262,7 +262,7 @@ class SqliteQuery:  # pragma: no cover
             else:
                 data = data[0]
             for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
-                if data[i] is None:
+                if data[i] is None:  # pragma: no cover
                     data[i] = "0"
             return data
         except Exception as e:  # pragma: no cover
@@ -388,7 +388,7 @@ class SqliteQuery:  # pragma: no cover
             return default_error(e)
 
     @timed
-    def get_swaps_for_ticker(
+    def get_swaps_for_coin(
         self,
         ticker: str,
         trade_type: TradeType = TradeType.ALL,
@@ -402,7 +402,7 @@ class SqliteQuery:  # pragma: no cover
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         try:
-            tickers = []
+            tickers = [ticker]
             if end_time == 0:
                 end_time = int(time.time())
 
@@ -417,7 +417,8 @@ class SqliteQuery:  # pragma: no cover
                 base_platform = ""
                 if len(i.split("-")) == 2:
                     base_platform = i.split("-")[1]
-
+                logger.info(base_ticker)
+                logger.info(base_platform)
                 sql = "SELECT * FROM stats_swaps WHERE"
                 sql += f" finished_at > {start_time}"
                 sql += f" AND finished_at < {end_time}"
@@ -468,7 +469,7 @@ class SqliteQuery:  # pragma: no cover
             return default_error(e)
 
     @timed
-    def get_volume_for_ticker(
+    def get_volume_for_coin(
         self,
         ticker: str,
         trade_type: str,

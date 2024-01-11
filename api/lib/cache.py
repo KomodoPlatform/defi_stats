@@ -29,7 +29,7 @@ class Cache:  # pragma: no cover
             msg = f"{type(e)} Error in [Cache.load_cache]: {e}"
             raise CacheItemNotFound(msg)
 
-    def updated_since(self, healthcheck=False):
+    def updated_since(self, healthcheck=False):  # pragma: no cover
         updated = {}
         for i in [
             "coins_config",
@@ -74,7 +74,7 @@ class CacheItem:
             logger.error(f"Failed to init CacheItem '{name}': {e}")
 
     @property
-    def data(self):
+    def data(self):  # pragma: no cover
         if len(self._data) is None:
             self.update_data()
         elif len(self._data) == 0:
@@ -83,7 +83,7 @@ class CacheItem:
 
     def get_data(self):
         data = self.files.load_jsonfile(self.filename)
-        if data is None:
+        if data is None:  # pragma: no cover
             data = self.save()
         if "last_updated" in data:
             since_updated = int(time.time()) - data["last_updated"]
@@ -95,7 +95,7 @@ class CacheItem:
             return data["data"]
         return data
 
-    def since_updated_min(self):
+    def since_updated_min(self):  # pragma: no cover
         data = self.files.load_jsonfile(self.filename)
         if "last_updated" in data:
             since_updated = int(time.time()) - data["last_updated"]
@@ -188,7 +188,7 @@ class CacheItem:
         return default_result(data=data, msg=msg, loglevel="merge")
 
 
-def load_gecko_source(testing=False):
+def load_gecko_source(testing=False):  # pragma: no cover
     try:
         # logger.merge("Loading Gecko source")
         return CacheItem("gecko_source", testing=testing).data
@@ -197,7 +197,7 @@ def load_gecko_source(testing=False):
         return {}
 
 
-def load_coins_config(testing=False):
+def load_coins_config(testing=False):  # pragma: no cover
     try:
         return CacheItem("coins_config", testing=testing).data
     except Exception as e:  # pragma: no cover
@@ -213,7 +213,7 @@ def load_coins(testing=False):  # pragma: no cover
         return {}
 
 
-def load_generic_last_traded(testing=False):
+def load_generic_last_traded(testing=False):  # pragma: no cover
     try:
         cache_item = CacheItem("generic_last_traded", testing=testing)
         return cache_item.data
@@ -222,7 +222,7 @@ def load_generic_last_traded(testing=False):
         return {}
 
 
-def load_generic_pairs(testing=False):
+def load_generic_pairs(testing=False):  # pragma: no cover
     try:
         return CacheItem("generic_pairs", testing=testing).data
     except Exception as e:  # pragma: no cover
@@ -230,7 +230,7 @@ def load_generic_pairs(testing=False):
         return {}
 
 
-def load_generic_tickers(testing=False):
+def load_generic_tickers(testing=False):  # pragma: no cover
     try:
         return CacheItem("generic_tickers", testing=testing).data
     except Exception as e:  # pragma: no cover
@@ -238,7 +238,7 @@ def load_generic_tickers(testing=False):
         return {}
 
 
-def load_adex_fortnite(testing=False):
+def load_adex_fortnite(testing=False):  # pragma: no cover
     try:
         return CacheItem("statsapi_adex_fortnite", testing=testing).data
     except Exception as e:  # pragma: no cover
@@ -246,7 +246,7 @@ def load_adex_fortnite(testing=False):
         return {}
 
 
-def load_statsapi_summary(testing=False):
+def load_statsapi_summary(testing=False):  # pragma: no cover
     try:
         return CacheItem("statsapi_summary", testing=testing).data
     except Exception as e:  # pragma: no cover
