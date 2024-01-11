@@ -14,7 +14,7 @@ from util.helper import (
     get_price_at_finish,
 )
 from util.logger import logger
-from fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_db import setup_swaps_db_data, setup_time
 
 
 def test_cache(setup_swaps_db_data):

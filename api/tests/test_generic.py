@@ -1,8 +1,8 @@
 import time
 import pytest
 from decimal import Decimal
-from fixtures_db import setup_swaps_db_data, setup_time
-from fixtures_data import swap_item
+from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_data import swap_item
 from util.helper import (
     get_mm2_rpc_port,
     get_netid_filename,
@@ -24,6 +24,11 @@ def test_orderbook(setup_swaps_db_data):
     assert len(r_all["quote"]) != len(r_all2["quote"])
     assert len(r_all["base"]) == len(r_all2["base"])
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
+
+    generic = Generic(db=setup_swaps_db_data, testing=True, netid="8762")
+    r = generic.orderbook("KMD_DOGE")
+    r2 = generic.orderbook("DOGE_KMD")
+    assert r["volume_usd_24hr"] == r2["volume_usd_24hr"]
 
     generic = Generic()
     r3 = generic.orderbook("KMD_DGB", depth=2)

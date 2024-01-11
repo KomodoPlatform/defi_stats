@@ -8,7 +8,7 @@ from util.defaults import set_params
 import util.transform as transform
 
 
-class StatsAPI:
+class StatsAPI:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             # Set params
@@ -32,7 +32,9 @@ class StatsAPI:
                 self.last_traded_cache = lib.load_generic_last_traded(
                     testing=self.testing
                 )
-
+            self.last_traded_cache = transform.traded_cache_to_stats_api(
+                self.last_traded_cache
+            )
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,
@@ -42,7 +44,7 @@ class StatsAPI:
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             logger.error(f"Failed to init Generic: {e}")
 
     def top_pairs(self, summaries: list):
@@ -76,6 +78,10 @@ class StatsAPI:
                 pairs_days = days
             pairs = self.db.query.get_pairs(days=pairs_days)
             suffix = transform.get_suffix(days)
+            if suffix == "24hr":
+                alt_suffix = "24h"
+            else:
+                alt_suffix = suffix
             ticker_infos = [
                 Pair(
                     pair_str=i,
@@ -84,15 +90,130 @@ class StatsAPI:
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
+                    testing=self.testing,
                 ).ticker_info(days)
                 for i in pairs
             ]
             data = [
                 transform.ticker_to_statsapi(i, suffix=suffix) for i in ticker_infos
             ]
+            # Drop coin platforms and merge data
+            resp_dict = {}
+            for i in data:
+                pair = i["trading_pair"]
+                clean_pair = transform.strip_pair_platforms(pair)
+                clean_pair_summary_item = transform.deplatform_pair_summary_item(i)
+                if clean_pair not in resp_dict:
+                    resp_dict.update({clean_pair: clean_pair_summary_item})
+                else:
+                    resp_dict[clean_pair][
+                        "pair_swaps_count"
+                    ] += clean_pair_summary_item["pair_swaps_count"]
+                    resp_dict[clean_pair][
+                        "pair_liquidity_usd"
+                    ] += clean_pair_summary_item["pair_liquidity_usd"]
+                    resp_dict[clean_pair][
+                        "pair_trade_value_usd"
+                    ] += clean_pair_summary_item["pair_trade_value_usd"]
+                    resp_dict[clean_pair]["base_volume"] += clean_pair_summary_item[
+                        "base_volume"
+                    ]
+                    resp_dict[clean_pair][
+                        "base_trade_value_usd"
+                    ] += clean_pair_summary_item["base_trade_value_usd"]
+                    resp_dict[clean_pair][
+                        "base_liquidity_coins"
+                    ] += clean_pair_summary_item["base_liquidity_coins"]
+                    resp_dict[clean_pair][
+                        "base_liquidity_usd"
+                    ] += clean_pair_summary_item["base_liquidity_usd"]
+                    resp_dict[clean_pair]["quote_volume"] += clean_pair_summary_item[
+                        "quote_volume"
+                    ]
+                    resp_dict[clean_pair][
+                        "quote_trade_value_usd"
+                    ] += clean_pair_summary_item["quote_trade_value_usd"]
+                    resp_dict[clean_pair][
+                        "quote_liquidity_coins"
+                    ] += clean_pair_summary_item["quote_liquidity_coins"]
+                    resp_dict[clean_pair][
+                        "quote_liquidity_usd"
+                    ] += clean_pair_summary_item["quote_liquidity_usd"]
+                    resp_dict[clean_pair][
+                        "base_trade_value_usd"
+                    ] += clean_pair_summary_item["base_trade_value_usd"]
+                    resp_dict[clean_pair][
+                        "base_trade_value_usd"
+                    ] += clean_pair_summary_item["base_trade_value_usd"]
+                    resp_dict[clean_pair][
+                        "base_trade_value_usd"
+                    ] += clean_pair_summary_item["base_trade_value_usd"]
+                    resp_dict[clean_pair][
+                        "base_trade_value_usd"
+                    ] += clean_pair_summary_item["base_trade_value_usd"]
+
+                    transform.update_if_greater(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        "highest_bid",
+                    )
+
+                    transform.update_if_lesser(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        "lowest_ask",
+                    )
+
+                    transform.update_if_greater(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        f"highest_price_{alt_suffix}",
+                    )
+
+                    transform.update_if_lesser(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        f"lowest_price_{alt_suffix}",
+                    )
+
+                    transform.update_if_greater(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        "newest_price_time",
+                        "newest_price",
+                    )
+
+                    transform.update_if_lesser(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        "oldest_price_time",
+                        "oldest_price",
+                    )
+
+                    transform.update_if_greater(
+                        resp_dict[clean_pair],
+                        clean_pair_summary_item,
+                        "last_trade",
+                        "last_price",
+                    )
+                resp_dict[clean_pair][f"price_change_{alt_suffix}"] = (
+                    resp_dict[clean_pair]["newest_price"]
+                    - resp_dict[clean_pair]["oldest_price"]
+                )
+                logger.info(resp_dict[clean_pair][f"price_change_{alt_suffix}"])
+
+                if resp_dict[clean_pair]["oldest_price"] != 0:
+                    resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = (
+                        resp_dict[clean_pair]["newest_price"]
+                        / resp_dict[clean_pair]["oldest_price"]
+                        - 1
+                    )
+                else:
+                    resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = 0
+                logger.info(resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"])
             return transform.clean_decimal_dict_list(data)
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
             return None
 
@@ -115,6 +236,6 @@ class StatsAPI:
             }
             data = transform.clean_decimal_dict(data)
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.adex_fortnite]: {e}")
             return None

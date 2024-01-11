@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal
-from fixtures_coin import (
+from tests.fixtures_coin import (
     setup_coin_btc,
     setup_coin_btc_bep20,
     setup_coin_ltc,

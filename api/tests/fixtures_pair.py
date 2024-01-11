@@ -2,11 +2,7 @@
 import pytest
 from lib.pair import Pair
 
-from lib.cache import (
-    load_gecko_source,
-    load_coins_config,
-    load_generic_last_traded
-)
+from lib.cache import load_gecko_source, load_coins_config, load_generic_last_traded
 
 coins_config = load_coins_config(testing=True)
 gecko_source = load_gecko_source(testing=True)
@@ -31,6 +27,19 @@ def setup_ltc_kmd_pair(setup_swaps_db_data):
     db = setup_swaps_db_data
     yield Pair(
         "LTC_KMD",
+        testing=True,
+        db=db,
+        coins_config=coins_config,
+        gecko_source=gecko_source,
+        generic_last_traded=generic_last_traded,
+    )
+
+
+@pytest.fixture
+def setup_morty_kmd_pair(setup_swaps_db_data):
+    db = setup_swaps_db_data
+    yield Pair(
+        "MORTY_KMD",
         testing=True,
         db=db,
         coins_config=coins_config,

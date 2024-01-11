@@ -1,18 +1,22 @@
 import pytest
 from decimal import Decimal
-from fixtures_transform import (
+from tests.fixtures_transform import (
+    setup_pairs_to_gecko,
+    setup_ticker_to_statsapi_24h,
+    setup_ticker_to_statsapi_7d,
     setup_ticker_to_market_ticker,
     setup_ticker_to_market_ticker_summary,
     setup_historical_trades_to_market_trades,
+    setup_ticker_to_gecko,
 )
-from fixtures_db import setup_swaps_db_data, setup_time
-from fixtures_class import setup_gecko
+from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_class import setup_gecko, setup_pairs_cache
 
-from fixtures_data import (
+from tests.fixtures_data import (
     historical_data,
     historical_trades,
     trades_info,
-    ticker_item,
+    get_ticker_item,
     dirty_dict,
     orderbook_as_string,
     orderbook_as_coords,
@@ -20,6 +24,7 @@ from fixtures_data import (
 
 from util.transform import (
     get_suffix,
+    get_top_items,
     clean_decimal_dict,
     clean_decimal_dict_list,
     round_to_str,
@@ -30,8 +35,12 @@ from util.transform import (
     sort_dict,
     format_10f,
     orderbook_to_gecko,
+    historical_trades_to_gecko,
     order_pair_by_market_cap,
+    strip_pair_platforms,
+    strip_coin_platform,
 )
+from util.logger import logger
 
 
 def test_format_10f():
@@ -42,7 +51,8 @@ def test_format_10f():
 
 def test_ticker_to_market_ticker_summary(setup_ticker_to_market_ticker_summary):
     x = setup_ticker_to_market_ticker_summary
-    assert x["trading_pair"] == "KMD_LTC"
+    ticker_item = get_ticker_item()
+    assert x["trading_pair"] == "DGB_LTC"
     assert x["quote_currency"] == "LTC"
     assert ticker_item["target_volume"] == x["quote_volume"]
     assert ticker_item["ticker_id"] == x["trading_pair"]
@@ -53,12 +63,34 @@ def test_ticker_to_market_ticker_summary(setup_ticker_to_market_ticker_summary):
 
 def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
     x = setup_ticker_to_market_ticker
+    ticker_item = get_ticker_item()
     ticker = ticker_item["ticker_id"]
     assert ticker in x
     assert x[ticker]["isFrozen"] == "0"
     assert x[ticker]["quote_volume"] == ticker_item["target_volume"]
     assert x[ticker]["base_volume"] == ticker_item["base_volume"]
     assert x[ticker]["last_price"] == ticker_item["last_price"]
+
+
+def test_ticker_to_gecko(setup_ticker_to_gecko):
+    x = setup_ticker_to_gecko
+    assert x["ticker_id"] == x["pool_id"]
+
+
+def test_ticker_to_statsapi(setup_ticker_to_statsapi_24h, setup_ticker_to_statsapi_7d):
+    x = setup_ticker_to_statsapi_7d
+    y = setup_ticker_to_statsapi_24h
+    logger.info(x)
+    logger.info(y)
+    assert x["trading_pair"] == y["trading_pair"]
+    assert "price_change_24h" in y
+    assert "price_change_7d" in x
+    assert "quote_price_usd" in x
+    assert "quote_price_usd" in y
+    assert "pair_liquidity_usd" in x
+    assert "pair_liquidity_usd" in y
+    assert isinstance(x["last_trade"], int)
+    assert isinstance(y["lowest_ask"], Decimal)
 
 
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
@@ -70,6 +102,27 @@ def test_historical_trades_to_market_trades(setup_historical_trades_to_market_tr
     assert trades_info[0]["target_volume"] == x["quote_volume"]
     assert trades_info[0]["timestamp"] == x["timestamp"]
     assert trades_info[0]["type"] == x["type"]
+
+
+def test_historical_trades_to_gecko():
+    x = historical_trades_to_gecko(trades_info[0])
+    assert trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+    assert trades_info[0]["trade_id"] == x["trade_id"]
+    assert trades_info[0]["price"] == x["price"]
+    assert trades_info[0]["base_volume"] == x["base_volume"]
+    assert trades_info[0]["target_volume"] == x["target_volume"]
+    assert trades_info[0]["timestamp"] == x["timestamp"]
+    assert trades_info[0]["type"] == x["type"]
+
+
+def test_pairs_to_gecko(setup_pairs_to_gecko):
+    x = setup_pairs_to_gecko
+    logger.info(x)
+    assert "DGB_LTC" in [i["pool_id"] for i in x]
+    assert "KMD_DOGE" in [i["pool_id"] for i in x]
+    assert "DGB_LTC-segwit" not in [i["pool_id"] for i in x]
+    assert "MORTY_KMD" not in [i["pool_id"] for i in x]
+    assert "XXX" not in [i["pool_id"] for i in x]
 
 
 def test_round_to_str():
@@ -157,3 +210,40 @@ def test_order_pair_by_market_cap(setup_gecko):
 
     assert a == c
     assert b == d
+
+
+def test_get_top_items():
+    data = [
+        {
+            "name": "Bob",
+            "age": 1,
+        },
+        {
+            "name": "Alice",
+            "age": 2,
+        },
+        {
+            "name": "Jess",
+            "age": 3,
+        },
+        {
+            "name": "Zelda",
+            "age": 4,
+        },
+        {
+            "name": "April",
+            "age": 5,
+        },
+    ]
+    assert get_top_items(data, "name", 2)[1]["name"] == "Jess"
+    assert get_top_items(data, "age", 2)[1]["age"] == 4
+
+
+def test_strip_pair_platforms():
+    r = strip_pair_platforms("KMD-BEP20_DGB-segwit")
+    assert r == "KMD_DGB"
+
+
+def test_strip_coin_platform():
+    r = strip_coin_platform("USDC-PLG20")
+    assert r == "USDC"

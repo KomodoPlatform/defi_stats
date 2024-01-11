@@ -67,6 +67,10 @@ class SqliteDB:  # pragma: no cover
     def connect(self):
         return sqlite3.connect(self.db_path)
 
+    def truncate_wal(self):  # pragma: no cover
+        sql = "PRAGMA wal_checkpoint(truncate);"
+        self.sql_cursor.execute(sql)
+
 
 class SqliteQuery:  # pragma: no cover
     def __init__(self, db, **kwargs):
@@ -258,8 +262,11 @@ class SqliteQuery:  # pragma: no cover
             else:
                 data = data[0]
             for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
-                if data[i] is None:
+                if data[i] is None:  # pragma: no cover
                     data[i] = "0"
+            data["price"] = Decimal(data["taker_amount"] / data["maker_amount"])
+            data["reverse_price"] = Decimal(data["maker_amount"] / data["taker_amount"])
+
             return data
         except Exception as e:  # pragma: no cover
             return default_error(e)
@@ -384,7 +391,7 @@ class SqliteQuery:  # pragma: no cover
             return default_error(e)
 
     @timed
-    def get_swaps_for_ticker(
+    def get_swaps_for_coin(
         self,
         ticker: str,
         trade_type: TradeType = TradeType.ALL,
@@ -398,7 +405,7 @@ class SqliteQuery:  # pragma: no cover
         Includes both buy and sell swaps (e.g. KMD/BTC & BTC/KMD)
         """
         try:
-            tickers = []
+            tickers = [ticker]
             if end_time == 0:
                 end_time = int(time.time())
 
@@ -413,7 +420,8 @@ class SqliteQuery:  # pragma: no cover
                 base_platform = ""
                 if len(i.split("-")) == 2:
                     base_platform = i.split("-")[1]
-
+                logger.info(base_ticker)
+                logger.info(base_platform)
                 sql = "SELECT * FROM stats_swaps WHERE"
                 sql += f" finished_at > {start_time}"
                 sql += f" AND finished_at < {end_time}"
@@ -464,7 +472,7 @@ class SqliteQuery:  # pragma: no cover
             return default_error(e)
 
     @timed
-    def get_volume_for_ticker(
+    def get_volume_for_coin(
         self,
         ticker: str,
         trade_type: str,

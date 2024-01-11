@@ -10,6 +10,7 @@ from const import (
     MM2_DB_PATHS,
     DB_SOURCE_PATH,
     DB_CLEAN_PATH,
+    DB_MASTER_PATH,
     compare_fields,
 )
 from db.sqlitedb import (
@@ -434,6 +435,22 @@ class SqliteMerge:
         except Exception as e:  # pragma: no cover
             return default_error(e)
         msg = f"Table 'stats_swaps' init for {db.db_file} complete..."
+        return default_result(msg=msg, loglevel="merge", ignore_until=10)
+
+    @timed
+    def truncate_wal(self):
+        source_dbs = list_sqlite_dbs(DB_SOURCE_PATH)
+        for fn in source_dbs:
+            src_db_path = f"{DB_SOURCE_PATH}/{fn}"
+            src_db = get_sqlite_db(db_path=src_db_path)
+            src_db.truncate_wal()
+
+        master_dbs = list_sqlite_dbs(DB_MASTER_PATH)
+        for fn in master_dbs:
+            master_db_path = f"{DB_MASTER_PATH}/{fn}"
+            master_db = get_sqlite_db(db_path=master_db_path)
+            master_db.truncate_wal()
+        msg = "Database wal truncation complete..."
         return default_result(msg=msg, loglevel="merge", ignore_until=10)
 
 

@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 import time
 import sqlite3
-from fixtures_class import (
-    helper,
-)
-from util.logger import logger
-
-from fixtures_data import swap_item, swap_item2
-from fixtures_db import (
-    setup_actual_db,
-    setup_swaps_db_data,
-    setup_time,
-)
-from util.transform import merge_orderbooks, format_10f
-
 from db.sqlitedb import (
     is_source_db,
     get_sqlite_db,
@@ -22,6 +9,18 @@ from db.sqlitedb import (
     get_netid,
     compare_uuid_fields,
 )
+from tests.fixtures_class import (
+    helper,
+)
+from tests.fixtures_data import swap_item, swap_item2
+from tests.fixtures_db import (
+    setup_actual_db,
+    setup_swaps_db_data,
+    setup_time,
+)
+from util.logger import logger
+from util.transform import merge_orderbooks, format_10f
+
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
 now = int(time.time())
@@ -82,6 +81,8 @@ def test_get_swap(setup_swaps_db_data):
     assert r["taker_coin"] == "KMD"
     assert r["maker_amount"] == 10
     assert r["taker_amount"] == 1
+    r = DB.query.get_swap("x")
+    assert "error" in r
 
 
 def test_is_source_db():
@@ -127,3 +128,50 @@ def test_get_netid():
     assert get_netid("file_MM2.db") == "8762"
     assert get_netid("seed_file.db") == "7777"
     assert get_netid("node_file.db") == "ALL"
+
+
+def test_get_row_count(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    assert DB.query.get_row_count("stats_swaps") == 15
+
+
+def test_swap_counts(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.swap_counts()
+    assert len(r) == 3
+    assert r["swaps_all_time"] == 14
+    assert r["swaps_30d"] == 11
+    assert r["swaps_24hr"] == 8
+
+
+def test_get_swaps_for_coin(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_swaps_for_coin("KMD")
+    assert len(r) == 5
+
+    r = DB.query.get_swaps_for_coin("LTC")
+    assert len(r) == 4
+
+
+def test_get_volume_for_coin(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_volume_for_coin("LTC", "buy")
+    logger.info(r)
+    assert r == 30
+
+    r = DB.query.get_volume_for_coin("KMD", "sell")
+    logger.info(r)
+    assert r == 2
+
+
+def test_get_uuids(setup_swaps_db_data):
+    DB = setup_swaps_db_data
+    r = DB.query.get_uuids(success_only=True)
+    logger.info(r)
+    assert len(r) == 14
+    r = DB.query.get_uuids(fail_only=True)
+    logger.info(r)
+    assert len(r) == 1
+    r = DB.query.get_uuids(success_only=False)
+    logger.info(r)
+    assert len(r) == 15

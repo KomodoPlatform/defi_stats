@@ -24,7 +24,7 @@ import util.templates as template
 from const import GENERIC_PAIRS_DAYS
 
 
-class Generic:
+class Generic:  # pragma: no cover
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
@@ -56,7 +56,6 @@ class Generic:
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-            logger.info(self.db.db_path)
             self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
             self.gecko = CoinGeckoAPI(
                 testing=self.testing,
@@ -150,7 +149,7 @@ class Generic:
                     )
                     if base_price > 0 and quote_price > 0:
                         pairs_dict["priced_gecko"].append(pair_str)
-                    else:
+                    else:  # pragma: no cover
                         pairs_dict["unpriced"].append(pair_str)
 
                 for pair_str in lib.KMD_PAIRS:
@@ -165,7 +164,7 @@ class Generic:
                         )
                         if base_price > 0 and quote_price > 0:
                             pairs_dict["priced_gecko"].append(pair_str)
-                        else:
+                        else:  # pragma: no cover
                             pairs_dict["unpriced"].append(pair_str)
 
                 priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)

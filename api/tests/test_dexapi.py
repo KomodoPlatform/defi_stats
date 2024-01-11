@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from fixtures_class import setup_dexapi
+from tests.fixtures_class import setup_dexapi
 from lib.dex_api import DexAPI
 
 

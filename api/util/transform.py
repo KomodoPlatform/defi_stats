@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
-from typing import Any, List
+from typing import Any, List, Dict
 from util.defaults import default_error
 import lib
 
@@ -116,7 +116,7 @@ def sort_dict(data: dict, reverse=False) -> dict:
     return resp
 
 
-def get_top_items(data, sort_key, length=5):
+def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
     data.sort(key=lambda x: x[sort_key], reverse=True)
     return data[:length]
 
@@ -127,12 +127,8 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) ->
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_mc = lib.get_gecko_mcap(
-            base, gecko_source=gecko_source, testing=testing
-        )
-        quote_mc = lib.get_gecko_mcap(
-            quote, gecko_source=gecko_source, testing=testing
-        )
+        base_mc = lib.get_gecko_mcap(base, gecko_source=gecko_source, testing=testing)
+        quote_mc = lib.get_gecko_mcap(quote, gecko_source=gecko_source, testing=testing)
         if quote_mc < base_mc:
             pair_str = reverse_ticker(pair_str)
         elif quote_mc == base_mc:
@@ -267,6 +263,10 @@ def ticker_to_statsapi(i, suffix):
             "quote_trade_value_usd": Decimal(i["quote_volume_usd"]),
             "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
             "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
+            "newest_price": i["newest_price"],
+            "oldest_price": i["oldest_price"],
+            "newest_price_time": i["newest_price_time"],
+            "oldest_price_time": i["oldest_price_time"],
             "highest_bid": Decimal(i["bid"]),
             "lowest_ask": Decimal(i["ask"]),
             f"highest_price_{alt_suffix}": Decimal(i["high"]),
@@ -304,6 +304,40 @@ def historical_trades_to_gecko(i):
     }
 
 
+def strip_pair_platforms(pair):
+    coins = pair.split("_")
+    return f"{strip_coin_platform(coins[0])}_{strip_coin_platform(coins[1])}"
+
+
+def strip_coin_platform(coin):
+    return coin.split("-")[0]
+
+
+def deplatform_pair_summary_item(i):
+    resp = {}
+    keys = i.keys()
+    for k in keys:
+        if k == "trading_pair":
+            resp.update({k: strip_pair_platforms(i[k])})
+        if k in ["base_currency", "quote_currency"]:
+            resp.update({k: strip_coin_platform(i[k])})
+        else:
+            resp.update({k: i[k]})
+    return resp
+
+
+def traded_cache_to_stats_api(traded_cache):
+    resp = {}
+    for i in traded_cache:
+        cleaned_ticker = strip_pair_platforms(i)
+        if cleaned_ticker not in resp:
+            resp.update({cleaned_ticker: traded_cache[i]})
+        else:
+            if resp[cleaned_ticker]["last_swap"] < traded_cache[i]["last_swap"]:
+                resp.update({cleaned_ticker: traded_cache[i]})
+    return resp
+
+
 def reverse_ticker(ticker_id):
     return "_".join(ticker_id.split("_")[::-1])
 
@@ -311,3 +345,17 @@ def reverse_ticker(ticker_id):
 def pairs_to_gecko(generic_data):
     # Remove unpriced
     return [i for i in generic_data if i["priced"]]
+
+
+def update_if_greater(existing, new, key, secondary_key=None):
+    if existing[key] < new[key]:
+        existing[key] = new[key]
+        if secondary_key is not None:
+            existing[secondary_key] = new[secondary_key]
+
+
+def update_if_lesser(existing, new, key, secondary_key=None):
+    if existing[key] > new[key]:
+        existing[key] = new[key]
+        if secondary_key is not None:
+            existing[secondary_key] = new[secondary_key]

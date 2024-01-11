@@ -2,11 +2,11 @@
 import time
 from decimal import Decimal
 from util.logger import logger
-from fixtures_class import setup_files
+from tests.fixtures_class import setup_files
 
-from fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_db import setup_swaps_db_data, setup_time
 
-from fixtures_pair import (
+from tests.fixtures_pair import (
     setup_kmd_dgb_pair,
     setup_dgb_kmd_pair,
     setup_kmd_ltc_pair,
@@ -17,7 +17,7 @@ from fixtures_pair import (
     setup_not_existing_pair,
 )
 
-from fixtures_orderbook import (
+from tests.fixtures_orderbook import (
     setup_dgb_kmd_orderbook,
     setup_kmd_dgb_orderbook,
     setup_kmd_ltc_orderbook,

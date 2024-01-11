@@ -73,4 +73,8 @@ def volumes_and_prices(suffix):
         f"price_change_percent_{suffix}": 0,
         f"price_change_{suffix}": 0,
         "last_swap_uuid": "",
+        "oldest_price": 0,
+        "newest_price": 0,
+        "oldest_price_time": 0,
+        "newest_price_time": 0
     }
