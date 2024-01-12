@@ -16,9 +16,9 @@ class CoinGeckoAPI:
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
-            self.files = Files(testing=self.testing)
+            self.files = Files()
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
             if "gecko_source" in kwargs:

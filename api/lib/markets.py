@@ -17,7 +17,6 @@ class Markets:
             set_params(self, self.kwargs, self.options)
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                 )

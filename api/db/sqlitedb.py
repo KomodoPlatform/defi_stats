@@ -24,7 +24,7 @@ class SqliteDB:  # pragma: no cover
             self.db_path = db_path
             self.db_file = basename(self.db_path)
             self.netid = get_netid(self.db_file)
-            self.options = ["testing", "wal", "netid"]
+            self.options = ["wal", "netid"]
             set_params(self, self.kwargs, self.options)
 
             if "last_traded_cache" in kwargs:
@@ -74,7 +74,7 @@ class SqliteQuery:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid"]
+            self.options = ["netid"]
             set_params(self, self.kwargs, self.options)
             self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.db = db
@@ -606,9 +606,9 @@ class SqliteUpdate:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid"]
+            self.options = ["netid"]
             set_params(self, self.kwargs, self.options)
-            self.files = Files(testing=self.testing)
+            self.files = Files()
             self.db = db
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
@@ -766,7 +766,7 @@ class SqliteUpdate:  # pragma: no cover
 
 
 def get_sqlite_db(
-    db_path=None, testing: bool = False, netid=None, db=None, **kwargs
+    db_path=None, netid=None, db=None, **kwargs
 ):  # pragma: no cover
     if db is not None:
         return db
@@ -774,7 +774,7 @@ def get_sqlite_db(
         db_path = get_sqlite_db_paths(netid)
     if db_path is None:
         logger.warning("DB path is none")
-    db = SqliteDB(db_path=db_path, testing=testing, **kwargs)
+    db = SqliteDB(db_path=db_path, **kwargs)
     # logger.info(f"Connected to DB [{db.db_path}]")
     return db
 

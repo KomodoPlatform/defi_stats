@@ -122,13 +122,13 @@ def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
 
 
 @timed
-def order_pair_by_market_cap(pair_str: str, gecko_source=None, testing=False) -> str:
+def order_pair_by_market_cap(pair_str: str, gecko_source=None) -> str:
     try:
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_mc = lib.get_gecko_mcap(base, gecko_source=gecko_source, testing=testing)
-        quote_mc = lib.get_gecko_mcap(quote, gecko_source=gecko_source, testing=testing)
+        base_mc = lib.get_gecko_mcap(base, gecko_source=gecko_source)
+        quote_mc = lib.get_gecko_mcap(quote, gecko_source=gecko_source)
         if quote_mc < base_mc:
             pair_str = reverse_ticker(pair_str)
         elif quote_mc == base_mc:

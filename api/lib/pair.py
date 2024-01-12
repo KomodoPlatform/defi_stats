@@ -34,7 +34,7 @@ class Pair:  # pragma: no cover
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "mm2_host", "db"]
+            self.options = ["netid", "mm2_host", "db"]
             set_params(self, self.kwargs, self.options)
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
@@ -58,7 +58,6 @@ class Pair:  # pragma: no cover
 
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                     coins_config=self.coins_config,
@@ -463,7 +462,7 @@ class Pair:  # pragma: no cover
 
 
 @timed
-def get_all_coin_pairs(coin, priced_coins, testing=False):
+def get_all_coin_pairs(coin, priced_coins):
     try:
         gecko_source = lib.load_gecko_source()
         pairs = [

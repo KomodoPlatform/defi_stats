@@ -19,7 +19,7 @@ class Orderbook:
             self.pair = pair_obj
             self.base = self.pair.base
             self.quote = self.pair.quote
-            self.options = ["testing", "netid", "mm2_host"]
+            self.options = ["netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
@@ -39,13 +39,11 @@ class Orderbook:
                 )
                 self.last_traded_cache = lib.load_generic_last_traded()
 
-            self.files = Files(testing=self.testing)
+            self.files = Files(**kwargs)
             segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.base_is_segwit_coin = self.base in segwit_coins
             self.quote_is_segwit_coin = self.quote in segwit_coins
-            self.dexapi = DexAPI(
-                testing=self.testing, mm2_host=self.mm2_host, netid=self.netid
-            )
+            self.dexapi = DexAPI(**kwargs)
             self.orderbook_template = template.orderbook(
                 self.pair.as_str, self.pair.inverse_requested
             )

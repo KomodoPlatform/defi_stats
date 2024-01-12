@@ -14,7 +14,7 @@ class Coin:
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
@@ -94,7 +94,7 @@ class Coin:
         return data
 
 
-def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
+def get_gecko_price(ticker, gecko_source=None) -> float:
     try:
         if gecko_source is None:
             gecko_source = load_gecko_source()
@@ -107,7 +107,7 @@ def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
     return Decimal(0)  # pragma: no cover
 
 
-def get_gecko_mcap(ticker, gecko_source=None, testing=False) -> float:
+def get_gecko_mcap(ticker, gecko_source=None) -> float:
     try:
         if gecko_source is None:
             gecko_source = load_gecko_source()

@@ -6,7 +6,7 @@ from lib.cache import load_coins_config, load_gecko_source, load_generic_last_tr
 
 @dataclass
 class Coins:  # pragma: no cover
-    def __init__(self, testing=False):
+    def __init__(self):
         coins_config = load_coins_config()
         gecko_source = load_gecko_source()
         last_traded_cache = load_generic_last_traded()

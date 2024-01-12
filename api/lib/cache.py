@@ -57,10 +57,10 @@ class CacheItem:
         try:
             self.name = name
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
 
-            self.files = Files(testing=self.testing, netid=self.netid)
+            self.files = Files(netid=self.netid)
             self.filename = self.files.get_cache_fn(name)
             if self.filename is None:
                 raise CacheFilenameNotFound(
@@ -132,38 +132,38 @@ class CacheItem:
 
                 if self.name == "gecko_tickers":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_tickers(pairs_days=7)
 
                 if self.name == "statsapi_adex_fortnite":
-                    data = StatsAPI(db=self.db, testing=self.testing).adex_fortnite()
+                    data = StatsAPI(db=self.db).adex_fortnite()
 
                 if self.name == "statsapi_summary":
-                    data = StatsAPI(db=self.db, testing=self.testing).pair_summaries()
+                    data = StatsAPI(db=self.db).pair_summaries()
 
                 if self.name == "generic_tickers":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_tickers()
 
                 if self.name == "generic_last_traded":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).last_traded()
 
                 if self.name == "generic_pairs":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_pairs_info()
 
                 if self.name == "markets_pairs":
                     data = Markets(
-                        netid=self.netid, db=self.db, testing=self.testing
+                        netid=self.netid, db=self.db
                     ).pairs(days=MARKETS_PAIRS_DAYS)
 
                 if self.name == "markets_tickers":
                     data = Markets(
-                        netid=self.netid, db=self.db, testing=self.testing
+                        netid=self.netid, db=self.db
                     ).tickers(pairs_days=MARKETS_PAIRS_DAYS)
 
             if data is not None:

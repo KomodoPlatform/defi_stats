@@ -13,7 +13,7 @@ class StatsAPI:  # pragma: no cover
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing", "db"]
+            self.options = ["db"]
             self.netid = "ALL"
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
@@ -35,7 +35,6 @@ class StatsAPI:  # pragma: no cover
             )
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                     coins_config=self.coins_config,
@@ -88,7 +87,6 @@ class StatsAPI:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                    testing=self.testing,
                 ).ticker_info(days)
                 for i in pairs
             ]

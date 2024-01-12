@@ -47,7 +47,5 @@ class SqlUpdate(SqlDB):
         SqlDB.__init__(self, db_type=db_type, db_path=db_path)
 
 
-
-
 if __name__ == "__main__":
     pgsql = SqlUpdate("pgsql")

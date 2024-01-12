@@ -20,53 +20,53 @@ import lib
 
 @pytest.fixture
 def setup_dexapi():
-    yield DexAPI(testing=True)
+    yield DexAPI()
 
 
 @pytest.fixture
 def setup_statsapi(setup_swaps_db_data):
     db = setup_swaps_db_data
-    yield StatsAPI(testing=True, db=db)
+    yield StatsAPI(db=db)
 
 
 @pytest.fixture
 def setup_markets():
-    yield Markets(testing=True)
+    yield Markets()
 
 
 @pytest.fixture
 def setup_cache_item():
-    yield lib.CacheItem(testing=True)
+    yield lib.CacheItem()
 
 
 @pytest.fixture
 def setup_pairs_cache():
-    yield lib.CacheItem("generic_pairs", testing=True).data
+    yield lib.CacheItem("generic_pairs", ).data
 
 
 @pytest.fixture
 def setup_last_traded_cache():
-    yield lib.CacheItem("generic_last_traded", testing=True).data
+    yield lib.CacheItem("generic_last_traded", ).data
 
 
 @pytest.fixture
 def setup_files():
-    yield Files(testing=True)
+    yield Files()
 
 
 @pytest.fixture
 def setup_urls():
-    yield Urls(testing=True)
+    yield Urls()
 
 
 @pytest.fixture
 def setup_cache():
-    yield Cache(testing=True)
+    yield Cache()
 
 
 @pytest.fixture
 def setup_gecko():
-    yield CoinGeckoAPI(testing=True)
+    yield CoinGeckoAPI()
 
 
 @pytest.fixture

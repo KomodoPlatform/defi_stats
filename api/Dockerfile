@@ -26,3 +26,7 @@ RUN addgroup --gid ${GROUP_ID} notarygroup
 RUN adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} komodian
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 WORKDIR /home/komodian/api
+# Setup user and working directory
+RUN chown -R komodian:notarygroup /home/komodian
+USER komodian
+

@@ -78,7 +78,7 @@ def test_validate_orderbook_pair():
 
 
 def test_validate_loop_data():
-    cache_item = lib.CacheItem("test", testing=True)
+    cache_item = lib.CacheItem("test")
     data = {"error": "foo"}
     assert not validate_loop_data(data, cache_item)
     data = {}

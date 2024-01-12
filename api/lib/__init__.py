@@ -13,12 +13,10 @@ from lib.cache import (
     load_adex_fortnite,
     load_statsapi_summary,
 )
-from const import IS_TESTING
 
-
-COINS = Coins(testing=IS_TESTING)
+COINS = Coins()
 PRICED_COINS = list(set([i.coin.replace("-segwit", "") for i in COINS.with_price]))
-KMD_PAIRS = get_all_coin_pairs("KMD", PRICED_COINS, testing=IS_TESTING)
+KMD_PAIRS = get_all_coin_pairs("KMD", PRICED_COINS)
 KMD_PAIRS.sort()
 KMD_PAIRS_INFO = [
     i for i in KMD_PAIRS

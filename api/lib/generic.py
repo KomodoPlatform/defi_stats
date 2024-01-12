@@ -28,7 +28,7 @@ class Generic:  # pragma: no cover
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
 
             if "gecko_source" in kwargs:
@@ -47,20 +47,14 @@ class Generic:  # pragma: no cover
                 self.last_traded_cache = lib.load_generic_last_traded()
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-            self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
-            self.gecko = CoinGeckoAPI(
-                testing=self.testing,
-                gecko_source=self.gecko_source,
-                coins_config=self.coins_config,
-                last_traded_cache=self.last_traded_cache,
-            )
+            self.files = Files(**kwargs)
+            self.gecko = CoinGeckoAPI(**kwargs)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 

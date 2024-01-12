@@ -1,11 +1,14 @@
 import time
 from util.exceptions import NoDefaultForKeyError
 from const import DEXAPI_8762_HOST, IS_TESTING
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def arg_defaults():
     val_keys = {
-        "false": ["reverse", "testing"],
+        "false": ["reverse"],
         "true": ["wal", "order_by_mcap"],
         "none": ["source_url", "db_path", "db"],
         "now": ["end"],
@@ -61,7 +64,6 @@ def set_params(object: object(), kwargs: dict(), options: list()) -> None:
             if arg in options:
                 if getattr(object, arg, "unset") == "unset":
                     setattr(object, arg, default_val(arg))
-
     except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"
         return default_error(e.msg)

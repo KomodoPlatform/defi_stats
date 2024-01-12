@@ -12,10 +12,20 @@ load_dotenv()
 # - process: runs only the database sourcing / processing
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
 
-if "IS_TESTING" in os.environ:
+if os.getenv("IS_TESTING") == 'True':
     IS_TESTING = True
 else:
     IS_TESTING = False
+
+if IS_TESTING:
+    DEXAPI_7777_HOST = "http://127.0.0.1"
+    DEXAPI_8762_HOST = "http://127.0.0.1"
+else:
+    DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
+    DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
+
+DEXAPI_7777_PORT = os.getenv("DEXAPI_7777_PORT")
+DEXAPI_8762_PORT = os.getenv("DEXAPI_8762_PORT")
 
 # Project path URLs
 API_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -73,15 +83,6 @@ MM2_DB_PATHS = {
     "local_7777_backup": LOCAL_MM2_DB_BACKUP_7777,
     "local_8762_backup": LOCAL_MM2_DB_BACKUP_8762,
 }
-if IS_TESTING:
-    DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
-    DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
-else:
-    DEXAPI_7777_HOST = "http://127.0.0.1"
-    DEXAPI_8762_HOST = "http://127.0.0.1"
-
-DEXAPI_7777_PORT = os.getenv("DEXAPI_7777_PORT")
-DEXAPI_8762_PORT = os.getenv("DEXAPI_8762_PORT")
 
 # KomodoPlatform DeFi API config.
 MM2_RPC_PORTS = {
