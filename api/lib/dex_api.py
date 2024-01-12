@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import requests
 from util.files import Files
-from const import API_ROOT_PATH, MM2_RPC_PORTS
+from const import API_ROOT_PATH, MM2_RPC_PORTS, MM2_RPC_HOSTS
 from util.logger import logger, timed
 from util.defaults import set_params, default_error
 import util.templates as template
@@ -11,13 +11,15 @@ class DexAPI:
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "mm2_host"]
+            self.options = ["netid"]
             set_params(self, self.kwargs, self.options)
+
             if self.netid == "ALL":  # pragma: no cover
                 self.netid = "8762"
+            self.mm2_host = MM2_RPC_HOSTS[self.netid]
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
-            self.files = Files(testing=self.testing)
+            self.files = Files()
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init DexAPI: {e}")
 

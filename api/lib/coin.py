@@ -14,24 +14,23 @@ class Coin:
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
-
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = load_gecko_source(testing=self.testing)
+                self.gecko_source = load_gecko_source()
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = load_coins_config(testing=self.testing)
+                self.coins_config = load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = load_generic_last_traded(testing=self.testing)
+                self.last_traded_cache = load_generic_last_traded()
 
             # Designate coin
             if self.coin in self.coins_config:
@@ -95,10 +94,10 @@ class Coin:
         return data
 
 
-def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
+def get_gecko_price(ticker, gecko_source=None) -> float:
     try:
         if gecko_source is None:
-            gecko_source = load_gecko_source(testing=testing)
+            gecko_source = load_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_price"])
     except KeyError as e:  # pragma: no cover
@@ -108,10 +107,10 @@ def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
     return Decimal(0)  # pragma: no cover
 
 
-def get_gecko_mcap(ticker, gecko_source=None, testing=False) -> float:
+def get_gecko_mcap(ticker, gecko_source=None) -> float:
     try:
         if gecko_source is None:
-            gecko_source = load_gecko_source(testing=testing)
+            gecko_source = load_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_market_cap"])
     except KeyError as e:  # pragma: no cover

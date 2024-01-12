@@ -34,36 +34,30 @@ class Pair:  # pragma: no cover
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "mm2_host", "db"]
+            self.options = ["netid", "mm2_host", "db"]
             set_params(self, self.kwargs, self.options)
-
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
 
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                     coins_config=self.coins_config,
@@ -468,9 +462,9 @@ class Pair:  # pragma: no cover
 
 
 @timed
-def get_all_coin_pairs(coin, priced_coins, testing=False):
+def get_all_coin_pairs(coin, priced_coins):
     try:
-        gecko_source = lib.load_gecko_source(testing=testing)
+        gecko_source = lib.load_gecko_source()
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]

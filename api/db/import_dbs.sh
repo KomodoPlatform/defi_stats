@@ -14,15 +14,20 @@ source "${project_folder}/api/.env"
 echo "Node type is: $NODE_TYPE"
 if [ $NODE_TYPE = 'serve' ]; then
     echo "Sourcing pre-processed master databases"
+    # Import cleaned, pre-processed source databases from the processing server (test.defi-stats.komodo.earth)
     rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_7777.db                     "${project_folder}/api/db/source/MM2_7777.db"
-    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_7777.db" --dest "${project_folder}/api/db/master/MM2_7777.db"
     rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_8762.db                     "${project_folder}/api/db/source/MM2_8762.db"
-    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_8762.db" --dest "${project_folder}/api/db/master/MM2_8762.db"
     rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_all.db                      "${project_folder}/api/db/source/MM2_all.db"
-    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_all.db" --dest  "${project_folder}/api/db/master/MM2_all.db"
+    # Backup cleaned, pre-processed source databases into 'master' db folder
+    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_7777.db" --dest "${project_folder}/api/db/master/MM2_7777.db"
+    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_8762.db" --dest "${project_folder}/api/db/master/MM2_8762.db"
+    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_all.db" --dest "${project_folder}/api/db/master/MM2_all.db"
+    # If we need to process local dbs, they should be exported to test.defi-stats.komodo.earth
+    # /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${HOST_LOCAL_MM2_DB_PATH_7777}"              --dest "${project_folder}/api/db/local/MM2_8762.db"
+    # /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${HOST_LOCAL_MM2_DB_PATH_8762}"              --dest "${project_folder}/api/db/local/MM2_7777.db"
 else
-    # MM2.db from each seednode is mustered on the stats-api.atomicdex.io server
-    echo "Sourcing seed node source databases"
+    # Import raw source databases from their respective servers for processing on test.defi-stats.komodo.earth
+    echo "Sourcing seed node source databases for processing"
     rsync -avzP atomic@stats-api.atomicdex.io:/DB/43ec929fe30ee72be42c9162c56dde910a05e50d/MM2.db     /home/${username}/defi_stats/api/db/source/seed7_MM2.db
     rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/seed2_MM2.db                            /home/${username}/defi_stats/api/db/source/seed2_MM2.db
     rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/seed3_MM2.db                            /home/${username}/defi_stats/api/db/source/seed3_MM2.db

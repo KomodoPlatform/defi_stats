@@ -17,7 +17,7 @@ class Cache:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
@@ -57,10 +57,10 @@ class CacheItem:
         try:
             self.name = name
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
 
-            self.files = Files(testing=self.testing, netid=self.netid)
+            self.files = Files(netid=self.netid)
             self.filename = self.files.get_cache_fn(name)
             if self.filename is None:
                 raise CacheFilenameNotFound(
@@ -132,38 +132,38 @@ class CacheItem:
 
                 if self.name == "gecko_tickers":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_tickers(pairs_days=7)
 
                 if self.name == "statsapi_adex_fortnite":
-                    data = StatsAPI(db=self.db, testing=self.testing).adex_fortnite()
+                    data = StatsAPI(db=self.db).adex_fortnite()
 
                 if self.name == "statsapi_summary":
-                    data = StatsAPI(db=self.db, testing=self.testing).pair_summaries()
+                    data = StatsAPI(db=self.db).pair_summaries()
 
                 if self.name == "generic_tickers":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_tickers()
 
                 if self.name == "generic_last_traded":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).last_traded()
 
                 if self.name == "generic_pairs":
                     data = Generic(
-                        netid="ALL", db=self.db, testing=self.testing
+                        netid="ALL", db=self.db
                     ).traded_pairs_info()
 
                 if self.name == "markets_pairs":
                     data = Markets(
-                        netid=self.netid, db=self.db, testing=self.testing
+                        netid=self.netid, db=self.db
                     ).pairs(days=MARKETS_PAIRS_DAYS)
 
                 if self.name == "markets_tickers":
                     data = Markets(
-                        netid=self.netid, db=self.db, testing=self.testing
+                        netid=self.netid, db=self.db
                     ).tickers(pairs_days=MARKETS_PAIRS_DAYS)
 
             if data is not None:
@@ -188,67 +188,67 @@ class CacheItem:
         return default_result(data=data, msg=msg, loglevel="merge")
 
 
-def load_gecko_source(testing=False):  # pragma: no cover
+def load_gecko_source():  # pragma: no cover
     try:
         # logger.merge("Loading Gecko source")
-        return CacheItem("gecko_source", testing=testing).data
+        return CacheItem("gecko_source").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_gecko_source]: {e}")
         return {}
 
 
-def load_coins_config(testing=False):  # pragma: no cover
+def load_coins_config():  # pragma: no cover
     try:
-        return CacheItem("coins_config", testing=testing).data
+        return CacheItem("coins_config").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_coins_config]: {e}")
         return {}
 
 
-def load_coins(testing=False):  # pragma: no cover
+def load_coins():  # pragma: no cover
     try:
-        return CacheItem("coins", testing=testing).data
+        return CacheItem("coins").data
     except Exception as e:
         logger.error(f"{type(e)} Error in [load_coins]: {e}")
         return {}
 
 
-def load_generic_last_traded(testing=False):  # pragma: no cover
+def load_generic_last_traded():  # pragma: no cover
     try:
-        cache_item = CacheItem("generic_last_traded", testing=testing)
+        cache_item = CacheItem("generic_last_traded")
         return cache_item.data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
         return {}
 
 
-def load_generic_pairs(testing=False):  # pragma: no cover
+def load_generic_pairs():  # pragma: no cover
     try:
-        return CacheItem("generic_pairs", testing=testing).data
+        return CacheItem("generic_pairs").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [generic_pairs]: {e}")
         return {}
 
 
-def load_generic_tickers(testing=False):  # pragma: no cover
+def load_generic_tickers():  # pragma: no cover
     try:
-        return CacheItem("generic_tickers", testing=testing).data
+        return CacheItem("generic_tickers").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [generic_tickers]: {e}")
         return {}
 
 
-def load_adex_fortnite(testing=False):  # pragma: no cover
+def load_adex_fortnite():  # pragma: no cover
     try:
-        return CacheItem("statsapi_adex_fortnite", testing=testing).data
+        return CacheItem("statsapi_adex_fortnite").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_adex_fortnite]: {e}")
         return {}
 
 
-def load_statsapi_summary(testing=False):  # pragma: no cover
+def load_statsapi_summary():  # pragma: no cover
     try:
-        return CacheItem("statsapi_summary", testing=testing).data
+        return CacheItem("statsapi_summary").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_statsapi_summary]: {e}")
         return {}

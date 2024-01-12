@@ -21,7 +21,7 @@ def test_get_mm2_rpc_port():
     assert get_mm2_rpc_port("7777") == 7877
     assert get_mm2_rpc_port(7777) == 7877
     assert get_mm2_rpc_port("8762") == 7862
-    assert get_mm2_rpc_port("ALL") == "ALL"
+    assert get_mm2_rpc_port("ALL") == 7862
 
     with pytest.raises(Exception):
         assert get_mm2_rpc_port("nope") == 7862

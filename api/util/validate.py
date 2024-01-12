@@ -56,22 +56,30 @@ def validate_loop_data(data, cache_item, netid=None):
         return False
 
 
-def validate_orderbook_pair(
-    base, quote, coins_config
-):
+def validate_orderbook_pair(base, quote, coins_config):
     try:
         logger.muted(f"Validating {base}/{quote}")
         err = None
+        wallet_only = [i.ticker for i in lib.COINS.wallet_only]
+        with_segwit = [i.ticker for i in lib.COINS.with_segwit]
         if base.replace("-segwit", "") == quote.replace("-segwit", ""):
             err = {"error": f"BaseQuoteSameError for {base}"}
         if base not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {base}"}
         if quote not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {quote}"}
-        if base in [i.ticker for i in lib.COINS.wallet_only]:
-            err = {"error": f"CoinWalletOnlyException for {base}"}
-        if quote in [i.ticker for i in lib.COINS.wallet_only]:
-            err = {"error": f"CoinWalletOnlyException for {quote}"}
+        if base in wallet_only:
+            if base in with_segwit:
+                if f"{base}-segwit" in wallet_only:
+                    err = {"error": f"CoinWalletOnlyException for {base}"}
+            else:
+                err = {"error": f"CoinWalletOnlyException for {base}"}
+        if quote in wallet_only:
+            if quote in with_segwit:
+                if f"{quote}-segwit" in wallet_only:
+                    err = {"error": f"CoinWalletOnlyException for {quote}"}
+            else:
+                err = {"error": f"CoinWalletOnlyException for {quote}"}
         if err is not None:
             return False
         return True

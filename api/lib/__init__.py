@@ -14,16 +14,9 @@ from lib.cache import (
     load_statsapi_summary,
 )
 
-
-print("Init coins...")
-if "IS_TESTING" in os.environ:
-    testing = True
-else:
-    testing = False
-
-COINS = Coins(testing=testing)
+COINS = Coins()
 PRICED_COINS = list(set([i.coin.replace("-segwit", "") for i in COINS.with_price]))
-KMD_PAIRS = get_all_coin_pairs("KMD", PRICED_COINS, testing=testing)
+KMD_PAIRS = get_all_coin_pairs("KMD", PRICED_COINS)
 KMD_PAIRS.sort()
 KMD_PAIRS_INFO = [
     i for i in KMD_PAIRS

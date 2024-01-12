@@ -1,0 +1,1 @@
+The databases in this folder are used to run queries. They should contain all items imported from source and local databases.

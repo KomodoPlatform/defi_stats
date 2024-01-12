@@ -16,8 +16,8 @@ from util.validate import (
 )
 import lib
 
-coins_config = lib.load_coins_config(testing=True)
-gecko_source = lib.load_gecko_source(testing=True)
+coins_config = lib.load_coins_config()
+gecko_source = lib.load_gecko_source()
 
 
 def test_reverse_ticker(
@@ -78,7 +78,7 @@ def test_validate_orderbook_pair():
 
 
 def test_validate_loop_data():
-    cache_item = lib.CacheItem("test", testing=True)
+    cache_item = lib.CacheItem("test")
     data = {"error": "foo"}
     assert not validate_loop_data(data, cache_item)
     data = {}

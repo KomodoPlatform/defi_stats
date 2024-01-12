@@ -19,7 +19,7 @@ from tests.fixtures_db import setup_swaps_db_data, setup_time
 
 def test_cache(setup_swaps_db_data):
     db = setup_swaps_db_data
-    cache = Cache(testing=True, db=db)
+    cache = Cache(db=db)
 
     for i in [
         "generic_last_traded",

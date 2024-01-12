@@ -15,7 +15,7 @@ def setup_time():
 @pytest.fixture
 def setup_swaps_db_data(setup_time):
     """Fixture to set up the in-memory database with test data"""
-    db = SqliteDB(db_path=":memory:", testing=True)
+    db = SqliteDB(db_path=":memory:")
     db.sql_cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS stats_swaps (

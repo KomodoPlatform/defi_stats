@@ -16,20 +16,20 @@ class CoinGeckoAPI:
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
-            self.files = Files(testing=self.testing)
+            self.files = Files()
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
         except Exception as e:  # pragma: no cover
             logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 
@@ -104,8 +104,8 @@ class CoinGeckoAPI:
                             )
                 except Exception as e:
                     error = f"{type(e)}: CoinGecko ID request/response mismatch [{coin_id}] [{e}]"
-                    return default_error(e, error)
-            time.sleep(5)
+                    logger.warning(error)
+            time.sleep(0.1)
         return gecko_info
 
 
