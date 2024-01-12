@@ -6,6 +6,7 @@ import time
 import lib
 from util.defaults import set_params
 import util.transform as transform
+from const import IS_TESTING
 
 
 class StatsAPI:  # pragma: no cover
@@ -16,6 +17,8 @@ class StatsAPI:  # pragma: no cover
             self.options = ["testing", "db"]
             self.netid = "ALL"
             set_params(self, self.kwargs, self.options)
+            if IS_TESTING:
+                self.testing = True
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:

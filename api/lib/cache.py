@@ -10,7 +10,7 @@ from util.files import Files
 from util.logger import logger
 from util.urls import Urls
 from util.validate import validate_loop_data
-from const import MARKETS_PAIRS_DAYS
+from const import MARKETS_PAIRS_DAYS, IS_TESTING
 
 
 class Cache:  # pragma: no cover
@@ -19,6 +19,8 @@ class Cache:  # pragma: no cover
             self.kwargs = kwargs
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
+            if IS_TESTING:
+                self.testing = True
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 

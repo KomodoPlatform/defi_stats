@@ -21,7 +21,7 @@ from util.transform import (
     order_pair_by_market_cap,
 )
 import util.templates as template
-from const import GENERIC_PAIRS_DAYS
+from const import GENERIC_PAIRS_DAYS, IS_TESTING
 
 
 class Generic:  # pragma: no cover
@@ -31,6 +31,8 @@ class Generic:  # pragma: no cover
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
 
+            if IS_TESTING:
+                self.testing = True
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:

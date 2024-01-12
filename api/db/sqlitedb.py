@@ -56,7 +56,7 @@ class SqliteDB:  # pragma: no cover
             self.query = SqliteQuery(db=self, **self.kwargs)
             self.update = SqliteUpdate(db=self, **self.kwargs)
         except Exception as e:  # pragma: no cover
-            logger.error(f"{type(e)}: Failed to init SqliteDB: {e}")
+            logger.error(f"{type(e)}: Failed to init SqliteDB {self.db_path}: {e}")
 
     @timed
     def close(self):

@@ -1,6 +1,6 @@
 import json
 import requests
-from const import API_ROOT_PATH
+from const import API_ROOT_PATH, IS_TESTING
 from util.defaults import default_error, set_params
 from util.logger import timed, logger
 from util.validate import validate_json
@@ -11,6 +11,8 @@ class Files:
         self.kwargs = kwargs
         self.options = ["testing", "netid"]
         set_params(self, self.kwargs, self.options)
+        if IS_TESTING:
+            self.testing = True
         if self.testing:
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"

@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from util.files import Files
 from util.exceptions import ApiKeyNotFoundException
-from const import FIXER_API_KEY
+from const import FIXER_API_KEY, IS_TESTING
 from util.logger import logger
 from util.defaults import set_params, default_error
 from util.helper import get_chunks
@@ -18,6 +18,8 @@ class CoinGeckoAPI:
             self.kwargs = kwargs
             self.options = ["testing"]
             set_params(self, self.kwargs, self.options)
+            if IS_TESTING:
+                self.testing = True
             self.files = Files(testing=self.testing)
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
@@ -104,8 +106,8 @@ class CoinGeckoAPI:
                             )
                 except Exception as e:
                     error = f"{type(e)}: CoinGecko ID request/response mismatch [{coin_id}] [{e}]"
-                    return default_error(e, error)
-            time.sleep(5)
+                    logger.warning(error)
+            time.sleep(0.1)
         return gecko_info
 
 

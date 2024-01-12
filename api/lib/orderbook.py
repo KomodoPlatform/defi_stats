@@ -10,6 +10,7 @@ from util.transform import format_10f, reverse_ticker
 from util.validate import validate_orderbook_pair
 import util.templates as template
 import lib
+from const import IS_TESTING
 
 
 class Orderbook:
@@ -21,6 +22,8 @@ class Orderbook:
             self.quote = self.pair.quote
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
+            if IS_TESTING:
+                self.testing = True
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:

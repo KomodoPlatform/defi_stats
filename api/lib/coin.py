@@ -7,6 +7,7 @@ from lib.cache import (
 )
 from util.defaults import set_params
 from util.logger import logger
+from const import IS_TESTING
 
 
 class Coin:
@@ -16,7 +17,8 @@ class Coin:
             self.kwargs = kwargs
             self.options = ["testing"]
             set_params(self, self.kwargs, self.options)
-
+            if IS_TESTING:
+                self.testing = True
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
             if "gecko_source" in kwargs:

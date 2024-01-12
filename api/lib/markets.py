@@ -5,7 +5,7 @@ from lib.external import CoinGeckoAPI
 from util.files import Files
 from util.logger import timed, logger
 from util.defaults import default_error, set_params
-from const import MARKETS_PAIRS_DAYS
+from const import MARKETS_PAIRS_DAYS, IS_TESTING
 import lib
 
 
@@ -15,6 +15,8 @@ class Markets:
             self.kwargs = kwargs
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
+            if IS_TESTING:
+                self.testing = True
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,

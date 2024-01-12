@@ -12,7 +12,7 @@ from util.transform import (
     get_suffix,
     reverse_ticker,
 )
-from const import MM2_RPC_PORTS
+from const import MM2_RPC_PORTS, IS_TESTING
 from db.sqlitedb import get_sqlite_db
 from lib.orderbook import Orderbook
 from util.defaults import default_error, set_params
@@ -36,7 +36,8 @@ class Pair:  # pragma: no cover
             self.kwargs = kwargs
             self.options = ["testing", "netid", "mm2_host", "db"]
             set_params(self, self.kwargs, self.options)
-
+            if IS_TESTING:
+                self.testing = True
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:

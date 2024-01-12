@@ -2,11 +2,14 @@
 from dataclasses import dataclass
 from lib.coin import Coin
 from lib.cache import load_coins_config, load_gecko_source, load_generic_last_traded
+from const import IS_TESTING
 
 
 @dataclass
 class Coins:  # pragma: no cover
     def __init__(self, testing=False):
+        if IS_TESTING:
+            self.testing = True
         coins_config = load_coins_config(testing=testing)
         gecko_source = load_gecko_source(testing=testing)
         last_traded_cache = load_generic_last_traded(testing=testing)
