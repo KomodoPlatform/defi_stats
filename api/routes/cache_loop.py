@@ -220,7 +220,7 @@ def generic_tickers():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=150)
 @timed
 def import_dbs():
     if NODE_TYPE != "serve":
@@ -230,7 +230,9 @@ def import_dbs():
         except Exception as e:
             return default_error(e)
         msg = "Import source databases loop complete!"
-        return default_result(msg=msg, loglevel="loop")
+        return default_result(msg=msg, loglevel="merge")
+    msg = "Import source databases skipped, NodeType is 'serve'!"
+    return default_result(msg=msg, loglevel="merge")
 
 
 @router.on_event("startup")

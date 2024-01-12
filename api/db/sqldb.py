@@ -22,7 +22,7 @@ class SqlDB:
             self.password = os.getenv("POSTGRES_PASSWORD")
             self.port = os.getenv("POSTGRES_PORT")
             self.db_url = (
-                f"postgresql://{self.user}:{self.password}@127.0.0.1:{self.port}"
+                f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
             )
         elif self.db_type == "sqlite":
             if self.db_path is not None:

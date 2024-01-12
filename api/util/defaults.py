@@ -1,5 +1,6 @@
 import time
 from util.exceptions import NoDefaultForKeyError
+from const import DEXAPI_8762_HOST
 
 
 def arg_defaults():
@@ -39,7 +40,7 @@ def default_val(key: str):
             if val.lower() == "kmd":
                 return "KMD"
             if val.lower() == "default_host":
-                return "http://127.0.0.1"
+                return DEXAPI_8762_HOST
             if val.lower() == "now":
                 return int(time.time())
             else:

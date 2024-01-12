@@ -2,6 +2,7 @@
 import time
 from tests.fixtures_class import setup_dexapi
 from util.defaults import arg_defaults, set_params
+from const import DEXAPI_8762_HOST
 
 
 def test_arg_defaults():
@@ -26,7 +27,7 @@ def test_arg_defaults():
     assert test.source_url == "https://app.komodoplatform.com/"
     assert test.end > int(time.time()) - 10
     assert test.netid == "ALL"
-    assert test.mm2_host == "http://127.0.0.1"
+    assert test.mm2_host == DEXAPI_8762_HOST
     assert test.trigger == 0
     assert test.coin == "KMD"
     assert test.loglevel == "debug"

@@ -74,8 +74,7 @@ MM2_DB_PATHS = {
     "local_7777_backup": LOCAL_MM2_DB_BACKUP_7777,
     "local_8762_backup": LOCAL_MM2_DB_BACKUP_8762,
 }
-
-if IS_TESTING:
+if IS_TESTING != 'True':
     DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
     DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
 else:
