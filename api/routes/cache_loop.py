@@ -6,7 +6,7 @@ from lib.cache import Cache
 from util.defaults import default_error, default_result
 from util.logger import timed, logger
 import lib
-
+from const import NODE_TYPE
 
 router = APIRouter()
 
@@ -223,7 +223,6 @@ def generic_tickers():
 @repeat_every(seconds=600)
 @timed
 def import_dbs():
-    NODE_TYPE = "noserve"
     if NODE_TYPE != "serve":
         try:
             merge = SqliteMerge()
