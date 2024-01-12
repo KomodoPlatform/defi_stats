@@ -10,7 +10,6 @@ from util.transform import format_10f, reverse_ticker
 from util.validate import validate_orderbook_pair
 import util.templates as template
 import lib
-from const import IS_TESTING
 
 
 class Orderbook:
@@ -22,17 +21,15 @@ class Orderbook:
             self.quote = self.pair.quote
             self.options = ["testing", "netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
-            if IS_TESTING:
-                self.testing = True
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
@@ -40,9 +37,7 @@ class Orderbook:
                 logger.loop(
                     f"Getting generic_last_traded source for {self.pair} Orderbook"
                 )
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
 
             self.files = Files(testing=self.testing)
             segwit_coins = [i.coin for i in lib.COINS.with_segwit]

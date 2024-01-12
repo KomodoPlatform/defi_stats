@@ -16,7 +16,6 @@ if "IS_TESTING" in os.environ:
     IS_TESTING = True
 else:
     IS_TESTING = False
-print(IS_TESTING)
 
 # Project path URLs
 API_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +73,7 @@ MM2_DB_PATHS = {
     "local_7777_backup": LOCAL_MM2_DB_BACKUP_7777,
     "local_8762_backup": LOCAL_MM2_DB_BACKUP_8762,
 }
-if IS_TESTING != 'True':
+if IS_TESTING:
     DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
     DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
 else:

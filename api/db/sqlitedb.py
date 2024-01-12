@@ -30,21 +30,19 @@ class SqliteDB:  # pragma: no cover
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
                 # logger.loop(f"Getting coins_config for db")
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
                 # logger.loop(f"Getting gecko_source for db")
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row

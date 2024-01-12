@@ -1,6 +1,6 @@
 import time
 from util.exceptions import NoDefaultForKeyError
-from const import DEXAPI_8762_HOST
+from const import DEXAPI_8762_HOST, IS_TESTING
 
 
 def arg_defaults():
@@ -51,12 +51,16 @@ def default_val(key: str):
 def set_params(object: object(), kwargs: dict(), options: list()) -> None:
     # Set the defaults from object options if not already set
     try:
+        if IS_TESTING:
+            setattr(object, "testing", True)
+        else:
+            setattr(object, "testing", False)
+        [setattr(object, k, v) for k, v in kwargs.items()]
+
         for arg in arg_defaults()["args"]:
             if arg in options:
                 if getattr(object, arg, "unset") == "unset":
                     setattr(object, arg, default_val(arg))
-        # Then process kwargs
-        [setattr(object, k, v) for k, v in kwargs.items()]
 
     except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"

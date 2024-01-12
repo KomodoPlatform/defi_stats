@@ -5,7 +5,7 @@ from lib.external import CoinGeckoAPI
 from util.files import Files
 from util.logger import timed, logger
 from util.defaults import default_error, set_params
-from const import MARKETS_PAIRS_DAYS, IS_TESTING
+from const import MARKETS_PAIRS_DAYS
 import lib
 
 
@@ -13,18 +13,16 @@ class Markets:
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
-            if IS_TESTING:
-                self.testing = True
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                 )
-            self.files = Files(netid=self.netid, testing=self.testing)
-            self.gecko = CoinGeckoAPI(testing=self.testing)
+            self.files = Files(**kwargs)
+            self.gecko = CoinGeckoAPI(**kwargs)
             self.generic = Generic(**kwargs)
             self.last_traded = lib.load_generic_last_traded()
         except Exception as e:  # pragma: no cover

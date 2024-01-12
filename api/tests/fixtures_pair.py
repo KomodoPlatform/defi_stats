@@ -4,9 +4,9 @@ from lib.pair import Pair
 
 from lib.cache import load_gecko_source, load_coins_config, load_generic_last_traded
 
-coins_config = load_coins_config(testing=True)
-gecko_source = load_gecko_source(testing=True)
-generic_last_traded = load_generic_last_traded(testing=True)
+coins_config = load_coins_config()
+gecko_source = load_gecko_source()
+generic_last_traded = load_generic_last_traded()
 
 
 @pytest.fixture

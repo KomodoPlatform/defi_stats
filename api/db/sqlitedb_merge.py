@@ -30,9 +30,9 @@ import lib
 class SqliteMerge:
     def __init__(self, testing=False):
         self.testing = testing
-        self.gecko_source = lib.load_gecko_source(testing=self.testing)
-        self.coins_config = lib.load_coins_config(testing=self.testing)
-        self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+        self.gecko_source = lib.load_gecko_source()
+        self.coins_config = lib.load_coins_config()
+        self.last_traded_cache = lib.load_generic_last_traded()
         self.init_dbs()
 
     @timed

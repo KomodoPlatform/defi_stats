@@ -21,7 +21,7 @@ from util.transform import (
     order_pair_by_market_cap,
 )
 import util.templates as template
-from const import GENERIC_PAIRS_DAYS, IS_TESTING
+from const import GENERIC_PAIRS_DAYS
 
 
 class Generic:  # pragma: no cover
@@ -31,24 +31,20 @@ class Generic:  # pragma: no cover
             self.options = ["testing", "netid", "db"]
             set_params(self, self.kwargs, self.options)
 
-            if IS_TESTING:
-                self.testing = True
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
             if self.db is None:
                 self.db = get_sqlite_db(
                     testing=self.testing,

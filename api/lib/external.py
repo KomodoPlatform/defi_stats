@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from util.files import Files
 from util.exceptions import ApiKeyNotFoundException
-from const import FIXER_API_KEY, IS_TESTING
+from const import FIXER_API_KEY
 from util.logger import logger
 from util.defaults import set_params, default_error
 from util.helper import get_chunks
@@ -18,20 +18,18 @@ class CoinGeckoAPI:
             self.kwargs = kwargs
             self.options = ["testing"]
             set_params(self, self.kwargs, self.options)
-            if IS_TESTING:
-                self.testing = True
             self.files = Files(testing=self.testing)
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
         except Exception as e:  # pragma: no cover
             logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 

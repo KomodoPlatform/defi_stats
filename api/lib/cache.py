@@ -10,17 +10,15 @@ from util.files import Files
 from util.logger import logger
 from util.urls import Urls
 from util.validate import validate_loop_data
-from const import MARKETS_PAIRS_DAYS, IS_TESTING
+from const import MARKETS_PAIRS_DAYS
 
 
 class Cache:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
-            if IS_TESTING:
-                self.testing = True
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 
@@ -190,67 +188,67 @@ class CacheItem:
         return default_result(data=data, msg=msg, loglevel="merge")
 
 
-def load_gecko_source(testing=False):  # pragma: no cover
+def load_gecko_source():  # pragma: no cover
     try:
         # logger.merge("Loading Gecko source")
-        return CacheItem("gecko_source", testing=testing).data
+        return CacheItem("gecko_source").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_gecko_source]: {e}")
         return {}
 
 
-def load_coins_config(testing=False):  # pragma: no cover
+def load_coins_config():  # pragma: no cover
     try:
-        return CacheItem("coins_config", testing=testing).data
+        return CacheItem("coins_config").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_coins_config]: {e}")
         return {}
 
 
-def load_coins(testing=False):  # pragma: no cover
+def load_coins():  # pragma: no cover
     try:
-        return CacheItem("coins", testing=testing).data
+        return CacheItem("coins").data
     except Exception as e:
         logger.error(f"{type(e)} Error in [load_coins]: {e}")
         return {}
 
 
-def load_generic_last_traded(testing=False):  # pragma: no cover
+def load_generic_last_traded():  # pragma: no cover
     try:
-        cache_item = CacheItem("generic_last_traded", testing=testing)
+        cache_item = CacheItem("generic_last_traded")
         return cache_item.data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
         return {}
 
 
-def load_generic_pairs(testing=False):  # pragma: no cover
+def load_generic_pairs():  # pragma: no cover
     try:
-        return CacheItem("generic_pairs", testing=testing).data
+        return CacheItem("generic_pairs").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [generic_pairs]: {e}")
         return {}
 
 
-def load_generic_tickers(testing=False):  # pragma: no cover
+def load_generic_tickers():  # pragma: no cover
     try:
-        return CacheItem("generic_tickers", testing=testing).data
+        return CacheItem("generic_tickers").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [generic_tickers]: {e}")
         return {}
 
 
-def load_adex_fortnite(testing=False):  # pragma: no cover
+def load_adex_fortnite():  # pragma: no cover
     try:
-        return CacheItem("statsapi_adex_fortnite", testing=testing).data
+        return CacheItem("statsapi_adex_fortnite").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_adex_fortnite]: {e}")
         return {}
 
 
-def load_statsapi_summary(testing=False):  # pragma: no cover
+def load_statsapi_summary():  # pragma: no cover
     try:
-        return CacheItem("statsapi_summary", testing=testing).data
+        return CacheItem("statsapi_summary").data
     except Exception as e:  # pragma: no cover
         logger.error(f"{type(e)} Error in [load_statsapi_summary]: {e}")
         return {}

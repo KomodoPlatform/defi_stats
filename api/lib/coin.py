@@ -7,7 +7,6 @@ from lib.cache import (
 )
 from util.defaults import set_params
 from util.logger import logger
-from const import IS_TESTING
 
 
 class Coin:
@@ -17,23 +16,21 @@ class Coin:
             self.kwargs = kwargs
             self.options = ["testing"]
             set_params(self, self.kwargs, self.options)
-            if IS_TESTING:
-                self.testing = True
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = load_gecko_source(testing=self.testing)
+                self.gecko_source = load_gecko_source()
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = load_coins_config(testing=self.testing)
+                self.coins_config = load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = load_generic_last_traded(testing=self.testing)
+                self.last_traded_cache = load_generic_last_traded()
 
             # Designate coin
             if self.coin in self.coins_config:
@@ -100,7 +97,7 @@ class Coin:
 def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
     try:
         if gecko_source is None:
-            gecko_source = load_gecko_source(testing=testing)
+            gecko_source = load_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_price"])
     except KeyError as e:  # pragma: no cover
@@ -113,7 +110,7 @@ def get_gecko_price(ticker, gecko_source=None, testing=False) -> float:
 def get_gecko_mcap(ticker, gecko_source=None, testing=False) -> float:
     try:
         if gecko_source is None:
-            gecko_source = load_gecko_source(testing=testing)
+            gecko_source = load_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_market_cap"])
     except KeyError as e:  # pragma: no cover
