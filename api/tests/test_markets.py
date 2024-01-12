@@ -15,14 +15,15 @@ from lib.markets import Markets
 
 
 def test_pairs():
-    markets = Markets(netid="8762", testing=True)
+    markets = Markets(netid="8762")
     data = markets.pairs()
     assert isinstance(data, list)
     r = [i["ticker_id"] for i in data]
     # Markets includes test coins
-    assert "MARTY_DOC" in r or "DOC_MARTY" in r
+    logger.calc(r)
+    assert "MORTY_KMD" in r
     # Same mcap, could be either :shrug:
-    assert "KMD-BEP20_KMD" in r or "KMD_KMD-BEP20" in r
+    assert "KMD_KMD-BEP20" in r
     assert "KMD_BTC" in r
     assert "BTC_KMD" not in r
     assert "KMD_LTC" in r
@@ -30,9 +31,8 @@ def test_pairs():
 
 
 def test_tickers(setup_swaps_db_data):
-    markets = Markets(netid="8762", testing=True, db=setup_swaps_db_data)
+    markets = Markets(netid="8762", db=setup_swaps_db_data)
     r = markets.tickers()
-    logger.info(r)
     assert r["last_update"] > time.time() - 60
     assert r["pairs_count"] > 0
     assert r["swaps_count"] > 0

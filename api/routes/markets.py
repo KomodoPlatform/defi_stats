@@ -271,10 +271,8 @@ def tickers_summary(netid: NetId = NetId.ALL):
                 with_action.update({ticker: resp[ticker]})
         return with_action
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}")
-        return {
-            "error": f"{type(e)} Error in [/api/v3/market/swaps_by_ticker_24h]: {e}"
-        }
+        logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
 
 
 @router.get(

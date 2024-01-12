@@ -12,6 +12,21 @@ load_dotenv()
 # - process: runs only the database sourcing / processing
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
 
+if os.getenv("IS_TESTING") == 'True':
+    IS_TESTING = True
+else:
+    IS_TESTING = False
+
+if IS_TESTING:
+    DEXAPI_7777_HOST = "http://127.0.0.1"
+    DEXAPI_8762_HOST = "http://127.0.0.1"
+else:
+    DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
+    DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
+
+DEXAPI_7777_PORT = os.getenv("DEXAPI_7777_PORT")
+DEXAPI_8762_PORT = os.getenv("DEXAPI_8762_PORT")
+
 # Project path URLs
 API_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -70,7 +85,16 @@ MM2_DB_PATHS = {
 }
 
 # KomodoPlatform DeFi API config.
-MM2_RPC_PORTS = {"7777": 7877, "8762": 7862, "ALL": "ALL"}
+MM2_RPC_PORTS = {
+    "7777": int(DEXAPI_7777_PORT),
+    "8762": int(DEXAPI_8762_PORT),
+    "ALL": int(DEXAPI_8762_PORT),
+}
+MM2_RPC_HOSTS = {
+    "7777": DEXAPI_7777_HOST,
+    "8762": DEXAPI_8762_HOST,
+    "ALL": DEXAPI_8762_HOST,
+}
 MM2_NETID = 8762  # The primary active NetId currently supported by KomodoPlatform
 
 # Some coins may have swaps data, but are not currently in the coins repo.

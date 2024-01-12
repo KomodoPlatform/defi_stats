@@ -9,8 +9,9 @@ from util.validate import validate_json
 class Files:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.options = ["testing", "netid"]
+        self.options = ["netid"]
         set_params(self, self.kwargs, self.options)
+
         if self.testing:
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"

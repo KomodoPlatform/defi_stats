@@ -29,8 +29,8 @@ from tests.fixtures_pair import (
 from util.logger import logger
 from util.transform import merge_orderbooks, format_10f
 
-coins_config = load_coins_config(testing=True)
-gecko_source = load_gecko_source(testing=True)
+coins_config = load_coins_config()
+gecko_source = load_gecko_source()
 
 
 def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):

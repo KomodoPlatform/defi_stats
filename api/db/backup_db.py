@@ -4,7 +4,7 @@ import argparse
 
 """
 Used to backup MM2.db files on source servers
-prior to exfiltration with rsync
+prior to exfiltration with rsync.
 """
 
 

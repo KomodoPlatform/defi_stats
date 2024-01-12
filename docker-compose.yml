@@ -1,6 +1,32 @@
 version: "3.9"
 
 services:
+  fastapi:
+    container_name: fastapi
+    env_file:
+      - ./api/.env
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=${USER_ID:-1000}
+        - GROUP_ID=${GROUP_ID:-1000}
+    volumes:
+      - ./api:/home/komodian/api
+    ports:
+      - 127.0.0.1:7068:7068
+    depends_on:
+      - pgsqldb
+      - komodefi
+      - komodefi_8762
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "10"
+    restart: always
+    command: ["uvicorn", "main:app", "--host", "${API_HOST}", "--port", "${API_PORT}", "--reload"]
+
   komodefi:
     container_name: mm2
     env_file:
@@ -46,3 +72,25 @@ services:
         max-size: "20m"
         max-file: "10"
     restart: always
+
+  pgsqldb:
+    container_name: db
+    image: postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./api/.env
+    depends_on:
+      - komodefi_8762
+      - komodefi
+    ports:
+      - "7432:5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "10"
+
+volumes:
+  postgres_data:

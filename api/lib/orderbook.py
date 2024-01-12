@@ -19,31 +19,31 @@ class Orderbook:
             self.pair = pair_obj
             self.base = self.pair.base
             self.quote = self.pair.quote
-            self.options = ["testing", "netid", "mm2_host"]
+            self.options = ["netid", "mm2_host"]
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                logger.loop(f"Getting generic_last_traded source for {self.pair} Orderbook")
-                self.last_traded_cache = lib.load_generic_last_traded(testing=self.testing)
+                logger.loop(
+                    f"Getting generic_last_traded source for {self.pair} Orderbook"
+                )
+                self.last_traded_cache = lib.load_generic_last_traded()
 
-            self.files = Files(testing=self.testing)
+            self.files = Files(**kwargs)
             segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.base_is_segwit_coin = self.base in segwit_coins
             self.quote_is_segwit_coin = self.quote in segwit_coins
-            self.dexapi = DexAPI(
-                testing=self.testing, mm2_host=self.mm2_host, netid=self.netid
-            )
+            self.dexapi = DexAPI(**kwargs)
             self.orderbook_template = template.orderbook(
                 self.pair.as_str, self.pair.inverse_requested
             )
@@ -97,12 +97,10 @@ class Orderbook:
             orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
             orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
             orderbook_data["total_asks_base_usd"] = (
-                total_asks_base_vol
-                * orderbook_data["base_price_usd"]
+                total_asks_base_vol * orderbook_data["base_price_usd"]
             )
             orderbook_data["total_bids_quote_usd"] = (
-                total_bids_quote_vol
-                * orderbook_data["quote_price_usd"]
+                total_bids_quote_vol * orderbook_data["quote_price_usd"]
             )
 
             orderbook_data["liquidity_usd"] = (

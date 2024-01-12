@@ -15,7 +15,7 @@ from util.logger import logger
 
 
 def test_orderbook(setup_swaps_db_data):
-    generic = Generic(db=setup_swaps_db_data, testing=True, netid="ALL")
+    generic = Generic(db=setup_swaps_db_data, netid="ALL")
     r_all = generic.orderbook("KMD_LTC")
     r_all2 = generic.orderbook("KMD_LTC-segwit")
     assert r_all["bids"][0] == r_all2["bids"][0]
@@ -25,7 +25,7 @@ def test_orderbook(setup_swaps_db_data):
     assert len(r_all["base"]) == len(r_all2["base"])
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
-    generic = Generic(db=setup_swaps_db_data, testing=True, netid="8762")
+    generic = Generic(db=setup_swaps_db_data, netid="8762")
     r = generic.orderbook("KMD_DOGE")
     r2 = generic.orderbook("DOGE_KMD")
     assert r["volume_usd_24hr"] == r2["volume_usd_24hr"]

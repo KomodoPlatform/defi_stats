@@ -249,7 +249,7 @@ class StopWatch:
         self.get_stopwatch(**kwargs)
 
     def get_stopwatch(self, **kwargs):
-        options = ["testing", "trigger", "msg", "loglevel"]
+        options = ["trigger", "msg", "loglevel"]
         set_params(self, kwargs, options)
         duration = int(time.time()) - int(self.start_time)
         if self.trigger == 0:

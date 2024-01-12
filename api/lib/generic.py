@@ -28,41 +28,33 @@ class Generic:  # pragma: no cover
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
-            self.options = ["testing", "netid", "db"]
+            self.options = ["netid", "db"]
             set_params(self, self.kwargs, self.options)
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                self.gecko_source = lib.load_gecko_source(testing=self.testing)
+                self.gecko_source = lib.load_gecko_source()
 
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                self.coins_config = lib.load_coins_config(testing=self.testing)
+                self.coins_config = lib.load_coins_config()
 
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded(
-                    testing=self.testing
-                )
+                self.last_traded_cache = lib.load_generic_last_traded()
             if self.db is None:
                 self.db = get_sqlite_db(
-                    testing=self.testing,
                     netid=self.netid,
                     db=self.db,
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-            self.files = Files(netid=self.netid, testing=self.testing, db=self.db)
-            self.gecko = CoinGeckoAPI(
-                testing=self.testing,
-                gecko_source=self.gecko_source,
-                coins_config=self.coins_config,
-                last_traded_cache=self.last_traded_cache,
-            )
+            self.files = Files(**kwargs)
+            self.gecko = CoinGeckoAPI(**kwargs)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 

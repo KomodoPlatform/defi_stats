@@ -14,7 +14,7 @@ def test_orderbook(setup_dexapi):
     assert "bids" in r
     assert "asks" in r
 
-    api = DexAPI(testing=False, netid="ALL")
+    api = DexAPI(netid="ALL")
     r = api.orderbook_rpc("KMD", "DASH")
     assert "bids" in r
     assert "asks" in r
