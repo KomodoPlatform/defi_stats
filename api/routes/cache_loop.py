@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+import time
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from db.sqlitedb_merge import SqliteMerge
-from db.sqldb import SqlDB
+from db.sqldb import SqlDB, SqlQuery
+from db.schema import CipiSwaps
 from lib.cache import Cache
 from util.defaults import default_error, default_result
 from util.logger import timed, logger
@@ -254,7 +256,10 @@ def truncate_wal():
 @timed
 def sqldb_loop():
     try:
-        ext_mysql = SqlDB("mysql", external=True)
+        ext_mysql = SqlQuery("mysql")
+        logger.merge(ext_mysql.get_swaps(CipiSwaps, start=int(time.time()-86400), end=int(time.time()))[0])
+        count = ext_mysql.get_count(CipiSwaps.uuid)
+        logger.merge(count)
         pgdb = SqlDB("pgsql")
     except Exception as e:
         return default_error(e)
