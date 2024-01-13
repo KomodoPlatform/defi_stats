@@ -27,7 +27,9 @@ RUN apt-get -qq -y update && \
         sqlite3 \
         python-is-python3 \
         libpq-dev \
-        software-properties-common 
+        software-properties-common \
+        libmysqlclient21 \
+        pkg-config
         
 #    mv /usr/bin/lsb_release /usr/bin/lsb_release.bak && \
 #    apt-get -y autoclean && \
@@ -47,6 +49,7 @@ ENV POETRY_HOME="/home/komodian/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+ENV IN_DOCKER=True
 COPY ./poetry.lock ./pyproject.toml /home/komodian/api/
 RUN curl -sSL https://install.python-poetry.org | python
 RUN poetry self update

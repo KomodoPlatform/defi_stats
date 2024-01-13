@@ -90,7 +90,7 @@ class CacheItem:
             since_updated_min = int(since_updated / 60)
             if since_updated_min > self.cache_expiry:
                 msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
-                logger.warning(msg)
+                #logger.warning(msg)
         if "data" in data:
             return data["data"]
         return data

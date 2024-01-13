@@ -254,6 +254,7 @@ def truncate_wal():
 @timed
 def sqldb_loop():
     try:
+        ext_mysql = SqlDB("mysql", external=True)
         pgdb = SqlDB("pgsql")
     except Exception as e:
         return default_error(e)

@@ -83,14 +83,14 @@ FIXER_API_KEY=your_key
 mysql_hostname="db_IP"
 mysql_username="db_username"
 mysql_password="db_password"
-mysql_db="db_name"
+MYSQL_DATABASE="db_name"
 
 ## Postgres/TimescaleDB
 POSTGRES_HOST=pgsqldb
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=db_name
 PGDATA=/var/lib/postgresql/data
-POSTGRES_USER=db_user
+MYSQL_USERNAME=db_user
 POSTGRES_PASSWORD=db_pass
 
 ## Sqlite

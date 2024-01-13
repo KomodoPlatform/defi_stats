@@ -3,8 +3,7 @@ from decimal import Decimal
 
 from sqlmodel import Field, Session, SQLModel, create_engine
 
-class StatsSwaps(SQLModel, table=True):
-    __tablename__ = "stats_swaps"    
+class Swaps(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     maker_coin: str = ""
@@ -28,3 +27,9 @@ class StatsSwaps(SQLModel, table=True):
     maker_version: str = "unknown"
     taker_version: str = "unknown"
 
+class StatsSwaps(Swaps):
+    __tablename__ = "stats_swaps"    
+
+class CipiSwaps(Swaps):
+    __tablename__ = "swaps"    
+    

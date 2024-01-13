@@ -10,19 +10,41 @@ load_dotenv()
 # - dev: runs both api endpoints and database sourcing / processing
 # - serve: runs only the api endpoints.
 # - process: runs only the database sourcing / processing
+
+# Database Creds
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+MYSQL_HOSTNAME = os.getenv("MYSQL_HOST")
+MYSQL_USERNAME = os.getenv("MYSQL_USERNAME")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_PORT = 3306
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
+
+
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
+
+IN_DOCKER = os.getenv("IN_DOCKER")
+if IN_DOCKER == 'True':
+    IN_DOCKER = True
+else:
+    IN_DOCKER = False
 
 if os.getenv("IS_TESTING") == 'True':
     IS_TESTING = True
 else:
     IS_TESTING = False
 
-if IS_TESTING:
-    DEXAPI_7777_HOST = "http://127.0.0.1"
-    DEXAPI_8762_HOST = "http://127.0.0.1"
-else:
+if IN_DOCKER:
     DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")
     DEXAPI_8762_HOST = os.getenv("DEXAPI_8762_HOST")
+else:
+    DEXAPI_7777_HOST = "http://127.0.0.1"
+    DEXAPI_8762_HOST = "http://127.0.0.1"
+    POSTGRES_HOST = "127.0.0.1"
+    
 
 DEXAPI_7777_PORT = os.getenv("DEXAPI_7777_PORT")
 DEXAPI_8762_PORT = os.getenv("DEXAPI_8762_PORT")
