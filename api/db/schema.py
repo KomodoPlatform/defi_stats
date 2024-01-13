@@ -1,25 +1,30 @@
-from sqlalchemy import Table, Column, Integer, String, MetaData, DECIMAL
+from typing import Optional
+from decimal import Decimal
 
-meta = MetaData()
+from sqlmodel import Field, Session, SQLModel, create_engine
 
-stats_swaps = Table(
-    "stats_swaps",
-    meta,
-    Column("id", Integer, primary_key=True),
-    Column("maker_coin", String(20), nullable=False),
-    Column("taker_coin", String(20), nullable=False),
-    Column("uuid", String(36), nullable=False, unique=True),
-    Column("started_at", Integer, nullable=False),
-    Column("finished_at", Integer, nullable=False),
-    Column("maker_amount", DECIMAL, nullable=False),
-    Column("taker_amount", DECIMAL, nullable=False),
-    Column("is_success", Integer, nullable=False),
-    Column("maker_coin_ticker", String(10), nullable=False),
-    Column("maker_coin_platform", String(10), nullable=False),
-    Column("taker_coin_ticker", String(10), nullable=False),
-    Column("taker_coin_platform", String(10), nullable=False),
-    Column("maker_coin_usd_price", DECIMAL, nullable=False),
-    Column("taker_coin_usd_price", DECIMAL, nullable=False),
-    Column("maker_pubkey", String(72), nullable=False),
-    Column("taker_pubkey", String(72), nullable=False),
-)
+class StatsSwaps(SQLModel, table=True):
+    __tablename__ = "stats_swaps"    
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    maker_coin: str = ""
+    taker_coin: str = ""
+    uuid: str = "77777777-7777-7777-7777-777777777777"
+    started_at: int = 1777777777
+    finished_at: int = 1777777777
+    maker_amount: Decimal = 777.777777
+    taker_amount: Decimal = 777.777777
+    is_success: str = 1
+    maker_coin_ticker: str = ""
+    maker_coin_platform: str = ""
+    taker_coin_ticker: str = ""
+    taker_coin_platform: str = ""
+    maker_coin_usd_price: Decimal = 777.777777
+    taker_coin_usd_price: Decimal = 777.777777
+    price: Decimal = 777.777777
+    reverse_price: Decimal = 777.777777
+    maker_gui: str = "unknown"
+    taker_gui: str = "unknown"
+    maker_version: str = "unknown"
+    taker_version: str = "unknown"
+

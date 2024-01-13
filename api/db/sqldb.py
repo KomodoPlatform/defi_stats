@@ -2,20 +2,21 @@
 import os
 import json
 import datetime
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 import psycopg2
-from schema import meta, stats_swaps
+from typing import Optional
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from db.schema import StatsSwaps
 from dotenv import load_dotenv
-from util.logger import logger
 
 load_dotenv()
+
 
 
 class SqlDB:
     def __init__(self, db_type, db_path=None) -> None:
         self.db_type = db_type
         self.db_path = db_path
-        self.meta = meta
         if self.db_type == "pgsql":
             self.host = os.getenv("POSTGRES_HOST")
             self.user = os.getenv("POSTGRES_USER")
@@ -39,7 +40,8 @@ class SqlDB:
                 f"postgres://{self.user}:{self.password}@{self.host}:{self.port}"
             )
         self.engine = create_engine(self.db_url, echo=True)
-        self.meta.create_all(self.engine)
+        with Session(self.engine) as session:
+            SQLModel.metadata.create_all(self.engine)
 
 
 class SqlUpdate(SqlDB):

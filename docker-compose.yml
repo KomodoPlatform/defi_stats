@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  fastapi:
-    container_name: fastapi
+  api:
+    container_name: api
     env_file:
       - ./api/.env
     build:
@@ -17,17 +17,17 @@ services:
       - 127.0.0.1:7068:7068
     depends_on:
       - pgsqldb
-      - komodefi
-      - komodefi_8762
+      - mm2
+      - mm2_8762
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "10"
     restart: always
-    command: ["uvicorn", "main:app", "--host", "${API_HOST}", "--port", "${API_PORT}", "--reload"]
+    command: ["poetry", "run", "python", "main.py"]
 
-  komodefi:
+  mm2:
     container_name: mm2
     env_file:
       - ./mm2/.env
@@ -50,7 +50,7 @@ services:
         max-file: "10"
     restart: always
 
-  komodefi_8762:
+  mm2_8762:
     container_name: mm2_8762
     env_file:
       - ./mm2_8762/.env
@@ -74,16 +74,16 @@ services:
     restart: always
 
   pgsqldb:
-    container_name: db
-    image: postgres
+    container_name: pgsqldb
+    image: postgres:12.17
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     env_file:
       - ./api/.env
     depends_on:
-      - komodefi_8762
-      - komodefi
+      - mm2_8762
+      - mm2
     ports:
       - "7432:5432"
     logging:
@@ -93,4 +93,4 @@ services:
         max-file: "10"
 
 volumes:
-  postgres_data:
+  pg_data:

@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from db.sqlitedb_merge import SqliteMerge
+from db.sqldb import SqlDB
 from lib.cache import Cache
 from util.defaults import default_error, default_result
 from util.logger import timed, logger
@@ -246,3 +247,15 @@ def truncate_wal():
         return default_error(e)
     msg = "Database wal truncation loop complete!"
     return default_result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def sqldb_loop():
+    try:
+        pgdb = SqlDB("pgsql")
+    except Exception as e:
+        return default_error(e)
+    msg = "SqlDB loop complete!"
+    return default_result(msg=msg, loglevel="query")
