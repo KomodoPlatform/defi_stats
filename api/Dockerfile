@@ -29,7 +29,8 @@ RUN apt-get -qq -y update && \
         libpq-dev \
         software-properties-common \
         libmysqlclient21 \
-        pkg-config
+        pkg-config \
+        libmysqlclient-dev
         
 #    mv /usr/bin/lsb_release /usr/bin/lsb_release.bak && \
 #    apt-get -y autoclean && \

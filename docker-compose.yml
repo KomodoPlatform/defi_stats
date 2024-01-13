@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  api:
+  defi_stats:
     container_name: api
     env_file:
       - ./api/.env
@@ -85,7 +85,7 @@ services:
       - mm2_8762
       - mm2
     ports:
-      - "7432:5432"
+      - "5432:5432"
     logging:
       driver: "json-file"
       options:
