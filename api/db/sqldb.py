@@ -83,7 +83,7 @@ class SqlQuery(SqlDB):
             r = session.query(func.count(table))
             return r[0][0]
 
-    def get_last(self, table: str, limit: int = 1):
+    def get_last(self, table: str, limit: int = 3):
         try:
             with Session(self.engine) as session:
                 sql = f"SELECT * FROM {table} LIMIT {limit};"

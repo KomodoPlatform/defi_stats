@@ -208,6 +208,10 @@ class Generic:  # pragma: no cover
     def last_traded(self):
         try:
             data = self.db.query.get_pairs_last_traded()
+            if 'DGB_DOGE' in data:
+                logger.loop(data['DGB_DOGE'])
+            else:
+                logger.loop(data.keys())
             return data
         except Exception as e:  # pragma: no cover
             msg = f"pairs_last_traded failed for netid {self.netid}!"
