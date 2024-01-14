@@ -27,12 +27,12 @@ MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
 
 IN_DOCKER = os.getenv("IN_DOCKER")
-if IN_DOCKER == 'True':
+if IN_DOCKER == "True":
     IN_DOCKER = True
 else:
     IN_DOCKER = False
 
-if os.getenv("IS_TESTING") == 'True':
+if os.getenv("IS_TESTING") == "True":
     IS_TESTING = True
 else:
     IS_TESTING = False
@@ -44,7 +44,7 @@ else:
     DEXAPI_7777_HOST = "http://127.0.0.1"
     DEXAPI_8762_HOST = "http://127.0.0.1"
     POSTGRES_HOST = "127.0.0.1"
-    
+
 
 DEXAPI_7777_PORT = os.getenv("DEXAPI_7777_PORT")
 DEXAPI_8762_PORT = os.getenv("DEXAPI_8762_PORT")

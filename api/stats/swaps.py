@@ -4,10 +4,12 @@ from util.logger import logger
 from db.sqldb import SqlUpdate
 
 
-
-
 def get_ext_swaps(days_since=1):
-    ext_cursor.execute("SELECT * FROM swaps WHERE started_at >= now() - INTERVAL "+str(days_since)+" DAY ORDER BY started_at;")
+    ext_cursor.execute(
+        "SELECT * FROM swaps WHERE started_at >= now() - INTERVAL "
+        + str(days_since)
+        + " DAY ORDER BY started_at;"
+    )
     result = ext_cursor.fetchall()
     for x in result:
         row = swaps_row()
@@ -28,7 +30,11 @@ def get_ext_swaps(days_since=1):
 
 
 def get_ext_swaps_failed(days_since=1):
-    ext_cursor.execute("SELECT * FROM swaps_failed WHERE started_at >= now() - INTERVAL "+str(days_since)+" DAY ORDER BY started_at;")
+    ext_cursor.execute(
+        "SELECT * FROM swaps_failed WHERE started_at >= now() - INTERVAL "
+        + str(days_since)
+        + " DAY ORDER BY started_at;"
+    )
     result = ext_cursor.fetchall()
     for x in result:
         row = swaps_failed_row()
@@ -58,5 +64,3 @@ if __name__ == "__main__":
         r = conn.execute("Select * from swaps limit 1;")
         for i in r:
             logger.query(i)
-    
-
