@@ -65,7 +65,8 @@ class Orderbook:
 
             orderbook_data["timestamp"] = f"{int(time.time())}"
             data = self.get_and_parse()
-
+                
+            
             orderbook_data["bids"] = data["bids"][:depth][::-1]
             orderbook_data["asks"] = data["asks"][::-1][:depth]
             total_bids_base_vol = sum(
@@ -126,8 +127,8 @@ class Orderbook:
             if self.quote_is_segwit_coin:
                 quote = f"{self.pair.quote.replace('-segwit', '')}-segwit"
             data = self.orderbook_template
-            if not validate_orderbook_pair(base, quote, self.coins_config):
-                return data
+            # if not validate_orderbook_pair(base, quote, self.coins_config):
+                # return data
             if self.pair.inverse_requested:
                 x = self.dexapi.orderbook_rpc(quote, base)
             else:

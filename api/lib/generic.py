@@ -184,7 +184,7 @@ class Generic:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                ).ticker_info(trades_days)
+                ).ticker_info(trades_days, frm='tt')
                 for i in pairs
             ]
             data = [i for i in data if i is not None]

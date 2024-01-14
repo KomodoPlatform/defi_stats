@@ -123,7 +123,7 @@ class CustomFormatter(logging.Formatter):
             )
         elif record.levelname == "UPDATED":
             log_fmt = (
-                self.lightgreen
+                self.skyblue
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
             )
         elif record.levelname == "SAVE":
