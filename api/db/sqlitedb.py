@@ -315,7 +315,6 @@ class SqliteQuery:  # pragma: no cover
             sql += " WHERE is_success=1"
             sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
                     taker_coin_platform, maker_coin_platform;"
-            logger.info(sql)
             self.db.sql_cursor.execute(sql)
             resp = self.db.sql_cursor.fetchall()
             resp = [dict(i) for i in resp]
@@ -335,8 +334,6 @@ class SqliteQuery:  # pragma: no cover
                             item.update({k: v})
 
                 pair = self.get_std_pair_str(i)
-                if pair == 'DGB_DOGE':
-                    logger.dexrpc(i)
                 std_pair = order_pair_by_market_cap(
                     pair, gecko_source=self.db.gecko_source
                 )
@@ -359,8 +356,6 @@ class SqliteQuery:  # pragma: no cover
                 if std_pair not in by_pair_dict:
                     by_pair_dict.update({std_pair: item})
                 elif item["last_swap"] > by_pair_dict[std_pair]["last_swap"]:
-                    if pair == 'DGB_DOGE':
-                        logger.merge(f"Updating last swap to {item}")
                     by_pair_dict[std_pair]['last_maker_amount'] = last_maker_amount
                     by_pair_dict[std_pair]['last_taker_amount'] = last_taker_amount
                     by_pair_dict[std_pair]['last_swap'] = item['last_swap']
@@ -369,8 +364,6 @@ class SqliteQuery:  # pragma: no cover
                     by_pair_dict[std_pair]['sum_taker_traded'] += sum_taker
                     by_pair_dict[std_pair]['swap_count'] += swap_count
 
-                if pair == 'DGB_DOGE':
-                    logger.calc(f"Updating last swap to {by_pair_dict[std_pair]}")
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
         except Exception as e:  # pragma: no cover

@@ -192,7 +192,7 @@ def generic_last_traded():
         cache_item.save()
     except Exception as e:
         return default_error(e)
-    msg = "Generic orderbook (ALL) loop complete!"
+    msg = "generic_last_traded loop complete!"
     return default_result(msg=msg, loglevel="loop")
 
 

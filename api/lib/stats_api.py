@@ -87,7 +87,7 @@ class StatsAPI:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                ).ticker_info(days)
+                ).ticker_info(days, frm="stat")
                 for i in pairs
             ]
             data = [

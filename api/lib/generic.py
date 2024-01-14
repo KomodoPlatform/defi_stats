@@ -184,7 +184,7 @@ class Generic:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                ).ticker_info(trades_days)
+                ).ticker_info(trades_days, frm='tt')
                 for i in pairs
             ]
             data = [i for i in data if i is not None]
@@ -208,10 +208,6 @@ class Generic:  # pragma: no cover
     def last_traded(self):
         try:
             data = self.db.query.get_pairs_last_traded()
-            if 'DGB_DOGE' in data:
-                logger.loop(data['DGB_DOGE'])
-            else:
-                logger.loop(data.keys())
             return data
         except Exception as e:  # pragma: no cover
             msg = f"pairs_last_traded failed for netid {self.netid}!"
