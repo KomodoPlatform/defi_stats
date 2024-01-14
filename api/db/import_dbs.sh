@@ -4,6 +4,8 @@
 
 if [ $(hostname) = 'hound' ]; then
     username='hound'
+elif [ $(hostname) = 'rates-komodo-earth' ]; then
+    username='admin'
 else
     username='atomic'
 fi
