@@ -313,6 +313,13 @@ def strip_coin_platform(coin):
     return coin.split("-")[0]
 
 
+def get_coin_platform(coin):
+    r = coin.split("-")
+    if len(r) == 2:
+        return r[1]
+    return ''
+
+
 def deplatform_pair_summary_item(i):
     resp = {}
     keys = i.keys()

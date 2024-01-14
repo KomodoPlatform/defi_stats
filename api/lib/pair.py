@@ -252,7 +252,8 @@ class Pair:  # pragma: no cover
         try:
             timestamp = int(time.time() - 86400 * days)
             swaps_for_pair = self.pair_swaps(start_time=timestamp)
-            # logger.calc(f"swaps_for_pair: {len(swaps_for_pair)}")
+            if self.as_str == "KMD_:TC":
+                logger.merge(swaps_for_pair)
             # Get template in case no swaps returned
             suffix = get_suffix(days)
 
@@ -344,7 +345,7 @@ class Pair:  # pragma: no cover
             return default_error(e, msg)
 
     @timed
-    def ticker_info(self, days=1):
+    def ticker_info(self, days=1, frm="??"):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
         try:

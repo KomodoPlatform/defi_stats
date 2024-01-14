@@ -16,6 +16,32 @@ Data is also imported into more robust databases (mySQL, postgresSQL/Timescale &
 
 ### Setup and requirements
 
+#### Database setup
+
+    sudo apt update
+    sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2
+
+    sudo systemctl start postgresql.service
+    # https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-18-04
+    # sudo -u postgres createuser --interactive
+    # sudo -u postgres createdb stats_swaps
+    # sudo -u postgres psql
+    # ALTER USER postgres PASSWORD 'myPassword';
+    # Update .env with creds (see readme after TODO: update)
+
+
+    cd ~/defi_stats/api
+    git stash
+    git pull
+    poetry install
+    docker compose build
+
+    # If not previously running wiuth systemd, skip this bit
+    sudo systemctl stop defi_stats.service 
+    sudo systemctl disable defi_stats.service 
+
+    docker compose up
+
 - Run `./setup.sh` to install poetry dependencies
 - Create `mm2/.env`, and `mm2_8762/.env` with the following inside (change the userpass)
 ```
@@ -36,7 +62,10 @@ GROUP_ID=1000
 
 ```
 # DEPENDENCY VERSIONS
-POETRY_VERSION='1.6.1'
+POETRY_VERSION='1.7.1'
+
+# Use `serve` for front end. Any other value will do database merge and processing.
+NODE_TYPE='serve'
 
 # FastAPI
 API_PORT=7068
@@ -54,19 +83,32 @@ FIXER_API_KEY=your_key
 mysql_hostname="db_IP"
 mysql_username="db_username"
 mysql_password="db_password"
-mysql_db="db_name"
+MYSQL_DATABASE="db_name"
 
 ## Postgres/TimescaleDB
-POSTGRES_HOST=timescale
+POSTGRES_HOST=pgsqldb
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=db_name
 PGDATA=/var/lib/postgresql/data
-POSTGRES_USER=db_user
+MYSQL_USERNAME=db_user
 POSTGRES_PASSWORD=db_pass
 
 ## Sqlite
-LOCAL_MM2_DB_PATH_7777="/home/admin/defi_stats/mm2/DB/db_hex/MM2.db"
-LOCAL_MM2_DB_PATH_8762="/home/admin/defi_stats/mm2_8762/DB/db_hex/MM2.db"
+LOCAL_MM2_DB_PATH_7777="/home/komodian/api/db/local/MM2_7777.db"
+LOCAL_MM2_DB_PATH_8762="/home/komodian/api/db/local/MM2_8762.db"
+HOST_LOCAL_MM2_DB_PATH_7777="/home/hound/defi_stats/api/db/local/MM2_7777.db"
+HOST_LOCAL_MM2_DB_PATH_8762="/home/hound/defi_stats/api/db/local/MM2_8762.db"
+
+# Komodo DeFi (hosts below are docker services, set to 127.0.0.1 if not using docker)
+DEXAPI_7777_HOST="http://komodefi"
+DEXAPI_8762_HOST="http://komodefi_8762"
+DEXAPI_7777_PORT="7877"
+DEXAPI_8762_PORT="7862"
+
+
+# AtomicDEX API
+COINS_CONFIG_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/utils/coins_config.json'
+COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 
 ```
 
@@ -105,6 +147,7 @@ All endpoints for this update will have a `api/v3/` prefix. Swagger docs are ava
 
 For [CoinGecko](https://www.coingecko.com/) endpoints, we are using the prefix `api/v3/gecko/`
 Endpoints previously at http://stats.testchain.xyz/ have been migrated to the prefix `api/v3/markets/`
+Endpoints previously at https://stats-api.atomicdex.io/ have been migrated to the prefix `api/v3/stats-api/`
 
 ## Data completeness
 Add `* * * * * /home/USERNAME/defi_stats/update_MM2_db.sh > /home/atomic/logs/db_update.log` to the crontab of the server you are running this api on to collect a variety of MM2.db files on varying netids, and to cover any missing data from swaps completed during server downtime. SSH key access is required.

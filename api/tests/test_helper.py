@@ -63,8 +63,9 @@ def test_get_pair_info_sorted():
 def test_get_last_trade_price(setup_last_traded_cache):
     cache = setup_last_traded_cache
     r = get_last_trade_price("KMD_LTC", cache)
-    assert r == Decimal("5.0000000000")
+    assert r == Decimal("20.0000000000")
     r2 = get_last_trade_price("LTC_KMD", cache)
+    assert r2 == Decimal("20.0000000000")
     assert r == r2
     r = get_last_trade_price("DOGE_XXX", cache)
     assert r == 0

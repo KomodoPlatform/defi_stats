@@ -298,9 +298,7 @@ class SqliteQuery:  # pragma: no cover
             return []
 
     @timed
-    def get_pairs_last_traded(self, started_at=None, finished_at=None, min_swaps=5):
-        if self.testing:
-            min_swaps = 0
+    def get_pairs_last_traded(self):
         # TODO: Filter out test coins
         try:
             sql = "SELECT taker_coin_ticker, maker_coin_ticker, \
@@ -315,15 +313,11 @@ class SqliteQuery:  # pragma: no cover
                     FROM stats_swaps"
 
             sql += " WHERE is_success=1"
-            if started_at is not None:
-                sql += f" AND finished_at > {started_at}"
-            if finished_at is not None:
-                sql += f" AND finished_at < {finished_at}"
             sql += " GROUP BY taker_coin_ticker, maker_coin_ticker, \
                     taker_coin_platform, maker_coin_platform;"
             self.db.sql_cursor.execute(sql)
             resp = self.db.sql_cursor.fetchall()
-            resp = [dict(i) for i in resp if i["swap_count"] >= min_swaps]
+            resp = [dict(i) for i in resp]
             by_pair_dict = {}
             for i in resp:
                 item = {}
@@ -345,15 +339,31 @@ class SqliteQuery:  # pragma: no cover
                 )
                 if pair == std_pair:
                     last_price = item["last_maker_amount"] / item["last_taker_amount"]
+                    sum_maker = item["sum_maker_traded"]
+                    sum_taker = item["sum_taker_traded"]
+                    last_taker_amount = item["last_taker_amount"]
+                    last_maker_amount = item["last_maker_amount"]
                 else:
                     last_price = item["last_taker_amount"] / item["last_maker_amount"]
+                    sum_taker = item["sum_maker_traded"]
+                    sum_maker = item["sum_taker_traded"]
+                    last_taker_amount = item["last_maker_amount"]
+                    last_maker_amount = item["last_taker_amount"]
+                    swap_count = item['swap_count']
                 item.update({"last_price": format_10f(last_price)})
 
                 # Handle segwit
                 if std_pair not in by_pair_dict:
                     by_pair_dict.update({std_pair: item})
                 elif item["last_swap"] > by_pair_dict[std_pair]["last_swap"]:
-                    by_pair_dict.update({std_pair: item})
+                    by_pair_dict[std_pair]['last_maker_amount'] = last_maker_amount
+                    by_pair_dict[std_pair]['last_taker_amount'] = last_taker_amount
+                    by_pair_dict[std_pair]['last_swap'] = item['last_swap']
+                    by_pair_dict[std_pair]['last_swap_uuid'] = item['last_swap_uuid']
+                    by_pair_dict[std_pair]['sum_maker_traded'] += sum_maker
+                    by_pair_dict[std_pair]['sum_taker_traded'] += sum_taker
+                    by_pair_dict[std_pair]['swap_count'] += swap_count
+
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
         except Exception as e:  # pragma: no cover

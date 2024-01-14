@@ -2,6 +2,9 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from db.sqlitedb_merge import SqliteMerge
+from db.sqldb import populate_pgsqldb, reset_defi_stats_table
+
+
 from lib.cache import Cache
 from util.defaults import default_error, default_result
 from util.logger import timed, logger
@@ -86,7 +89,7 @@ def fixer_rates():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def gecko_tickers():
     try:
@@ -126,7 +129,7 @@ def markets_tickers(netid):
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def markets_tickers_7777():
     markets_tickers("7777")
@@ -135,7 +138,7 @@ def markets_tickers_7777():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def markets_tickers_8762():
     markets_tickers("8762")
@@ -144,7 +147,7 @@ def markets_tickers_8762():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def markets_tickers_all():
     markets_tickers("ALL")
@@ -189,12 +192,12 @@ def generic_last_traded():
         cache_item.save()
     except Exception as e:
         return default_error(e)
-    msg = "Generic orderbook (ALL) loop complete!"
+    msg = "generic_last_traded loop complete!"
     return default_result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def generic_pairs():
     try:
@@ -246,3 +249,11 @@ def truncate_wal():
         return default_error(e)
     msg = "Database wal truncation loop complete!"
     return default_result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def populate_pgsqldb_loop():
+    reset_defi_stats_table()
+    populate_pgsqldb()

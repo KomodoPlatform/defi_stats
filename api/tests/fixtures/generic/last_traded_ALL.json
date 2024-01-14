@@ -1,10 +1,10 @@
 {
-    "last_updated": 1705070049,
+    "last_updated": 1705252777,
     "data": {
         "DGB_LTC": {
             "last_taker_amount": 1,
             "last_maker_amount": 1,
-            "last_swap": 1705066453,
+            "last_swap": 1705249181,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 1,
@@ -14,7 +14,7 @@
         "KMD-BEP20_BTC": {
             "last_taker_amount": 1,
             "last_maker_amount": 2000000,
-            "last_swap": 1704983349,
+            "last_swap": 1705166077,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 2000000,
@@ -24,7 +24,7 @@
         "KMD-BEP20_DGB": {
             "last_taker_amount": 0.9,
             "last_maker_amount": 500,
-            "last_swap": 1705066509,
+            "last_swap": 1705249237,
             "swap_count": 2,
             "sum_taker_traded": 1.9,
             "sum_maker_traded": 1500,
@@ -34,7 +34,7 @@
         "KMD_BTC": {
             "last_taker_amount": 1,
             "last_maker_amount": 1000000,
-            "last_swap": 1705059256,
+            "last_swap": 1705241984,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 1000000,
@@ -42,19 +42,19 @@
             "last_price": "0.0000010000"
         },
         "KMD_LTC": {
-            "last_taker_amount": 5,
-            "last_maker_amount": 1,
-            "last_swap": 1705066454,
-            "swap_count": 1,
-            "sum_taker_traded": 5,
-            "sum_maker_traded": 1,
+            "last_taker_amount": 1,
+            "last_maker_amount": 5,
+            "last_swap": 1705249182,
+            "swap_count": 3,
+            "sum_taker_traded": 3,
+            "sum_maker_traded": 35,
             "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-            "last_price": "5.0000000000"
+            "last_price": "20.0000000000"
         },
         "LTC_BTC": {
             "last_taker_amount": 1,
             "last_maker_amount": 5,
-            "last_swap": 1704465259,
+            "last_swap": 1704647987,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 5,
@@ -64,7 +64,7 @@
         "LTC_DOGE": {
             "last_taker_amount": 1,
             "last_maker_amount": 10,
-            "last_swap": 1699886062,
+            "last_swap": 1700068790,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 10,
@@ -74,7 +74,7 @@
         "MORTY_KMD": {
             "last_taker_amount": 1,
             "last_maker_amount": 1,
-            "last_swap": 1705066450,
+            "last_swap": 1705249178,
             "swap_count": 1,
             "sum_taker_traded": 1,
             "sum_maker_traded": 1,
