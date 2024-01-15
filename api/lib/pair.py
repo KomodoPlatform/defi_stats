@@ -15,13 +15,15 @@ from util.transform import (
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
-from lib.orderbook import Orderbook
+from db.schema import DefiSwap
+
 from util.defaults import default_error, set_params
 from util.enums import TradeType
 from util.helper import get_price_at_finish, get_last_trade_time
 from util.logger import logger, timed
 import util.templates as template
 import lib
+import db
 
 
 class Pair:  # pragma: no cover
@@ -141,7 +143,7 @@ class Pair:  # pragma: no cover
     @property
     def orderbook(self):
         # Handles reverse pairs
-        return Orderbook(
+        return lib.Orderbook(
             pair_obj=self,
             gecko_source=self.gecko_source,
             coins_config=self.coins_config,
@@ -184,21 +186,17 @@ class Pair:  # pragma: no cover
             else:
                 ticker_id = self.as_str
             trades_info = []
-            swaps_for_pair = self.pair_swaps(
-                limit=limit,
-                trade_type=trade_type,
+            pg_query = lib.SqlQuery()
+            swaps_for_pair = pg_query.get_swaps(
+                table=DefiSwap,
                 start_time=start_time,
                 end_time=end_time,
             )
             for swap in swaps_for_pair:
                 trade_info = OrderedDict()
                 trade_info["trade_id"] = swap["uuid"]
-                if self.inverse_requested:
-                    trade_info["base_ticker"] = self.quote
-                    trade_info["target_ticker"] = self.base
-                else:
-                    trade_info["base_ticker"] = self.base
-                    trade_info["target_ticker"] = self.quote
+                trade_info["base_ticker"] = self.base
+                trade_info["target_ticker"] = self.quote
                 price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
@@ -207,6 +205,7 @@ class Pair:  # pragma: no cover
                 trade_info["timestamp"] = swap["finished_at"]
                 trade_info["type"] = swap["trade_type"]
                 trades_info.append(trade_info)
+            logger.merge(trades_info)
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {ticker_id} failed for netid {self.netid}!"
             return default_error(e, msg)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from typing import List
+from typing import List, Dict
 
 from db.sqldb import SqlQuery
 from db.schema import DefiSwap
@@ -24,16 +24,23 @@ cache = Cache()
 
 
 @router.get(
-    "/get_swaps",
+    "/get_swaps/",
     description=f"Swaps completed within two epoch timestamps.",
     responses={406: {"model": ErrorMessage}},
-    response_model=List[DefiSwap],
+    response_model=List[DefiSwap] | Dict[str, List[DefiSwap]] | Dict,
     status_code=200,
 )
-def get_swaps(start: int = 0, end: int = 0):
+def get_swaps(
+    start: int = 0,
+    end: int = 0,
+    coin: str | None = None,
+    pair: str | None = None
+):
     try:
         query = SqlQuery()
-        return query.get_swaps(start=start, end=end)
+        resp = query.get_swaps(start=start, end=end, coin=coin, pair=pair)
+        logger.calc(resp)
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
