@@ -2,9 +2,11 @@
 import time
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from typing import Optional
 from lib.cache import Cache
 from lib.generic import Generic
 from lib.pair import Pair
+from db.sqlitedb import get_sqlite_db
 from util.enums import TradeType
 from util.validate import validate_positive_numeric
 from models.generic import (
@@ -57,13 +59,17 @@ def pairs():
 
 @router.get(
     "/last_traded",
-    description="Time and price of last trade for all pairs",
+    description="Time and price of last trade for all pairs. Segwit pairs are merged.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def last_traded():
+def last_traded(pair_str: str = ""):
     try:
-        return load_generic_last_traded()
+        last_traded = load_generic_last_traded()
+        if pair_str != "":
+            if pair_str in last_traded:
+                return last_traded[pair_str]
+        return last_traded
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -71,18 +77,18 @@ def last_traded():
 
 
 @router.get(
-    "/orderbook/{ticker_id}",
+    "/orderbook/{pair_str}",
     description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def orderbook(
-    ticker_id: str = "KMD_LTC",
+    pair_str: str = "KMD_LTC",
     depth: int = 100,
 ):
     try:
         generic = Generic(netid="ALL")
-        data = generic.orderbook(pair_str=ticker_id, depth=depth)
+        data = generic.orderbook(pair_str=pair_str, depth=depth)
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
@@ -92,19 +98,23 @@ def orderbook(
 
 
 @router.get(
-    "/historical_trades/{ticker_id}",
+    "/historical_trades/{pair_str}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def historical_trades(
     trade_type: TradeType = TradeType.ALL,
-    ticker_id: str = "KMD_LTC",
+    pair_str: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
+    start_time: Optional[int] = 0,
+    end_time: Optional[int] = 0,
 ):
     try:
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -115,13 +125,93 @@ def historical_trades(
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        pair = Pair(pair_str=ticker_id)
+        pair = Pair(pair_str=pair_str)
         data = pair.historical_trades(
             trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,
         )
+        return data
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/swaps_for_pair/{pair_str}",
+    description="Swaps in DB for a given time range. Use format `KMD_LTC`",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def swaps_for_pair(
+    trade_type: TradeType = TradeType.ALL,
+    pair_str: str = "KMD_LTC",
+    limit: int = 100,
+    start_time: int = 0,
+    end_time: int = 0,
+):
+    try:
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        for value, name in [
+            (limit, "limit"),
+            (start_time, "start_time"),
+            (end_time, "end_time"),
+        ]:
+            validate_positive_numeric(value, name)
+        if start_time > end_time:
+            raise ValueError("start_time must be less than end_time")
+        if trade_type not in ["all", "buy", "sell"]:
+            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
+        if "_" not in pair_str:
+            raise ValueError("pair_str must be in the format: 'KMD_LTC'")
+        base, quote = pair_str.split("_")
+        days = (end_time - start_time) / 86400
+        msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
+        msg += f"| {start_time} -> {end_time} | {days} days"
+        logger.query(msg)
+        db = get_sqlite_db(netid="ALL")
+        data = db.query.get_swaps_for_pair(
+            base, quote, trade_type, limit, start_time, end_time
+        )
+        """
+        pair = Pair(pair_str=pair_str)
+        data = pair.historical_trades(
+            trade_type=trade_type,
+            limit=limit,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        """
+        return {
+            "trade_type": trade_type,
+            "pair_str": pair_str,
+            "limit": limit,
+            "start_time": start_time,
+            "end_time": end_time,
+            "swaps_count": len(data),
+            "swaps": data,
+        }
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/last_24h_swaps",
+    description="All successful swaps in the last 24hrs",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def last_24h_swaps():
+    try:
+        db = get_sqlite_db(netid="ALL")
+        data = db.query.last_24h_swaps()
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

@@ -61,3 +61,42 @@ These should be consolidated in this repo at some point. They are based on branc
 - https://coinpaprika.com/exchanges/atomicdex/
 - https://www.coingecko.com/en/exchanges/komodo-wallet
 - https://markets.atomicdex.io/
+
+
+## Notes
+- Pairs are expressed as a string delimited by `_`, and ordered by market cap (or alphabetically where neither coin has a mcap value). To handle potential maker/taker inversion for the pair, an extra field in db was added to assign trade type as "buy" or "sell".
+- Coin tickers are expressed as `COIN-PROTOCOL`. In some cases, the "protocol" field is `segwit`. This suffix should be removed and data merged (e.g. LTC & LTC-segwit == LTC) before responding to endpoint requests.
+- Some consumers want no protocol suffix, and to have all tokens data merged. To facilitate this, any aggregate data from the DB should be categorised as below:
+    {
+        "coin": "USDC",
+        "start_time": 1705238147,
+        "end_time": 1705324547,
+        "range_days": 1,
+        "trade_type": "all",
+        "data": {
+            "USDC-AVX20": 0,
+            "USDC-AVX20_OLD": 0,
+            "USDC-ERC20": 0,
+            "USDC-BEP20": 12.356005570915247,
+            "USDC-FTM20": 0,
+            "USDC-HCO20": 0,
+            "USDC-KRC20": 0,
+            "USDC-MVR20": 0,
+            "USDC-PLG20": 207.8573098306688,
+            "USDC-PLG20_OLD": 0,
+            "USDC-ALL": 220.21331540158405
+        }
+    },
+    {
+        "coin": "LTC",
+        "start_time": 1705238147,
+        "end_time": 1705324547,
+        "range_days": 1,
+        "trade_type": "all",
+        "data": {
+            "LTC": 0.016497480406290333,
+            "LTC-segwit": 1.010765441602137,
+            "LTC-ALL": 1.0272629220084273
+        }
+    }
+- The `-ALL` suffix is used for the combined sum of all variants.

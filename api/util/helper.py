@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import timedelta
 from decimal import Decimal
 from typing import Dict
 from const import MM2_RPC_PORTS, MM2_NETID
@@ -28,6 +29,11 @@ def get_chunks(data, chunk_length):
             yield data[i: i + chunk_length]
     except Exception as e:  # pragma: no cover
         return default_error(e)
+
+
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + timedelta(n)
 
 
 def get_price_at_finish(swap):
@@ -95,3 +101,12 @@ def get_last_trade_uuid(pair_str: str, last_traded_cache: Dict) -> int:
     except Exception as e:  # pragma: no cover
         logger.warning(default_error(e))
     return ""
+
+
+def pair_without_segwit_suffix(maker_coin, taker_coin):
+    """Removes `-segwit` suffixes from the tickers of a pair"""
+    if maker_coin.endswith('-'):
+        maker_coin = maker_coin[:-1]
+    if taker_coin.endswith('-'):
+        taker_coin = taker_coin[:-1]
+    return f'{maker_coin.replace("-segwit", "")}_{taker_coin.replace("-segwit", "")}'

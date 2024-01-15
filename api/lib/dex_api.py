@@ -3,7 +3,7 @@ import requests
 from util.files import Files
 from const import API_ROOT_PATH, MM2_RPC_PORTS, MM2_RPC_HOSTS
 from util.logger import logger, timed
-from util.defaults import set_params, default_error
+from util.defaults import set_params, default_error, default_result
 import util.templates as template
 
 
@@ -62,3 +62,27 @@ class DexAPI:
 
         except Exception as e:  # pragma: no cover
             return default_error(e)
+
+
+@timed
+def get_orderbook(base, quote):
+    try:
+        pair = f"{base}_{quote}"
+        data = template.orderbook(pair)
+        dexapi = DexAPI(netid="ALL")
+        x = dexapi.orderbook_rpc(base, quote)
+        for i in ["asks", "bids"]:
+            items = [
+                {
+                    "price": j["price"]["decimal"],
+                    "volume": j["base_max_volume"]["decimal"],
+                }
+                for j in x[i]
+            ]
+            x[i] = items
+            data[i] += x[i]
+    except Exception as e:  # pragma: no cover
+        msg = f"orderbook.get_and_parse {base}/{quote} failed | netid ALL: {e}"
+        return default_error(e, msg)
+    msg = f"orderbook.get_and_parse {base}/{quote} ok | netid ALL"
+    return default_result(data=data, msg=msg)

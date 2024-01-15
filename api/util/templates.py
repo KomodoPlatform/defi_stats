@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-from util.transform import reverse_ticker
 
 
 def last_price_for_pair():  # pragma: no cover
@@ -36,12 +35,14 @@ def pair_info(pair_str: str, priced: bool = False) -> dict:
 
 def orderbook(pair_str, inverse_requested=False):
     if inverse_requested:
-        pair_str = reverse_ticker(pair_str)
+        pair_str = "_".join(pair_str.split("_")[::-1])
     x = pair_str.split("_")
+    base = x[0].replace("-segwit", "")
+    quote = x[1].replace("-segwit", "")
     return {
-        "pair": f"{pair_str}",
-        "base": x[0],
-        "quote": x[1],
+        "pair": f"{base}_{quote}",
+        "base": base,
+        "quote": quote,
         "timestamp": f"{int(time.time())}",
         "asks": [],
         "bids": [],

@@ -26,7 +26,7 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
         resp = db.query.get_swap(uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
-        return db.query.get_swap(uuid)
+        return resp
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

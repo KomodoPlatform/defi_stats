@@ -235,6 +235,7 @@ def import_dbs():
         msg = "Import source databases loop complete!"
         return default_result(msg=msg, loglevel="merge")
     msg = "Import source databases skipped, NodeType is 'serve'!"
+    msg += " Masters will be updated from cron."
     return default_result(msg=msg, loglevel="merge")
 
 
@@ -255,5 +256,6 @@ def truncate_wal():
 @repeat_every(seconds=300)
 @timed
 def populate_pgsqldb_loop():
-    reset_defi_stats_table()
+    # reset_defi_stats_table()
+    # updates last 24 hours swaps
     populate_pgsqldb()

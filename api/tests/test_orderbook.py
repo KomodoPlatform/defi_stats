@@ -47,7 +47,7 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
     orderbook = setup_ltc_kmd_orderbook
     r = orderbook.get_and_parse()
     logger.loop(r)
-    assert r["pair"] == "LTC_KMD"
+    assert r["pair"] == "KMD_LTC"
     assert orderbook.pair.inverse_requested
     assert "asks" in r
     assert "bids" in r
