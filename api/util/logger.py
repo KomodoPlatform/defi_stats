@@ -170,7 +170,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging, methodName, logToRoot)
 
 
-logger = logging.getLogger("dexstats_app")
+logger = logging.getLogger("defi-stats")
 # create console handler with a higher log level
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())

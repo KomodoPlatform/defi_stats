@@ -121,7 +121,7 @@ def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
 
 
 @timed
-def order_pair_by_market_cap(pair_str: str, gecko_source=None) -> str:
+def order_pair_by_market_cap(pair_str: str, gecko_source: Dict) -> str:
     try:
         pair_str.replace("-segwit", "")
         pair_list = pair_str.split("_")

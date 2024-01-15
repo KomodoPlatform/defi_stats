@@ -86,7 +86,7 @@ def get_swaps_for_coin(coin: str):
         resp = db.query.get_swaps_for_coin(coin)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
-        return {"coin": coin, "data": resp}
+        return resp
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -105,7 +105,7 @@ def get_volume_for_coin(coin: str):
         resp = db.query.get_volume_for_coin(coin)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
-        return {"coin": coin, "data": resp}
+        return resp
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

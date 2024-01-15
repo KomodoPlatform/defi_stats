@@ -17,6 +17,7 @@ from routes import (
     tickers,
     stats_api,
     old_db,
+    new_db,
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -122,6 +123,14 @@ app.include_router(
     old_db.router,
     prefix="/api/v3/old_db",
     tags=["Old DB"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    new_db.router,
+    prefix="/api/v3/new_db",
+    tags=["New DB"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
