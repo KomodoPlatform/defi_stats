@@ -2,7 +2,6 @@ from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
 from typing import Any, List, Dict
 from util.defaults import default_error
-import lib
 
 
 def round_to_str(value: Any, rounding=8):
@@ -122,13 +121,18 @@ def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
 
 
 @timed
-def order_pair_by_market_cap(pair_str: str, gecko_source=None) -> str:
+def order_pair_by_market_cap(pair_str: str, gecko_source: Dict) -> str:
     try:
+        pair_str.replace("-segwit", "")
         pair_list = pair_str.split("_")
         base = pair_list[0]
         quote = pair_list[1]
-        base_mc = lib.get_gecko_mcap(base, gecko_source=gecko_source)
-        quote_mc = lib.get_gecko_mcap(quote, gecko_source=gecko_source)
+        base_mc = 0
+        quote_mc = 0
+        if base in gecko_source:
+            base_mc = Decimal(gecko_source[base]["usd_market_cap"])
+        if quote in gecko_source:
+            quote_mc = Decimal(gecko_source[quote]["usd_market_cap"])
         if quote_mc < base_mc:
             pair_str = reverse_ticker(pair_str)
         elif quote_mc == base_mc:
@@ -136,6 +140,7 @@ def order_pair_by_market_cap(pair_str: str, gecko_source=None) -> str:
     except Exception as e:  # pragma: no cover
         msg = f"order_pair_by_market_cap failed: {e}"
         logger.warning(msg)
+
     return pair_str
 
 
@@ -317,7 +322,7 @@ def get_coin_platform(coin):
     r = coin.split("-")
     if len(r) == 2:
         return r[1]
-    return ''
+    return ""
 
 
 def deplatform_pair_summary_item(i):

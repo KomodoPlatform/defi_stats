@@ -19,10 +19,10 @@ def test_orderbook(setup_swaps_db_data):
     r_all = generic.orderbook("KMD_LTC")
     r_all2 = generic.orderbook("KMD_LTC-segwit")
     assert r_all["bids"][0] == r_all2["bids"][0]
-    assert len(r_all["asks"]) == len(r_all2["asks"])
-    assert len(r_all["pair"]) != len(r_all2["pair"])
-    assert len(r_all["quote"]) != len(r_all2["quote"])
-    assert len(r_all["base"]) == len(r_all2["base"])
+    assert r_all["asks"][0] == r_all2["asks"][0]
+    assert r_all["pair"] == r_all2["pair"]
+    assert r_all["quote"] == r_all2["quote"]
+    assert r_all["base"] == r_all2["base"]
     assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
     generic = Generic(db=setup_swaps_db_data, netid="8762")

@@ -2,6 +2,7 @@
 import time
 from collections import OrderedDict
 from decimal import Decimal
+from typing import Optional
 from util.transform import (
     sum_json_key,
     sum_json_key_10f,
@@ -14,13 +15,15 @@ from util.transform import (
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
-from lib.orderbook import Orderbook
+from db.schema import DefiSwap
+
 from util.defaults import default_error, set_params
 from util.enums import TradeType
 from util.helper import get_price_at_finish, get_last_trade_time
 from util.logger import logger, timed
 import util.templates as template
 import lib
+import db
 
 
 class Pair:  # pragma: no cover
@@ -140,7 +143,7 @@ class Pair:  # pragma: no cover
     @property
     def orderbook(self):
         # Handles reverse pairs
-        return Orderbook(
+        return lib.Orderbook(
             pair_obj=self,
             gecko_source=self.gecko_source,
             coins_config=self.coins_config,
@@ -168,32 +171,32 @@ class Pair:  # pragma: no cover
         self,
         trade_type: TradeType,
         limit: int = 100,
-        start_time: int = int(time.time()) - 86400,
-        end_time: int = int(time.time()),
+        start_time: Optional[int] = 0,
+        end_time: Optional[int] = 0,
     ):
         """Returns trades for this pair."""
         # Handles reverse pairs
         try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
             if self.inverse_requested:
                 ticker_id = reverse_ticker(self.as_str)
             else:
                 ticker_id = self.as_str
             trades_info = []
-            swaps_for_pair = self.pair_swaps(
-                limit=limit,
-                trade_type=trade_type,
+            pg_query = lib.SqlQuery()
+            swaps_for_pair = pg_query.get_swaps(
+                table=DefiSwap,
                 start_time=start_time,
                 end_time=end_time,
             )
             for swap in swaps_for_pair:
                 trade_info = OrderedDict()
                 trade_info["trade_id"] = swap["uuid"]
-                if self.inverse_requested:
-                    trade_info["base_ticker"] = self.quote
-                    trade_info["target_ticker"] = self.base
-                else:
-                    trade_info["base_ticker"] = self.base
-                    trade_info["target_ticker"] = self.quote
+                trade_info["base_ticker"] = self.base
+                trade_info["target_ticker"] = self.quote
                 price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
                 trade_info["price"] = format_10f(price)
                 trade_info["base_volume"] = format_10f(swap["maker_amount"])
@@ -202,6 +205,7 @@ class Pair:  # pragma: no cover
                 trade_info["timestamp"] = swap["finished_at"]
                 trade_info["type"] = swap["trade_type"]
                 trades_info.append(trade_info)
+            logger.merge(trades_info)
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {ticker_id} failed for netid {self.netid}!"
             return default_error(e, msg)
@@ -252,7 +256,7 @@ class Pair:  # pragma: no cover
         try:
             timestamp = int(time.time() - 86400 * days)
             swaps_for_pair = self.pair_swaps(start_time=timestamp)
-            if self.as_str == "KMD_:TC":
+            if self.as_str in ["KMD_LTC"] and days == 1:
                 logger.merge(swaps_for_pair)
             # Get template in case no swaps returned
             suffix = get_suffix(days)
@@ -349,12 +353,18 @@ class Pair:  # pragma: no cover
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
         try:
-            logger.muted(f"Getting ticker info for {self.as_str} on {self.netid}")
             vol_price_data = self.get_volumes_and_prices(days)
             suffix = get_suffix(days)
             orderbook_data = self.orderbook_data
             liquidity = self.get_liquidity(orderbook_data)
-
+            if self.as_str in ["KMD_LTC"] and days == 1:
+                msg = f"ticker info: {self.as_str} | {self.netid} | {days} days"
+                logger.pair(msg)
+                msg = f"last swap uuid: {vol_price_data['last_swap_uuid']}"
+                logger.pair(msg)
+                # logger.pair(f"orderbook_data: {orderbook_data}")
+                # logger.pair(f"liquidity: {liquidity}")
+                pass
             resp = {
                 "ticker_id": self.as_str,
                 "pool_id": self.as_str,
@@ -410,10 +420,14 @@ class Pair:  # pragma: no cover
         self,
         limit: int = 100,
         trade_type: TradeType = TradeType.ALL,
-        start_time: int = int(time.time()) - 86400,
-        end_time: int = int(time.time()),
+        start_time: Optional[int] = 0,
+        end_time: Optional[int] = 0,
     ):
         try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
             # Handles reverse pairs
             if self.inverse_requested:
                 base = self.quote
@@ -437,11 +451,15 @@ class Pair:  # pragma: no cover
     @timed
     def swap_uuids(
         self,
-        start_time: int = int(time.time()) - 86400,
-        end_time: int = int(time.time()),
+        start_time: Optional[int] = 0,
+        end_time: Optional[int] = 0,
         db=None,
     ) -> list:
         try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
             swaps_for_pair = self.pair_swaps(start_time=start_time, end_time=end_time)
             data = [i["uuid"] for i in swaps_for_pair]
             return data

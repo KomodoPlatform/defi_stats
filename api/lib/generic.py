@@ -123,7 +123,6 @@ class Generic:  # pragma: no cover
             # TODO: is segwit is coalesced yet?
             pairs = self.db.query.get_pairs(days=days)
 
-            # logger.info(pairs)
             if "error" in pairs:  # pragma: no cover
                 raise DataStructureError(
                     f"'get_pairs' returned an error: {pairs['error']}"

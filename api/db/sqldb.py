@@ -4,12 +4,13 @@ from decimal import Decimal
 from datetime import datetime, timezone
 from sqlalchemy import func
 from sqlalchemy.sql.expression import bindparam
-from sqlmodel import Session, SQLModel, create_engine, text, update
+from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
 from db.schema import CipiSwap, DefiSwap, StatsSwap
 from dotenv import load_dotenv
 from util.defaults import default_error, default_result
 from util.logger import logger, timed
 import util.transform as transform
+import lib
 from const import (
     MYSQL_USERNAME,
     MYSQL_HOSTNAME,
@@ -27,7 +28,7 @@ load_dotenv()
 
 
 class SqlDB:
-    def __init__(self, db_type, db_path=None, external=False) -> None:
+    def __init__(self, db_type="pgsql", db_path=None, external=False, **kwargs) -> None:
         self.db_type = db_type
         self.db_path = db_path
         self.external = external
@@ -56,9 +57,18 @@ class SqlDB:
 
         self.engine = create_engine(self.db_url)  # ), echo=True)
 
+        if "gecko_source" in kwargs:
+            self.gecko_source = kwargs["gecko_source"]
+        else:
+            self.gecko_source = lib.cache.load_gecko_source()
+        if "coins_config" in kwargs:
+            self.coins_config = kwargs["coins_config"]
+        else:
+            self.coins_config = lib.cache.load_coins_config()
+
 
 class SqlUpdate(SqlDB):
-    def __init__(self, db_type, db_path=None, external=False) -> None:
+    def __init__(self, db_type="pgsql", db_path=None, external=False) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
 
     def drop(self, table):
@@ -71,12 +81,14 @@ class SqlUpdate(SqlDB):
 
 
 class SqlQuery(SqlDB):
-    def __init__(self, db_type, db_path=None, external=False) -> None:
+    def __init__(self, db_type="pgsql", db_path=None, external=False) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
 
+    """
     def get_distinct(self, table: object):
         with Session(self.engine) as session:
             pass
+    """
 
     def get_count(self, table: object):
         with Session(self.engine) as session:
@@ -87,12 +99,19 @@ class SqlQuery(SqlDB):
         try:
             with Session(self.engine) as session:
                 sql = f"SELECT * FROM {table} LIMIT {limit};"
-                logger.calc(sql)
                 r = session.exec(text(sql))
                 return [dict(i) for i in r]
         except Exception as e:
             logger.error(e)
-            
+
+    def get_first(self, table: str, limit: int = 3):
+        try:
+            with Session(self.engine) as session:
+                sql = f"SELECT * FROM {table} ORDER BY started_at ASC LIMIT {limit};"
+                r = session.exec(text(sql))
+                return [dict(i) for i in r]
+        except Exception as e:
+            logger.error(e)
 
     def describe(self, table):
         with Session(self.engine) as session:
@@ -104,7 +123,14 @@ class SqlQuery(SqlDB):
                 logger.merge(i)
 
     @timed
-    def get_swaps(self, table: object, start: int, end: int):
+    def get_swaps(
+        self,
+        table: object = DefiSwap,
+        start_time: int = 0,
+        end_time: int = 0,
+        coin=None,
+        pair=None,
+    ):
         """
         Returns swaps matching filter from any of the SQL databases.
         For MM2 and Cipi's databases, some fields are derived or set
@@ -112,38 +138,108 @@ class SqlQuery(SqlDB):
         'defi_stats' database contains data imported from the above,
         using the higher value for any numeric fields, and with defaults
         reconciled (if available in either of the MM2/Cipi databases).
+
+        For `pair` or `coin`, it will return all variants to be combined
+        (or further filtered) later.
         """
         try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
             if table.__tablename__ in ["swaps", "swaps_failed"]:
-                start = datetime.fromtimestamp(start, timezone.utc)
-                end = datetime.fromtimestamp(end, timezone.utc)
+                start_time = datetime.fromtimestamp(start_time, timezone.utc)
+                end_time = datetime.fromtimestamp(end_time, timezone.utc)
             with Session(self.engine) as session:
-                r = (
-                    session.query(table)
-                    .filter(table.started_at > start)
-                    .filter(table.started_at < end)
-                    .order_by(table.started_at)
-                    .all()
+                q = select(table).where(
+                    table.started_at > start_time, table.started_at < end_time
                 )
+                if coin is not None:
+                    q = q.where(
+                        or_(
+                            coin == table.maker_coin_ticker,
+                            coin == table.taker_coin_ticker,
+                        )
+                    )
+                elif pair is not None:
+                    pair = transform.strip_pair_platforms(pair)
+                    pair = transform.order_pair_by_market_cap(
+                        pair, gecko_source=self.gecko_source
+                    )
+                    base, quote = pair.split("_")
+                    q = q.where(
+                        or_(
+                            base == table.maker_coin_ticker,
+                            base == table.taker_coin_ticker,
+                        )
+                    ).where(
+                        or_(
+                            quote == table.maker_coin_ticker,
+                            quote == table.taker_coin_ticker,
+                        )
+                    )
+
+                q = q.order_by(table.started_at)
+                r = session.exec(q)
                 data = [dict(i) for i in r]
-                data = normalise_swap_data(data)
-                if table.__tablename__ == "swaps":
-                    data["is_success"]: 1
-                elif table.__tablename__ == "swaps_failed":
-                    data["is_success"]: 0
+
+                if coin is not None:
+                    variants = [i for i in self.coins_config if i.startswith(coin)]
+                    for i in data:
+                        logger.calc(i)
+                        logger.info(i["taker_coin"])
+                    resp = {
+                        i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
+                        for i in variants
+                    }
+                    resp.update({f"{coin}-ALL": data})
+                elif pair is not None:
+                    base_variants = [i for i in self.coins_config if i.startswith(base)]
+                    quote_variants = [
+                        i for i in self.coins_config if i.startswith(quote)
+                    ]
+                    resp = {}
+                    for i in base_variants:
+                        for j in quote_variants:
+                            resp.update(
+                                {
+                                    f"{i}_{j}": [
+                                        k
+                                        for k in data
+                                        if i == k["taker_coin"] and j == k["maker_coin"]
+                                    ]
+                                }
+                            )
+                    resp.update({f"{pair} [ALL]": data})
+                else:
+                    resp = data
         except Exception as e:
             return default_error(e)
-        msg = f"Got {len(data)} swaps from {table.__tablename__} between {start} and {end}"
-        return default_result(data=data, msg=msg, loglevel="updated")
+        msg = f"Got {len(data)} swaps from {table.__tablename__}"
+        msg += f" between {start_time} and {end_time}"
+        if coin is not None:
+            msg += f" [{coin}]"
+        if pair is not None:
+            msg += f" [{pair}]"
+        return default_result(data=resp, msg=msg, loglevel="muted")
 
 
 @timed
-def normalise_swap_data(data):
+def normalise_swap_data(data, gecko_source, is_success=None):
     try:
         for i in data:
+            pair = f'{i["maker_coin"]}_{i["taker_coin"]}'
+            pair_std = transform.order_pair_by_market_cap(
+                pair, gecko_source=gecko_source
+            )
+            if pair.replace("-segwit", "") == pair_std:
+                trade_type = "buy"
+            else:
+                trade_type = "sell"
             i.update(
                 {
-                    "is_success": -1,
+                    "pair": pair,
+                    "trade_type": trade_type,
                     "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
                     "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),
                     "taker_coin_ticker": transform.strip_coin_platform(i["taker_coin"]),
@@ -152,20 +248,35 @@ def normalise_swap_data(data):
                     "reverse_price": Decimal(i["maker_amount"] / i["taker_amount"]),
                 }
             )
+            if "is_success" not in i:
+                if is_success is not None:
+                    if is_success:
+                        i.update({"is_success": 1})
+                    else:
+                        i.update({"is_success": 0})
+                else:
+                    i.update({"is_success": -1})
+
             for k, v in i.items():
-                if k in ["maker_coin_usd_price", "taker_coin_usd_price"]:
-                    if v is None:
-                        i.update({k: 0})
                 if k in [
                     "maker_pubkey",
                     "taker_pubkey",
                     "taker_gui",
-                    "taker_gui",
+                    "maker_gui",
                     "taker_version",
-                    "taker_version",
+                    "maker_version",
                 ]:
-                    if v is None:
+                    if v in [None, ""]:
                         i.update({k: ""})
+                if k in [
+                    "maker_coin_usd_price",
+                    "taker_coin_usd_price",
+                    "started_at",
+                    "finished_at",
+                ]:
+                    if v in [None, ""]:
+                        i.update({k: 0})
+
     except Exception as e:
         return default_error(e)
     msg = "Data normalised"
@@ -197,6 +308,8 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 maker_pubkey=cipi_data["maker_pubkey"],
                 maker_version=cipi_data["maker_version"],
                 started_at=int(cipi_data["started_at"].timestamp()),
+                # Not in Cipi's DB, but better than zero.
+                finished_at=cipi_data["started_at"],
                 # Not in Cipi's DB, but able to derive.
                 price=cipi_data["price"],
                 reverse_price=cipi_data["reverse_price"],
@@ -205,11 +318,12 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 maker_coin_ticker=cipi_data["maker_coin_ticker"],
                 taker_coin_platform=cipi_data["taker_coin_platform"],
                 taker_coin_ticker=cipi_data["taker_coin_ticker"],
-                # Not in Cipi's DB, but better than zero.
-                finished_at=cipi_data["started_at"],
+                # Extra columns
+                trade_type=cipi_data["trade_type"],
+                pair=cipi_data["pair"],
+                last_updated=int(time.time()),
             )
         else:
-            logger.merge(cipi_data)
             for i in [
                 "taker_coin",
                 "maker_coin",
@@ -225,8 +339,14 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 "taker_coin_platform",
             ]:
                 if cipi_data[i] != defi_data[i]:
-                    if cipi_data[i] in ["", "None", "unknown"]:
+                    if cipi_data[i] in ["", "None", "unknown", None]:
                         cipi_data[i] = defi_data[i]
+                    elif defi_data[i] in ["", "None", "unknown", None]:
+                        defi_data[i] = cipi_data[i]
+                    elif isinstance(defi_data[i], str):
+                        if len(defi_data[i]) == 0:
+                            defi_data[i] = cipi_data[i]
+                        pass
                     else:
                         # This shouldnt happen
                         logger.warning("Mismatch on incoming cipi data vs defi data:")
@@ -263,7 +383,15 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 # Not in Cipi's DB
                 maker_coin_usd_price=max(0, defi_data["maker_coin_usd_price"]),
                 taker_coin_usd_price=max(0, defi_data["taker_coin_usd_price"]),
+                # Extra columns
+                trade_type=defi_data["trade_type"],
+                pair=defi_data["pair"],
+                last_updated=int(time.time()),
             )
+        if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+            data.duration = data.finished_at - data.started_at
+        else:
+            data.duration = -1
     except Exception as e:
         return default_error(e)
     msg = "cipi to defi conversion complete"
@@ -277,6 +405,9 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
     """
     try:
         if defi_data is None:
+            for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
+                if i not in mm2_data:
+                    mm2_data.update({i: ""})
             data = DefiSwap(
                 uuid=mm2_data["uuid"],
                 taker_amount=mm2_data["taker_amount"],
@@ -296,10 +427,14 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 price=mm2_data["price"],
                 reverse_price=mm2_data["reverse_price"],
                 # Not in MM2 DB, using default.
-                taker_gui="",
-                taker_version="",
-                maker_gui="",
-                maker_version="",
+                taker_gui=mm2_data["taker_gui"],
+                taker_version=mm2_data["taker_version"],
+                maker_gui=mm2_data["maker_gui"],
+                maker_version=mm2_data["maker_version"],
+                # Extra columns
+                trade_type=mm2_data["trade_type"],
+                pair=mm2_data["pair"],
+                last_updated=int(time.time()),
             )
         else:
             for i in [
@@ -317,6 +452,9 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                         mm2_data[i] = defi_data[i]
                     elif defi_data[i] in ["", "None", None, -1, "unknown"]:
                         pass
+                    elif isinstance(mm2_data[i], str):
+                        if len(mm2_data[i]) == 0:
+                            mm2_data[i] = defi_data[i]
                     else:
                         # This shouldnt happen
                         logger.warning("Mismatch on incoming mm2 data vs defi data:")
@@ -349,7 +487,16 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 maker_gui=defi_data["maker_gui"],
                 taker_version=defi_data["taker_version"],
                 maker_version=defi_data["maker_version"],
+                # Extra columns
+                trade_type=defi_data["trade_type"],
+                pair=defi_data["pair"],
+                last_updated=int(time.time()),
             )
+        if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+            data.duration = data.finished_at - data.started_at
+        else:
+            data.duration = -1
+
     except Exception as e:
         return default_error(e)
     msg = "mm2 to defi conversion complete"
@@ -357,13 +504,17 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
 
 
 @timed
-def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
+def import_cipi_swaps(
+    pgdb: SqlDB,
+    pgdb_query: SqlQuery,
+    start=int(time.time() - 86400),
+    end=int(time.time()),
+):
     try:
         # import Cipi's swap data
         ext_mysql = SqlQuery("mysql")
-        cipi_swaps = ext_mysql.get_swaps(
-            CipiSwap, start=int(time.time() - 86400), end=int(time.time())
-        )
+        cipi_swaps = ext_mysql.get_swaps(CipiSwap, start_time=start, end_time=end)
+        cipi_swaps = normalise_swap_data(cipi_swaps, ext_mysql.gecko_source)
         if len(cipi_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(DefiSwap.uuid)
@@ -378,10 +529,10 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
                 updates = []
                 for each in overlapping_swaps:
-                    # Get dict row for existing swaps
+                    # Get dict row for ex         "isting swaps
                     cipi_data = cipi_to_defi_swap(
                         cipi_swaps_data[each.uuid], each.__dict__
-                    )
+                    ).__dict__
                     # create bindparam
                     cipi_data.update({"_id": each.id})
                     # remove id field to avoid contraint errors
@@ -396,7 +547,9 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
                 if len(updates) > 0:
                     # Update existing records
-                    bind_values = {i: bindparam(i) for i in updates if i not in ["_id"]}
+                    bind_values = {
+                        i: bindparam(i) for i in updates[0].keys() if i not in ["_id"]
+                    }
                     stmt = (
                         update(DefiSwap)
                         .where(DefiSwap.id == bindparam("_id"))
@@ -415,7 +568,8 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
                         session.add(swap)
                 session.commit()
                 count_after = pgdb_query.get_count(DefiSwap.uuid)
-                msg = f"{count_after - count} records added/updated from Cipi database"
+                msg = f"{count_after - count} records added from Cipi database"
+                msg = f" | {len(updates)} records updated from Cipi database"
         else:
             msg = "Zero Cipi swaps returned!"
 
@@ -425,14 +579,17 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
 
 @timed
-def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
+def import_mm2_swaps(
+    pgdb: SqlDB,
+    pgdb_query: SqlQuery,
+    start=int(time.time() - 86400),
+    end=int(time.time()),
+):
     try:
         # Import in Sqlite (all) database
         mm2_sqlite = SqlQuery("sqlite", db_path=MM2_DB_PATH_ALL)
-        mm2_swaps = mm2_sqlite.get_swaps(
-            StatsSwap, start=int(time.time() - 86400), end=int(time.time())
-        )
-        logger.info(mm2_sqlite.get_last('stats_swaps')[0]['uuid'])
+        mm2_swaps = mm2_sqlite.get_swaps(StatsSwap, start_time=start, end_time=end)
+        mm2_swaps = normalise_swap_data(mm2_swaps, mm2_sqlite.gecko_source)
         if len(mm2_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(DefiSwap.uuid)
@@ -487,7 +644,8 @@ def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
                         session.add(swap)
                 session.commit()
                 count_after = pgdb_query.get_count(DefiSwap.uuid)
-                msg = f"{count_after - count} records added/updated from MM2.db"
+                msg = f"{count_after - count} records added from MM2.db"
+                msg += f" | {len(updates)} records updated from MM2.db"
         else:
             msg = "Zero MM2 swaps returned!"
     except Exception as e:
@@ -496,15 +654,15 @@ def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
 
 @timed
-def populate_pgsqldb():
+def populate_pgsqldb(start=int(time.time() - 86400), end=int(time.time())):
     try:
         pgdb = SqlUpdate("pgsql")
         pgdb_query = SqlQuery("pgsql")
-        import_cipi_swaps(pgdb, pgdb_query)
-        import_mm2_swaps(pgdb, pgdb_query)
+        import_cipi_swaps(pgdb, pgdb_query, start=start, end=end)
+        import_mm2_swaps(pgdb, pgdb_query, start=start, end=end)
     except Exception as e:
         return default_error(e)
-    msg = "populate_pgsqldb complete"
+    msg = f"Importing swaps from {start} - {end} complete"
     return default_result(msg=msg, loglevel="updated")
 
 
