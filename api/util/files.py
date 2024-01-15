@@ -1,3 +1,4 @@
+import time
 import json
 import requests
 from const import API_ROOT_PATH
@@ -75,13 +76,17 @@ class Files:
             }
 
     def load_jsonfile(self, path):
-        try:
-            with open(path, "r") as f:
-                # logger.calc(f"Loading {path}")
-                return json.load(f)
-        except Exception as e:  # pragma: no cover
-            error = f"Error loading {path}: {e}"
-            logger.warning(error)
+        i = 0
+        while i < 5:
+            try:
+                with open(path, "r") as f:
+                    # logger.calc(f"Loading {path}")
+                    return json.load(f)
+            except Exception as e:  # pragma: no cover
+                error = f"Error loading {path}: {e}"
+                logger.warning(error)
+            i += 1
+            time.sleep(0.1)
         return None
 
     def download_json(self, url):

@@ -126,6 +126,11 @@ class CustomFormatter(logging.Formatter):
                 self.skyblue
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
             )
+        elif record.levelname == "PAIR":
+            log_fmt = (
+                self.skyblue
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+            )
         elif record.levelname == "SAVE":
             log_fmt = (
                 self.drabgreen
@@ -170,6 +175,10 @@ logger = logging.getLogger("dexstats_app")
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
+
+# Shows DB imports
+addLoggingLevel("PAIR", logging.DEBUG + 11)
+logger.setLevel("PAIR")
 
 # Shows DB imports
 addLoggingLevel("MERGE", logging.DEBUG + 9)
@@ -235,6 +244,8 @@ def send_log(loglevel, msg):
             logger.error(f"  {msg}")
         case "loop":
             logger.loop(f"   {msg}")
+        case "pair":
+            logger.pair(f"   {msg}")
         case "query":
             logger.query(f"  {msg}")
         case "request":

@@ -74,10 +74,11 @@ class SqlQuery(SqlDB):
     def __init__(self, db_type, db_path=None, external=False) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
 
+    '''
     def get_distinct(self, table: object):
         with Session(self.engine) as session:
             pass
-
+    '''
     def get_count(self, table: object):
         with Session(self.engine) as session:
             r = session.query(func.count(table))
@@ -87,12 +88,19 @@ class SqlQuery(SqlDB):
         try:
             with Session(self.engine) as session:
                 sql = f"SELECT * FROM {table} LIMIT {limit};"
-                logger.calc(sql)
                 r = session.exec(text(sql))
                 return [dict(i) for i in r]
         except Exception as e:
             logger.error(e)
-            
+
+    def get_first(self, table: str, limit: int = 3):
+        try:
+            with Session(self.engine) as session:
+                sql = f"SELECT * FROM {table} ORDER BY started_at ASC LIMIT {limit};"
+                r = session.exec(text(sql))
+                return [dict(i) for i in r]
+        except Exception as e:
+            logger.error(e)
 
     def describe(self, table):
         with Session(self.engine) as session:
@@ -134,7 +142,7 @@ class SqlQuery(SqlDB):
         except Exception as e:
             return default_error(e)
         msg = f"Got {len(data)} swaps from {table.__tablename__} between {start} and {end}"
-        return default_result(data=data, msg=msg, loglevel="updated")
+        return default_result(data=data, msg=msg, loglevel="muted")
 
 
 @timed
@@ -209,7 +217,6 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 finished_at=cipi_data["started_at"],
             )
         else:
-            logger.merge(cipi_data)
             for i in [
                 "taker_coin",
                 "maker_coin",
@@ -225,8 +232,14 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 "taker_coin_platform",
             ]:
                 if cipi_data[i] != defi_data[i]:
-                    if cipi_data[i] in ["", "None", "unknown"]:
+                    if cipi_data[i] in ["", "None", "unknown", None]:
                         cipi_data[i] = defi_data[i]
+                    elif defi_data[i] in ["", "None", "unknown", None]:
+                        defi_data[i] = cipi_data[i]
+                    elif isinstance(defi_data[i], str):
+                        if len(defi_data[i]) == 0:
+                            defi_data[i] = cipi_data[i]
+                        pass
                     else:
                         # This shouldnt happen
                         logger.warning("Mismatch on incoming cipi data vs defi data:")
@@ -317,6 +330,9 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                         mm2_data[i] = defi_data[i]
                     elif defi_data[i] in ["", "None", None, -1, "unknown"]:
                         pass
+                    elif isinstance(mm2_data[i], str):
+                        if len(mm2_data[i]) == 0:
+                            mm2_data[i] = defi_data[i]
                     else:
                         # This shouldnt happen
                         logger.warning("Mismatch on incoming mm2 data vs defi data:")
@@ -357,13 +373,16 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
 
 
 @timed
-def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
+def import_cipi_swaps(
+    pgdb: SqlDB,
+    pgdb_query: SqlQuery,
+    start=int(time.time() - 86400),
+    end=int(time.time()),
+):
     try:
         # import Cipi's swap data
         ext_mysql = SqlQuery("mysql")
-        cipi_swaps = ext_mysql.get_swaps(
-            CipiSwap, start=int(time.time() - 86400), end=int(time.time())
-        )
+        cipi_swaps = ext_mysql.get_swaps(CipiSwap, start=start, end=end)
         if len(cipi_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(DefiSwap.uuid)
@@ -381,7 +400,7 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
                     # Get dict row for existing swaps
                     cipi_data = cipi_to_defi_swap(
                         cipi_swaps_data[each.uuid], each.__dict__
-                    )
+                    ).__dict__
                     # create bindparam
                     cipi_data.update({"_id": each.id})
                     # remove id field to avoid contraint errors
@@ -396,7 +415,9 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
                 if len(updates) > 0:
                     # Update existing records
-                    bind_values = {i: bindparam(i) for i in updates if i not in ["_id"]}
+                    bind_values = {
+                        i: bindparam(i) for i in updates[0].keys() if i not in ["_id"]
+                    }
                     stmt = (
                         update(DefiSwap)
                         .where(DefiSwap.id == bindparam("_id"))
@@ -415,7 +436,8 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
                         session.add(swap)
                 session.commit()
                 count_after = pgdb_query.get_count(DefiSwap.uuid)
-                msg = f"{count_after - count} records added/updated from Cipi database"
+                msg = f"{count_after - count} records added from Cipi database"
+                msg = f" | {len(updates)} records updated from Cipi database"
         else:
             msg = "Zero Cipi swaps returned!"
 
@@ -425,14 +447,16 @@ def import_cipi_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
 
 @timed
-def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
+def import_mm2_swaps(
+    pgdb: SqlDB,
+    pgdb_query: SqlQuery,
+    start=int(time.time() - 86400),
+    end=int(time.time()),
+):
     try:
         # Import in Sqlite (all) database
         mm2_sqlite = SqlQuery("sqlite", db_path=MM2_DB_PATH_ALL)
-        mm2_swaps = mm2_sqlite.get_swaps(
-            StatsSwap, start=int(time.time() - 86400), end=int(time.time())
-        )
-        logger.info(mm2_sqlite.get_last('stats_swaps')[0]['uuid'])
+        mm2_swaps = mm2_sqlite.get_swaps(StatsSwap, start=start, end=end)
         if len(mm2_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(DefiSwap.uuid)
@@ -487,7 +511,8 @@ def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
                         session.add(swap)
                 session.commit()
                 count_after = pgdb_query.get_count(DefiSwap.uuid)
-                msg = f"{count_after - count} records added/updated from MM2.db"
+                msg = f"{count_after - count} records added from MM2.db"
+                msg += f" | {len(updates)} records updated from MM2.db"
         else:
             msg = "Zero MM2 swaps returned!"
     except Exception as e:
@@ -496,12 +521,12 @@ def import_mm2_swaps(pgdb: SqlDB, pgdb_query: SqlQuery):
 
 
 @timed
-def populate_pgsqldb():
+def populate_pgsqldb(start=int(time.time() - 86400), end=int(time.time())):
     try:
         pgdb = SqlUpdate("pgsql")
         pgdb_query = SqlQuery("pgsql")
-        import_cipi_swaps(pgdb, pgdb_query)
-        import_mm2_swaps(pgdb, pgdb_query)
+        import_cipi_swaps(pgdb, pgdb_query, start=start, end=end)
+        import_mm2_swaps(pgdb, pgdb_query, start=start, end=end)
     except Exception as e:
         return default_error(e)
     msg = "populate_pgsqldb complete"

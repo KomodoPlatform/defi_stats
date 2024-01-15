@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from db.sqlitedb_merge import SqliteMerge
-from db.sqldb import populate_pgsqldb, reset_defi_stats_table
+from db.sqldb import populate_pgsqldb
 
 
 from lib.cache import Cache
@@ -235,6 +235,7 @@ def import_dbs():
         msg = "Import source databases loop complete!"
         return default_result(msg=msg, loglevel="merge")
     msg = "Import source databases skipped, NodeType is 'serve'!"
+    msg += " Masters will be updated from cron."
     return default_result(msg=msg, loglevel="merge")
 
 
@@ -255,5 +256,5 @@ def truncate_wal():
 @repeat_every(seconds=300)
 @timed
 def populate_pgsqldb_loop():
-    reset_defi_stats_table()
+    # updates last 24 hours swaps
     populate_pgsqldb()

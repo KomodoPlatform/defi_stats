@@ -117,7 +117,7 @@ def test_historical_trades_to_gecko():
 
 def test_pairs_to_gecko(setup_pairs_to_gecko):
     x = setup_pairs_to_gecko
-    logger.info(x)
+    logger.info([i["pool_id"] for i in x])
     assert "DGB_LTC" in [i["pool_id"] for i in x]
     assert "KMD_DOGE" in [i["pool_id"] for i in x]
     assert "DGB_LTC-segwit" not in [i["pool_id"] for i in x]

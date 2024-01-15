@@ -22,6 +22,16 @@ def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail
     raise ValueError(msg)
 
 
+def simple_validate_pair_str(pair_str):
+    if "_" not in pair_str:
+        return False
+    if " " in pair_str:
+        return False
+    if ";" in pair_str:
+        return False
+    return True
+
+
 def validate_positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:

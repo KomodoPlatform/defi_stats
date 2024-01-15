@@ -90,7 +90,7 @@ class CacheItem:
             since_updated_min = int(since_updated / 60)
             if since_updated_min > self.cache_expiry:
                 msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
-                # logger.warning(msg)
+                logger.muted(msg)
         if "data" in data:
             return data["data"]
         return data
@@ -131,9 +131,7 @@ class CacheItem:
                     data = CoinGeckoAPI().get_gecko_source()
 
                 if self.name == "gecko_tickers":
-                    data = Generic(
-                        netid="ALL", db=self.db
-                    ).traded_tickers(pairs_days=7)
+                    data = Generic(netid="ALL", db=self.db).traded_tickers(pairs_days=7)
 
                 if self.name == "statsapi_adex_fortnite":
                     data = StatsAPI(db=self.db).adex_fortnite()
@@ -142,29 +140,23 @@ class CacheItem:
                     data = StatsAPI(db=self.db).pair_summaries()
 
                 if self.name == "generic_tickers":
-                    data = Generic(
-                        netid="ALL", db=self.db
-                    ).traded_tickers()
+                    data = Generic(netid="ALL", db=self.db).traded_tickers()
 
                 if self.name == "generic_last_traded":
-                    data = Generic(
-                        netid="ALL", db=self.db
-                    ).last_traded()
+                    data = Generic(netid="ALL", db=self.db).last_traded()
 
                 if self.name == "generic_pairs":
-                    data = Generic(
-                        netid="ALL", db=self.db
-                    ).traded_pairs_info()
+                    data = Generic(netid="ALL", db=self.db).traded_pairs_info()
 
                 if self.name == "markets_pairs":
-                    data = Markets(
-                        netid=self.netid, db=self.db
-                    ).pairs(days=MARKETS_PAIRS_DAYS)
+                    data = Markets(netid=self.netid, db=self.db).pairs(
+                        days=MARKETS_PAIRS_DAYS
+                    )
 
                 if self.name == "markets_tickers":
-                    data = Markets(
-                        netid=self.netid, db=self.db
-                    ).tickers(pairs_days=MARKETS_PAIRS_DAYS)
+                    data = Markets(netid=self.netid, db=self.db).tickers(
+                        pairs_days=MARKETS_PAIRS_DAYS
+                    )
 
             if data is not None:
                 if validate_loop_data(data, self, "ALL"):

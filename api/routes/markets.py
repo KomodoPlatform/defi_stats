@@ -341,11 +341,11 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
 
 # TODO: get volumes for x days for ticker
 @router.get(
-    "/volumes_ticker/{ticker}/{days_in_past}",
-    description="Daily volume of a coin (e.g. `KMD`) traded for the last 'x' days.",
+    "/volumes_ticker/{coin}/{days_in_past}",
+    description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
 def volumes_history_ticker(
-    ticker="KMD",
+    coin="KMD",
     days_in_past=1,
     trade_type: TradeType = TradeType.ALL,
     netid: NetId = NetId.ALL,
@@ -358,12 +358,14 @@ def volumes_history_ticker(
         d_str = d.strftime("%Y-%m-%d")
         day_ts = int(int(d.strftime("%s")) / 86400) * 86400
         # TODO: Align with midnight
-        start_time = int(day_ts) - 86400
-        end_time = int(day_ts)
-        volumes_dict[d_str] = db.query.get_volume_for_coin(
-            ticker=ticker,
-            trade_type=trade_type.value,
+        start_time = int(day_ts)
+        end_time = int(day_ts) + 86400
+        data = db.query.get_volume_for_coin(
+            coin=coin,
+            trade_type=trade_type,
             start_time=start_time,
             end_time=end_time,
         )
+        logger.info(data)
+        volumes_dict[d_str] = data['data'][coin]
     return volumes_dict

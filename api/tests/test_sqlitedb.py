@@ -147,21 +147,27 @@ def test_swap_counts(setup_swaps_db_data):
 def test_get_swaps_for_coin(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.query.get_swaps_for_coin("KMD")
-    assert len(r) == 5
+    logger.info(r['data']['KMD'])
+    assert len(r['data']['KMD']) == 7
 
     r = DB.query.get_swaps_for_coin("LTC")
-    assert len(r) == 4
+    logger.info(r['data']['LTC'])
+    assert len(r['data']['LTC']) == 4
 
 
 def test_get_volume_for_coin(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.query.get_volume_for_coin("LTC", "buy")
     logger.info(r)
-    assert r == 30
+    assert r['data']['LTC'] == 20
+    assert r['data']['LTC-segwit'] == 10
+    assert r['data']['LTC-ALL'] == 30
 
     r = DB.query.get_volume_for_coin("KMD", "sell")
     logger.info(r)
-    assert r == 2
+    assert r['data']['KMD'] == 2
+    assert r['data']['KMD-BEP20'] == 1.9
+    assert r['data']['KMD-ALL'] == 3.9
 
 
 def test_get_uuids(setup_swaps_db_data):
