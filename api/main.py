@@ -18,6 +18,7 @@ from routes import (
     stats_api,
     old_db,
     new_db,
+    stats_xyz
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -131,6 +132,14 @@ app.include_router(
     new_db.router,
     prefix="/api/v3/new_db",
     tags=["New DB"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    stats_xyz.router,
+    prefix="/api/v3/stats_xyz",
+    tags=["Stats XYZ"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
