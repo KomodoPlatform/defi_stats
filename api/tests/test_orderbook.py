@@ -34,7 +34,6 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
     r = orderbook.get_and_parse()
     logger.merge(r)
     assert r["pair"] == "KMD_LTC"
-    assert not orderbook.pair.inverse_requested
     assert "asks" in r
     assert "bids" in r
     assert len(r["asks"]) > 0
@@ -47,8 +46,7 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
     orderbook = setup_ltc_kmd_orderbook
     r = orderbook.get_and_parse()
     logger.loop(r)
-    assert r["pair"] == "KMD_LTC"
-    assert orderbook.pair.inverse_requested
+    assert r["pair"] == "LTC_KMD"
     assert "asks" in r
     assert "bids" in r
     assert len(r["asks"]) > 0
@@ -67,7 +65,6 @@ def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
     r = orderbook.for_pair()
     logger.info(r)
     assert r["ticker_id"] == "DGB_DOGE"
-    assert not orderbook.pair.inverse_requested
     assert int(r["timestamp"]) > int(time.time()) - 86400
     assert len(r["asks"]) == 3
     assert len(r["bids"]) == 3
@@ -79,7 +76,6 @@ def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
     orderbook = setup_doge_dgb_orderbook
     r = orderbook.for_pair()
     assert r["ticker_id"] == "DOGE_DGB"
-    assert orderbook.pair.inverse_requested
     assert int(r["timestamp"]) > int(time.time()) - 86400
     assert len(r["asks"]) == 3
     assert len(r["bids"]) == 3

@@ -9,7 +9,8 @@ from lib.cache import Cache
 from util.defaults import default_error, default_result
 from util.logger import timed, logger
 import lib
-from const import NODE_TYPE
+from const import NODE_TYPE, RESET_TABLE
+
 
 router = APIRouter()
 
@@ -256,6 +257,7 @@ def truncate_wal():
 @repeat_every(seconds=300)
 @timed
 def populate_pgsqldb_loop():
-    # reset_defi_stats_table()
+    if RESET_TABLE:
+        reset_defi_stats_table()
     # updates last 24 hours swaps
     populate_pgsqldb()

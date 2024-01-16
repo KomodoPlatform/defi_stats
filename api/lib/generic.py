@@ -18,7 +18,6 @@ from util.transform import (
     clean_decimal_dict_list,
     format_10f,
     merge_orderbooks,
-    order_pair_by_market_cap,
 )
 import util.templates as template
 from const import GENERIC_PAIRS_DAYS
@@ -63,11 +62,6 @@ class Generic:  # pragma: no cover
         try:
             if len(pair_str.split("_")) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
-            if (
-                order_pair_by_market_cap(pair_str, gecko_source=self.gecko_source)
-                != pair_str
-            ):
-                orderbook_data = template.orderbook(pair_str, True)
             else:
                 orderbook_data = template.orderbook(pair_str)
             if self.netid == "ALL":
@@ -99,22 +93,22 @@ class Generic:  # pragma: no cover
                         j[k] = format_10f(Decimal(j[k]))
             data["bids"] = data["bids"][: int(depth)][::-1]
             data["asks"] = data["asks"][::-1][: int(depth)]
-            for i in [
-                "total_asks_base_vol",
-                "total_bids_base_vol",
-                "total_asks_quote_vol",
-                "total_bids_quote_vol",
-                "total_asks_base_usd",
-                "total_bids_quote_usd",
-                "liquidity_usd",
-                "volume_usd_24hr",
-            ]:
-                data[i] = format_10f(Decimal(data[i]))
-            return data
         except Exception as e:  # pragma: no cover
             err = {"error": f"Generic.orderbook: {e}"}
             logger.warning(err)
             return template.orderbook(pair_str)
+        for i in [
+            "total_asks_base_vol",
+            "total_bids_base_vol",
+            "total_asks_quote_vol",
+            "total_bids_quote_vol",
+            "total_asks_base_usd",
+            "total_bids_quote_usd",
+            "liquidity_usd",
+            "volume_usd_24hr",
+        ]:
+            data[i] = format_10f(Decimal(data[i]))
+        return data
 
     @timed
     def traded_pairs_info(self, days: int = GENERIC_PAIRS_DAYS) -> dict:

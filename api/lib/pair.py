@@ -23,13 +23,11 @@ from util.helper import get_price_at_finish, get_last_trade_time
 from util.logger import logger, timed
 import util.templates as template
 import lib
-import db
 
 
 class Pair:  # pragma: no cover
     """
     Allows for referencing pairs as a string or tuple.
-    To standardise like CEX pairs, the higher Mcap coin is always second.
     e.g. DOGE_BTC, not BTC_DOGE
     """
 
@@ -69,10 +67,7 @@ class Pair:  # pragma: no cover
                 )
 
             # Adjust pair order
-            self.as_str = order_pair_by_market_cap(
-                pair_str, gecko_source=self.gecko_source
-            )
-            self.inverse_requested = self.as_str != pair_str
+            self.as_str = pair_str
             self.base = self.as_str.split("_")[0]
             self.quote = self.as_str.split("_")[1]
             self.as_tuple = tuple((self.base, self.quote))
@@ -181,11 +176,7 @@ class Pair:  # pragma: no cover
                 start_time = int(time.time()) - 86400
             if end_time == 0:
                 end_time = int(time.time())
-            if self.inverse_requested:
-                ticker_id = reverse_ticker(self.as_str)
-            else:
-                ticker_id = self.as_str
-            
+
             pg_query = lib.SqlQuery()
             swaps_for_pair = pg_query.get_swaps(
                 table=DefiSwap,
@@ -201,9 +192,10 @@ class Pair:  # pragma: no cover
                     trade_info = OrderedDict()
                     trade_info["pair"] = swap["pair"]
                     trade_info["trade_id"] = swap["uuid"]
-                    trade_info["base_ticker"] = self.base
-                    trade_info["target_ticker"] = self.quote
-                    price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
+                    if swap["trade_type"] == "buy":
+                        price = Decimal(swap["price"])
+                    else:
+                        price = Decimal(swap["reverse_price"])
                     trade_info["price"] = format_10f(price)
                     trade_info["base_volume"] = format_10f(swap["maker_amount"])
                     trade_info["quote_volume"] = format_10f(swap["taker_amount"])
@@ -219,7 +211,7 @@ class Pair:  # pragma: no cover
                 sells = sort_dict_list(sells, "timestamp", reverse=True)
 
                 data = {
-                    "ticker_id": ticker_id,
+                    "ticker_id": self.as_str,
                     "start_time": str(start_time),
                     "end_time": str(end_time),
                     "limit": str(limit),
@@ -257,7 +249,6 @@ class Pair:  # pragma: no cover
         """
         Iterates over list of swaps to get volumes and prices data
         """
-        # TODO: Handle inverse_requested
         try:
             timestamp = int(time.time() - 86400 * days)
             swaps_for_pair = self.pair_swaps(start_time=timestamp)
@@ -431,16 +422,9 @@ class Pair:  # pragma: no cover
                 start_time = int(time.time()) - 86400
             if end_time == 0:
                 end_time = int(time.time())
-            # Handles reverse pairs
-            if self.inverse_requested:
-                base = self.quote
-                quote = self.base
-            else:
-                base = self.base
-                quote = self.quote
             data = self.db.query.get_swaps_for_pair(
-                base=base,
-                quote=quote,
+                base=self.base,
+                quote=self.quote,
                 limit=limit,
                 trade_type=trade_type,
                 start_time=start_time,

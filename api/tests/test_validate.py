@@ -13,7 +13,7 @@ from util.validate import (
     validate_json,
     validate_pair,
 )
-import util.validate as validate 
+import util.validate as validate
 import lib
 
 coins_config = lib.load_coins_config()
