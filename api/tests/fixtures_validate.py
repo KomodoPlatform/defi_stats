@@ -6,20 +6,16 @@ import pytest
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 
-from util.validate import (
-    validate_ticker_id,
-)
+import util.validate as validate
 
-from util.transform import (
-    invert_pair,
-)
+import util.transform as transform
 
 
 @pytest.fixture
 def setup_invert_pair_kmd_ltc():
-    yield invert_pair("KMD_LTC")
+    yield transform.invert_pair("KMD_LTC")
 
 
 @pytest.fixture
 def setup_validate_ticker_id():
-    yield validate_ticker_id("KMD_LTC")
+    yield validate.ticker_id("KMD_LTC")

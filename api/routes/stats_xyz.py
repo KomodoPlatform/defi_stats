@@ -26,15 +26,8 @@ from lib.generic import Generic
 from lib.markets import Markets
 from util.enums import TradeType, NetId
 from util.logger import logger
-from util.transform import (
-    ticker_to_market_ticker,
-    ticker_to_xyz_summary,
-    to_summary_for_ticker_item,
-    sum_json_key_10f,
-    sum_json_key,
-)
-from util.transform import clean_decimal_dict
 import util.validate as validate
+import util.transform as transform
 import lib
 
 router = APIRouter()
@@ -137,7 +130,7 @@ def summary(netid: NetId = NetId.ALL):
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
-            resp.append(ticker_to_xyz_summary(i))
+            resp.append(transform.ticker_to_xyz_summary(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/tickers]: {e}")
@@ -167,7 +160,7 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
                         i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
                         i["last_price"] = last_traded[i["ticker_id"]]["last_swap"]
 
-                new_data.append(to_summary_for_ticker_xyz_item(i))
+                new_data.append(transform.to_summary_for_ticker_xyz_item(i))
 
         return resp
     except Exception as e:  # pragma: no cover
@@ -206,7 +199,7 @@ def ticker(netid: NetId = NetId.ALL):
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
-            resp.append(ticker_to_market_ticker(i))
+            resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
@@ -224,7 +217,7 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
         resp = []
         for i in data["data"]:
             if ticker in [i["base_currency"], i["target_currency"]]:
-                resp.append(ticker_to_market_ticker(i))
+                resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
@@ -251,7 +244,7 @@ def tickers_summary(netid: NetId = NetId.ALL):
                     resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
                 elif ticker == rel:
                     resp[ticker]["volume_24h"] += Decimal(i["target_volume"])
-        resp = clean_decimal_dict(resp)
+        resp = transform.clean_decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())
         tickers.sort()

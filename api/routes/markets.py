@@ -287,8 +287,6 @@ def trades(
         all = all.lower() == 'true'
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
-        if days_in_past > 7:
-            return {"error": "Maximum value for 'days_in_past' is '7'. Try again."}
         data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
         return data
     except BadPairFormatError as e:
