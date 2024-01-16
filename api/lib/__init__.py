@@ -14,7 +14,7 @@ from lib.cache import (
     load_statsapi_summary,
 )
 from lib.orderbook import Orderbook
-from db.sqldb import SqlQuery
+from db.sqldb import SqlQuery, populate_pgsqldb
 
 COINS = Coins()
 PRICED_COINS = list(set([i.coin.replace("-segwit", "") for i in COINS.with_price]))
