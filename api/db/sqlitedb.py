@@ -454,8 +454,6 @@ class SqliteQuery:  # pragma: no cover
             data = self.db.sql_cursor.fetchall()
         except Exception as e:  # pragma: no cover
             return default_error(e)
-        msg = f"{len(data)} swaps for netid {self.netid}"
-        logger.query(msg)
         return data
 
     def last_24h_swaps(self):

@@ -117,9 +117,7 @@ class SqlQuery(SqlDB):
     def describe(self, table):
         with Session(self.engine) as session:
             stmt = text(f"DESCRIBE {get_tablename(table)};")
-            logger.loop(stmt)
             r = session.exec(stmt)
-            logger.merge(r)
             for i in r:
                 logger.merge(i)
 
@@ -222,20 +220,20 @@ class SqlQuery(SqlDB):
                 q = q.order_by(table.started_at)
                 r = session.exec(q)
                 data = [dict(i) for i in r]
-
+                logger.calc(data[0])
                 if coin is not None:
                     variants = get_coin_variants(coin, self.coins_config)
-                    for i in data:
-                        logger.calc(i)
-                        logger.info(i["taker_coin"])
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
+                    logger.calc(pair)
                     base_variants = get_coin_variants(base, self.coins_config)
+                    logger.calc(base_variants)
                     quote_variants = get_coin_variants(quote, self.coins_config)
+                    logger.calc(quote_variants)
                     resp = {}
                     all = 0
                     for i in base_variants:
@@ -273,10 +271,8 @@ def normalise_swap_data(data, gecko_source, is_success=None):
             )
             if pair == pair_std:
                 trade_type = "buy"
-                logger.merge(f'{pair} vs {pair_std}: buy')
             else:
                 trade_type = "sell"
-                logger.calc(f'{pair} vs {pair_std}: sell')
             i.update(
                 {
                     "pair": pair_std,

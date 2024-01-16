@@ -124,7 +124,6 @@ class Generic:  # pragma: no cover
             else:
                 pairs_dict = {"priced_gecko": [], "unpriced": []}
                 for pair_str in pairs:
-                    # logger.info(pair_str)
                     pair_split = pair_str.split("_")
                     base_price = get_gecko_price(
                         pair_split[0], self.gecko_source
@@ -139,7 +138,6 @@ class Generic:  # pragma: no cover
 
                 for pair_str in lib.KMD_PAIRS:
                     if pair_str not in pairs:
-                        # logger.info(pair_str)
                         pair_split = pair_str.split("_")
                         base_price = get_gecko_price(
                             pair_split[0], self.gecko_source

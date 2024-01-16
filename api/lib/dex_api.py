@@ -26,7 +26,6 @@ class DexAPI:
     @timed
     def api(self, params: dict) -> dict:
         try:
-            # logger.calc(params)
             r = requests.post(self.mm2_rpc, json=params)
             resp = r.json()
             if "error" not in resp:
