@@ -14,7 +14,8 @@ from models.generic import ErrorMessage
 from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType, NetId
-from util.validate import validate_positive_numeric
+
+import util.validate as validate
 from lib.generic import Generic
 from util.transform import (
     orderbook_to_gecko,
@@ -109,7 +110,7 @@ def gecko_historical_trades(
             (start_time, "start_time"),
             (end_time, "end_time"),
         ]:
-            validate_positive_numeric(value, name)
+            validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:

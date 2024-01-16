@@ -62,6 +62,7 @@ class StatsApiOrderbook(BaseModel):
 
 
 class StatsApiTradeInfo(BaseModel):
+    pair: str = "XXX_YYY"
     trade_id: str = "77777777-7777-7777-7777-777777777777"
     price: float = 777.777777
     base_volume: float = 777.777777

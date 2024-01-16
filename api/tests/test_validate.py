@@ -8,12 +8,12 @@ from tests.fixtures_data import valid_tickers
 
 from util.validate import (
     validate_ticker_id,
-    validate_positive_numeric,
     validate_orderbook_pair,
     validate_loop_data,
     validate_json,
     validate_pair,
 )
+import util.validate as validate 
 import lib
 
 coins_config = lib.load_coins_config()
@@ -44,23 +44,23 @@ def test_validate_ticker_id():
 
 
 def test_validate_positive_numeric():
-    assert validate_positive_numeric(5, "var")
-    assert validate_positive_numeric("5", "var")
-    assert validate_positive_numeric(5.5, "var")
-    assert validate_positive_numeric("5.5", "var")
-    assert validate_positive_numeric(5, "var", True)
-    assert validate_positive_numeric("5", "var", True)
+    assert validate.positive_numeric(5, "var")
+    assert validate.positive_numeric("5", "var")
+    assert validate.positive_numeric(5.5, "var")
+    assert validate.positive_numeric("5.5", "var")
+    assert validate.positive_numeric(5, "var", True)
+    assert validate.positive_numeric("5", "var", True)
 
     with pytest.raises(ValueError):
-        validate_positive_numeric(-5, "var")
+        validate.positive_numeric(-5, "var")
     with pytest.raises(ValueError):
-        validate_positive_numeric(-5.5, "var")
+        validate.positive_numeric(-5.5, "var")
     with pytest.raises(ValueError):
-        validate_positive_numeric(5.5, "var", True)
+        validate.positive_numeric(5.5, "var", True)
     with pytest.raises(ValueError):
-        validate_positive_numeric("5.5", "var", True)
+        validate.positive_numeric("5.5", "var", True)
     with pytest.raises(ValueError):
-        validate_positive_numeric("foo", "var")
+        validate.positive_numeric("foo", "var")
 
 
 def test_validate_orderbook_pair():

@@ -192,7 +192,7 @@ class SqlQuery(SqlDB):
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
                     }
-                    resp.update({f"{coin}-ALL": data})
+                    resp.update({"ALL": data})
                 elif pair is not None:
                     base_variants = [i for i in self.coins_config if i.startswith(base)]
                     quote_variants = [
@@ -210,7 +210,7 @@ class SqlQuery(SqlDB):
                                     ]
                                 }
                             )
-                    resp.update({f"{pair} [ALL]": data})
+                    resp.update({"ALL": data})
                 else:
                     resp = data
         except Exception as e:
