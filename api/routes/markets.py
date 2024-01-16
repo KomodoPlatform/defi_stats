@@ -22,19 +22,19 @@ from models.markets import (
     MarketsSummaryForTicker,
 )
 from lib.generic import Generic
-from lib.pair import Pair
+
+from lib.markets import Markets
 from util.enums import TradeType, NetId
 from util.logger import logger
 from util.transform import (
     ticker_to_market_ticker,
     ticker_to_market_ticker_summary,
-    sort_dict_list,
     to_summary_for_ticker_item,
     sum_json_key_10f,
     sum_json_key,
 )
 from util.transform import clean_decimal_dict
-from util.validate import validate_pair
+import util.validate as validate
 import lib
 
 router = APIRouter()
@@ -281,37 +281,16 @@ def tickers_summary(netid: NetId = NetId.ALL):
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int = 1, netid: NetId = NetId.ALL
+    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = 'false'
 ):
     try:
-        resp = []
-        validate_pair(market_pair)
-        start = int(time.time() - 86400 * days_in_past)
-        end = int(time.time())
-        if netid.value == "ALL":
-            for x in NetId:
-                if x.value != "ALL":
-                    pair = Pair(pair_str=market_pair, netid=x.value)
-                    data = pair.historical_trades(
-                        trade_type="all",
-                        start_time=start,
-                        end_time=end,
-                    )
-                    logger.info(data)
-                    resp += data["buy"]
-                    resp += data["sell"]
-        else:
-            pair = Pair(pair_str=market_pair, netid=netid.value)
-            data = pair.historical_trades(
-                trade_type="all",
-                start_time=start,
-                end_time=end,
-            )
-            logger.info(data)
-            resp += data["buy"]
-            resp += data["sell"]
-        sorted_trades = sort_dict_list(resp, "timestamp", reverse=True)
-        return sorted_trades
+        all = all.lower() == 'true'
+        for value, name in [(days_in_past, "days_in_past")]:
+            validate.positive_numeric(value, name)
+        if days_in_past > 7:
+            return {"error": "Maximum value for 'days_in_past' is '7'. Try again."}
+        data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
+        return data
     except BadPairFormatError as e:
         err = {"error": f"{e.msg}"}
         logger.warning(err)

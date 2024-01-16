@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from util.exceptions import BadPairFormatError
 from tests.fixtures_validate import (
-    setup_reverse_ticker_kmd_ltc,
+    setup_invert_pair_kmd_ltc,
 )
 from tests.fixtures_data import valid_tickers
 
@@ -13,17 +13,17 @@ from util.validate import (
     validate_json,
     validate_pair,
 )
-import util.validate as validate 
+import util.validate as validate
 import lib
 
 coins_config = lib.load_coins_config()
 gecko_source = lib.load_gecko_source()
 
 
-def test_reverse_ticker(
-    setup_reverse_ticker_kmd_ltc,
+def test_invert_pair(
+    setup_invert_pair_kmd_ltc,
 ):
-    assert setup_reverse_ticker_kmd_ltc == "LTC_KMD"
+    assert setup_invert_pair_kmd_ltc == "LTC_KMD"
 
 
 def test_validate_pair():

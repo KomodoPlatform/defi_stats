@@ -11,13 +11,13 @@ from util.validate import (
 )
 
 from util.transform import (
-    reverse_ticker,
+    invert_pair,
 )
 
 
 @pytest.fixture
-def setup_reverse_ticker_kmd_ltc():
-    yield reverse_ticker("KMD_LTC")
+def setup_invert_pair_kmd_ltc():
+    yield invert_pair("KMD_LTC")
 
 
 @pytest.fixture

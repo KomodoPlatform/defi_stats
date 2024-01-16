@@ -9,6 +9,7 @@ from db.schema import CipiSwap, DefiSwap, StatsSwap
 from dotenv import load_dotenv
 from util.defaults import default_error, default_result
 from util.logger import logger, timed
+from util.helper import get_coin_variants
 import util.transform as transform
 import lib
 from const import (
@@ -116,9 +117,7 @@ class SqlQuery(SqlDB):
     def describe(self, table):
         with Session(self.engine) as session:
             stmt = text(f"DESCRIBE {get_tablename(table)};")
-            logger.loop(stmt)
             r = session.exec(stmt)
-            logger.merge(r)
             for i in r:
                 logger.merge(i)
 
@@ -205,9 +204,6 @@ class SqlQuery(SqlDB):
                     )
                 elif pair is not None:
                     pair = transform.strip_pair_platforms(pair)
-                    pair = transform.order_pair_by_market_cap(
-                        pair, gecko_source=self.gecko_source
-                    )
                     base, quote = pair.split("_")
                     q = q.where(
                         or_(
@@ -224,35 +220,16 @@ class SqlQuery(SqlDB):
                 q = q.order_by(table.started_at)
                 r = session.exec(q)
                 data = [dict(i) for i in r]
-
                 if coin is not None:
-                    variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(coin, "") == ""
-                        or i.replace(coin, "").startswith("-")
-                    ]
-                    for i in data:
-                        logger.calc(i)
-                        logger.info(i["taker_coin"])
+                    variants = get_coin_variants(coin, self.coins_config)
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
-                    base_variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(base, "") == ""
-                        or i.replace(base, "").startswith("-")
-                    ]
-                    quote_variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(quote, "") == ""
-                        or i.replace(quote, "").startswith("-")
-                    ]
+                    base_variants = get_coin_variants(base, self.coins_config)
+                    quote_variants = get_coin_variants(quote, self.coins_config)
                     resp = {}
                     all = 0
                     for i in base_variants:
@@ -288,13 +265,13 @@ def normalise_swap_data(data, gecko_source, is_success=None):
             pair_std = transform.order_pair_by_market_cap(
                 pair, gecko_source=gecko_source
             )
-            if pair.replace("-segwit", "") == pair_std:
+            if pair == pair_std:
                 trade_type = "buy"
             else:
                 trade_type = "sell"
             i.update(
                 {
-                    "pair": pair,
+                    "pair": pair_std,
                     "trade_type": trade_type,
                     "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
                     "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),

@@ -6,8 +6,9 @@ from lib.dex_api import DexAPI, get_orderbook
 from util.files import Files
 from util.logger import logger, timed
 from util.defaults import default_error, set_params, default_result
-from util.transform import format_10f, reverse_ticker
+from util.helper import get_gecko_price
 import lib
+import util.transform as transform
 
 
 class Orderbook:
@@ -50,14 +51,9 @@ class Orderbook:
     def for_pair(self, depth=100):
         try:
             orderbook_data = OrderedDict()
-            if self.pair.inverse_requested:
-                orderbook_data["ticker_id"] = reverse_ticker(self.pair.as_str)
-                orderbook_data["base"] = self.pair.quote
-                orderbook_data["quote"] = self.pair.base
-            else:
-                orderbook_data["ticker_id"] = self.pair.as_str
-                orderbook_data["base"] = self.pair.base
-                orderbook_data["quote"] = self.pair.quote
+            orderbook_data["ticker_id"] = self.pair.as_str
+            orderbook_data["base"] = self.pair.base
+            orderbook_data["quote"] = self.pair.quote
 
             orderbook_data["timestamp"] = f"{int(time.time())}"
             data = self.get_and_parse()
@@ -82,10 +78,10 @@ class Orderbook:
                     for i in orderbook_data["asks"]
                 ]
             )
-            orderbook_data["base_price_usd"] = lib.get_gecko_price(
+            orderbook_data["base_price_usd"] = get_gecko_price(
                 orderbook_data["base"], self.gecko_source
             )
-            orderbook_data["quote_price_usd"] = lib.get_gecko_price(
+            orderbook_data["quote_price_usd"] = get_gecko_price(
                 orderbook_data["quote"], self.gecko_source
             )
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol
@@ -127,25 +123,25 @@ class Orderbook:
         """Returns lowest ask from provided orderbook"""
         try:
             if len(orderbook["asks"]) > 0:
-                return format_10f(
+                return transform.format_10f(
                     min([Decimal(ask["price"]) for ask in orderbook["asks"]])
                 )
         except KeyError as e:  # pragma: no cover
-            return default_error(e, data=format_10f(0))
+            return default_error(e, data=transform.format_10f(0))
         except Exception as e:  # pragma: no cover
-            return default_error(e, data=format_10f(0))
-        return format_10f(0)
+            return default_error(e, data=transform.format_10f(0))
+        return transform.format_10f(0)
 
     @timed
     def find_highest_bid(self, orderbook: list) -> str:
         """Returns highest bid from provided orderbook"""
         try:
             if len(orderbook["bids"]) > 0:
-                return format_10f(
+                return transform.format_10f(
                     max([Decimal(bid["price"]) for bid in orderbook["bids"]])
                 )
         except KeyError as e:  # pragma: no cover
-            return default_error(e, data=format_10f(0))
+            return default_error(e, data=transform.format_10f(0))
         except Exception as e:  # pragma: no cover
-            return default_error(e, data=format_10f(0))
-        return format_10f(0)
+            return default_error(e, data=transform.format_10f(0))
+        return transform.format_10f(0)

@@ -126,6 +126,7 @@ class MarketsSummaryForTicker(BaseModel):
 
 
 class PairTrades(BaseModel):
+    pair: str = "XXX_YYY"
     trade_id: str = "77777777-7777-7777-7777-777777777777"
     price: str = "123.456"
     base_volume: str = "777.777777"

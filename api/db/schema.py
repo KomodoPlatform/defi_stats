@@ -1,10 +1,8 @@
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, SQLModel
 from util.enums import TradeType
-
 
 
 class DefiSwap(SQLModel, table=True):
@@ -57,6 +55,27 @@ class CipiSwap(SQLModel, table=True):
     maker_gui: str = "unknown"
     maker_pubkey: str = "unknown"
     maker_version: str = "unknown"
+
+
+class CipiSwapFailed(SQLModel, table=True):
+    __tablename__ = "swaps_failed"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    started_at: datetime = 1777777777
+    uuid: str = "77777777-7777-7777-7777-777777777777"
+    taker_amount: Decimal = 777.777777
+    taker_coin: str = ""
+    taker_gui: str = "unknown"
+    taker_pubkey: str = "unknown"
+    taker_version: str = "unknown"
+    taker_error_type: str = "unknown"
+    taker_error_msg: str = "unknown"
+    maker_amount: Decimal = 777.777777
+    maker_coin: str = ""
+    maker_gui: str = "unknown"
+    maker_pubkey: str = "unknown"
+    maker_version: str = "unknown"
+    maker_error_type: str = "unknown"
+    maker_error_msg: str = "unknown"
 
 
 class StatsSwap(SQLModel, table=True):

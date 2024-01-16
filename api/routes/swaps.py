@@ -11,7 +11,6 @@ from util.logger import logger
 router = APIRouter()
 
 
-
 @router.get(
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
@@ -33,8 +32,6 @@ def get_swap(uuid: str):
         return JSONResponse(status_code=400, content=err)
 
 
-
-
 @router.get(
     "/swap_uuids",
     description="Get swap uuids for a pair (e.g. `KMD_LTC`).",
@@ -54,35 +51,32 @@ def swap_uuids(
             end_time = int(time.time())
         query = SqlQuery()
         uuids = query.swap_uuids(
-            start_time=start_time,
-            end_time=end_time,
-            coin=coin,
-            pair=pair
+            start_time=start_time, end_time=end_time, coin=coin, pair=pair
         )
-        if coin is not None:        
+        if coin is not None:
             return {
                 "coin": coin,
                 "start_time": start_time,
                 "end_time": end_time,
                 "variants": list(uuids.keys()),
-                "swap_count": len(uuids['ALL']),
-                "swap_uuids": uuids
+                "swap_count": len(uuids["ALL"]),
+                "swap_uuids": uuids,
             }
-        elif pair is not None:        
+        elif pair is not None:
             return {
                 "pair": pair,
                 "start_time": start_time,
                 "end_time": end_time,
                 "variants": list(uuids.keys()),
-                "swap_count": len(uuids['ALL']),
-                "swap_uuids": uuids
+                "swap_count": len(uuids["ALL"]),
+                "swap_uuids": uuids,
             }
         return {
-                "start_time": start_time,
-                "end_time": end_time,
-                "swap_count": len(uuids),
-                "swap_uuids": uuids
-            }
+            "start_time": start_time,
+            "end_time": end_time,
+            "swap_count": len(uuids),
+            "swap_uuids": uuids,
+        }
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)

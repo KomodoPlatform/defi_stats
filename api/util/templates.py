@@ -33,9 +33,7 @@ def pair_info(pair_str: str, priced: bool = False) -> dict:
     }
 
 
-def orderbook(pair_str, inverse_requested=False):
-    if inverse_requested:
-        pair_str = "_".join(pair_str.split("_")[::-1])
+def orderbook(pair_str):
     x = pair_str.split("_")
     base = x[0].replace("-segwit", "")
     quote = x[1].replace("-segwit", "")

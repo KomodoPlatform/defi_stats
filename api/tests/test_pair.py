@@ -37,10 +37,6 @@ def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
     assert pair.is_tradable
     assert pair.info["ticker_id"] == "KMD_LTC"
-    assert not pair.inverse_requested
-
-    pair = setup_ltc_kmd_pair
-    assert pair.inverse_requested
 
 
 def test_historical_trades(
@@ -48,11 +44,10 @@ def test_historical_trades(
     setup_ltc_kmd_pair,
 ):
     pair = setup_kmd_ltc_pair
-    r = pair.historical_trades(trade_type="all")["ALL"]
-    r["trades_count"] = len(r["buy"]) + len(r["sell"])
-    assert r["trades_count"] > 0
+    r = pair.historical_trades(trade_type="all")
+    assert len(r) > 0
     # TODO: Restore tests once testdb setup for pgsql
-    '''
+    """
     assert r["buy"][0]["type"] == "buy"
     assert r["buy"][0]["base_volume"] == format_10f(1)
     assert r["buy"][0]["target_volume"] == format_10f(5)
@@ -70,7 +65,8 @@ def test_historical_trades(
     assert r3[0]["base_volume"] == format_10f(5)
     assert r3[0]["target_volume"] == format_10f(1)
     assert r3[0]["price"] == format_10f(0.2)
-    '''
+    """
+
 
 def test_get_average_price(setup_not_existing_pair):
     pair = setup_not_existing_pair
@@ -116,10 +112,10 @@ def test_pair(
     setup_morty_kmd_pair,
 ):
     pair = setup_ltc_kmd_pair
-    assert pair.base == "KMD"
-    assert pair.quote == "LTC"
-    assert pair.as_str == "KMD_LTC"
-    assert pair.as_tuple == ("KMD", "LTC")
+    assert pair.base == "LTC"
+    assert pair.quote == "KMD"
+    assert pair.as_str == "LTC_KMD"
+    assert pair.as_tuple == ("LTC", "KMD")
     assert pair.is_priced
     pair = setup_kmd_dgb_pair
     assert not pair.as_str == "DGB_KMD"
@@ -159,20 +155,6 @@ def test_swap_uuids(setup_kmd_ltc_pair):
     r = setup_kmd_ltc_pair.swap_uuids()
     assert "77777777-2762-4633-8add-6ad2e9b1a4e7" in r
     assert len(r) == 3
-
-
-def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
-    pair = setup_kmd_ltc_pair
-    r = pair.related_pairs
-    assert "KMD_LTC" in r
-    assert "KMD-BEP20_LTC" in r
-    assert len(r) == 4
-
-    pair = setup_1inch_usdc_pair
-    r = pair.related_pairs
-    assert ("1INCH-AVX20_USDC-ERC20") in r
-    assert ("1INCH-PLG20_USDC-BEP20") in r
-    assert len(r) > 40
 
 
 def test_swap_info(setup_kmd_ltc_pair, setup_ltc_kmd_pair):

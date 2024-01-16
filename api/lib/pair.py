@@ -9,27 +9,29 @@ from util.transform import (
     sort_dict_list,
     format_10f,
     list_json_key,
-    order_pair_by_market_cap,
     get_suffix,
-    reverse_ticker,
+    invert_pair,
 )
 from const import MM2_RPC_PORTS
 from db.sqlitedb import get_sqlite_db
 from db.schema import DefiSwap
 
-from util.defaults import default_error, set_params
+from util.defaults import default_error, set_params, default_result
 from util.enums import TradeType
-from util.helper import get_price_at_finish, get_last_trade_time
+from util.helper import (
+    get_price_at_finish,
+    get_last_trade_time,
+    get_gecko_price,
+)
 from util.logger import logger, timed
 import util.templates as template
+import util.transform as transform
 import lib
-import db
 
 
 class Pair:  # pragma: no cover
     """
     Allows for referencing pairs as a string or tuple.
-    To standardise like CEX pairs, the higher Mcap coin is always second.
     e.g. DOGE_BTC, not BTC_DOGE
     """
 
@@ -69,22 +71,22 @@ class Pair:  # pragma: no cover
                 )
 
             # Adjust pair order
-            self.as_str = order_pair_by_market_cap(
-                pair_str, gecko_source=self.gecko_source
+            self.as_str = pair_str
+            self.as_std_str = transform.order_pair_by_market_cap(
+                self.as_str, gecko_source=self.gecko_source
             )
-            self.inverse_requested = self.as_str != pair_str
+            self.is_reversed = self.as_str != self.as_std_str
             self.base = self.as_str.split("_")[0]
             self.quote = self.as_str.split("_")[1]
             self.as_tuple = tuple((self.base, self.quote))
             self.as_set = set((self.base, self.quote))
 
             # Get price and market cap
-            self.base_usd_price = lib.get_gecko_price(self.base, self.gecko_source)
-
-            self.quote_usd_price = lib.get_gecko_price(self.quote, self.gecko_source)
+            self.base_usd_price = get_gecko_price(self.base, self.gecko_source)
+            self.quote_usd_price = get_gecko_price(self.quote, self.gecko_source)
             self.base_mcap = lib.get_gecko_mcap(self.base, self.gecko_source)
-
             self.quote_mcap = lib.get_gecko_mcap(self.quote, self.gecko_source)
+
             # Connections to other objects
             self.mm2_port = MM2_RPC_PORTS[self.netid]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
@@ -111,34 +113,6 @@ class Pair:  # pragma: no cover
         last_trade = get_last_trade_time(self.as_str, self.last_traded_cache)
         data.update({"last_trade": last_trade})
         return data
-
-    @property
-    def related_pairs(self):
-        try:
-            return [
-                f"{i}_{j}"
-                for i in [
-                    i.coin
-                    for i in lib.Coin(
-                        coin=self.base,
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    ).related_coins
-                ]
-                for j in [
-                    i.coin
-                    for i in lib.Coin(
-                        coin=self.quote,
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    ).related_coins
-                ]
-                if i != j
-            ]
-        except Exception as e:  # pragma: no cover
-            return default_error(e)
 
     @property
     def orderbook(self):
@@ -175,51 +149,87 @@ class Pair:  # pragma: no cover
         end_time: Optional[int] = 0,
     ):
         """Returns trades for this pair."""
-        # Handles reverse pairs
+
         try:
             if start_time == 0:
                 start_time = int(time.time()) - 86400
             if end_time == 0:
                 end_time = int(time.time())
-            if self.inverse_requested:
-                ticker_id = reverse_ticker(self.as_str)
-            else:
-                ticker_id = self.as_str
-            
+
+            resp = {}
             pg_query = lib.SqlQuery()
             swaps_for_pair = pg_query.get_swaps(
                 table=DefiSwap,
                 start_time=start_time,
                 end_time=end_time,
-                pair=self.as_str
+                pair=self.as_str,
             )
-            resp = {}
             for variant in swaps_for_pair:
-                logger.info(variant)
                 trades_info = []
                 for swap in swaps_for_pair[variant]:
                     trade_info = OrderedDict()
-                    trade_info["pair"] = swap["pair"]
                     trade_info["trade_id"] = swap["uuid"]
-                    trade_info["base_ticker"] = self.base
-                    trade_info["target_ticker"] = self.quote
-                    price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
-                    trade_info["price"] = format_10f(price)
-                    trade_info["base_volume"] = format_10f(swap["maker_amount"])
-                    trade_info["quote_volume"] = format_10f(swap["taker_amount"])
-                    trade_info["target_volume"] = format_10f(swap["taker_amount"])
                     trade_info["timestamp"] = swap["finished_at"]
-                    trade_info["type"] = swap["trade_type"]
+                    # Handle reversed pair
+                    if self.is_reversed:
+                        trade_info["pair"] = transform.invert_pair(swap["pair"])
+                        trade_info["type"] = transform.invert_trade_type(
+                            swap["trade_type"]
+                        )
+                        if trade_info["type"] == "buy":
+                            price = swap["price"]
+                            trade_info["base_volume"] = format_10f(swap["maker_amount"])
+                            trade_info["quote_volume"] = format_10f(
+                                swap["taker_amount"]
+                            )
+                            trade_info["target_volume"] = format_10f(
+                                swap["taker_amount"]
+                            )
+                        else:
+                            price = Decimal(swap["reverse_price"])
+                            trade_info["base_volume"] = format_10f(swap["taker_amount"])
+                            trade_info["quote_volume"] = format_10f(
+                                swap["maker_amount"]
+                            )
+                            trade_info["target_volume"] = format_10f(
+                                swap["maker_amount"]
+                            )
+                    else:
+                        trade_info["pair"] = swap["pair"]
+                        trade_info["type"] = swap["trade_type"]
+                        price = Decimal(swap["price"])
+                        if trade_info["type"] == "buy":
+                            price = swap["price"]
+                            trade_info["base_volume"] = format_10f(swap["maker_amount"])
+                            trade_info["quote_volume"] = format_10f(
+                                swap["taker_amount"]
+                            )
+                            trade_info["target_volume"] = format_10f(
+                                swap["taker_amount"]
+                            )
+                        else:
+                            price = Decimal(swap["reverse_price"])
+                            trade_info["base_volume"] = format_10f(swap["taker_amount"])
+                            trade_info["quote_volume"] = format_10f(
+                                swap["maker_amount"]
+                            )
+                            trade_info["target_volume"] = format_10f(
+                                swap["maker_amount"]
+                            )
+
+                    trade_info["price"] = format_10f(price)
                     trades_info.append(trade_info)
 
                 average_price = self.get_average_price(trades_info)
                 buys = list_json_key(trades_info, "type", "buy")
                 sells = list_json_key(trades_info, "type", "sell")
-                buys = sort_dict_list(buys, "timestamp", reverse=True)
-                sells = sort_dict_list(sells, "timestamp", reverse=True)
+                if len(buys) > 0:
+                    buys = sort_dict_list(buys, "timestamp", reverse=True)
+                if len(sells) > 0:
+                    sells = sort_dict_list(sells, "timestamp", reverse=True)
 
                 data = {
-                    "ticker_id": ticker_id,
+                    "ticker_id": self.as_str,
                     "start_time": str(start_time),
                     "end_time": str(end_time),
                     "limit": str(limit),
@@ -234,13 +244,13 @@ class Pair:  # pragma: no cover
                     "buy": buys,
                     "sell": sells,
                 }
-                resp.update({
-                    variant: data
-                })
-            return resp
+                resp.update({variant: data})
+
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {self.as_str} failed for netid {self.netid}!"
             return default_error(e, msg)
+
+        return default_result(data=resp, msg="historical_trades complete")
 
     @timed
     def get_average_price(self, trades_info):
@@ -257,7 +267,6 @@ class Pair:  # pragma: no cover
         """
         Iterates over list of swaps to get volumes and prices data
         """
-        # TODO: Handle inverse_requested
         try:
             timestamp = int(time.time() - 86400 * days)
             swaps_for_pair = self.pair_swaps(start_time=timestamp)
@@ -323,8 +332,8 @@ class Pair:  # pragma: no cover
         last_swap = {"last_swap": 0, "last_price": 0, "last_swap_uuid": ""}
         if self.as_str in self.last_traded_cache:
             last_swap = self.last_traded_cache[self.as_str]
-        elif reverse_ticker(self.as_str) in self.last_traded_cache:  # pragma: no cover
-            last_swap = self.last_traded_cache[reverse_ticker(self.as_str)]
+        elif invert_pair(self.as_str) in self.last_traded_cache:  # pragma: no cover
+            last_swap = self.last_traded_cache[invert_pair(self.as_str)]
         return last_swap
 
     @timed
@@ -362,11 +371,7 @@ class Pair:  # pragma: no cover
             liquidity = self.get_liquidity(orderbook_data)
             if self.as_str in ["KMD_LTC"] and days == 1:
                 msg = f"ticker info: {self.as_str} | {self.netid} | {days} days"
-                logger.pair(msg)
                 msg = f"last swap uuid: {vol_price_data['last_swap_uuid']}"
-                logger.pair(msg)
-                # logger.pair(f"orderbook_data: {orderbook_data}")
-                # logger.pair(f"liquidity: {liquidity}")
                 pass
             resp = {
                 "ticker_id": self.as_str,
@@ -431,16 +436,9 @@ class Pair:  # pragma: no cover
                 start_time = int(time.time()) - 86400
             if end_time == 0:
                 end_time = int(time.time())
-            # Handles reverse pairs
-            if self.inverse_requested:
-                base = self.quote
-                quote = self.base
-            else:
-                base = self.base
-                quote = self.quote
             data = self.db.query.get_swaps_for_pair(
-                base=base,
-                quote=quote,
+                base=self.base,
+                quote=self.quote,
                 limit=limit,
                 trade_type=trade_type,
                 start_time=start_time,
@@ -490,7 +488,9 @@ def get_all_coin_pairs(coin, priced_coins):
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]
-        sorted_pairs = set([order_pair_by_market_cap(i, gecko_source) for i in pairs])
+        sorted_pairs = set(
+            [transform.order_pair_by_market_cap(i, gecko_source) for i in pairs]
+        )
         return list(sorted_pairs)
     except Exception as e:  # pragma: no cover
         msg = "get_all_coin_pairs failed"

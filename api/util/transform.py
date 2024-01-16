@@ -134,7 +134,7 @@ def order_pair_by_market_cap(pair_str: str, gecko_source: Dict) -> str:
         if quote in gecko_source:
             quote_mc = Decimal(gecko_source[quote]["usd_market_cap"])
         if quote_mc < base_mc:
-            pair_str = reverse_ticker(pair_str)
+            pair_str = invert_pair(pair_str)
         elif quote_mc == base_mc:
             pair_str = "_".join(sorted(pair_list))
     except Exception as e:  # pragma: no cover
@@ -350,7 +350,7 @@ def traded_cache_to_stats_api(traded_cache):
     return resp
 
 
-def reverse_ticker(ticker_id):
+def invert_pair(ticker_id):
     return "_".join(ticker_id.split("_")[::-1])
 
 
@@ -371,3 +371,11 @@ def update_if_lesser(existing, new, key, secondary_key=None):
         existing[key] = new[key]
         if secondary_key is not None:
             existing[secondary_key] = new[secondary_key]
+
+
+def invert_trade_type(trade_type):
+    if trade_type == "buy":
+        return "sell"
+    if trade_type == "sell":
+        return "buy"
+    return trade_type

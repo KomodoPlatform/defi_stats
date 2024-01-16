@@ -454,8 +454,6 @@ class SqliteQuery:  # pragma: no cover
             data = self.db.sql_cursor.fetchall()
         except Exception as e:  # pragma: no cover
             return default_error(e)
-        msg = f"{len(data)} swaps for netid {self.netid}"
-        logger.query(msg)
         return data
 
     def last_24h_swaps(self):
@@ -484,7 +482,11 @@ class SqliteQuery:  # pragma: no cover
         """
         try:
             coin = coin.split("-")[0]
-            variants = [i for i in self.db.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
+            variants = [
+                i
+                for i in self.db.coins_config
+                if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
+            ]
             if end_time == 0:
                 end_time = int(time.time())
             resp = {}
@@ -572,7 +574,11 @@ class SqliteQuery:  # pragma: no cover
         try:
             resp = {}
             coin = coin.split("-")[0]
-            variants = [i for i in self.db.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
+            variants = [
+                i
+                for i in self.db.coins_config
+                if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
+            ]
             if end_time == 0:
                 end_time = int(time.time())
 

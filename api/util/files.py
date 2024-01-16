@@ -75,7 +75,6 @@ class Files:
                 "loglevel": "warning",
             }
 
-
     def load_jsonfile(self, path):
         i = 0
         while i < 5:
@@ -89,7 +88,6 @@ class Files:
             i += 1
             time.sleep(0.1)
         return None
-
 
     def download_json(self, url):
         try:

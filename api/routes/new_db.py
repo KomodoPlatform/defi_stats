@@ -12,7 +12,6 @@ from util.enums import TradeType
 from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
-import util.transform as transform
 import util.validate as validate
 
 
@@ -28,7 +27,7 @@ cache = Cache()
 
 @router.get(
     "/get_swaps/",
-    description=f"Swaps completed within two epoch timestamps.",
+    description="Swaps completed within two epoch timestamps.",
     responses={406: {"model": ErrorMessage}},
     response_model=List[DefiSwap] | Dict[str, List[DefiSwap]] | Dict,
     status_code=200,
@@ -80,7 +79,6 @@ def historical_trades(
             (end_time, "end_time"),
         ]:
             validate.positive_numeric(value, name, True)
-        logger.info(ticker_id)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
@@ -103,6 +101,7 @@ def historical_trades(
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
+
 
 @router.get(
     "/swap/{uuid}",
@@ -144,35 +143,32 @@ def swap_uuids(
             end_time = int(time.time())
         query = SqlQuery()
         uuids = query.swap_uuids(
-            start_time=start_time,
-            end_time=end_time,
-            coin=coin,
-            pair=pair
+            start_time=start_time, end_time=end_time, coin=coin, pair=pair
         )
-        if coin is not None:        
+        if coin is not None:
             return {
                 "coin": coin,
                 "start_time": start_time,
                 "end_time": end_time,
                 "variants": list(uuids.keys()),
-                "swap_count": len(uuids['ALL']),
-                "swap_uuids": uuids
+                "swap_count": len(uuids["ALL"]),
+                "swap_uuids": uuids,
             }
-        elif pair is not None:        
+        elif pair is not None:
             return {
                 "pair": pair,
                 "start_time": start_time,
                 "end_time": end_time,
                 "variants": list(uuids.keys()),
-                "swap_count": len(uuids['ALL']),
-                "swap_uuids": uuids
+                "swap_count": len(uuids["ALL"]),
+                "swap_uuids": uuids,
             }
         return {
-                "start_time": start_time,
-                "end_time": end_time,
-                "swap_count": len(uuids),
-                "swap_uuids": uuids
-            }
+            "start_time": start_time,
+            "end_time": end_time,
+            "swap_count": len(uuids),
+            "swap_uuids": uuids,
+        }
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)
