@@ -244,6 +244,7 @@ def ticker_to_xyz_summary(i):
         "quote_currency": i["target_currency"],
         "quote_volume": i["target_volume"],
         "lowest_ask": i["ask"],
+        "last_swap_timestamp": int(i["last_trade"]),
         "highest_bid": i["bid"],
         "price_change_percent_24h": str(i["price_change_percent_24hr"]),
         "highest_price_24h": i["high"],
@@ -251,6 +252,7 @@ def ticker_to_xyz_summary(i):
         "trades_24h": int(i["trades_24hr"]),
         "last_swap": int(i["last_trade"]),
         "last_price": i["last_price"],
+        
     }
 
 
