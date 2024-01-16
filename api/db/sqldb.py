@@ -184,7 +184,7 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in r]
 
                 if coin is not None:
-                    variants = [i for i in self.coins_config if i.startswith(coin)]
+                    variants = [i for i in self.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
                     for i in data:
                         logger.calc(i)
                         logger.info(i["taker_coin"])
@@ -194,9 +194,9 @@ class SqlQuery(SqlDB):
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
-                    base_variants = [i for i in self.coins_config if i.startswith(base)]
+                    base_variants = [i for i in self.coins_config if i.replace(base, "") == "" or i.replace(base, "").startswith("-")]
                     quote_variants = [
-                        i for i in self.coins_config if i.startswith(quote)
+                        i for i in self.coins_config if i.replace(quote, "") == "" or i.replace(quote, "").startswith("-")
                     ]
                     resp = {}
                     for i in base_variants:

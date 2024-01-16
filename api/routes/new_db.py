@@ -37,14 +37,19 @@ cache = Cache()
     status_code=200,
 )
 def get_swaps(
-    start: int = 0,
-    end: int = 0,
+    start_time: int = 0,
+    end_time: int = 0,
     coin: str | None = None,
     pair: str | None = None
 ):
     try:
         query = SqlQuery()
-        resp = query.get_swaps(start=start, end=end, coin=coin, pair=pair)
+        resp = query.get_swaps(
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            pair=pair
+        )
         logger.calc(resp)
         return resp
     except Exception as e:  # pragma: no cover
