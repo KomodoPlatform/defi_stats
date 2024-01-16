@@ -195,6 +195,28 @@ def to_summary_for_ticker_item(data):  # pragma: no cover
         "last_trade": data["last_trade"],
     }
 
+def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
+    return {
+        "trading_pair": data["ticker_id"],
+        "base_currency": data["base_currency"],
+        "liquidity_usd": data["liquidity_in_usd"],
+        "base_volume": data["base_volume"],
+        "base_usd_price": data["base_usd_price"],
+        "quote_currency": data["target_currency"],
+        "quote_volume": data["target_volume"],
+        "quote_usd_price": data["target_usd_price"],
+        "highest_bid": data["bid"],
+        "lowest_ask": data["ask"],
+        "highest_price_24h": data["high"],
+        "lowest_price_24h": data["low"],
+        "price_change_24h": data["price_change_24hr"],
+        "price_change_percent_24h": data["price_change_percent_24hr"],
+        "trades_24h": data["trades_24hr"],
+        "volume_usd_24h": data["volume_usd_24hr"],
+        "last_price": data["last_price"],
+        "last_swap_timestamp": data["last_trade"],
+    }
+
 
 def ticker_to_market_ticker_summary(i):
     return {
@@ -209,6 +231,24 @@ def ticker_to_market_ticker_summary(i):
         "highest_price_24hr": i["high"],
         "lowest_price_24hr": i["low"],
         "trades_24hr": int(i["trades_24hr"]),
+        "last_swap": int(i["last_trade"]),
+        "last_price": i["last_price"],
+    }
+
+
+def ticker_to_xyz_summary(i):
+    return {
+        "trading_pair": f"{i['base_currency']}_{i['target_currency']}",
+        "base_currency": i["base_currency"],
+        "base_volume": i["base_volume"],
+        "quote_currency": i["target_currency"],
+        "quote_volume": i["target_volume"],
+        "lowest_ask": i["ask"],
+        "highest_bid": i["bid"],
+        "price_change_percent_24h": str(i["price_change_percent_24hr"]),
+        "highest_price_24h": i["high"],
+        "lowest_price_24h": i["low"],
+        "trades_24h": int(i["trades_24hr"]),
         "last_swap": int(i["last_trade"]),
         "last_price": i["last_price"],
     }
