@@ -199,17 +199,17 @@ class SqlQuery(SqlDB):
                         i for i in self.coins_config if i.replace(quote, "") == "" or i.replace(quote, "").startswith("-")
                     ]
                     resp = {}
+                    all = 0
                     for i in base_variants:
                         for j in quote_variants:
-                            resp.update(
-                                {
-                                    f"{i}_{j}": [
-                                        k
-                                        for k in data
-                                        if i == k["taker_coin"] and j == k["maker_coin"]
-                                    ]
-                                }
-                            )
+                            variant = f"{i}_{j}"
+                            variant_trades = [
+                                k for k in data
+                                if i in [k["taker_coin"], k["maker_coin"]]
+                                and j in [k["taker_coin"], k["maker_coin"]]
+                            ]
+                            resp.update({variant: variant_trades})
+                            all += len(variant_trades)
                     resp.update({"ALL": data})
                 else:
                     resp = data

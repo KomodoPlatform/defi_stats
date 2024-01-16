@@ -50,7 +50,6 @@ def get_swaps(
             coin=coin,
             pair=pair
         )
-        logger.calc(resp)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
