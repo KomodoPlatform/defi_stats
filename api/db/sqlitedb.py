@@ -484,7 +484,7 @@ class SqliteQuery:  # pragma: no cover
         """
         try:
             coin = coin.split("-")[0]
-            variants = [i for i in self.db.coins_config if i.startswith(coin)]
+            variants = [i for i in self.db.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
             if end_time == 0:
                 end_time = int(time.time())
             resp = {}
@@ -572,7 +572,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             resp = {}
             coin = coin.split("-")[0]
-            variants = [i for i in self.db.coins_config if i.startswith(coin)]
+            variants = [i for i in self.db.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
             if end_time == 0:
                 end_time = int(time.time())
 
