@@ -32,11 +32,13 @@ def simple_validate_pair_str(pair_str):
     return True
 
 
-def validate_positive_numeric(value, name, is_int=False):
+def positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:
+            logger.warning(f"{name} can not be negative!")
             raise ValueError(f"{name} can not be negative!")
         if is_int and Decimal(value) % 1 != 0:
+            logger.warning(f"{name} must be an integer!")
             raise ValueError(f"{name} must be an integer!")
     except Exception as e:
         logger.warning(f"{type(e)} Error validating {name}: {e}")

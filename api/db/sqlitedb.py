@@ -192,16 +192,6 @@ class SqliteQuery:  # pragma: no cover
                     for swap in swaps_for_pair_a_b:
                         swap["trade_type"] = "buy"
 
-                    # "KMD_LTC"
-                    if (
-                        "KMD" in bases + quotes
-                        and "LTC" in bases + quotes
-                        and end_time - start_time == 86400
-                    ):
-                        logger.query(
-                            f"swaps_for_pair_a_b [{i}/{j}]: {swaps_for_pair_a_b}"
-                        )
-
                     # Get base = taker; quote = maker
                     sql = "SELECT * FROM stats_swaps WHERE"
                     sql += f" finished_at > {start_time}"
@@ -228,15 +218,6 @@ class SqliteQuery:  # pragma: no cover
                         swap["taker_amount"] = temp_maker_amount
                         swap["trade_type"] = "sell"
 
-                    if (
-                        "KMD" in bases + quotes
-                        and "LTC" in bases + quotes
-                        and end_time - start_time == 86400
-                    ):
-                        logger.query(
-                            f"swaps_for_pair_b_a [{i}/{j}]: {swaps_for_pair_b_a}"
-                        )
-
                     swaps_for_pair += swaps_for_pair_a_b + swaps_for_pair_b_a
             # Sort swaps by timestamp
             swaps_for_pair = sorted(
@@ -252,13 +233,6 @@ class SqliteQuery:  # pragma: no cover
                 ]
             if limit > 0:
                 swaps_for_pair = swaps_for_pair[:limit]
-
-            if (
-                "KMD" in bases + quotes
-                and "LTC" in bases + quotes
-                and end_time - start_time == 86400
-            ):
-                logger.query(f"swaps_for_pair {bases}/{quotes}: {swaps_for_pair}")
 
             return swaps_for_pair
         except sqlite3.OperationalError as e:

@@ -8,7 +8,7 @@ from lib.generic import Generic
 from lib.pair import Pair
 from db.sqlitedb import get_sqlite_db
 from util.enums import TradeType
-from util.validate import validate_positive_numeric
+import util.validate as validate
 from models.generic import (
     ErrorMessage,
 )
@@ -120,7 +120,7 @@ def historical_trades(
             (start_time, "start_time"),
             (end_time, "end_time"),
         ]:
-            validate_positive_numeric(value, name)
+            validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
@@ -162,7 +162,7 @@ def swaps_for_pair(
             (start_time, "start_time"),
             (end_time, "end_time"),
         ]:
-            validate_positive_numeric(value, name)
+            validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:

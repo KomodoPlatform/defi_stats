@@ -48,7 +48,7 @@ def test_historical_trades(
     setup_ltc_kmd_pair,
 ):
     pair = setup_kmd_ltc_pair
-    r = pair.historical_trades(trade_type="all")
+    r = pair.historical_trades(trade_type="all")["ALL"]
     r["trades_count"] = len(r["buy"]) + len(r["sell"])
     assert r["trades_count"] > 0
     # TODO: Restore tests once testdb setup for pgsql
