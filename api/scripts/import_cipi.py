@@ -7,7 +7,7 @@ from datetime import time as dt_time
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
-from db import sqldb
+from lib import populate_pgsqldb
 from util.logger import logger
 
 
@@ -23,7 +23,7 @@ def import_swaps():
         logger.updated(f"Importing swaps from {dt.strftime('%Y-%m-%d')} {dt}")
         start_ts = datetime.combine(dt, dt_time()).timestamp()
         end_ts = datetime.combine(dt, dt_time()).timestamp() + 86400
-        sqldb.populate_pgsqldb(start=start_ts, end=end_ts)
+        populate_pgsqldb(start=start_ts, end=end_ts)
         time.sleep(2)
 
 
