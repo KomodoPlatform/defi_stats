@@ -2,28 +2,28 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from db.sqlitedb import get_sqlite_db
-from models.generic import ErrorMessage, SwapUuids, SwapItem
-from lib.pair import Pair
+from db.sqldb import SqlQuery
+from db.schema import DefiSwap
+from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
-from util.enums import NetId
-from util.validate import validate_pair
 
 router = APIRouter()
+
 
 
 @router.get(
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
     responses={406: {"model": ErrorMessage}},
-    response_model=SwapItem,
+    response_model=DefiSwap,
     status_code=200,
 )
-def get_swap(uuid: str, netid: NetId = NetId.ALL):
+def get_swap(uuid: str):
     try:
-        db = get_sqlite_db(netid=netid.value)
-        resp = db.query.get_swap(uuid)
+        logger.info(uuid)
+        query = SqlQuery()
+        resp = query.get_swap(uuid=uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
         return resp
@@ -33,25 +33,56 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
         return JSONResponse(status_code=400, content=err)
 
 
+
+
 @router.get(
-    "/swap_uuids/{pair}",
+    "/swap_uuids",
     description="Get swap uuids for a pair (e.g. `KMD_LTC`).",
     responses={406: {"model": ErrorMessage}},
-    response_model=SwapUuids,
     status_code=200,
 )
 def swap_uuids(
-    pair: str = "KMD_LTC",
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
-    netid: NetId = NetId.ALL,
+    start_time: int = 0,
+    end_time: int = 0,
+    coin: str | None = None,
+    pair: str | None = None,
 ):
     try:
-        validate_pair(pair)
-        pair = Pair(pair_str=pair, netid=netid.value)
-        uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
-        resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
-        return resp
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        query = SqlQuery()
+        uuids = query.swap_uuids(
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            pair=pair
+        )
+        if coin is not None:        
+            return {
+                "coin": coin,
+                "start_time": start_time,
+                "end_time": end_time,
+                "variants": list(uuids.keys()),
+                "swap_count": len(uuids['ALL']),
+                "swap_uuids": uuids
+            }
+        elif pair is not None:        
+            return {
+                "pair": pair,
+                "start_time": start_time,
+                "end_time": end_time,
+                "variants": list(uuids.keys()),
+                "swap_count": len(uuids['ALL']),
+                "swap_uuids": uuids
+            }
+        return {
+                "start_time": start_time,
+                "end_time": end_time,
+                "swap_count": len(uuids),
+                "swap_uuids": uuids
+            }
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)

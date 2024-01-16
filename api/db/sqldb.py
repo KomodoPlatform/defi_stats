@@ -123,6 +123,48 @@ class SqlQuery(SqlDB):
                 logger.merge(i)
 
     @timed
+    def swap_uuids(
+        self,
+        table: object = DefiSwap,
+        start_time: int = 0,
+        end_time: int = 0,
+        coin=None,
+        pair=None,
+    ):
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        swaps = self.get_swaps(
+            table=DefiSwap,
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            pair=pair,
+        )
+
+        if coin is not None or pair is not None:
+            resp = {}
+            for variant in swaps:
+                resp.update({variant: [i["uuid"] for i in swaps[variant]]})
+            return resp
+        else:
+            return [i["uuid"] for i in swaps]
+
+    @timed
+    def get_swap(self, table: object = DefiSwap, uuid: str = ""):
+        try:
+            with Session(self.engine) as session:
+                q = select(table).where(table.uuid == uuid)
+                data = [dict(i) for i in session.exec(q)]
+                if len(data) == 0:
+                    return {"error": f"swap uuid {uuid} not found"}
+                else:
+                    return data[0]
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
     def get_swaps(
         self,
         table: object = DefiSwap,
@@ -184,7 +226,12 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in r]
 
                 if coin is not None:
-                    variants = [i for i in self.coins_config if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")]
+                    variants = [
+                        i
+                        for i in self.coins_config
+                        if i.replace(coin, "") == ""
+                        or i.replace(coin, "").startswith("-")
+                    ]
                     for i in data:
                         logger.calc(i)
                         logger.info(i["taker_coin"])
@@ -194,9 +241,17 @@ class SqlQuery(SqlDB):
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
-                    base_variants = [i for i in self.coins_config if i.replace(base, "") == "" or i.replace(base, "").startswith("-")]
+                    base_variants = [
+                        i
+                        for i in self.coins_config
+                        if i.replace(base, "") == ""
+                        or i.replace(base, "").startswith("-")
+                    ]
                     quote_variants = [
-                        i for i in self.coins_config if i.replace(quote, "") == "" or i.replace(quote, "").startswith("-")
+                        i
+                        for i in self.coins_config
+                        if i.replace(quote, "") == ""
+                        or i.replace(quote, "").startswith("-")
                     ]
                     resp = {}
                     all = 0
@@ -204,7 +259,8 @@ class SqlQuery(SqlDB):
                         for j in quote_variants:
                             variant = f"{i}_{j}"
                             variant_trades = [
-                                k for k in data
+                                k
+                                for k in data
                                 if i in [k["taker_coin"], k["maker_coin"]]
                                 and j in [k["taker_coin"], k["maker_coin"]]
                             ]
