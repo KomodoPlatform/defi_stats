@@ -4,7 +4,7 @@ import lib
 from util.exceptions import DataStructureError, BadPairFormatError
 
 
-def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
+def ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     if allow_reverse:
         inverse_valid_tickers = [
             f'{i.split("_")[1]}_{i.split("_")[0]}' for i in valid_tickers
@@ -22,15 +22,6 @@ def validate_ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail
     raise ValueError(msg)
 
 
-def simple_validate_pair_str(pair_str):
-    if "_" not in pair_str:
-        return False
-    if " " in pair_str:
-        return False
-    if ";" in pair_str:
-        return False
-    return True
-
 
 def positive_numeric(value, name, is_int=False):
     try:
@@ -46,7 +37,7 @@ def positive_numeric(value, name, is_int=False):
     return True
 
 
-def validate_loop_data(data, cache_item, netid=None):
+def loop_data(data, cache_item, netid=None):
     try:
         if data is None:
             return False
@@ -68,7 +59,7 @@ def validate_loop_data(data, cache_item, netid=None):
         return False
 
 
-def validate_orderbook_pair(base, quote, coins_config):
+def orderbook_pair(base, quote, coins_config):
     try:
         logger.muted(f"Validating {base}/{quote}")
         err = None
@@ -100,7 +91,7 @@ def validate_orderbook_pair(base, quote, coins_config):
         return False
 
 
-def validate_json(data, outer=True):
+def json_obj(data, outer=True):
     if outer:
         try:
             if isinstance(data, list):
@@ -110,9 +101,9 @@ def validate_json(data, outer=True):
             return False
     # Recursivety checks nested data
     if isinstance(data, dict):
-        return all(validate_json(value, False) for value in data.values())
+        return all(json_obj(value, False) for value in data.values())
     elif isinstance(data, list):
-        return all(validate_json(item, False) for item in data)
+        return all(json_obj(item, False) for item in data)
     elif isinstance(data, (int, float, str, bool, type(None))):
         # We can add custom validation here, for example if an error
         # message ends up in the json data which should not be there
@@ -121,7 +112,7 @@ def validate_json(data, outer=True):
         return False
 
 
-def validate_pair(pair_str):
+def pair(pair_str):
     if not isinstance(pair_str, str):
         raise TypeError
     if "_" not in pair_str:

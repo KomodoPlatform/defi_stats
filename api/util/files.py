@@ -4,7 +4,7 @@ import requests
 from const import API_ROOT_PATH
 from util.defaults import default_error, set_params
 from util.logger import timed, logger
-from util.validate import validate_json
+import util.validate as validate
 
 
 class Files:
@@ -47,7 +47,7 @@ class Files:
     def save_json(self, fn, data):
         try:
             if len(data) > 0:
-                if validate_json(data):
+                if validate.json_obj(data):
                     with open(fn, "w+") as f:
                         json.dump(data, f, indent=4)
                         return {

@@ -9,7 +9,7 @@ from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger
 from util.urls import Urls
-from util.validate import validate_loop_data
+import util.validate as validate
 from const import MARKETS_PAIRS_DAYS
 
 
@@ -159,7 +159,7 @@ class CacheItem:
                     )
 
             if data is not None:
-                if validate_loop_data(data, self, "ALL"):
+                if validate.loop_data(data, self, "ALL"):
                     data = {"last_updated": int(time.time()), "data": data}
                     self.files.save_json(self.filename, data)
                 else:
