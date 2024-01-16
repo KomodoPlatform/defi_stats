@@ -9,7 +9,6 @@ from util.transform import (
     sort_dict_list,
     format_10f,
     list_json_key,
-    order_pair_by_market_cap,
     get_suffix,
     reverse_ticker,
 )
@@ -22,6 +21,7 @@ from util.enums import TradeType
 from util.helper import get_price_at_finish, get_last_trade_time
 from util.logger import logger, timed
 import util.templates as template
+import util.transform as transform
 import lib
 
 
@@ -474,7 +474,7 @@ def get_all_coin_pairs(coin, priced_coins):
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]
-        sorted_pairs = set([order_pair_by_market_cap(i, gecko_source) for i in pairs])
+        sorted_pairs = set([transform.order_pair_by_market_cap(i, gecko_source) for i in pairs])
         return list(sorted_pairs)
     except Exception as e:  # pragma: no cover
         msg = "get_all_coin_pairs failed"

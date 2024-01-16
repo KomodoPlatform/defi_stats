@@ -110,3 +110,11 @@ def pair_without_segwit_suffix(maker_coin, taker_coin):
     if taker_coin.endswith('-'):
         taker_coin = taker_coin[:-1]
     return f'{maker_coin.replace("-segwit", "")}_{taker_coin.replace("-segwit", "")}'
+
+
+def get_coin_variants(coin, coins_config):
+    return [
+        i for i in coins_config
+        if i.replace(coin, "") == ""
+        or i.replace(coin, "").startswith("-")
+    ]

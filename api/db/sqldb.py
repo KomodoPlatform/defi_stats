@@ -9,6 +9,7 @@ from db.schema import CipiSwap, DefiSwap, StatsSwap
 from dotenv import load_dotenv
 from util.defaults import default_error, default_result
 from util.logger import logger, timed
+from util.helper import get_coin_variants
 import util.transform as transform
 import lib
 from const import (
@@ -205,9 +206,6 @@ class SqlQuery(SqlDB):
                     )
                 elif pair is not None:
                     pair = transform.strip_pair_platforms(pair)
-                    pair = transform.order_pair_by_market_cap(
-                        pair, gecko_source=self.gecko_source
-                    )
                     base, quote = pair.split("_")
                     q = q.where(
                         or_(
@@ -226,12 +224,7 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in r]
 
                 if coin is not None:
-                    variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(coin, "") == ""
-                        or i.replace(coin, "").startswith("-")
-                    ]
+                    variants = get_coin_variants(coin, self.coins_config)
                     for i in data:
                         logger.calc(i)
                         logger.info(i["taker_coin"])
@@ -241,18 +234,8 @@ class SqlQuery(SqlDB):
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
-                    base_variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(base, "") == ""
-                        or i.replace(base, "").startswith("-")
-                    ]
-                    quote_variants = [
-                        i
-                        for i in self.coins_config
-                        if i.replace(quote, "") == ""
-                        or i.replace(quote, "").startswith("-")
-                    ]
+                    base_variants = get_coin_variants(base, self.coins_config)
+                    quote_variants = get_coin_variants(quote, self.coins_config)
                     resp = {}
                     all = 0
                     for i in base_variants:
