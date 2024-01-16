@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 from lib.cache import (
     load_coins_config,
     load_gecko_source,
     load_generic_last_traded,
 )
 from util.defaults import set_params
+from util.helper import get_gecko_mcap, get_gecko_price
 from util.logger import logger
 
 
@@ -92,29 +92,3 @@ class Coin:
             if i == self.coin or i.startswith(f"{self.ticker}-")
         ]
         return data
-
-
-def get_gecko_price(ticker, gecko_source=None) -> float:
-    try:
-        if gecko_source is None:
-            gecko_source = load_gecko_source()
-        if ticker in gecko_source:
-            return Decimal(gecko_source[ticker]["usd_price"])
-    except KeyError as e:  # pragma: no cover
-        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
-    return Decimal(0)  # pragma: no cover
-
-
-def get_gecko_mcap(ticker, gecko_source=None) -> float:
-    try:
-        if gecko_source is None:
-            gecko_source = load_gecko_source()
-        if ticker in gecko_source:
-            return Decimal(gecko_source[ticker]["usd_market_cap"])
-    except KeyError as e:  # pragma: no cover
-        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
-    return Decimal(0)  # pragma: no cover

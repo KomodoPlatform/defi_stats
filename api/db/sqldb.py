@@ -271,13 +271,15 @@ def normalise_swap_data(data, gecko_source, is_success=None):
             pair_std = transform.order_pair_by_market_cap(
                 pair, gecko_source=gecko_source
             )
-            if pair.replace("-segwit", "") == pair_std:
+            if pair == pair_std:
                 trade_type = "buy"
+                logger.merge(f'{pair} vs {pair_std}: buy')
             else:
                 trade_type = "sell"
+                logger.calc(f'{pair} vs {pair_std}: sell')
             i.update(
                 {
-                    "pair": pair,
+                    "pair": pair_std,
                     "trade_type": trade_type,
                     "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
                     "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),

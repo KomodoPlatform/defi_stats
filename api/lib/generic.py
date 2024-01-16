@@ -9,7 +9,7 @@ from util.defaults import default_error, set_params, default_result
 from util.enums import NetId
 from util.exceptions import DataStructureError
 from util.files import Files
-from util.helper import get_pairs_info
+from util.helper import get_pairs_info, get_gecko_price
 from util.logger import timed, logger
 from util.transform import (
     sum_json_key,
@@ -126,10 +126,10 @@ class Generic:  # pragma: no cover
                 for pair_str in pairs:
                     # logger.info(pair_str)
                     pair_split = pair_str.split("_")
-                    base_price = lib.get_gecko_price(
+                    base_price = get_gecko_price(
                         pair_split[0], self.gecko_source
                     )
-                    quote_price = lib.get_gecko_price(
+                    quote_price = get_gecko_price(
                         pair_split[1], self.gecko_source
                     )
                     if base_price > 0 and quote_price > 0:
@@ -141,10 +141,10 @@ class Generic:  # pragma: no cover
                     if pair_str not in pairs:
                         # logger.info(pair_str)
                         pair_split = pair_str.split("_")
-                        base_price = lib.get_gecko_price(
+                        base_price = get_gecko_price(
                             pair_split[0], self.gecko_source
                         )
-                        quote_price = lib.get_gecko_price(
+                        quote_price = get_gecko_price(
                             pair_split[1], self.gecko_source
                         )
                         if base_price > 0 and quote_price > 0:

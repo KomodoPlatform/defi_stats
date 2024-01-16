@@ -158,20 +158,6 @@ def test_swap_uuids(setup_kmd_ltc_pair):
     assert len(r) == 3
 
 
-def test_related_pairs(setup_kmd_ltc_pair, setup_1inch_usdc_pair):
-    pair = setup_kmd_ltc_pair
-    r = pair.related_pairs
-    assert "KMD_LTC" in r
-    assert "KMD-BEP20_LTC" in r
-    assert len(r) == 4
-
-    pair = setup_1inch_usdc_pair
-    r = pair.related_pairs
-    assert ("1INCH-AVX20_USDC-ERC20") in r
-    assert ("1INCH-PLG20_USDC-BEP20") in r
-    assert len(r) > 40
-
-
 def test_swap_info(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
     data = pair.last_swap

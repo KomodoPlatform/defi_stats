@@ -6,6 +6,7 @@ from lib.dex_api import DexAPI, get_orderbook
 from util.files import Files
 from util.logger import logger, timed
 from util.defaults import default_error, set_params, default_result
+from util.helper import get_gecko_price
 import lib
 import util.transform as transform
 
@@ -77,10 +78,10 @@ class Orderbook:
                     for i in orderbook_data["asks"]
                 ]
             )
-            orderbook_data["base_price_usd"] = lib.get_gecko_price(
+            orderbook_data["base_price_usd"] = get_gecko_price(
                 orderbook_data["base"], self.gecko_source
             )
-            orderbook_data["quote_price_usd"] = lib.get_gecko_price(
+            orderbook_data["quote_price_usd"] = get_gecko_price(
                 orderbook_data["quote"], self.gecko_source
             )
             orderbook_data["total_asks_base_vol"] = total_asks_base_vol

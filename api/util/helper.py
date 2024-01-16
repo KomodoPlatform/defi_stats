@@ -105,16 +105,38 @@ def get_last_trade_uuid(pair_str: str, last_traded_cache: Dict) -> int:
 
 def pair_without_segwit_suffix(maker_coin, taker_coin):
     """Removes `-segwit` suffixes from the tickers of a pair"""
-    if maker_coin.endswith('-'):
+    if maker_coin.endswith("-"):
         maker_coin = maker_coin[:-1]
-    if taker_coin.endswith('-'):
+    if taker_coin.endswith("-"):
         taker_coin = taker_coin[:-1]
     return f'{maker_coin.replace("-segwit", "")}_{taker_coin.replace("-segwit", "")}'
 
 
 def get_coin_variants(coin, coins_config):
     return [
-        i for i in coins_config
-        if i.replace(coin, "") == ""
-        or i.replace(coin, "").startswith("-")
+        i
+        for i in coins_config
+        if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
     ]
+
+
+def get_gecko_price(ticker, gecko_source) -> float:
+    try:
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_price"])
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0)  # pragma: no cover
+
+
+def get_gecko_mcap(ticker, gecko_source) -> float:
+    try:
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_market_cap"])
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0)  # pragma: no cover

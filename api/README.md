@@ -100,3 +100,15 @@ These should be consolidated in this repo at some point. They are based on branc
         }
     }
 - The `-ALL` suffix is used for the combined sum of all variants.
+
+
+- Given a pair XXX_YYY, we assume XXX is base and YYY is quote with higher marketcap. The pair value in DB is mcap sorted, so XXX_YYY is the `standard pair`.
+- If maker is XXX and taker is YYY, its a BUY
+- If maker is YYY and taker is XXX, its a SELL
+- XXX is the BASE, and YYY is the QUOTE (or rel/target)
+- Price should always be expressed as BASE volume / QUOTE volume
+
+For the inverted pair `YYY_XXX`, an inversion of the data above is returned, after a transformation where:
+- BUY becomes SELL and vice versa.
+- BASE becomes QUOTE (or rel/target) and vice versa.
+- Price becomes 1/price
