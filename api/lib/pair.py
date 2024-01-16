@@ -185,54 +185,59 @@ class Pair:  # pragma: no cover
                 ticker_id = reverse_ticker(self.as_str)
             else:
                 ticker_id = self.as_str
-            trades_info = []
+            
             pg_query = lib.SqlQuery()
             swaps_for_pair = pg_query.get_swaps(
                 table=DefiSwap,
                 start_time=start_time,
                 end_time=end_time,
+                pair=self.as_str
             )
-            for swap in swaps_for_pair:
-                trade_info = OrderedDict()
-                trade_info["trade_id"] = swap["uuid"]
-                trade_info["base_ticker"] = self.base
-                trade_info["target_ticker"] = self.quote
-                price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
-                trade_info["price"] = format_10f(price)
-                trade_info["base_volume"] = format_10f(swap["maker_amount"])
-                trade_info["quote_volume"] = format_10f(swap["taker_amount"])
-                trade_info["target_volume"] = format_10f(swap["taker_amount"])
-                trade_info["timestamp"] = swap["finished_at"]
-                trade_info["type"] = swap["trade_type"]
-                trades_info.append(trade_info)
-            logger.merge(trades_info)
-        except Exception as e:  # pragma: no cover
-            msg = f"pair.historical_trades {ticker_id} failed for netid {self.netid}!"
-            return default_error(e, msg)
-        try:
-            average_price = self.get_average_price(trades_info)
-            buys = list_json_key(trades_info, "type", "buy")
-            sells = list_json_key(trades_info, "type", "sell")
-            buys = sort_dict_list(buys, "timestamp", reverse=True)
-            sells = sort_dict_list(sells, "timestamp", reverse=True)
+            resp = {}
+            for variant in swaps_for_pair:
+                logger.info(variant)
+                trades_info = []
+                for swap in swaps_for_pair[variant]:
+                    trade_info = OrderedDict()
+                    trade_info["pair"] = swap["pair"]
+                    trade_info["trade_id"] = swap["uuid"]
+                    trade_info["base_ticker"] = self.base
+                    trade_info["target_ticker"] = self.quote
+                    price = Decimal(swap["taker_amount"]) / Decimal(swap["maker_amount"])
+                    trade_info["price"] = format_10f(price)
+                    trade_info["base_volume"] = format_10f(swap["maker_amount"])
+                    trade_info["quote_volume"] = format_10f(swap["taker_amount"])
+                    trade_info["target_volume"] = format_10f(swap["taker_amount"])
+                    trade_info["timestamp"] = swap["finished_at"]
+                    trade_info["type"] = swap["trade_type"]
+                    trades_info.append(trade_info)
 
-            data = {
-                "ticker_id": ticker_id,
-                "start_time": str(start_time),
-                "end_time": str(end_time),
-                "limit": str(limit),
-                "trades_count": str(len(trades_info)),
-                "sum_base_volume_buys": sum_json_key_10f(buys, "base_volume"),
-                "sum_base_volume_sells": sum_json_key_10f(sells, "base_volume"),
-                "sum_target_volume_buys": sum_json_key_10f(buys, "target_volume"),
-                "sum_target_volume_sells": sum_json_key_10f(sells, "target_volume"),
-                "sum_quote_volume_buys": sum_json_key_10f(buys, "quote_volume"),
-                "sum_quote_volume_sells": sum_json_key_10f(sells, "quote_volume"),
-                "average_price": format_10f(average_price),
-                "buy": buys,
-                "sell": sells,
-            }
-            return data
+                average_price = self.get_average_price(trades_info)
+                buys = list_json_key(trades_info, "type", "buy")
+                sells = list_json_key(trades_info, "type", "sell")
+                buys = sort_dict_list(buys, "timestamp", reverse=True)
+                sells = sort_dict_list(sells, "timestamp", reverse=True)
+
+                data = {
+                    "ticker_id": ticker_id,
+                    "start_time": str(start_time),
+                    "end_time": str(end_time),
+                    "limit": str(limit),
+                    "trades_count": str(len(trades_info)),
+                    "sum_base_volume_buys": sum_json_key_10f(buys, "base_volume"),
+                    "sum_base_volume_sells": sum_json_key_10f(sells, "base_volume"),
+                    "sum_target_volume_buys": sum_json_key_10f(buys, "target_volume"),
+                    "sum_target_volume_sells": sum_json_key_10f(sells, "target_volume"),
+                    "sum_quote_volume_buys": sum_json_key_10f(buys, "quote_volume"),
+                    "sum_quote_volume_sells": sum_json_key_10f(sells, "quote_volume"),
+                    "average_price": format_10f(average_price),
+                    "buy": buys,
+                    "sell": sells,
+                }
+                resp.update({
+                    variant: data
+                })
+            return resp
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {self.as_str} failed for netid {self.netid}!"
             return default_error(e, msg)
@@ -256,8 +261,6 @@ class Pair:  # pragma: no cover
         try:
             timestamp = int(time.time() - 86400 * days)
             swaps_for_pair = self.pair_swaps(start_time=timestamp)
-            if self.as_str in ["KMD_LTC"] and days == 1:
-                logger.merge(swaps_for_pair)
             # Get template in case no swaps returned
             suffix = get_suffix(days)
 

@@ -16,7 +16,7 @@ from models.stats_api import (
 )
 from util.logger import logger
 import util.transform as transform
-from util.validate import validate_positive_numeric
+import util.validate as validate
 from util.enums import TradeType
 from util.helper import get_last_trade_price
 import lib
@@ -134,7 +134,7 @@ def trades(
             (start_time, "start_time"),
             (end_time, "end_time"),
         ]:
-            validate_positive_numeric(value, name)
+            validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
@@ -145,7 +145,7 @@ def trades(
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-        )
+        )['ALL']
         resp = data["buy"] + data["sell"]
         resp = transform.sort_dict_list(resp, "timestamp", True)
         return resp
