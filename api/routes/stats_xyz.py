@@ -43,7 +43,6 @@ router = APIRouter()
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
-    response_model=MarketsAtomicdexIo,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -60,7 +59,6 @@ def atomicdex_info_api(netid: NetId = NetId.ALL):
 # New endpoint
 @router.get(
     "/current_liquidity",
-    response_model=MarketsCurrentLiquidity,
     description="Global liquidity on the orderbook for all pairs.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
@@ -79,7 +77,6 @@ def current_liquidity(netid: NetId = NetId.ALL):
 @router.get(
     "/fiat_rates",
     description="Coin prices in USD (where available)",
-    response_model=Dict[str, MarketsFiatRatesItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -91,7 +88,6 @@ def fiat_rates():
 @router.get(
     "/orderbook/{market_pair}",
     description="Get Orderbook for a market pair in `KMD_LTC` format.",
-    response_model=MarketsOrderbookItem,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -108,7 +104,6 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
 @router.get(
     "/pairs_last_trade",
     description="Returns last trade info for all pairs matching the filter",
-    response_model=List[MarketsPairLastTradeItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -133,7 +128,6 @@ def pairs_last_traded(
 @router.get(
     "/summary",
     description=f"24-hour price & volume for each pair traded in last {MARKETS_PAIRS_DAYS} days.",
-    response_model=List[MarketsSummaryItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -154,7 +148,6 @@ def summary(netid: NetId = NetId.ALL):
 @router.get(
     "/summary_for_ticker/{coin}",
     description="24h price & volume for market pairs with a specific coin traded in last 7 days",
-    response_model=MarketsSummaryForTicker,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -185,7 +178,6 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
 @router.get(
     "/swaps24/{ticker}",
     description="Total swaps involving a specific ticker (e.g. `KMD`) in the last 24hrs.",
-    response_model=MarketsSwaps24,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -274,7 +266,6 @@ def tickers_summary(netid: NetId = NetId.ALL):
 
 @router.get(
     "/trades/{market_pair}/{days_in_past}",
-    response_model=List[PairTrades],
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
@@ -303,7 +294,6 @@ def trades(
 # Migrated from https://stats.testchain.xyz/api/v1/usd_volume_24h
 @router.get(
     "/usd_volume_24hr",
-    response_model=MarketsUsdVolume,
     description="Volume (in USD) traded in last 24hrs.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
