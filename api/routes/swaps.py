@@ -4,27 +4,26 @@ from fastapi.responses import JSONResponse
 import time
 from db.sqldb import SqlQuery
 from db.schema import DefiSwap
-from models.generic import ErrorMessage, SwapUuids, SwapItem
-from lib.pair import Pair
+from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
-from util.enums import NetId
-from util.validate import validate_pair
 
 router = APIRouter()
+
 
 
 @router.get(
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
     responses={406: {"model": ErrorMessage}},
-    response_model=SwapItem,
+    response_model=DefiSwap,
     status_code=200,
 )
-def get_swap(uuid: str, netid: NetId = NetId.ALL):
+def get_swap(uuid: str):
     try:
+        logger.info(uuid)
         query = SqlQuery()
-        resp = query.get_swap(uuid)
+        resp = query.get_swap(uuid=uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
         return resp
@@ -34,11 +33,12 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
         return JSONResponse(status_code=400, content=err)
 
 
+
+
 @router.get(
-    "/swap_uuids/{pair}",
+    "/swap_uuids",
     description="Get swap uuids for a pair (e.g. `KMD_LTC`).",
     responses={406: {"model": ErrorMessage}},
-    response_model=SwapUuids,
     status_code=200,
 )
 def swap_uuids(
