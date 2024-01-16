@@ -117,7 +117,7 @@ def get_coin_variants(coin, coins_config, segwit_only=False):
         i
         for i in coins_config
         if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
-        and (segwit_only == False or i.endswith('segwit') or i.replace(coin, "") == "")
+        and (not segwit_only or i.endswith('segwit') or i.replace(coin, "") == "")
     ]
 
 

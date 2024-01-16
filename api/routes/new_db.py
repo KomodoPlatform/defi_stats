@@ -79,7 +79,6 @@ def historical_trades(
             (end_time, "end_time"),
         ]:
             validate.positive_numeric(value, name, True)
-        logger.info(ticker_id)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:

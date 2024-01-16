@@ -29,7 +29,6 @@ from util.logger import logger
 from util.transform import (
     ticker_to_market_ticker,
     ticker_to_market_ticker_summary,
-    sort_dict_list,
     to_summary_for_ticker_item,
     sum_json_key_10f,
     sum_json_key,
@@ -291,7 +290,6 @@ def trades(
         if days_in_past > 7:
             return {"error": "Maximum value for 'days_in_past' is '7'. Try again."}
         data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
-        logger.info(data)
         return data
     except BadPairFormatError as e:
         err = {"error": f"{e.msg}"}

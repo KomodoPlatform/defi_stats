@@ -220,7 +220,6 @@ class SqlQuery(SqlDB):
                 q = q.order_by(table.started_at)
                 r = session.exec(q)
                 data = [dict(i) for i in r]
-                logger.calc(data[0])
                 if coin is not None:
                     variants = get_coin_variants(coin, self.coins_config)
                     resp = {
@@ -229,11 +228,8 @@ class SqlQuery(SqlDB):
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
-                    logger.calc(pair)
                     base_variants = get_coin_variants(base, self.coins_config)
-                    logger.calc(base_variants)
                     quote_variants = get_coin_variants(quote, self.coins_config)
-                    logger.calc(quote_variants)
                     resp = {}
                     all = 0
                     for i in base_variants:

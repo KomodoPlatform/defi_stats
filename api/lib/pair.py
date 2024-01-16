@@ -164,18 +164,13 @@ class Pair:  # pragma: no cover
                 end_time=end_time,
                 pair=self.as_str,
             )
-            logger.calc(swaps_for_pair.keys())
             for variant in swaps_for_pair:
                 trades_info = []
-                logger.calc(variant)
-                logger.calc(swaps_for_pair[variant])
                 for swap in swaps_for_pair[variant]:
-                    logger.calc(swap)
                     trade_info = OrderedDict()
                     trade_info["trade_id"] = swap["uuid"]
                     trade_info["timestamp"] = swap["finished_at"]
                     # Handle reversed pair
-                    logger.calc(self.is_reversed)
                     if self.is_reversed:
                         trade_info["pair"] = transform.invert_pair(swap["pair"])
                         trade_info["type"] = transform.invert_trade_type(
@@ -201,7 +196,6 @@ class Pair:  # pragma: no cover
                             )
                     else:
                         trade_info["pair"] = swap["pair"]
-                        logger.calc(trade_info["pair"])
                         trade_info["type"] = swap["trade_type"]
                         price = Decimal(swap["price"])
                         if trade_info["type"] == "buy":
@@ -224,9 +218,7 @@ class Pair:  # pragma: no cover
                             )
 
                     trade_info["price"] = format_10f(price)
-                    logger.calc(trade_info["price"])
                     trades_info.append(trade_info)
-
 
                 average_price = self.get_average_price(trades_info)
                 buys = list_json_key(trades_info, "type", "buy")
@@ -253,7 +245,7 @@ class Pair:  # pragma: no cover
                     "sell": sells,
                 }
                 resp.update({variant: data})
-                
+
         except Exception as e:  # pragma: no cover
             msg = f"pair.historical_trades {self.as_str} failed for netid {self.netid}!"
             return default_error(e, msg)

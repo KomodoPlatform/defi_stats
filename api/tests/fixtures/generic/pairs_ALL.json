@@ -1,12 +1,12 @@
 {
-    "last_updated": 1705406628,
+    "last_updated": 1705413422,
     "data": [
         {
             "ticker_id": "DGB_LTC",
             "pool_id": "DGB_LTC",
             "base": "DGB",
             "target": "LTC",
-            "last_trade": 1705403031,
+            "last_trade": 1705409826,
             "priced": true
         },
         {
@@ -14,7 +14,7 @@
             "pool_id": "KMD-BEP20_BTC",
             "base": "KMD-BEP20",
             "target": "BTC",
-            "last_trade": 1705319927,
+            "last_trade": 1705326722,
             "priced": true
         },
         {
@@ -22,7 +22,7 @@
             "pool_id": "KMD-BEP20_DGB",
             "base": "KMD-BEP20",
             "target": "DGB",
-            "last_trade": 1705403087,
+            "last_trade": 1705409882,
             "priced": true
         },
         {
@@ -30,7 +30,7 @@
             "pool_id": "KMD_BTC",
             "base": "KMD",
             "target": "BTC",
-            "last_trade": 1705395834,
+            "last_trade": 1705402629,
             "priced": true
         },
         {
@@ -70,7 +70,7 @@
             "pool_id": "KMD_LTC",
             "base": "KMD",
             "target": "LTC",
-            "last_trade": 1705403032,
+            "last_trade": 1705409827,
             "priced": true
         },
         {
@@ -78,7 +78,7 @@
             "pool_id": "LTC_BTC",
             "base": "LTC",
             "target": "BTC",
-            "last_trade": 1704801837,
+            "last_trade": 1704808632,
             "priced": true
         },
         {
@@ -86,7 +86,7 @@
             "pool_id": "MORTY_KMD",
             "base": "MORTY",
             "target": "KMD",
-            "last_trade": 1705403028,
+            "last_trade": 1705409823,
             "priced": false
         }
     ]

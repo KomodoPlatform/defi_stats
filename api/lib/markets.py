@@ -69,7 +69,6 @@ class Markets:
             resp = []
             base, quote = pair.split("_")
             if all:
-                logger.calc("Returning ALL")
                 resp += data["ALL"]["buy"]
                 resp += data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:
@@ -91,8 +90,7 @@ class Markets:
                 resp += data[pair]["buy"]
                 resp += data[pair]["sell"]
             return transform.sort_dict_list(resp, "timestamp", reverse=True)
-            
+
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
             return default_error(e, msg)
-        
