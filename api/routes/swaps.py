@@ -2,7 +2,8 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import time
-from db.sqlitedb import get_sqlite_db
+from db.sqldb import SqlQuery
+from db.schema import DefiSwap
 from models.generic import ErrorMessage, SwapUuids, SwapItem
 from lib.pair import Pair
 from util.exceptions import UuidNotFoundException, BadPairFormatError
@@ -22,8 +23,8 @@ router = APIRouter()
 )
 def get_swap(uuid: str, netid: NetId = NetId.ALL):
     try:
-        db = get_sqlite_db(netid=netid.value)
-        resp = db.query.get_swap(uuid)
+        query = SqlQuery()
+        resp = query.get_swap(uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
         return resp
@@ -41,17 +42,47 @@ def get_swap(uuid: str, netid: NetId = NetId.ALL):
     status_code=200,
 )
 def swap_uuids(
-    pair: str = "KMD_LTC",
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
-    netid: NetId = NetId.ALL,
+    start_time: int = 0,
+    end_time: int = 0,
+    coin: str | None = None,
+    pair: str | None = None,
 ):
     try:
-        validate_pair(pair)
-        pair = Pair(pair_str=pair, netid=netid.value)
-        uuids = pair.swap_uuids(start_time=start_time, end_time=end_time)
-        resp = {"pair": pair.as_str, "swap_count": len(uuids), "swap_uuids": uuids}
-        return resp
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        query = SqlQuery()
+        uuids = query.swap_uuids(
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            pair=pair
+        )
+        if coin is not None:        
+            return {
+                "coin": coin,
+                "start_time": start_time,
+                "end_time": end_time,
+                "variants": list(uuids.keys()),
+                "swap_count": len(uuids['ALL']),
+                "swap_uuids": uuids
+            }
+        elif pair is not None:        
+            return {
+                "pair": pair,
+                "start_time": start_time,
+                "end_time": end_time,
+                "variants": list(uuids.keys()),
+                "swap_count": len(uuids['ALL']),
+                "swap_uuids": uuids
+            }
+        return {
+                "start_time": start_time,
+                "end_time": end_time,
+                "swap_count": len(uuids),
+                "swap_uuids": uuids
+            }
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)
