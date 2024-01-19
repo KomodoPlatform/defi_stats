@@ -75,5 +75,35 @@ def volumes_and_prices(suffix):
         "oldest_price": 0,
         "newest_price": 0,
         "oldest_price_time": 0,
-        "newest_price_time": 0
+        "newest_price_time": 0,
+    }
+
+
+def coin_trade_vol_item():
+    return {
+        "taker_volume": 0,
+        "maker_volume": 0,
+        "trade_volume": 0,
+        "swaps": 0,
+    }
+
+
+def pair_trade_vol_item():
+    return {
+        "base_volume": 0,
+        "quote_volume": 0,
+        "swaps": 0,
+    }
+
+
+def last_trade_info():
+    return {
+        "swap_count": 0,
+        "sum_taker_traded": 0,
+        "sum_maker_traded": 0,
+        "last_swap": 0,
+        "last_price": 0,
+        "last_swap_uuid": "",
+        "last_taker_amount": 0,
+        "last_maker_amount": 0,
     }

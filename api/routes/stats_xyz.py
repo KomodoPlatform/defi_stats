@@ -4,25 +4,11 @@ from fastapi.responses import JSONResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
 import time
-from typing import List, Dict
 from const import MARKETS_PAIRS_DAYS
 from db.sqlitedb import get_sqlite_db
 from models.generic import ErrorMessage
 from util.exceptions import BadPairFormatError
-from models.markets import (
-    MarketsUsdVolume,
-    MarketsCurrentLiquidity,
-    MarketsFiatRatesItem,
-    MarketsAtomicdexIo,
-    MarketsOrderbookItem,
-    MarketsPairLastTradeItem,
-    MarketsSwaps24,
-    PairTrades,
-    MarketsSummaryItem,
-    MarketsSummaryForTicker,
-)
 from lib.generic import Generic
-
 from lib.markets import Markets
 from util.enums import TradeType, NetId
 from util.logger import logger
@@ -42,10 +28,8 @@ router = APIRouter()
 def atomicdex_info_api(netid: NetId = NetId.ALL):
     db = get_sqlite_db(netid=netid.value)
     data = db.query.swap_counts()
-    data.update({
-        "swaps_24h": data['swaps_24hr']
-    })
-    del data['swaps_24hr']
+    data.update({"swaps_24h": data["swaps_24hr"]})
+    del data["swaps_24hr"]
     return data
 
 
@@ -262,10 +246,10 @@ def tickers_summary(netid: NetId = NetId.ALL):
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = 'false'
+    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = "false"
 ):
     try:
-        all = all.lower() == 'true'
+        all = all.lower() == "true"
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
         if days_in_past > 7:
@@ -329,5 +313,5 @@ def volumes_history_ticker(
             end_time=end_time,
         )
         logger.info(data)
-        volumes_dict[d_str] = data['data'][coin]
+        volumes_dict[d_str] = data["data"][coin]
     return volumes_dict

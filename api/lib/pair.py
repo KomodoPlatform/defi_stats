@@ -20,7 +20,7 @@ from util.defaults import default_error, set_params, default_result
 from util.enums import TradeType
 from util.helper import (
     get_price_at_finish,
-    get_last_trade_time,
+    get_last_trade_item,
     get_gecko_price,
 )
 from util.logger import logger, timed
@@ -110,7 +110,7 @@ class Pair:  # pragma: no cover
     @property
     def info(self):
         data = template.pair_info(f"{self.base}_{self.quote}")
-        last_trade = get_last_trade_time(self.as_str, self.last_traded_cache)
+        last_trade = get_last_trade_item(self.as_str, self.last_traded_cache, "last_swap")
         data.update({"last_trade": last_trade})
         return data
 
@@ -149,7 +149,7 @@ class Pair:  # pragma: no cover
         end_time: Optional[int] = 0,
     ):
         """Returns trades for this pair."""
-
+        # TODO: Review price / reverse price logic
         try:
             if start_time == 0:
                 start_time = int(time.time()) - 86400

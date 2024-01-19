@@ -125,3 +125,45 @@ class HealthCheck(BaseModel):
     timestamp: int = 1777777777
     status: str = "ok"
     cache_age_mins: Dict[str, Any]
+
+
+class CoinTradeVolume(BaseModel):
+    swaps: int = 777
+    taker_volume: float = 777.777777
+    maker_volume: float = 777.777777
+    trade_volume: float = 777.777777
+    taker_volume_usd: float = 777.777777
+    maker_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+
+
+class CoinTradeVolumes(BaseModel):
+    swaps: int = 77777
+    range_days: float = 777.77
+    start_time: int = 1777777777
+    end_time: int = 1777777777
+    taker_volume_usd: float = 777.777777
+    maker_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    volumes: Dict[str, Dict[str, CoinTradeVolume]]
+
+
+class PairTradeVolume(BaseModel):
+    swaps: int = 777
+    dex_price: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    base_volume: float = 777.777777
+    base_volume_usd: float = 777.777777
+    quote_volume: float = 777.777777
+    quote_volume_usd: float = 777.777777
+
+
+class PairTradeVolumes(BaseModel):
+    swaps: int = 77777
+    range_days: float = 777.77
+    start_time: int = 1777777777
+    end_time: int = 1777777777
+    base_volume_usd: float = 777.777777
+    quote_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    volumes: Dict[str, Dict[str, PairTradeVolume]]

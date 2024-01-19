@@ -9,7 +9,7 @@ from db.schema import DefiSwap
 from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType
-from models.generic import ErrorMessage
+from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 import util.validate as validate
@@ -26,6 +26,50 @@ cache = Cache()
 
 
 @router.get(
+    "/distinct/",
+    description="Get Unique values for a column",
+    responses={406: {"model": ErrorMessage}},
+    response_model=List,
+    status_code=200,
+)
+def distinct(
+    start_time: int = 0,
+    end_time: int = 0,
+    column: SqlQuery(with_enums=True).DefiSwapColumnsDistinct | None = None,
+    coin: SqlQuery(with_enums=True).ValidCoins | None = None,
+    pair: SqlQuery(with_enums=True).ValidPairs | None = None,
+    pubkey: SqlQuery(with_enums=True).ValidPubkeys | None = None,
+    gui: SqlQuery(with_enums=True).ValidGuis | None = None,
+    version: SqlQuery(with_enums=True).ValidVersions | None = None,
+    success_only: bool = True,
+    failed_only: bool = False,
+):
+    try:
+        if end_time == 0:
+            end_time = int(time.time())
+        query = SqlQuery()
+        resp = sorted(
+            query.get_distinct(
+                start_time=start_time,
+                end_time=end_time,
+                column=column,
+                coin=coin,
+                pair=pair,
+                gui=gui,
+                version=version,
+                failed_only=failed_only,
+                success_only=success_only,
+                pubkey=pubkey,
+            )
+        )
+        return resp
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
     "/get_swaps/",
     description="Swaps completed within two epoch timestamps.",
     responses={406: {"model": ErrorMessage}},
@@ -37,6 +81,11 @@ def get_swaps(
     end_time: int = 0,
     coin: str | None = None,
     pair: str | None = None,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    version: str | None = None,
+    success_only: bool = True,
+    failed_only: bool = False,
 ):
     try:
         if start_time == 0:
@@ -45,7 +94,15 @@ def get_swaps(
             end_time = int(time.time())
         query = SqlQuery()
         resp = query.get_swaps(
-            start_time=start_time, end_time=end_time, coin=coin, pair=pair
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            pair=pair,
+            gui=gui,
+            version=version,
+            failed_only=failed_only,
+            success_only=success_only,
+            pubkey=pubkey,
         )
         return resp
     except Exception as e:  # pragma: no cover
@@ -172,6 +229,73 @@ def swap_uuids(
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)
+    except Exception as e:
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/coin_trade_volumes_usd",
+    description="Trade volumes for each coin over the selected time period.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=CoinTradeVolumes,
+    status_code=200,
+)
+def coin_trade_volumes_usd(
+    start_time: int = 0,
+    end_time: int = 0,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    version: str | None = None,
+):
+    try:
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        query = SqlQuery()
+        volumes = query.coin_trade_volumes(
+            start_time=start_time,
+            end_time=end_time,
+        )
+        return query.coin_trade_volumes_usd(volumes=volumes)
+    except Exception as e:
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/pair_trade_volumes_usd",
+    description="Trade volumes for each pair over the selected time period.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=PairTradeVolumes,
+    status_code=200,
+)
+def pair_trade_volumes_usd(
+    start_time: int = 0,
+    end_time: int = 0,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    coin: str | None = None,
+    version: str | None = None,
+):
+    try:
+        if start_time == 0:
+            start_time = int(time.time()) - 86400
+        if end_time == 0:
+            end_time = int(time.time())
+        query = SqlQuery()
+        volumes = query.pair_trade_volumes(
+            start_time=start_time,
+            end_time=end_time,
+            version=version,
+            pubkey=pubkey,
+            coin=coin,
+            gui=gui,
+        )
+        return query.pair_trade_volumes_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

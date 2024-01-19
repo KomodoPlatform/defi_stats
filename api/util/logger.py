@@ -279,7 +279,7 @@ class StopWatch:
             func = self.trace["function"]
             if PROJECT_ROOT_PATH in self.msg:
                 self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-            self.msg = f"|{duration:>4} sec | {func:<20} | {str(self.msg):<70} "
+            self.msg = f"{duration:>3} sec | {func:<20} | {str(self.msg):<70} "
             self.msg += f"| {basename(filename)}:{lineno}"
 
             send_log(loglevel=self.loglevel, msg=self.msg)

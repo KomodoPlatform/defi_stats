@@ -63,44 +63,35 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
         return default_error(e)
 
 
-def get_last_trade_time(pair_str: str, last_traded_cache: Dict) -> int:
+def get_last_trade_item(pair_str: str, last_traded_cache: Dict, item: str):
     try:
         pair_str = pair_str.replace("-segwit", "")
         if pair_str in last_traded_cache:
-            return int(last_traded_cache[pair_str]["last_swap"])
+            v = last_traded_cache[pair_str][item]
         reverse_pair = "_".join(pair_str.split("_")[::-1])
         if reverse_pair in last_traded_cache:
-            return int(last_traded_cache[reverse_pair]["last_swap"])
-
+            v = last_traded_cache[reverse_pair][item]
+        if item in ['last_swap_uuid']:
+            return v
+        return Decimal(v)
     except Exception as e:  # pragma: no cover
         logger.warning(default_error(e))
-    return 0
+    if item in ['last_swap_uuid']:
+        return ''
+    return Decimal(0)
 
 
-def get_last_trade_price(pair_str: str, last_traded_cache: Dict) -> int:
+def get_last_trade_info(pair_str: str, last_traded_cache: Dict):
     try:
         pair_str = pair_str.replace("-segwit", "")
         if pair_str in last_traded_cache:
-            return Decimal(last_traded_cache[pair_str]["last_price"])
+            return last_traded_cache[pair_str]
         reverse_pair = "_".join(pair_str.split("_")[::-1])
         if reverse_pair in last_traded_cache:
-            return Decimal(last_traded_cache[reverse_pair]["last_price"])
+            return last_traded_cache[reverse_pair]
     except Exception as e:  # pragma: no cover
         logger.warning(default_error(e))
-    return 0
-
-
-def get_last_trade_uuid(pair_str: str, last_traded_cache: Dict) -> int:
-    try:
-        pair_str = pair_str.replace("-segwit", "")
-        if pair_str in last_traded_cache:
-            return last_traded_cache[pair_str]["last_swap_uuid"]
-        reverse_pair = "_".join(pair_str.split("_")[::-1])
-        if reverse_pair in last_traded_cache:
-            return last_traded_cache[reverse_pair]["last_swap_uuid"]
-    except Exception as e:  # pragma: no cover
-        logger.warning(default_error(e))
-    return ""
+    return template.last_trade_info()
 
 
 def pair_without_segwit_suffix(maker_coin, taker_coin):

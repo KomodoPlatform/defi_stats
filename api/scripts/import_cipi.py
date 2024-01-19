@@ -17,7 +17,7 @@ def daterange(start_date, end_date):
 
 
 def import_swaps():
-    start_dt = date(2023, 10, 10)
+    start_dt = date(2019, 8, 8)
     end_dt = date(2024, 2, 2)
     for dt in daterange(start_dt, end_dt):
         logger.updated(f"Importing swaps from {dt.strftime('%Y-%m-%d')} {dt}")

@@ -18,7 +18,7 @@ from util.logger import logger
 import util.transform as transform
 import util.validate as validate
 from util.enums import TradeType
-from util.helper import get_last_trade_price
+from util.helper import get_last_trade_item
 import lib
 
 router = APIRouter()
@@ -166,7 +166,7 @@ def last_price_for_pair(pair="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
         last_traded_cache = lib.load_generic_last_traded()
-        return get_last_trade_price(pair, last_traded_cache)
+        return get_last_trade_item(pair, last_traded_cache, "last_price")
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

@@ -9,9 +9,7 @@ from util.helper import (
     get_price_at_finish,
     get_pairs_info,
     get_pair_info_sorted,
-    get_last_trade_time,
-    get_last_trade_price,
-    get_last_trade_uuid,
+    get_last_trade_item,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from util.logger import logger
@@ -60,32 +58,26 @@ def test_get_pair_info_sorted():
     assert not r[0]["priced"]
 
 
-def test_get_last_trade_price(setup_last_traded_cache):
+def test_get_last_trade_item(setup_last_traded_cache):
     cache = setup_last_traded_cache
-    r = get_last_trade_price("KMD_LTC", cache)
+    r = get_last_trade_item("DOGE_LTC", cache, "last_swap_uuid")
+    assert r == "EEEEEEEE-ee4b-494f-a2fb-48467614b613"
+    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap_uuid")
+    assert r == r2
+    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_uuid")
+    assert r == ""
+
+    r = get_last_trade_item("DOGE_LTC-segwit", cache, "last_swap")
+    assert r > 0
+    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap")
+    assert r == r2
+    r = get_last_trade_item("DOGE_XXX", cache, "last_swap")
+    assert r == 0
+
+    r = get_last_trade_item("KMD_LTC", cache, "last_price")
     assert r == Decimal("20.0000000000")
-    r2 = get_last_trade_price("LTC_KMD", cache)
+    r2 = get_last_trade_item("LTC_KMD", cache, "last_price")
     assert r2 == Decimal("20.0000000000")
     assert r == r2
-    r = get_last_trade_price("DOGE_XXX", cache)
+    r = get_last_trade_item("DOGE_XXX", cache, "last_price")
     assert r == 0
-
-
-def test_get_last_trade_time(setup_last_traded_cache):
-    cache = setup_last_traded_cache
-    r = get_last_trade_time("DOGE_LTC-segwit", cache)
-    assert r > 0
-    r2 = get_last_trade_time("LTC_DOGE", cache)
-    assert r == r2
-    r = get_last_trade_time("DOGE_XXX", cache)
-    assert r == 0
-
-
-def test_get_last_trade_uuid(setup_last_traded_cache):
-    cache = setup_last_traded_cache
-    r = get_last_trade_uuid("DOGE_LTC", cache)
-    assert r == "EEEEEEEE-ee4b-494f-a2fb-48467614b613"
-    r2 = get_last_trade_uuid("LTC_DOGE", cache)
-    assert r == r2
-    r = get_last_trade_uuid("DOGE_XXX", cache)
-    assert r == ""

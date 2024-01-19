@@ -195,6 +195,7 @@ def to_summary_for_ticker_item(data):  # pragma: no cover
         "last_trade": data["last_trade"],
     }
 
+
 def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
     return {
         "trading_pair": data["ticker_id"],
@@ -252,7 +253,6 @@ def ticker_to_xyz_summary(i):
         "trades_24h": int(i["trades_24hr"]),
         "last_swap": int(i["last_trade"]),
         "last_price": i["last_price"],
-        
     }
 
 

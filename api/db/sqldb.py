@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 import time
 from decimal import Decimal
+from enum import Enum
 from datetime import datetime, timezone
-from sqlalchemy import func
+from typing import List, Dict
 from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
-from db.schema import CipiSwap, DefiSwap, StatsSwap
+from sqlalchemy import create_engine, Column, Integer, String, Numeric, DateTime, func
+from db.schema import CipiSwap, DefiSwap, StatsSwap, CipiSwapFailed
+from util.exceptions import InvalidParamCombination
 from dotenv import load_dotenv
 from util.defaults import default_error, default_result
 from util.logger import logger, timed
-from util.helper import get_coin_variants
+from util.helper import get_coin_variants, get_gecko_price
 import util.transform as transform
+import util.templates as template
 import lib
 from const import (
     MYSQL_USERNAME,
@@ -38,16 +42,19 @@ class SqlDB:
             self.user = POSTGRES_USERNAME
             self.password = POSTGRES_PASSWORD
             self.port = POSTGRES_PORT
+            self.table = DefiSwap
             self.db_url = (
                 f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
             )
         elif self.db_type == "sqlite":
             if self.db_path is not None:
+                self.table = StatsSwap
                 self.db_path = db_path
                 self.db_url = f"sqlite:///{self.db_path}"
 
         elif self.db_type == "mysql":
             self.external = True
+            self.table = CipiSwap
             self.host = MYSQL_HOSTNAME
             self.user = MYSQL_USERNAME
             self.password = MYSQL_PASSWORD
@@ -82,53 +89,443 @@ class SqlUpdate(SqlDB):
 
 
 class SqlQuery(SqlDB):
-    def __init__(self, db_type="pgsql", db_path=None, external=False) -> None:
+    def __init__(
+        self, db_type="pgsql", db_path=None, external=False, with_enums=False
+    ) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
+        self.sqlfilter = SqlFilter(self.table)
+        if with_enums == True:
+            self.enums = self.get_enums()
+            self.no_distinct_cols = [
+                "duration",
+                "finished_at",
+                "id",
+                "last_updated",
+                "maker_amount",
+                "maker_coin_usd_price",
+                "price",
+                "reverse_price",
+                "started_at",
+                "taker_amount",
+                "taker_coin_usd_price",
+                "uuid",
+            ]
 
-    """
-    def get_distinct(self, table: object):
-        with Session(self.engine) as session:
-            pass
-    """
+            self.ValidTickers = Enum(
+                "ValidTickers",
+                {i: i for i in self.enums["tickers"]},
+                type=str,
+            )
+            self.ValidPlatforms = Enum(
+                "ValidPlatforms",
+                {i: i for i in self.enums["platforms"]},
+                type=str,
+            )
+            self.DefiSwapColumns = Enum(
+                "DefiSwapColumns",
+                {i: i for i in self.enums["defi_swap_cols"]},
+                type=str,
+            )
+            self.DefiSwapColumnsDistinct = Enum(
+                "DefiSwapColumnsDistinct",
+                {
+                    i: i
+                    for i in self.enums["defi_swap_cols"]
+                    if i not in self.no_distinct_cols
+                },
+                type=str,
+            )
+            self.ValidGuis = Enum(
+                "ValidGuis",
+                {i: i for i in self.enums["guis"] if i not in ["", None]},
+                type=str,
+            )
+            self.ValidPairs = Enum(
+                "ValidPairs",
+                {i: i for i in self.enums["pairs"] if i not in ["", None]},
+                type=str,
+            )
+            self.ValidPubkeys = Enum(
+                "ValidPubkeys",
+                {i: i for i in self.enums["pubkeys"] if i not in ["", None]},
+                type=str,
+            )
+            self.ValidVersions = Enum(
+                "ValidVersions",
+                {i: i for i in self.enums["versions"] if i not in ["", None]},
+                type=str,
+            )
 
-    def get_count(self, table: object):
-        with Session(self.engine) as session:
-            r = session.query(func.count(table))
-            return r[0][0]
+            @property
+            def ValidCoins(self):
+                data = sorted([j for j in self.coins_config.keys()])
+                return Enum(
+                    "ValidCoins",
+                    {i: i for i in data},
+                    type=str,
+                )
 
-    def get_last(self, table: str, limit: int = 3):
-        try:
-            with Session(self.engine) as session:
-                sql = f"SELECT * FROM {table} LIMIT {limit};"
-                r = session.exec(text(sql))
-                return [dict(i) for i in r]
-        except Exception as e:
-            logger.error(e)
-
-    def get_first(self, table: str, limit: int = 3):
-        try:
-            with Session(self.engine) as session:
-                sql = f"SELECT * FROM {table} ORDER BY started_at ASC LIMIT {limit};"
-                r = session.exec(text(sql))
-                return [dict(i) for i in r]
-        except Exception as e:
-            logger.error(e)
-
-    def describe(self, table):
-        with Session(self.engine) as session:
-            stmt = text(f"DESCRIBE {get_tablename(table)};")
-            r = session.exec(stmt)
-            for i in r:
-                logger.merge(i)
-
-    @timed
-    def swap_uuids(
+    def get_distinct(
         self,
         table: object = DefiSwap,
         start_time: int = 0,
         end_time: int = 0,
+        column: str | None = None,
+        coin: str | None = None,
+        pair: str | None = None,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+        success_only: bool = True,
+        failed_only: bool = False,
+    ):
+        if end_time == 0:
+            end_time = int(time.time())
+        with Session(self.engine) as session:
+            if coin is not None:
+                q = session.query(table.maker_coin, column.taker_coin)
+            elif pair is not None:
+                q = session.query(table.maker_coin, table.taker_coin)
+            elif column is not None:
+                try:
+                    col = getattr(table, column)
+                    q = session.query(col)
+                except AttributeError as e:
+                    logger.info(type(e))
+                    logger.info(e)
+                    raise InvalidParamCombination(
+                        f"'{column}' does not exist in {table.__tablename__}! Options are {get_columns(table)}"
+                    )
+                except Exception as e:
+                    logger.info(type(e))
+                    logger.info(e)
+                    raise InvalidParamCombination(
+                        f"'{column}' does not exist in {table.__tablename__}! Options are {get_columns(table)}"
+                    )
+            else:
+                raise InvalidParamCombination(
+                    "Unless 'pair' or 'coin' param is set, you must set the 'column' param."
+                )
+
+            q = self.sqlfilter.gui(q, gui)
+            q = self.sqlfilter.coin(q, coin)
+            q = self.sqlfilter.pair(q, pair)
+            q = self.sqlfilter.pubkey(q, pubkey)
+            q = self.sqlfilter.version(q, version)
+            q = self.sqlfilter.timestamps(q, start_time, end_time)
+            q = self.sqlfilter.success(q, success_only, failed_only)
+            q = q.distinct()
+            data = [list(dict(i).values())[0] for i in q.all()]
+        return data
+
+    @timed
+    def coin_trade_volumes(
+        self,
+        start_time: int = 0,
+        end_time: int = 0,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+    ) -> list:
+        """
+        Returns volume traded of coin between two timestamps.
+        If no timestamp is given, returns data for last 24 hrs.
+        """
+        try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
+
+            resp = {}
+            total_swaps = 0
+
+            with Session(self.engine) as session:
+                q = session.query(
+                    func.sum(func.cast(DefiSwap.maker_amount, Numeric)).label(
+                        "maker_volume"
+                    ),
+                    DefiSwap.maker_coin.label("coin"),
+                    DefiSwap.maker_coin_ticker.label("ticker"),
+                    func.count(DefiSwap.maker_coin).label("num_swaps"),
+                )
+                q = self.sqlfilter.success(q)
+                q = self.sqlfilter.timestamps(q, start_time, end_time)
+                q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.version(q, version)
+                q = self.sqlfilter.pubkey(q, pubkey)
+                q = q.group_by(DefiSwap.maker_coin, DefiSwap.maker_coin_ticker)
+                q = q.order_by(DefiSwap.maker_coin, DefiSwap.maker_coin_ticker.desc())
+                data = [dict(i) for i in q.all()]
+
+            for i in data:
+                coin = i["coin"]
+                ticker = i["ticker"]
+                num_swaps = Decimal(i["num_swaps"])
+                maker_vol = Decimal(i["maker_volume"])
+
+                if ticker not in resp:
+                    resp.update({ticker: {"ALL": template.coin_trade_vol_item()}})
+
+                if coin not in resp[ticker]:
+                    resp[ticker].update({coin: template.coin_trade_vol_item()})
+
+                total_swaps += num_swaps
+                resp[ticker]["ALL"]["swaps"] += num_swaps
+                resp[ticker][coin]["swaps"] += num_swaps
+
+                resp[ticker]["ALL"]["maker_volume"] += maker_vol
+                resp[ticker][coin]["maker_volume"] += maker_vol
+
+                resp[ticker]["ALL"]["trade_volume"] += maker_vol
+                resp[ticker][coin]["trade_volume"] += maker_vol
+
+            with Session(self.engine) as session:
+                q = session.query(
+                    func.sum(func.cast(DefiSwap.taker_amount, Numeric)).label(
+                        "taker_volume"
+                    ),
+                    DefiSwap.taker_coin.label("coin"),
+                    DefiSwap.taker_coin_ticker.label("ticker"),
+                    func.count(DefiSwap.taker_coin).label("num_swaps"),
+                )
+                q = self.sqlfilter.success(q)
+                q = self.sqlfilter.timestamps(q, start_time, end_time)
+                q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.version(q, version)
+                q = self.sqlfilter.pubkey(q, pubkey)
+                q = q.group_by(DefiSwap.taker_coin, DefiSwap.taker_coin_ticker)
+                q = q.order_by(DefiSwap.taker_coin, DefiSwap.taker_coin_ticker.desc())
+                data = [dict(i) for i in q.all()]
+
+            for i in data:
+                coin = i["coin"]
+                ticker = i["ticker"]
+                num_swaps = Decimal(i["num_swaps"])
+                taker_vol = Decimal(i["taker_volume"])
+
+                if ticker not in resp:
+                    resp.update({ticker: {"ALL": template.coin_trade_vol_item()}})
+
+                if coin not in resp[ticker]:
+                    resp[ticker].update({coin: template.coin_trade_vol_item()})
+
+                total_swaps += num_swaps
+                resp[ticker]["ALL"]["swaps"] += num_swaps
+                resp[ticker][coin]["swaps"] += num_swaps
+
+                resp[ticker]["ALL"]["taker_volume"] += taker_vol
+                resp[ticker][coin]["taker_volume"] += taker_vol
+
+                resp[ticker]["ALL"]["trade_volume"] += taker_vol
+                resp[ticker][coin]["trade_volume"] += taker_vol
+
+            data = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "range_days": (end_time - start_time) / 86400,
+                "swaps": num_swaps,
+                "volumes": resp,
+            }
+            return default_result(
+                data=data, msg="coin_trade_volumes complete", loglevel="query"
+            )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def coin_trade_volumes_usd(self, volumes: Dict) -> list:
+        """
+        Returns volume traded of coin between two timestamps.
+        If no timestamp is given, returns volume for last 24hrs.
+        Price is based on current price, so less accurate for
+        longer timespans
+        """
+        try:
+            total_swaps = 0
+            total_maker_vol_usd = 0
+            total_taker_vol_usd = 0
+            for ticker in volumes["volumes"]:
+                usd_price = get_gecko_price(ticker, self.gecko_source)
+                for coin in volumes["volumes"][ticker]:
+                    taker_vol = volumes["volumes"][ticker][coin]["taker_volume"]
+                    maker_vol = volumes["volumes"][ticker][coin]["maker_volume"]
+                    taker_vol_usd = taker_vol * usd_price
+                    maker_vol_usd = maker_vol * usd_price
+                    total_trade_vol_usd = taker_vol_usd + maker_vol_usd
+
+                    volumes["volumes"][ticker][coin].update(
+                        {
+                            "taker_volume_usd": taker_vol_usd,
+                            "maker_volume_usd": maker_vol_usd,
+                            "trade_volume_usd": total_trade_vol_usd,
+                        }
+                    )
+                    total_maker_vol_usd += maker_vol_usd
+                    total_taker_vol_usd += taker_vol_usd
+                total_swaps += volumes["volumes"][ticker]["ALL"]["swaps"]
+
+            total_trade_vol_usd = total_maker_vol_usd + total_taker_vol_usd
+            # global coin swaps divided by two wrt both coins in pair
+            global_totals = {
+                "swaps": total_swaps / 2,
+                "taker_volume_usd": total_taker_vol_usd,
+                "maker_volume_usd": total_maker_vol_usd,
+                "trade_volume_usd": total_trade_vol_usd,
+            }
+            volumes.update(global_totals)
+            return volumes
+
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def pair_trade_volumes(
+        self,
+        start_time: int = 0,
+        end_time: int = 0,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        coin: str | None = None,
+        version: str | None = None,
+    ) -> list:
+        """
+        Returns volume traded of pairs between two timestamps.
+        If no timestamp is given, returns data for last 24 hrs.
+        """
+        try:
+            if start_time == 0:
+                start_time = int(time.time()) - 86400
+            if end_time == 0:
+                end_time = int(time.time())
+
+            resp = {}
+            num_swaps = 0
+
+            with Session(self.engine) as session:
+                q = session.query(
+                    DefiSwap.pair,
+                    DefiSwap.trade_type,
+                    func.sum(func.cast(DefiSwap.maker_amount, Numeric)).label(
+                        "maker_volume"
+                    ),
+                    func.sum(func.cast(DefiSwap.taker_amount, Numeric)).label(
+                        "taker_volume"
+                    ),
+                    func.count(DefiSwap.maker_amount).label("num_swaps"),
+                )
+                q = self.sqlfilter.success(q)
+                q = self.sqlfilter.timestamps(q, start_time, end_time)
+                q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.version(q, version)
+                q = self.sqlfilter.pubkey(q, pubkey)
+                q = self.sqlfilter.coin(q, coin)
+                q = q.group_by(DefiSwap.pair, DefiSwap.trade_type)
+                q = q.order_by(DefiSwap.pair.asc())
+                data = [dict(i) for i in q.all()]
+
+            for i in data:
+                pair_std = transform.strip_pair_platforms(i["pair"])
+                if pair_std not in resp:
+                    resp.update({pair_std: {"ALL": template.pair_trade_vol_item()}})
+                if i["pair"] not in resp[pair_std]:
+                    resp[pair_std].update({i["pair"]: template.pair_trade_vol_item()})
+
+                num_swaps = Decimal(i["num_swaps"])
+                if i["trade_type"] == "buy":
+                    base_vol = Decimal(i["maker_volume"])
+                    quote_vol = Decimal(i["taker_volume"])
+
+                elif i["trade_type"] == "sell":
+                    base_vol = Decimal(i["taker_volume"])
+                    quote_vol = Decimal(i["maker_volume"])
+
+                resp[pair_std]["ALL"]["swaps"] += num_swaps
+                resp[pair_std]["ALL"]["base_volume"] += base_vol
+                resp[pair_std]["ALL"]["quote_volume"] += quote_vol
+                resp[pair_std][i["pair"]]["swaps"] += num_swaps
+                resp[pair_std][i["pair"]]["base_volume"] += base_vol
+                resp[pair_std][i["pair"]]["quote_volume"] += quote_vol
+
+            data = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "range_days": (end_time - start_time) / 86400,
+                "swaps": num_swaps,
+                "volumes": resp,
+            }
+            return default_result(data=data, msg="pair_trade_volumes", loglevel="query")
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def pair_trade_volumes_usd(self, volumes: Dict) -> list:
+        """
+        Returns volume traded of a pair between two timestamps.
+        If no timestamp is given, returns volume for last 24hrs.
+        Price is based on current price, so less accurate for
+        longer timespans
+        """
+        try:
+            total_swaps = 0
+            total_base_vol_usd = 0
+            total_quote_vol_usd = 0
+            for pair_std in volumes["volumes"]:
+                base, rel = pair_std.split("_")
+                base_usd_price = get_gecko_price(base, self.gecko_source)
+                quote_usd_price = get_gecko_price(rel, self.gecko_source)
+
+                for pair in volumes["volumes"][pair_std]:
+                    base_vol = volumes["volumes"][pair_std][pair]["base_volume"]
+                    quote_vol = volumes["volumes"][pair_std][pair]["quote_volume"]
+                    base_vol_usd = base_vol * base_usd_price
+                    quote_vol_usd = quote_vol * quote_usd_price
+                    total_trade_vol_usd = base_vol_usd + quote_vol_usd
+                    volumes["volumes"][pair_std][pair].update(
+                        {
+                            "dex_price": base_vol / quote_vol,
+                            "base_volume_usd": base_vol_usd,
+                            "quote_volume_usd": quote_vol_usd,
+                            "trade_volume_usd": total_trade_vol_usd,
+                        }
+                    )
+
+                total_swaps += volumes["volumes"][pair_std]["ALL"]["swaps"]
+                total_base_vol_usd += volumes["volumes"][pair_std]["ALL"][
+                    "base_volume_usd"
+                ]
+                total_quote_vol_usd += volumes["volumes"][pair_std]["ALL"][
+                    "quote_volume_usd"
+                ]
+
+            total_trade_vol_usd = total_base_vol_usd + total_quote_vol_usd
+            volumes.update(
+                {
+                    "swaps": total_swaps,
+                    "base_volume_usd": total_base_vol_usd,
+                    "quote_volume_usd": total_quote_vol_usd,
+                    "trade_volume_usd": total_trade_vol_usd,
+                }
+            )
+            return default_result(
+                data=volumes, msg="pair_trade_volumes_usd complete", loglevel="query"
+            )
+
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def swap_uuids(
+        self,
+        start_time: int = 0,
+        end_time: int = 0,
         coin=None,
         pair=None,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+        success_only: bool = True,
+        failed_only: bool = False,
     ):
         if start_time == 0:
             start_time = int(time.time()) - 86400
@@ -140,6 +537,11 @@ class SqlQuery(SqlDB):
             end_time=end_time,
             coin=coin,
             pair=pair,
+            pubkey=pubkey,
+            gui=gui,
+            version=version,
+            success_only=success_only,
+            failed_only=failed_only,
         )
 
         if coin is not None or pair is not None:
@@ -169,8 +571,13 @@ class SqlQuery(SqlDB):
         table: object = DefiSwap,
         start_time: int = 0,
         end_time: int = 0,
-        coin=None,
-        pair=None,
+        coin: str | None = None,
+        pair: str | None = None,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+        success_only: bool = True,
+        failed_only: bool = False,
     ):
         """
         Returns swaps matching filter from any of the SQL databases.
@@ -192,32 +599,18 @@ class SqlQuery(SqlDB):
                 start_time = datetime.fromtimestamp(start_time, timezone.utc)
                 end_time = datetime.fromtimestamp(end_time, timezone.utc)
             with Session(self.engine) as session:
-                q = select(table).where(
-                    table.started_at > start_time, table.started_at < end_time
-                )
-                if coin is not None:
-                    q = q.where(
-                        or_(
-                            coin == table.maker_coin_ticker,
-                            coin == table.taker_coin_ticker,
-                        )
-                    )
-                elif pair is not None:
-                    pair = transform.strip_pair_platforms(pair)
-                    base, quote = pair.split("_")
-                    q = q.where(
-                        or_(
-                            base == table.maker_coin_ticker,
-                            base == table.taker_coin_ticker,
-                        )
-                    ).where(
-                        or_(
-                            quote == table.maker_coin_ticker,
-                            quote == table.taker_coin_ticker,
-                        )
-                    )
+                q = self.sqlfilter.timestamps(q, start_time, end_time)
+                q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.version(q, version)
+                q = self.sqlfilter.pubkey(q, pubkey)
+                q = self.sqlfilter.coin(q, coin)
+                q = self.sqlfilter.pair(q, pair)
+                q = self.sqlfilter.success(q, success_only, failed_only)
+                if table in [CipiSwap, CipiSwapFailed]:
+                    q = q.order_by(table.started_at)
+                else:
+                    q = q.order_by(table.finished_at)
 
-                q = q.order_by(table.started_at)
                 r = session.exec(q)
                 data = [dict(i) for i in r]
                 if coin is not None:
@@ -228,10 +621,11 @@ class SqlQuery(SqlDB):
                     }
                     resp.update({"ALL": data})
                 elif pair is not None:
+                    base, quote = pair.split("_")
                     base_variants = get_coin_variants(base, self.coins_config)
                     quote_variants = get_coin_variants(quote, self.coins_config)
                     resp = {}
-                    all = 0
+
                     for i in base_variants:
                         for j in quote_variants:
                             variant = f"{i}_{j}"
@@ -242,7 +636,6 @@ class SqlQuery(SqlDB):
                                 and j in [k["taker_coin"], k["maker_coin"]]
                             ]
                             resp.update({variant: variant_trades})
-                            all += len(variant_trades)
                     resp.update({"ALL": data})
                 else:
                     resp = data
@@ -250,11 +643,97 @@ class SqlQuery(SqlDB):
             return default_error(e)
         msg = f"Got {len(data)} swaps from {table.__tablename__}"
         msg += f" between {start_time} and {end_time}"
-        if coin is not None:
-            msg += f" [{coin}]"
-        if pair is not None:
-            msg += f" [{pair}]"
         return default_result(data=resp, msg=msg, loglevel="muted")
+
+    def get_count(self, table: object):
+        with Session(self.engine) as session:
+            r = session.query(func.count(table))
+            return r[0][0]
+
+    def get_last(self, table: str, limit: int = 3):
+        try:
+            with Session(self.engine) as session:
+                r = (
+                    session.query(table)
+                    .where(table.is_success == 1)
+                    .order_by(table.finished_at.desc())
+                    .limit(limit)
+                    .all()
+                )
+                return [dict(i) for i in r]
+        except Exception as e:
+            logger.error(e)
+
+    def get_first(self, table: str, limit: int = 3):
+        try:
+            with Session(self.engine) as session:
+                r = (
+                    session.query(table)
+                    .where(table.is_success == 1)
+                    .order_by(table.finished_at.asc())
+                    .limit(limit)
+                    .all()
+                )
+                return [dict(i) for i in r]
+        except Exception as e:
+            logger.error(e)
+
+    def describe(self, table):
+        with Session(self.engine) as session:
+            stmt = text(f"DESCRIBE {get_tablename(table)};")
+            r = session.exec(stmt)
+            for i in r:
+                logger.merge(i)
+
+    def get_enums(self):
+        return {
+            "pairs": sorted(self.get_distinct(column="pair")),
+            "tickers": sorted(
+                list(set([j.split("-")[0] for j in self.coins_config.keys()]))
+            ),
+            "platforms": sorted(
+                list(
+                    set(
+                        [
+                            j.split("-")[1]
+                            for j in self.coins_config.keys()
+                            if len(j.split("-")) > 1
+                        ]
+                    )
+                )
+            ),
+            "defi_swap_cols": get_columns(DefiSwap),
+            "maker_guis": sorted(self.get_distinct(column="maker_gui")),
+            "taker_guis": sorted(self.get_distinct(column="taker_gui")),
+            "guis": sorted(
+                list(
+                    set(
+                        self.get_distinct(column="taker_gui")
+                        + self.get_distinct(column="maker_gui")
+                    )
+                )
+            ),
+            "maker_pubkeys": sorted(self.get_distinct(column="maker_pubkey")),
+            "taker_pubkeys": sorted(self.get_distinct(column="taker_pubkey")),
+            "pubkeys": sorted(
+                list(
+                    set(
+                        self.get_distinct(column="taker_pubkey")
+                        + self.get_distinct(column="maker_pubkey")
+                    )
+                )
+            ),
+            "maker_versions": sorted(self.get_distinct(column="maker_version")),
+            "taker_versions": sorted(self.get_distinct(column="taker_version")),
+            "versions": sorted(
+                list(
+                    set(
+                        self.get_distinct(column="taker_version")
+                        + self.get_distinct(column="maker_version")
+                    )
+                )
+            ),
+        }
 
 
 @timed
@@ -267,8 +746,12 @@ def normalise_swap_data(data, gecko_source, is_success=None):
             )
             if pair == pair_std:
                 trade_type = "buy"
+                price = Decimal(i["maker_amount"] / i["taker_amount"])
+                reverse_price = Decimal(i["taker_amount"] / i["maker_amount"])
             else:
                 trade_type = "sell"
+                price = Decimal(i["taker_amount"] / i["maker_amount"])
+                reverse_price = Decimal(i["maker_amount"] / i["taker_amount"])
             i.update(
                 {
                     "pair": pair_std,
@@ -277,8 +760,8 @@ def normalise_swap_data(data, gecko_source, is_success=None):
                     "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),
                     "taker_coin_ticker": transform.strip_coin_platform(i["taker_coin"]),
                     "taker_coin_platform": transform.get_coin_platform(i["taker_coin"]),
-                    "price": Decimal(i["taker_amount"] / i["maker_amount"]),
-                    "reverse_price": Decimal(i["maker_amount"] / i["taker_amount"]),
+                    "price": price,
+                    "reverse_price": reverse_price,
                 }
             )
             if "is_success" not in i:
@@ -693,6 +1176,8 @@ def populate_pgsqldb(start=int(time.time() - 86400), end=int(time.time())):
         pgdb_query = SqlQuery("pgsql")
         import_cipi_swaps(pgdb, pgdb_query, start=start, end=end)
         import_mm2_swaps(pgdb, pgdb_query, start=start, end=end)
+        # pgdb_query.describe('defi_swaps')
+
     except Exception as e:
         return default_error(e)
     msg = f"Importing swaps from {start} - {end} complete"
@@ -715,5 +1200,109 @@ def get_tablename(table):
         return table.__tablename__
 
 
+def get_columns(table: object):
+    return sorted(list(table.__annotations__.keys()))
+
+
+class SqlFilter:
+    def __init__(self, table=DefiSwap) -> None:
+        self.table = table
+
+    def coin(self, q, coin):
+        if coin is not None:
+            q = q.filter(
+                or_(
+                    coin == self.table.maker_gui,
+                    coin == self.table.taker_gui,
+                )
+            )
+        return q
+
+    def gui(self, q, gui):
+        if gui is not None:
+            q = q.filter(
+                or_(
+                    gui == self.table.maker_gui,
+                    gui == self.table.taker_gui,
+                )
+            )
+        return q
+
+    def pair(self, q, pair):
+        if pair is not None:
+            pair = transform.strip_pair_platforms(pair)
+            maker_ticker = self.table.maker_coin_ticker
+            taker_ticker = self.table.taker_coin_ticker
+            q = q.where(
+                or_(
+                    pair == f"{maker_ticker}_{taker_ticker}",
+                    pair == f"{taker_ticker}_{maker_ticker}",
+                )
+            )
+        return q
+
+    def pubkey(self, q, pubkey):
+        if pubkey is not None:
+            q = q.filter(
+                or_(
+                    pubkey == self.table.pubkey_gui,
+                    pubkey == self.table.pubkey_gui,
+                )
+            )
+        return q
+
+    def success(self, q, success_only=True, failed_only=False):
+        if success_only:
+            if self.table == CipiSwapFailed:
+                return []
+            elif self.table != CipiSwap:
+                q = q.filter(self.table.is_success == 1)
+        if failed_only:
+            if self.table == CipiSwap:
+                return []
+            elif self.table != CipiSwapFailed:
+                q = q.filter(self.table.is_success == 0)
+        return q
+
+    def timestamps(self, q, start_time, end_time):
+        if self.table in [CipiSwap, CipiSwapFailed]:
+            q = q.filter(
+                self.table.started_at > start_time, self.table.started_at < end_time
+            )
+        else:
+            q = q.filter(
+                self.table.finished_at > start_time, self.table.finished_at < end_time
+            )
+        return q
+
+    def version(self, q, version):
+        if version is not None:
+            q = q.filter(
+                or_(
+                    version == self.table.version_gui,
+                    version == self.table.version_gui,
+                )
+            )
+        return q
+
+
 if __name__ == "__main__":
     pgsql = SqlUpdate("pgsql")
+
+
+# pubkey swaps [maker/taker]
+# version swaps [maker/taker]
+# gui swaps [maker/taker]
+# pubkey versions
+# gui versions
+# version pubkeys
+# gui pubkeys
+
+# swap durations per pair
+
+# fails: find patterns
+# - same coin? [maker/taker]
+# - same pair? [maker/taker]
+# - same pubkey? [maker/taker] Derive reputation score?
+# - same version? [maker/taker]
+# - same gui? [maker/taker]

@@ -22,7 +22,6 @@ def ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     raise ValueError(msg)
 
 
-
 def positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:
