@@ -10,9 +10,14 @@ from util.helper import (
     get_pairs_info,
     get_pair_info_sorted,
     get_last_trade_item,
+    get_coin_variants,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from util.logger import logger
+
+from lib.cache import load_gecko_source, load_coins_config, load_generic_last_traded
+
+coins_config = load_coins_config()
 
 
 def test_get_mm2_rpc_port():
@@ -81,3 +86,18 @@ def test_get_last_trade_item(setup_last_traded_cache):
     assert r == r2
     r = get_last_trade_item("DOGE_XXX", cache, "last_price")
     assert r == 0
+
+
+def test_get_coin_variants():
+    r = get_coin_variants("BTC", coins_config)
+    assert "BTC-BEP20" in r
+    assert "BTC-segwit" in r
+    assert "BTC" in r
+    logger.merge(r)
+    assert len(r) > 2
+    r = get_coin_variants("BTC", coins_config, True)
+    assert "BTC-BEP20" not in r
+    assert "BTC-segwit" in r
+    assert "BTC" in r
+    logger.merge(r)
+    assert len(r) == 2

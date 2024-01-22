@@ -71,8 +71,16 @@ class Markets:
                 resp += data["ALL"]["buy"]
                 resp += data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:
-                bases = get_coin_variants(base, self.coins_config, segwit_only=True)
-                quotes = get_coin_variants(quote, self.coins_config, segwit_only=True)
+                bases = get_coin_variants(
+                    base,
+                    self.coins_config,
+                    segwit_only=True,
+                )
+                quotes = get_coin_variants(
+                    quote,
+                    self.coins_config,
+                    segwit_only=True,
+                )
                 for i in bases:
                     for j in quotes:
                         pair_str = f"{i}_{j}"

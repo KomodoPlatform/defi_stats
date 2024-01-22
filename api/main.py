@@ -3,14 +3,15 @@ import time
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-'''
+
+"""
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import (
     get_redoc_html,
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-'''
+"""
 
 from const import API_HOST, API_PORT
 from routes import (
@@ -27,7 +28,7 @@ from routes import (
     stats_api,
     old_db,
     new_db,
-    stats_xyz
+    stats_xyz,
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -170,7 +171,8 @@ def healthcheck():
         "cache_age_mins": cache.updated_since(),
     }
 
-'''
+
+"""
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
@@ -180,7 +182,7 @@ async def custom_swagger_ui_html():
         swagger_js_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
         #swagger_css_url="https://defi-stats.komodo.earth/static/css/dark.css",
     )
-'''
+"""
 
 if __name__ == "__main__":  # pragma: no cover
     uvicorn.run("main:app", host=API_HOST, port=API_PORT, reload=True)

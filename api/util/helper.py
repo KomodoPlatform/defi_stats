@@ -26,7 +26,7 @@ def get_netid_filename(filename, netid):
 def get_chunks(data, chunk_length):
     try:
         for i in range(0, len(data), chunk_length):
-            yield data[i: i + chunk_length]
+            yield data[i : i + chunk_length]
     except Exception as e:  # pragma: no cover
         return default_error(e)
 
@@ -71,13 +71,13 @@ def get_last_trade_item(pair_str: str, last_traded_cache: Dict, item: str):
         reverse_pair = "_".join(pair_str.split("_")[::-1])
         if reverse_pair in last_traded_cache:
             v = last_traded_cache[reverse_pair][item]
-        if item in ['last_swap_uuid']:
+        if item in ["last_swap_uuid"]:
             return v
         return Decimal(v)
     except Exception as e:  # pragma: no cover
         logger.warning(default_error(e))
-    if item in ['last_swap_uuid']:
-        return ''
+    if item in ["last_swap_uuid"]:
+        return ""
     return Decimal(0)
 
 
@@ -104,11 +104,12 @@ def pair_without_segwit_suffix(maker_coin, taker_coin):
 
 
 def get_coin_variants(coin, coins_config, segwit_only=False):
+    coin = coin.split("-")[0]
     return [
         i
         for i in coins_config
         if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
-        and (not segwit_only or i.endswith('segwit') or i.replace(coin, "") == "")
+        and (not segwit_only or i.endswith("segwit") or i.replace(coin, "") == "")
     ]
 
 

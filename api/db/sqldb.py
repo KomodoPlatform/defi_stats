@@ -879,6 +879,7 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in r]
                 if coin is not None:
                     variants = get_coin_variants(coin, self.coins_config)
+
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
@@ -895,12 +896,21 @@ class SqlQuery(SqlDB):
                     base, quote = pair.split("_")
                     base_variants = get_coin_variants(base, self.coins_config)
                     quote_variants = get_coin_variants(quote, self.coins_config)
-                    resp = {}
+                    if root_pairing == " KMD_LTC":
+                        logger.calc(f"base_variants: {base_variants}")
+                        logger.calc(f"quote_variants: {quote_variants}")
 
+                    resp = {}
                     for i in base_variants:
+                        if root_pairing == " KMD_LTC":
+                            logger.calc(f"i: {i}")
                         for j in quote_variants:
+                            if root_pairing == " KMD_LTC":
+                                logger.calc(f"j: {j}")
                             if i != j:
                                 variant = f"{i}_{j}"
+                                if root_pairing == " KMD_LTC":
+                                    logger.calc(f"variant: {variant}")
                                 # exclude duplication for bridge swaps
                                 if (
                                     bridge_swap
