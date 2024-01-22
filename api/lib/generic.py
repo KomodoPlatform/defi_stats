@@ -3,12 +3,9 @@ import time
 from decimal import Decimal
 from db.sqlitedb import get_sqlite_db
 import lib
-from lib.external import CoinGeckoAPI
 from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
-from util.enums import NetId
 from util.exceptions import DataStructureError
-from util.files import Files
 from util.helper import get_pairs_info, get_gecko_price
 from util.logger import timed, logger
 from util.transform import (
@@ -44,6 +41,7 @@ class Generic:  # pragma: no cover
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 self.last_traded_cache = lib.load_generic_last_traded()
+
             if self.db is None:
                 self.db = get_sqlite_db(
                     netid=self.netid,
@@ -52,31 +50,16 @@ class Generic:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     last_traded_cache=self.last_traded_cache,
                 )
-            self.files = Files(**kwargs)
-            self.gecko = CoinGeckoAPI(**kwargs)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 
     @timed
-    def orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100):
+    def orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100, v2: bool = False):
         try:
             if len(pair_str.split("_")) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
             else:
                 orderbook_data = template.orderbook(pair_str)
-            if self.netid == "ALL":
-                for x in NetId:
-                    if x.value != "ALL":
-                        pair_obj = Pair(
-                            pair_str=pair_str,
-                            netid=self.netid,
-                            db=self.db,
-                            gecko_source=self.gecko_source,
-                            coins_config=self.coins_config,
-                            last_traded_cache=self.last_traded_cache,
-                        )
-                        data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
-            else:
                 pair_obj = Pair(
                     pair_str=pair_str,
                     netid=self.netid,
@@ -85,7 +68,10 @@ class Generic:  # pragma: no cover
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
                 )
-                data = merge_orderbooks(orderbook_data, pair_obj.orderbook_data)
+                vol_price_data = pair_obj.get_volumes_and_prices(days=1, v2=v2)
+                data = merge_orderbooks(
+                    orderbook_data, pair_obj.orderbook_data(vol_price_data)
+                )
             # Standardise values
             for i in ["bids", "asks"]:
                 for j in data[i]:
@@ -125,12 +111,8 @@ class Generic:  # pragma: no cover
                 pairs_dict = {"priced_gecko": [], "unpriced": []}
                 for pair_str in pairs:
                     pair_split = pair_str.split("_")
-                    base_price = get_gecko_price(
-                        pair_split[0], self.gecko_source
-                    )
-                    quote_price = get_gecko_price(
-                        pair_split[1], self.gecko_source
-                    )
+                    base_price = get_gecko_price(pair_split[0], self.gecko_source)
+                    quote_price = get_gecko_price(pair_split[1], self.gecko_source)
                     if base_price > 0 and quote_price > 0:
                         pairs_dict["priced_gecko"].append(pair_str)
                     else:  # pragma: no cover
@@ -139,12 +121,8 @@ class Generic:  # pragma: no cover
                 for pair_str in lib.KMD_PAIRS:
                     if pair_str not in pairs:
                         pair_split = pair_str.split("_")
-                        base_price = get_gecko_price(
-                            pair_split[0], self.gecko_source
-                        )
-                        quote_price = get_gecko_price(
-                            pair_split[1], self.gecko_source
-                        )
+                        base_price = get_gecko_price(pair_split[0], self.gecko_source)
+                        quote_price = get_gecko_price(pair_split[1], self.gecko_source)
                         if base_price > 0 and quote_price > 0:
                             pairs_dict["priced_gecko"].append(pair_str)
                         else:  # pragma: no cover
@@ -165,6 +143,40 @@ class Generic:  # pragma: no cover
             return default_error(e, msg)
 
     @timed
+    def traded_tickers_old(self, trades_days: int = 1, pairs_days: int = 7):
+        try:
+            pairs = self.db.query.get_pairs(days=pairs_days)
+            data = [
+                Pair(
+                    pair_str=i,
+                    db=self.db,
+                    gecko_source=self.gecko_source,
+                    coins_config=self.coins_config,
+                    last_traded_cache=self.last_traded_cache,
+                ).ticker_info(trades_days)
+                for i in pairs
+            ]
+            data = [i for i in data if i is not None]
+            data = clean_decimal_dict_list(data, to_string=True, rounding=10)
+            data = sort_dict_list(data, "ticker_id")
+            for i in data:
+                if int(i["trades_24hr"]) > 2:
+                    logger.calc(f"{i['ticker_id']}: {i['volume_usd_24hr']}")
+            data = {
+                "last_update": int(time.time()),
+                "pairs_count": len(data),
+                "swaps_count": int(sum_json_key(data, "trades_24hr")),
+                "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
+                "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
+                "data": data,
+            }
+            msg = f"traded_tickers_old for netid {self.netid} complete!"
+            return default_result(data, msg)
+        except Exception as e:  # pragma: no cover
+            msg = f"traded_tickers_old failed for netid {self.netid}!"
+            return default_error(e, msg)
+
+    @timed
     def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7):
         try:
             pairs = self.db.query.get_pairs(days=pairs_days)
@@ -175,12 +187,15 @@ class Generic:  # pragma: no cover
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                ).ticker_info(trades_days, frm='tt')
+                ).ticker_info(trades_days, v2=True)
                 for i in pairs
             ]
             data = [i for i in data if i is not None]
             data = clean_decimal_dict_list(data, to_string=True, rounding=10)
             data = sort_dict_list(data, "ticker_id")
+            for i in data:
+                if int(i["trades_24hr"]) > 2:
+                    logger.merge(f"{i['ticker_id']}: {i['volume_usd_24hr']}")
             data = {
                 "last_update": int(time.time()),
                 "pairs_count": len(data),

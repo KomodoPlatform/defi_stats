@@ -13,6 +13,10 @@ class DefiSwap(SQLModel, table=True):
         default="77777777-7777-7777-7777-777777777777", unique=True, nullable=False
     )
     pair: str = "XXX-PROTO_YYY-PROTO"
+    pair_std: str = "XXX_YYY"
+    pair_reverse: str = "YYY-PROTO_XXX-PROTO"
+    pair_std_reverse: str = "YYY_XXX"
+    pair: str = "XXX-PROTO_YYY-PROTO"
     trade_type: TradeType = "ALL"
     is_success: int = 0
     taker_amount: Decimal = 777.777777

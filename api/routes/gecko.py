@@ -113,11 +113,8 @@ def gecko_historical_trades(
             validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
-        if trade_type not in ["all", "buy", "sell"]:
-            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         pair = Pair(pair_str=ticker_id)
         data = pair.historical_trades(
-            trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,

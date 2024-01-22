@@ -4,8 +4,9 @@ from decimal import Decimal
 from enum import Enum
 from datetime import datetime, timezone
 from typing import List, Dict
+from itertools import chain
 from sqlalchemy.sql.expression import bindparam
-from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
+from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
 from sqlalchemy import create_engine, Column, Integer, String, Numeric, DateTime, func
 from db.schema import CipiSwap, DefiSwap, StatsSwap, CipiSwapFailed
 from util.exceptions import InvalidParamCombination
@@ -111,59 +112,82 @@ class SqlQuery(SqlDB):
                 "uuid",
             ]
 
-            self.ValidTickers = Enum(
-                "ValidTickers",
-                {i: i for i in self.enums["tickers"]},
-                type=str,
-            )
-            self.ValidPlatforms = Enum(
-                "ValidPlatforms",
-                {i: i for i in self.enums["platforms"]},
-                type=str,
-            )
-            self.DefiSwapColumns = Enum(
-                "DefiSwapColumns",
-                {i: i for i in self.enums["defi_swap_cols"]},
-                type=str,
-            )
-            self.DefiSwapColumnsDistinct = Enum(
-                "DefiSwapColumnsDistinct",
-                {
-                    i: i
-                    for i in self.enums["defi_swap_cols"]
-                    if i not in self.no_distinct_cols
-                },
-                type=str,
-            )
-            self.ValidGuis = Enum(
-                "ValidGuis",
-                {i: i for i in self.enums["guis"] if i not in ["", None]},
-                type=str,
-            )
-            self.ValidPairs = Enum(
-                "ValidPairs",
-                {i: i for i in self.enums["pairs"] if i not in ["", None]},
-                type=str,
-            )
-            self.ValidPubkeys = Enum(
-                "ValidPubkeys",
-                {i: i for i in self.enums["pubkeys"] if i not in ["", None]},
-                type=str,
-            )
-            self.ValidVersions = Enum(
-                "ValidVersions",
-                {i: i for i in self.enums["versions"] if i not in ["", None]},
-                type=str,
-            )
+    @property
+    def ValidTickers(self):
+        return Enum(
+            "ValidTickers",
+            {i: i for i in self.enums["tickers"]},
+            type=str,
+        )
 
-            @property
-            def ValidCoins(self):
-                data = sorted([j for j in self.coins_config.keys()])
-                return Enum(
-                    "ValidCoins",
-                    {i: i for i in data},
-                    type=str,
-                )
+    @property
+    def ValidPlatforms(self):
+        return Enum(
+            "ValidPlatforms",
+            {i: i for i in self.enums["platforms"]},
+            type=str,
+        )
+
+    @property
+    def DefiSwapColumns(self):
+        return Enum(
+            "DefiSwapColumns",
+            {i: i for i in self.enums["defi_swap_cols"]},
+            type=str,
+        )
+
+    @property
+    def DefiSwapColumnsDistinct(self):
+        return Enum(
+            "DefiSwapColumnsDistinct",
+            {
+                i: i
+                for i in self.enums["defi_swap_cols"]
+                if i not in self.no_distinct_cols
+            },
+            type=str,
+        )
+
+    @property
+    def ValidGuis(self):
+        return Enum(
+            "ValidGuis",
+            {i: i for i in self.enums["guis"] if i not in ["", None]},
+            type=str,
+        )
+
+    @property
+    def ValidPairs(self):
+        return Enum(
+            "ValidPairs",
+            {i: i for i in self.enums["pairs"] if i not in ["", None]},
+            type=str,
+        )
+
+    @property
+    def ValidPubkeys(self):
+        return Enum(
+            "ValidPubkeys",
+            {i: i for i in self.enums["pubkeys"] if i not in ["", None]},
+            type=str,
+        )
+
+    @property
+    def ValidVersions(self):
+        return Enum(
+            "ValidVersions",
+            {i: i for i in self.enums["versions"] if i not in ["", None]},
+            type=str,
+        )
+
+    @property
+    def ValidCoins(self):
+        data = sorted([j for j in self.coins_config.keys()])
+        return Enum(
+            "ValidCoins",
+            {i: i for i in data},
+            type=str,
+        )
 
     def get_distinct(
         self,
@@ -425,7 +449,7 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                pair_std = transform.strip_pair_platforms(i["pair"])
+                pair_std = i["pair_std"]
                 if pair_std not in resp:
                     resp.update({pair_std: {"ALL": template.pair_trade_vol_item()}})
                 if i["pair"] not in resp[pair_std]:
@@ -514,6 +538,249 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default_error(e)
 
+    # Todo: Pair swap duration stats. Fastest, slowest, average, [x,y] for graph
+
+    @timed
+    def last_trade(self, group_by_cols, is_success: bool = True):
+        try:
+            with Session(self.engine) as session:
+                # 1st query for most recent swap info for category
+                category = list(
+                    chain.from_iterable((obj, "-") for obj in group_by_cols[:-1])
+                ) + [group_by_cols[-1]]
+
+                logger.info(category)
+                cols = list(
+                    set(
+                        [
+                            DefiSwap.uuid.label("last_swap_uuid"),
+                            DefiSwap.finished_at.label("last_swap_time"),
+                            func.concat(*category).label("category"),
+                        ]
+                    )
+                )
+                q = session.query(*cols)
+                q = self.sqlfilter.success(q, is_success)
+                distinct = q.distinct(*group_by_cols)
+                last = distinct.order_by(*group_by_cols, DefiSwap.finished_at.desc())
+                last_data = [dict(i) for i in last.all()]
+                last_data = {i["category"]: i for i in last_data}
+
+                # 2nd query for swap first swap info for category
+                cols = list(
+                    set(
+                        [
+                            DefiSwap.uuid.label("first_swap_uuid"),
+                            DefiSwap.finished_at.label("first_swap_time"),
+                            func.concat(*category).label("category"),
+                        ]
+                    )
+                )
+                q = session.query(*cols)
+                q = self.sqlfilter.success(q, is_success)
+                distinct = q.distinct(*group_by_cols)
+                first = distinct.order_by(*group_by_cols, DefiSwap.finished_at.asc())
+                first_data = [dict(i) for i in first.all()]
+                first_data = {i["category"]: i for i in first_data}
+
+                #  3rd query for aggregates
+                cols = list(
+                    set(
+                        [
+                            func.count(group_by_cols[0]).label("num_swaps"),
+                            func.concat(*category).label("category"),
+                        ]
+                    )
+                )
+                q = session.query(*cols)
+                q = self.sqlfilter.success(q, is_success)
+                aggr = q.group_by(*group_by_cols)
+                aggr_data = [dict(i) for i in aggr.all()]
+                aggr_data = {i["category"]: i for i in aggr_data}
+
+                for i in [last_data, first_data]:
+                    for j in i:
+                        for k, v in i[j].items():
+                            if k != "category":
+                                aggr_data[j].update({k: v})
+
+                return default_result(
+                    data=aggr_data, msg="last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def gui_last_traded(self, is_success: bool = True, min_swaps: int = 0):
+        try:
+            maker_data = self.last_trade(
+                is_success=is_success,
+                group_by_cols=[DefiSwap.maker_gui, DefiSwap.maker_version],
+            )
+            taker_data = self.last_trade(
+                is_success=is_success,
+                group_by_cols=[DefiSwap.taker_gui, DefiSwap.taker_version],
+            )
+            data = {}
+            for i in maker_data:
+                k = transform.derive_app(maker_data[i]["category"])
+                if k not in data:
+                    data.update({k: template.last_traded_item()})
+                logger.loop(data[k])
+                data[k].update(
+                    {
+                        "maker_num_swaps": maker_data[i]["num_swaps"],
+                        "maker_last_swap_uuid": maker_data[i]["last_swap_uuid"],
+                        "maker_last_swap_time": maker_data[i]["last_swap_time"],
+                        "maker_first_swap_uuid": maker_data[i]["first_swap_uuid"],
+                        "maker_first_swap_time": maker_data[i]["first_swap_time"],
+                        "raw_category": maker_data[i]["category"],
+                    }
+                )
+                data[k]["total_num_swaps"] += maker_data[i]["num_swaps"]
+
+            for i in taker_data:
+                k = transform.derive_app(taker_data[i]["category"])
+                if k not in data:
+                    data.update({k: template.last_traded_item()})
+                data[k].update(
+                    {
+                        "taker_num_swaps": taker_data[i]["num_swaps"],
+                        "taker_last_swap_uuid": taker_data[i]["last_swap_uuid"],
+                        "taker_last_swap_time": taker_data[i]["last_swap_time"],
+                        "taker_first_swap_uuid": taker_data[i]["first_swap_uuid"],
+                        "taker_first_swap_time": taker_data[i]["first_swap_time"],
+                        "raw_category": taker_data[i]["category"],
+                    }
+                )
+                data[k]["total_num_swaps"] += taker_data[i]["num_swaps"]
+
+            data = {i: data[i] for i in data if data[i]["total_num_swaps"] > min_swaps}
+            for i in data:
+                data[i].update({})
+            # Convert the results to a list of dictionaries
+            return default_result(
+                data=data, msg="gui_last_traded complete", loglevel="query"
+            )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def pair_last_trade(self, is_success: bool = True):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                q.group_by(DefiSwap.pair)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+                return default_result(
+                    data=results, msg="pair_last_trade complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def coin_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                if trade_side == "maker":
+                    q.group_by(DefiSwap.maker_coin)
+                elif trade_side == "taker":
+                    q.group_by(DefiSwap.taker_coin)
+                elif trade_side == "all":
+                    q.group_by(DefiSwap.maker_coin, DefiSwap.taker_coin)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+                return default_result(
+                    data=results, msg="coin_last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                if trade_side == "maker":
+                    q.group_by(DefiSwap.maker_ticker)
+                elif trade_side == "taker":
+                    q.group_by(DefiSwap.taker_ticker)
+                elif trade_side == "all":
+                    q.group_by(DefiSwap.maker_ticker, DefiSwap.taker_ticker)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+                return default_result(
+                    data=results, msg="ticker_last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def platform_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                if trade_side == "maker":
+                    q.group_by(DefiSwap.maker_platform)
+                elif trade_side == "taker":
+                    q.group_by(DefiSwap.taker_platform)
+                elif trade_side == "all":
+                    q.group_by(DefiSwap.maker_platform, DefiSwap.taker_platform)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+                return default_result(
+                    data=results, msg="platform_last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def pubkey_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                if trade_side == "maker":
+                    q.group_by(DefiSwap.maker_pubkey)
+                elif trade_side == "taker":
+                    q.group_by(DefiSwap.taker_pubkey)
+                elif trade_side == "all":
+                    q.group_by(DefiSwap.maker_pubkey, DefiSwap.taker_pubkey)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+                return default_result(
+                    data=results, msg="pubkey_last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    @timed
+    def version_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            with Session(self.engine) as session:
+                q = self.last_trade(is_success=is_success)
+                if trade_side == "maker":
+                    q.group_by(DefiSwap.maker_version)
+                elif trade_side == "taker":
+                    q.group_by(DefiSwap.taker_version)
+                elif trade_side == "all":
+                    q.group_by(DefiSwap.taker_version, DefiSwap.maker_version)
+                results = q.all()
+                # Convert the results to a list of dictionaries
+                results = [dict(zip(result.keys(), result)) for result in results]
+
+                return default_result(
+                    data=results, msg="version_last_traded complete", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
     @timed
     def swap_uuids(
         self,
@@ -599,12 +866,11 @@ class SqlQuery(SqlDB):
                 start_time = datetime.fromtimestamp(start_time, timezone.utc)
                 end_time = datetime.fromtimestamp(end_time, timezone.utc)
             with Session(self.engine) as session:
+                q = select(table)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
-                q = self.sqlfilter.coin(q, coin)
-                q = self.sqlfilter.pair(q, pair)
                 q = self.sqlfilter.success(q, success_only, failed_only)
                 if table in [CipiSwap, CipiSwapFailed]:
                     q = q.order_by(table.started_at)
@@ -619,8 +885,15 @@ class SqlQuery(SqlDB):
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
                     }
-                    resp.update({"ALL": data})
+                    all = []
+                    for i in resp:
+                        all += resp[i]
+                    resp.update({"ALL": all})
                 elif pair is not None:
+                    bridge_swap = False
+                    root_pairing = transform.strip_pair_platforms(pair)
+                    if len(set(root_pairing.split("_"))) == 1:
+                        bridge_swap = True
                     base, quote = pair.split("_")
                     base_variants = get_coin_variants(base, self.coins_config)
                     quote_variants = get_coin_variants(quote, self.coins_config)
@@ -628,15 +901,23 @@ class SqlQuery(SqlDB):
 
                     for i in base_variants:
                         for j in quote_variants:
-                            variant = f"{i}_{j}"
-                            variant_trades = [
-                                k
-                                for k in data
-                                if i in [k["taker_coin"], k["maker_coin"]]
-                                and j in [k["taker_coin"], k["maker_coin"]]
-                            ]
-                            resp.update({variant: variant_trades})
-                    resp.update({"ALL": data})
+                            if i != j:
+                                variant = f"{i}_{j}"
+                                # exclude duplication for bridge swaps
+                                if bridge_swap and variant != transform.order_pair_by_market_cap(variant, gecko_source=self.gecko_source):
+                                    logger.calc(f"Exluding {variant} to avoid bridge duplication")
+                                    continue
+                                variant_trades = [
+                                    k
+                                    for k in data
+                                    if i in [k["taker_coin"], k["maker_coin"]]
+                                    and j in [k["taker_coin"], k["maker_coin"]]
+                                ]
+                                resp.update({variant: variant_trades})
+                    all = []
+                    for i in resp:
+                        all += resp[i]
+                    resp.update({"ALL": all})
                 else:
                     resp = data
         except Exception as e:
@@ -740,11 +1021,14 @@ class SqlQuery(SqlDB):
 def normalise_swap_data(data, gecko_source, is_success=None):
     try:
         for i in data:
-            pair = f'{i["maker_coin"]}_{i["taker_coin"]}'
-            pair_std = transform.order_pair_by_market_cap(
-                pair, gecko_source=gecko_source
+            pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
+            pair = transform.order_pair_by_market_cap(
+                pair_raw, gecko_source=gecko_source
             )
-            if pair == pair_std:
+            pair_reverse = transform.invert_pair(pair)
+            pair_std = transform.strip_pair_platforms(pair)
+            pair_std_reverse = transform.invert_pair(pair_std)
+            if pair_raw == pair:
                 trade_type = "buy"
                 price = Decimal(i["maker_amount"] / i["taker_amount"])
                 reverse_price = Decimal(i["taker_amount"] / i["maker_amount"])
@@ -754,7 +1038,10 @@ def normalise_swap_data(data, gecko_source, is_success=None):
                 reverse_price = Decimal(i["maker_amount"] / i["taker_amount"])
             i.update(
                 {
-                    "pair": pair_std,
+                    "pair": pair,
+                    "pair_std": pair_std,
+                    "pair_reverse": pair_reverse,
+                    "pair_std_reverse": pair_std_reverse,
                     "trade_type": trade_type,
                     "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
                     "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),
@@ -837,6 +1124,11 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 # Extra columns
                 trade_type=cipi_data["trade_type"],
                 pair=cipi_data["pair"],
+                pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
+                pair_std_reverse=transform.strip_pair_platforms(
+                    transform.invert_pair(cipi_data["pair"])
+                ),
                 last_updated=int(time.time()),
             )
         else:
@@ -902,6 +1194,11 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 # Extra columns
                 trade_type=defi_data["trade_type"],
                 pair=defi_data["pair"],
+                pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
+                pair_std_reverse=transform.strip_pair_platforms(
+                    transform.invert_pair(cipi_data["pair"])
+                ),
                 last_updated=int(time.time()),
             )
         if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
@@ -950,6 +1247,11 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 # Extra columns
                 trade_type=mm2_data["trade_type"],
                 pair=mm2_data["pair"],
+                pair_reverse=transform.invert_pair(mm2_data["pair"]),
+                pair_std=transform.strip_pair_platforms(mm2_data["pair"]),
+                pair_std_reverse=transform.strip_pair_platforms(
+                    transform.invert_pair(mm2_data["pair"])
+                ),
                 last_updated=int(time.time()),
             )
         else:
@@ -1006,6 +1308,11 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 # Extra columns
                 trade_type=defi_data["trade_type"],
                 pair=defi_data["pair"],
+                pair_reverse=transform.invert_pair(defi_data["pair"]),
+                pair_std=transform.strip_pair_platforms(defi_data["pair"]),
+                pair_std_reverse=transform.strip_pair_platforms(
+                    transform.invert_pair(defi_data["pair"])
+                ),
                 last_updated=int(time.time()),
             )
         if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
@@ -1212,8 +1519,8 @@ class SqlFilter:
         if coin is not None:
             q = q.filter(
                 or_(
-                    coin == self.table.maker_gui,
-                    coin == self.table.taker_gui,
+                    coin == self.table.maker_coin,
+                    coin == self.table.taker_coin,
                 )
             )
         return q
@@ -1231,12 +1538,11 @@ class SqlFilter:
     def pair(self, q, pair):
         if pair is not None:
             pair = transform.strip_pair_platforms(pair)
-            maker_ticker = self.table.maker_coin_ticker
-            taker_ticker = self.table.taker_coin_ticker
-            q = q.where(
+            logger.info(f"Stripped pair: {pair}")
+            q = q.filter(
                 or_(
-                    pair == f"{maker_ticker}_{taker_ticker}",
-                    pair == f"{taker_ticker}_{maker_ticker}",
+                    pair == self.table.pair_std,
+                    pair == self.table.pair_std_reverse,
                 )
             )
         return q

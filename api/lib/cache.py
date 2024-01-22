@@ -130,23 +130,35 @@ class CacheItem:
                 if self.name == "gecko_source":
                     data = CoinGeckoAPI().get_gecko_source()
 
-                if self.name == "gecko_tickers":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers(pairs_days=7)
+                if self.name == "statsapi_summary":
+                    data = StatsAPI(db=self.db).pair_summaries()
 
                 if self.name == "statsapi_adex_fortnite":
                     data = StatsAPI(db=self.db).adex_fortnite()
 
-                if self.name == "statsapi_summary":
-                    data = StatsAPI(db=self.db).pair_summaries()
+                if self.name == "gecko_tickers":
+                    data = Generic(netid="ALL", db=self.db).traded_tickers(pairs_days=7)
+
+                if self.name == "gecko_tickers_old":
+                    data = Generic(netid="ALL", db=self.db).traded_tickers_old(pairs_days=7)
 
                 if self.name == "generic_tickers":
                     data = Generic(netid="ALL", db=self.db).traded_tickers()
 
+                if self.name == "generic_tickers_old":
+                    data = Generic(netid="ALL", db=self.db).traded_tickers_old()
+
                 if self.name == "generic_last_traded":
                     data = Generic(netid="ALL", db=self.db).last_traded()
 
+                if self.name == "generic_last_traded_old":
+                    data = Generic(netid="ALL", db=self.db).last_traded_old()
+
                 if self.name == "generic_pairs":
                     data = Generic(netid="ALL", db=self.db).traded_pairs_info()
+
+                if self.name == "generic_pairs_old":
+                    data = Generic(netid="ALL", db=self.db).traded_pairs_info_old()
 
                 if self.name == "markets_pairs":
                     data = Markets(netid=self.netid, db=self.db).pairs(

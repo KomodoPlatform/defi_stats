@@ -44,7 +44,7 @@ def test_historical_trades(
     setup_ltc_kmd_pair,
 ):
     pair = setup_kmd_ltc_pair
-    r = pair.historical_trades(trade_type="all")
+    r = pair.historical_trades()
     assert len(r) > 0
     # TODO: Restore tests once testdb setup for pgsql
     """
@@ -132,7 +132,7 @@ def test_pair(
 
 
 def test_merge_orderbooks(setup_kmd_ltc_pair):
-    orderbook_data = setup_kmd_ltc_pair.orderbook_data
+    orderbook_data = setup_kmd_ltc_pair.orderbook_data()
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge_orderbooks(book, book2)

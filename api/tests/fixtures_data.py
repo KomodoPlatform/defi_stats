@@ -153,6 +153,7 @@ def get_ticker_item(suffix="24hr"):
         "ticker_id": "DGB_LTC",
         "pool_id": "DGB_LTC",
         f"trades_{suffix}": "1",
+        "variants": ["DGB_LTC", "DGB-segwit_LTC", "DGB_LTC-segwit", "DGB-segwit_LTC-segwit"],
         "base_currency": "DGB",
         "base_volume": "1.0000000000",
         "base_usd_price": "0.0100000000",

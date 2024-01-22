@@ -3,6 +3,8 @@ import time
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+
+
 from const import API_HOST, API_PORT
 from routes import (
     gecko,
@@ -18,7 +20,7 @@ from routes import (
     stats_api,
     old_db,
     new_db,
-    stats_xyz
+    stats_xyz,
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
@@ -35,7 +37,9 @@ async def lifespan(app: FastAPI):
     # shut down functions
 
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None, swagger_ui_parameters={"syntaxHighlight.theme": "obsidian"}
+)
 
 app.include_router(cache_loop.router)
 
@@ -163,4 +167,4 @@ def healthcheck():
 
 
 if __name__ == "__main__":  # pragma: no cover
-    uvicorn.run("main:app", host=API_HOST, port=API_PORT)
+    uvicorn.run("main:app", host=API_HOST, port=API_PORT, reload=True)

@@ -30,6 +30,7 @@ class Files:
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source.json"
         self.gecko_tickers = f"{folder}/gecko/tickers_{self.netid}.json"
+        self.gecko_tickers_old = f"{folder}/gecko/tickers_old_{self.netid}.json"
         # For Markets endpoints
         self.markets_tickers = f"{folder}/markets/tickers_{self.netid}.json"
         # For Prices endpoints
@@ -37,8 +38,15 @@ class Files:
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
         # For Generic Cache
         self.generic_last_traded = f"{folder}/generic/last_traded_{self.netid}.json"
+        self.generic_last_traded_old = (
+            f"{folder}/generic/last_traded_old_{self.netid}.json"
+        )
+
         self.generic_pairs = f"{folder}/generic/pairs_{self.netid}.json"
+        self.generic_pairs_old = f"{folder}/generic/pairs_old_{self.netid}.json"
+
         self.generic_tickers = f"{folder}/generic/tickers_{self.netid}.json"
+        self.generic_tickers_old = f"{folder}/generic/tickers_old_{self.netid}.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)

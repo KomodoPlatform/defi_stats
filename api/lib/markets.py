@@ -61,7 +61,6 @@ class Markets:
             end_time = int(time.time())
 
             data = Pair(pair_str=pair).historical_trades(
-                trade_type="all",
                 start_time=start_time,
                 end_time=end_time,
             )

@@ -8,7 +8,7 @@ from db.sqldb import SqlQuery
 from db.schema import DefiSwap
 from lib.cache import Cache
 from lib.pair import Pair
-from util.enums import TradeType
+from util.enums import TradeType, GroupBy
 from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
@@ -143,14 +143,13 @@ def historical_trades(
         pair = Pair(pair_str=ticker_id)
 
         data = pair.historical_trades(
-            trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,
         )
 
-        if variant in data:
-            return data[variant]
+        if variant.lower() in data:
+            return data[variant.lower()]
         return data
         # resp = transform.sort_dict_list(resp, "timestamp", True)
         return data
@@ -296,6 +295,42 @@ def pair_trade_volumes_usd(
             gui=gui,
         )
         return query.pair_trade_volumes_usd(volumes=volumes)
+    except Exception as e:
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/last_traded",
+    description="Trade volumes for each pair over the selected time period.",
+    responses={406: {"model": ErrorMessage}},
+    # response_model=PairTradeVolumes,
+    status_code=200,
+)
+def last_traded(
+    group_by: GroupBy,
+    min_swaps: int = 3
+):
+    try:
+        query = SqlQuery()
+        match group_by:
+            case GroupBy.pair:
+                return query.pair_last_trade(min_swaps=min_swaps)
+            case GroupBy.gui:
+                return query.gui_last_traded(min_swaps=min_swaps)
+            case GroupBy.coin:
+                return query.coin_last_traded(min_swaps=min_swaps)
+            case GroupBy.ticker:
+                return query.ticker_last_traded(min_swaps=min_swaps)
+            case GroupBy.platform:
+                return query.platform_last_traded(min_swaps=min_swaps)
+            case GroupBy.pubkey:
+                return query.pubkey_last_traded(min_swaps=min_swaps)
+            case GroupBy.version:
+                return query.version_last_traded(min_swaps=min_swaps)
+            case _:
+                return {"error": "Invalid selection for `group_by`"}
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

@@ -79,7 +79,6 @@ class SqliteQuery:  # pragma: no cover
             set_params(self, self.kwargs, self.options)
             self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.db = db
-
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
 
@@ -252,12 +251,6 @@ class SqliteQuery:  # pragma: no cover
                 return {"error": f"swap uuid {uuid} not found"}
             else:
                 data = data[0]
-            for i in ["taker_coin_usd_price", "maker_coin_usd_price"]:
-                if data[i] is None:  # pragma: no cover
-                    data[i] = "0"
-            data["price"] = Decimal(data["taker_amount"] / data["maker_amount"])
-            data["reverse_price"] = Decimal(data["maker_amount"] / data["taker_amount"])
-
             return data
         except Exception as e:  # pragma: no cover
             return default_error(e)

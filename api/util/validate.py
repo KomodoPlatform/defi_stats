@@ -4,6 +4,14 @@ import lib
 from util.exceptions import DataStructureError, BadPairFormatError
 
 
+def is_valid_hex(s):
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
+
 def ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
     if allow_reverse:
         inverse_valid_tickers = [

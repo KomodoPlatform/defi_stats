@@ -1,6 +1,21 @@
 from enum import Enum
 
 
+class GroupBy(str, Enum):
+    gui = "gui"
+    coin = "coin"
+    pair = "pair"
+    pubkey = "pubkey"
+    ticker = "ticker"
+    platform = "platform"
+    version = "version"
+
+
+class TradeSide(str, Enum):
+    MAKER = "maker"
+    TAKER = "taker"
+
+
 class TradeType(str, Enum):
     BUY = "buy"
     SELL = "sell"

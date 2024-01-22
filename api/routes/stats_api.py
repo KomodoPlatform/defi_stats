@@ -17,7 +17,6 @@ from models.stats_api import (
 from util.logger import logger
 import util.transform as transform
 import util.validate as validate
-from util.enums import TradeType
 from util.helper import get_last_trade_item
 import lib
 
@@ -122,7 +121,6 @@ def orderbook(
     status_code=200,
 )
 def trades(
-    trade_type: TradeType = TradeType.ALL,
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
     start_time: int = int(time.time() - 86400),
@@ -137,11 +135,8 @@ def trades(
             validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
-        if trade_type not in ["all", "buy", "sell"]:
-            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         pair = Pair(pair_str=ticker_id)
         data = pair.historical_trades(
-            trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,

@@ -150,6 +150,7 @@ def test_clean_decimal_dict_list():
 def test_clean_decimal_dict():
     x = dirty_dict.copy()
     r = clean_decimal_dict(x)
+    logger.info(r)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)

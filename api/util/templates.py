@@ -76,6 +76,7 @@ def volumes_and_prices(suffix):
         "newest_price": 0,
         "oldest_price_time": 0,
         "newest_price_time": 0,
+        "variants": [],
     }
 
 
@@ -106,4 +107,20 @@ def last_trade_info():
         "last_swap_uuid": "",
         "last_taker_amount": 0,
         "last_maker_amount": 0,
+    }
+
+
+def last_traded_item():
+    return {
+        "total_num_swaps": 0,
+        "maker_num_swaps": 0,
+        "taker_num_swaps": 0,
+        "maker_last_swap_uuid": 0,
+        "maker_last_swap_time": 0,
+        "maker_first_swap_uuid": 0,
+        "maker_first_swap_time": 0,
+        "taker_last_swap_uuid": 0,
+        "taker_last_swap_time": 0,
+        "taker_first_swap_uuid": 0,
+        "taker_first_swap_time": 0,
     }

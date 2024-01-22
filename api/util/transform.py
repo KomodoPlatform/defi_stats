@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
 from typing import Any, List, Dict
 from util.defaults import default_error
+import util.validate as validate
 
 
 def round_to_str(value: Any, rounding=8):
@@ -39,18 +40,19 @@ def clean_decimal_dict_list(data, to_string=False, rounding=8):
         return default_error(e)
 
 
-def clean_decimal_dict(data, to_string=False, rounding=8):
+def clean_decimal_dict(data, to_string=False, rounding=8, exclude_keys: List = list()):
     """
     Works for a simple dict with no nesting
     (e.g. summary_cache.json)
     """
     try:
         for i in data:
-            if isinstance(data[i], Decimal):
-                if to_string:
-                    data[i] = round_to_str(data[i], rounding)
-                else:
-                    data[i] = float(data[i])
+            if i not in exclude_keys:
+                if isinstance(data[i], Decimal):
+                    if to_string:
+                        data[i] = round_to_str(data[i], rounding)
+                    else:
+                        data[i] = float(data[i])
         return data
     except Exception as e:  # pragma: no cover
         return default_error(e)
@@ -63,12 +65,12 @@ def get_suffix(days: int) -> str:
         return f"{days}d"
 
 
-def format_10f(number: float) -> str:
+def format_10f(number: float | Decimal) -> str:
     """
     Format a float to 10 decimal places.
     """
     if isinstance(number, str):
-        number = float(number)
+        number = Decimal(number)
     return f"{number:.10f}"
 
 
@@ -268,23 +270,27 @@ def ticker_to_market_ticker(i):
 
 
 def ticker_to_gecko(i):
-    return {
-        "ticker_id": i["ticker_id"],
-        "pool_id": i["ticker_id"],
-        "base_currency": i["base_currency"],
-        "target_currency": i["target_currency"],
-        "bid": i["bid"],
-        "ask": i["ask"],
-        "high": i["high"],
-        "low": i["low"],
-        "base_volume": i["base_volume"],
-        "target_volume": i["target_volume"],
-        "last_price": i["last_price"],
-        "last_trade": i["last_trade"],
-        "trades_24hr": i["trades_24hr"],
-        "volume_usd_24hr": i["volume_usd_24hr"],
-        "liquidity_in_usd": i["liquidity_in_usd"],
+    data = {
+        "ticker_id": strip_pair_platforms(i["ticker_id"]),
+        "pool_id": strip_pair_platforms(i["ticker_id"]),
+        "base_currency": strip_coin_platform(i["base_currency"]),
+        "target_currency": strip_coin_platform(i["target_currency"]),
+        "bid": format_10f(i["bid"]),
+        "ask": format_10f(i["ask"]),
+        "high": format_10f(i["high"]),
+        "low": format_10f(i["low"]),
+        "base_volume": format_10f(i["base_volume"]),
+        "target_volume": format_10f(i["target_volume"]),
+        "last_price": format_10f(i["last_price"]),
+        "last_trade": int(Decimal(i["last_trade"])),
+        "trades_24hr": int(Decimal(i["trades_24hr"])),
+        "volume_usd_24hr": format_10f(i["volume_usd_24hr"]),
+        "liquidity_in_usd": format_10f(i["liquidity_in_usd"]),
     }
+
+    if "included_variants" in i:
+        data.update({"included_variants": i["included_variants"]})
+    return data
 
 
 def ticker_to_statsapi(i, suffix):
@@ -293,7 +299,7 @@ def ticker_to_statsapi(i, suffix):
             alt_suffix = "24h"
         else:
             alt_suffix = suffix
-        return {
+        data = {
             "trading_pair": i["ticker_id"],
             "pair_swaps_count": int(i[f"trades_{suffix}"]),
             "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
@@ -325,6 +331,10 @@ def ticker_to_statsapi(i, suffix):
             "last_trade": int(i["last_trade"]),
             "last_price": Decimal(i["last_price"]),
         }
+        if "included_variants" in i:
+            data.update({"included_variants": i["included_variants"]})
+        return data
+
     except Exception as e:  # pragma: no cover
         return default_error(e)
 
@@ -421,3 +431,127 @@ def invert_trade_type(trade_type):
     if trade_type == "sell":
         return "buy"
     return trade_type
+
+
+def derive_app(appname):
+    logger.query(f"appname: {appname}")
+    gui, match = derive_gui(appname)
+    appname.replace(match, "")
+    app_version, match = derive_app_version(appname)
+    appname.replace(match, "")
+    defi_version, match = derive_defi_version(appname)
+    appname.replace(match, "")
+    # check the last to avoid false positives: e.g. web / web_dex
+    device, match = derive_device(appname)
+    appname.replace(match, "")
+    derived_app = f"{gui} {app_version} {device} (sdk: {defi_version})"
+    logger.calc(f"appname remaining: {appname}")
+    logger.info(f"derived_app: {derived_app}")
+    return derived_app
+
+
+def derive_gui(appname):
+    for i in DeFiApps:
+        for j in DeFiApps[i]:
+            if j in appname.lower():
+                return i, j
+    return "Unknown", ""
+
+
+def derive_device(appname):
+    for i in DeFiDevices:
+        for j in DeFiDevices[i]:
+            if j in appname.lower():
+                return i, j
+    return "Unknown", ""
+
+
+def derive_app_version(appname):
+    parts = appname.split(" ")
+    for i in parts:
+        subparts = i.split("-")
+        for j in subparts:
+            version_parts = j.split(".")
+            for k in version_parts:
+                try:
+                    int(k)
+                except ValueError:
+                    break
+                except Exception as e:
+                    logger.warning(e)
+                    break
+                return j, j
+    return "Unknown", ""
+
+
+def derive_defi_version(appname):
+    parts = appname.split("_")
+    for i in parts:
+        if validate.is_valid_hex(i) and len(i) > 6:
+            return i, i
+    return "Unknown", ""
+
+
+DeFiApps = {
+    "Adex-CLI": ["adex-cli"],
+    "AirDex": ["air_dex", "airdex"],
+    "AtomicDEX": ["atomicdex"],
+    "BitcoinZ Dex": ["bitcoinz dex"],
+    "BumbleBee": ["bumblebee"],
+    "CLI": ["cli", "atomicdex client cli"],
+    "ColliderDex": ["colliderdex desktop"],
+    "DexStats": ["dexstats"],
+    "Docs Walkthru": [
+        "docs_walkthru",
+        "devdocs",
+        "core_readme",
+        "kmd_atomicdex_api_tutorial",
+    ],
+    "DogeDex": ["dogedex"],
+    "Faucet": ["faucet"],
+    "FiroDex": ["firodex", "firo dex"],
+    "GleecDex": ["gleecdex"],
+    "Komodo Wallet": ["komodo wallet"],
+    "Legacy Desktop": ["atomicdex desktop"],
+    "Legacy Desktop CE": ["atomicdex desktop ce"],
+    "LoreDex": ["lore dex"],
+    "MM2 CLI": ["mm2cli"],
+    "MM2GUI": ["mm2gui"],
+    "NatureDEX": ["naturedex"],
+    "Other": [],
+    "PirateDex": ["piratedex"],
+    "PytomicDex": ["pytomicdex", "pymakerbot"],
+    "QA Tools": ["history_spammer_tool", "wasmtest", "artemii_dev", "qa_cli"],
+    "ShibaDex": ["shibadex"],
+    "SmartDEX": ["smartdex"],
+    "SqueexeDEX": ["squeexedex", "squeexe wallet"],
+    "SwapCase Desktop": ["swapcase desktop"],
+    "Tokel IDO": ["tokel ido"],
+    "Unknown": ["unknown"],
+    "WebDEX": ["web_dex", "webdex"],
+    "mmtools": ["mmtools"],
+    "mpm": ["mpm"],
+    "NN Seed": ["nn_seed"],
+    "No Gui": ["nogui"],
+}
+
+
+DeFiVersions = {}
+
+
+DeFiDevices = {
+    "ios": ["iOS"],
+    "web": ["Web"],
+    "android": ["Android"],
+    "darwin": ["Mac"],
+    "linux": ["Linux"],
+    "windows": ["Windows"],
+}
+
+
+def sum_num_str(val1, val2):
+    x = Decimal(val1) + Decimal(val2)
+    return format_10f(x)
+
+
+# If  in

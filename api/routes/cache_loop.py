@@ -34,10 +34,8 @@ def check_cache():  # pragma: no cover
 @timed
 def coins():  # pragma: no cover
     try:
-        logger.loop("Init coins source update")
         for i in ["coins", "coins_config"]:
-            cache_item = lib.CacheItem("coins")
-            cache_item.save()
+            lib.CacheItem(i).save()
     except Exception as e:
         return default_error(e)
     return default_result("Coins update loop complete!", loglevel="loop")
@@ -48,9 +46,7 @@ def coins():  # pragma: no cover
 @timed
 def gecko_data():  # pragma: no cover
     try:
-        logger.loop("Init gecko source update")
-        cache_item = lib.CacheItem("gecko_source")
-        cache_item.save()
+        lib.CacheItem("gecko_source").save()
     except Exception as e:
         return default_error(e)
     msg = "Gecko data update loop complete!"
@@ -62,10 +58,8 @@ def gecko_data():  # pragma: no cover
 @timed
 def prices_service():  # pragma: no cover
     try:
-        logger.loop("Init prices_service source update")
         for i in ["prices_tickers_v1", "prices_tickers_v2"]:
-            cache_item = lib.CacheItem(i)
-            cache_item.save()
+            lib.CacheItem(i).save()
     except Exception as e:
         return default_error(e)
     msg = "Prices update loop complete!"
@@ -77,9 +71,7 @@ def prices_service():  # pragma: no cover
 @timed
 def fixer_rates():  # pragma: no cover
     try:
-        logger.loop("Init fixer_rates source update")
-        cache_item = lib.CacheItem("fixer_rates")
-        cache_item.save()
+        lib.CacheItem("fixer_rates").save()
     except Exception as e:
         return default_error(e)
     msg = "Fixer rates update loop complete!"
@@ -94,9 +86,8 @@ def fixer_rates():  # pragma: no cover
 @timed
 def gecko_tickers():
     try:
-        logger.loop("Init gecko_tickers source update")
-        cache_item = lib.CacheItem(name="gecko_tickers")
-        cache_item.save()
+        lib.CacheItem(name="gecko_tickers").save()
+        lib.CacheItem(name="gecko_tickers_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Gecko tickers (ALL) loop complete!"
@@ -109,8 +100,7 @@ def gecko_tickers():
 @timed
 def markets_pairs(netid):
     try:
-        cache_item = lib.CacheItem(name="markets_pairs", netid=netid)
-        cache_item.save()
+        lib.CacheItem(name="markets_pairs", netid=netid).save()
     except Exception as e:
         msg = f"Markets pairs update failed! ({netid}): {e}"
         return default_error(e, msg)
@@ -119,8 +109,7 @@ def markets_pairs(netid):
 @timed
 def markets_tickers(netid):
     try:
-        cache_item = lib.CacheItem(name="markets_tickers", netid=netid)
-        cache_item.save()
+        lib.CacheItem(name="markets_tickers", netid=netid).save()
     except Exception as e:
         msg = f"Failed for netid {netid}!"
         return default_error(e, msg)
@@ -162,8 +151,7 @@ def markets_tickers_all():
 @timed
 def statsapi_atomicdex_fortnight():
     try:
-        cache_item = lib.CacheItem(name="statsapi_adex_fortnite")
-        cache_item.save()
+        lib.CacheItem(name="statsapi_adex_fortnite").save()
     except Exception as e:
         logger.info(default_error(e))
     msg = "Stats API Adex fortnight loop complete!"
@@ -175,8 +163,7 @@ def statsapi_atomicdex_fortnight():
 @timed
 def statsapi_summary():
     try:
-        cache_item = lib.CacheItem(name="statsapi_summary")
-        cache_item.save()
+        lib.CacheItem(name="statsapi_summary").save()
     except Exception as e:
         return default_error(e)
     msg = "Stats API summary loop complete!"
@@ -189,8 +176,8 @@ def statsapi_summary():
 @timed
 def generic_last_traded():
     try:
-        cache_item = lib.CacheItem(name="generic_last_traded")
-        cache_item.save()
+        lib.CacheItem(name="generic_last_traded").save()
+        lib.CacheItem(name="generic_last_traded_old").save()
     except Exception as e:
         return default_error(e)
     msg = "generic_last_traded loop complete!"
@@ -202,8 +189,8 @@ def generic_last_traded():
 @timed
 def generic_pairs():
     try:
-        cache_item = lib.CacheItem(name="generic_pairs")
-        cache_item.save()
+        lib.CacheItem(name="generic_pairs").save()
+        lib.CacheItem(name="generic_pairs_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Generic pairs (ALL) loop complete!"
@@ -215,8 +202,8 @@ def generic_pairs():
 @timed
 def generic_tickers():
     try:
-        cache_item = lib.CacheItem(name="generic_tickers")
-        cache_item.save()
+        lib.CacheItem(name="generic_tickers").save()
+        lib.CacheItem(name="generic_tickers_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Generic tickers (ALL) loop complete!"
