@@ -72,7 +72,7 @@ def prices_service():  # pragma: no cover
 @timed
 def fixer_rates():  # pragma: no cover
     try:
-        return requests("https://rates.komodo.earth/api/v1/usd_rates").json()
+        return requests.get("https://rates.komodo.earth/api/v1/usd_rates").json()
     except Exception as e:
         return default_error(e)
     msg = "Fixer rates update loop complete!"
