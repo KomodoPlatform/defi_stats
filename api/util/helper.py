@@ -39,9 +39,13 @@ def daterange(start_date, end_date):
 def get_price_at_finish(swap):
     try:
         end_time = swap["finished_at"]
-        taker_amount = Decimal(swap["taker_amount"])
-        maker_amount = Decimal(swap["maker_amount"])
-        return {end_time: taker_amount / maker_amount}
+        if swap["trade_type"] == "sell":
+            base_amount = Decimal(swap["maker_amount"])
+            quote_amount = Decimal(swap["taker_amount"])
+        else:
+            base_amount = Decimal(swap["taker_amount"])
+            quote_amount = Decimal(swap["maker_amount"])
+        return {end_time: base_amount / quote_amount}
     except Exception as e:  # pragma: no cover
         return default_error(e)
 
