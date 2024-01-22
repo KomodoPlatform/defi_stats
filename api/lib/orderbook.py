@@ -49,8 +49,8 @@ class Orderbook:
         try:
             orderbook_data = OrderedDict()
             orderbook_data["ticker_id"] = self.pair.as_str
-            orderbook_data["base"] = self.pair.base
-            orderbook_data["quote"] = self.pair.quote
+            orderbook_data["base"] = self.base
+            orderbook_data["quote"] = self.quote
 
             orderbook_data["timestamp"] = f"{int(time.time())}"
             data = self.get_and_parse()
@@ -106,13 +106,13 @@ class Orderbook:
 
     @timed
     def get_and_parse(self):
-        base = self.pair.base
-        quote = self.pair.quote
+        base = self.base
+        quote = self.quote
         # Handle segwit only coins
         if self.base_is_segwit_coin:
-            base = f"{self.pair.base.replace('-segwit', '')}-segwit"
+            base = f"{self.base.replace('-segwit', '')}-segwit"
         if self.quote_is_segwit_coin:
-            quote = f"{self.pair.quote.replace('-segwit', '')}-segwit"
+            quote = f"{self.quote.replace('-segwit', '')}-segwit"
         return get_orderbook(base, quote)
 
     @timed
