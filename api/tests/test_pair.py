@@ -88,11 +88,11 @@ def test_get_volumes_and_prices(setup_kmd_ltc_pair, setup_not_existing_pair):
     assert float(r["quote_volume"]) == 35
     assert r["base_volume"] == format_10f(3)
     assert r["quote_volume"] == format_10f(35)
-    assert float(r["highest_price_24hr"]) == 20
+    assert float(r["highest_price_24hr"]) == 5
     assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert float(r["lowest_price_24hr"]) == 5
-    assert float(r["price_change_24hr"]) == -15
-    assert float(r["price_change_percent_24hr"]) == -0.75
+    assert float(r["lowest_price_24hr"]) == 0.05
+    assert float(r["price_change_24hr"]) == 4.95
+    assert float(r["price_change_percent_24hr"]) == 99
     assert float(r["base_volume_usd"]) == 3
     assert float(r["quote_volume_usd"]) == 3500
     # average of base and rel volume

@@ -26,7 +26,7 @@ def get_netid_filename(filename, netid):
 def get_chunks(data, chunk_length):
     try:
         for i in range(0, len(data), chunk_length):
-            yield data[i : i + chunk_length]
+            yield data[i: i + chunk_length]
     except Exception as e:  # pragma: no cover
         return default_error(e)
 

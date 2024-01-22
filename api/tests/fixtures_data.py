@@ -190,6 +190,7 @@ no_trades_info = []
 swap_item = {
     "maker_coin": "KMD",
     "taker_coin": "LTC-segwit",
+    "trade_type": "buy",
     "uuid": "7d36be55-6db3-4662-93af-74dc73a58bfa",
     "started_at": "1700000776",
     "finished_at": "1700000777",
