@@ -154,7 +154,7 @@ def statsapi_atomicdex_fortnight():
     try:
         lib.CacheItem(name="statsapi_adex_fortnite").save()
     except Exception as e:
-        logger.info(default_error(e))
+        logger.warning(default_error(e))
     msg = "Stats API Adex fortnight loop complete!"
     return default_result(msg=msg, loglevel="loop")
 

@@ -47,15 +47,11 @@ def summary_v2():
         tickers = {}
         # Combine to pair without platforms
         for i in data["data"]:
-            logger.loop(i["ticker_id"])
             root_pair = transform.strip_pair_platforms(i["ticker_id"])
-            logger.merge(root_pair)
             if root_pair not in tickers:
                 tickers.update({root_pair: i})
-                # logger.loop(i)
             else:
                 j = tickers[root_pair]
-                logger.loop(root_pair)
                 for key in [
                     "trades_24hr",
                     "volume_usd_24hr",
@@ -69,7 +65,6 @@ def summary_v2():
                     "quote_liquidity_coins",
                     "quote_liquidity_usd",
                 ]:
-                    logger.info(key)
                     j[key] = transform.sum_num_str(i[key], j[key])
 
                 if Decimal(i["last_price"]) > Decimal(j["last_price"]):
@@ -103,12 +98,9 @@ def summary_v2():
                 j["price_change_percent_24hr"] = transform.format_10f(
                     Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
                 )
-                logger.calc(root_pair)
 
         for i in tickers:
-            logger.query(i)
             tickers[i] = transform.ticker_to_gecko(tickers[i])
-            logger.loop(tickers[i])
 
         data["data"] = tickers
         return data

@@ -32,7 +32,6 @@ from tests.fixtures_orderbook import (
 def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
     orderbook = setup_kmd_ltc_orderbook
     r = orderbook.get_and_parse()
-    logger.merge(r)
     assert r["pair"] == "KMD_LTC"
     assert "asks" in r
     assert "bids" in r
@@ -45,13 +44,11 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
 
     orderbook = setup_ltc_kmd_orderbook
     r = orderbook.get_and_parse()
-    logger.loop(r)
     assert r["pair"] == "LTC_KMD"
     assert "asks" in r
     assert "bids" in r
     assert len(r["asks"]) > 0
     assert len(r["bids"]) > 0
-    logger.loop(r["asks"])
     assert len(r["asks"][0]) == 2
     assert len(r["bids"][0]) == 2
     assert isinstance(r["asks"][0], dict)
@@ -63,7 +60,6 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
 def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
     orderbook = setup_dgb_doge_orderbook
     r = orderbook.for_pair()
-    logger.info(r)
     assert r["ticker_id"] == "DGB_DOGE"
     assert int(r["timestamp"]) > int(time.time()) - 86400
     assert len(r["asks"]) == 3

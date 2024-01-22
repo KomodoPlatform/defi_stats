@@ -28,5 +28,4 @@ def test_cache(setup_swaps_db_data):
     ]:
         cache_item = cache.get_item(i)
         data = cache_item.save()
-        logger.info(data)
         assert "error" not in data

@@ -76,7 +76,6 @@ class Markets:
                 for i in bases:
                     for j in quotes:
                         pair_str = f"{i}_{j}"
-                        logger.info(pair_str)
                         if pair_str in data:
                             resp += data[pair_str]["buy"]
                             resp += data[pair_str]["sell"]
@@ -85,7 +84,6 @@ class Markets:
                                 f"{pair_str} expected in variants, but not found!"
                             )
             else:
-                logger.info(pair)
                 resp += data[pair]["buy"]
                 resp += data[pair]["sell"]
             return transform.sort_dict_list(resp, "timestamp", reverse=True)

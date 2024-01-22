@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import requests
 import time
-from datetime import datetime
+# from datetime import datetime
 from util.files import Files
-from util.exceptions import ApiKeyNotFoundException
+# from util.exceptions import ApiKeyNotFoundException
 from const import FIXER_API_KEY
 from util.logger import logger
 from util.defaults import set_params, default_error
@@ -120,7 +120,8 @@ class FixerAPI:  # pragma: no cover
             '''
             if self.api_key == "":
                 raise ApiKeyNotFoundException("FIXER_API key not set!")
-            r = requests.get(f"{self.base_url}/latest?access_key={self.api_key}")
+            url = f"{self.base_url}/latest?access_key={self.api_key}"
+            r = requests.get(url)
             received_rates = r.json()
             received_rates["date"] = str(
                 datetime.fromtimestamp(received_rates["timestamp"])

@@ -166,7 +166,6 @@ class Pair:  # pragma: no cover
                 end_time=end_time,
                 pair=self.as_str,
             )
-            logger.info(swaps_for_pair)
             for variant in swaps_for_pair:
                 trades_info = []
                 for swap in swaps_for_pair[variant]:
@@ -283,7 +282,6 @@ class Pair:  # pragma: no cover
                     pair=self.as_str,
                 )
                 if all:
-                    logger.info(swaps_for_pair.keys())
                     variants = sorted([i for i in swaps_for_pair.keys() if i != "ALL"])
                     data["variants"] = variants
                     swaps_for_pair = swaps_for_pair["ALL"]
@@ -296,15 +294,6 @@ class Pair:  # pragma: no cover
                 # TODO: Inversions on values?
             else:
                 swaps_for_pair = self.pair_swaps(start_time=timestamp)
-            if "LTC" in self.as_str and "KMD" in self.as_str:
-                if v2:
-                    logger.info(
-                        f"{swaps_for_pair} | {self.as_str} | v2: {v2} | {days} days | "
-                    )
-                else:
-                    logger.calc(
-                        f"{swaps_for_pair} | {self.as_str} | v2: {v2} | {days} days | "
-                    )
             # Get template in case no swaps returned
 
             data["base"] = self.base

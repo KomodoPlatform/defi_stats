@@ -1,7 +1,7 @@
 {
-    "last_updated": 1705930961,
+    "last_updated": 1705931991,
     "data": {
-        "last_update": 1705930961,
+        "last_update": 1705931991,
         "pairs_count": 7,
         "swaps_count": 4,
         "combined_volume_usd": "1072.8181698319",
@@ -175,7 +175,7 @@
                 "target_volume": "5.4878713931",
                 "target_usd_price": "100.0000000000",
                 "last_price": "20.0000000000",
-                "last_trade": "1705927365",
+                "last_trade": "1705928396",
                 "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
                 "oldest_price": "0.0036268806",
                 "newest_price": "295.6604497276",

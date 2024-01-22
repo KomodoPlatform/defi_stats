@@ -36,13 +36,11 @@ class SqliteDB:  # pragma: no cover
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
-                # logger.loop(f"Getting coins_config for db")
                 self.coins_config = lib.load_coins_config()
 
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
-                # logger.loop(f"Getting gecko_source for db")
                 self.gecko_source = lib.load_gecko_source()
 
             self.conn = self.connect()
@@ -666,10 +664,8 @@ class SqliteUpdate:  # pragma: no cover
         try:
             cols = ", ".join([f"{k} = ?" for k in data.keys()])
             colvals = tuple(data.values()) + (uuid,)
-            # logger.calc(colvals)
             t = colvals
             sql = f"UPDATE 'stats_swaps' SET {cols} WHERE uuid = ?;"
-            # logger.calc(sql)
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
             return default_result(msg=f"{uuid} updated in {self.db.db_file}")

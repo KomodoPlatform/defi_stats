@@ -158,7 +158,6 @@ def test_get_swaps_for_coin(setup_swaps_db_data):
 def test_get_volume_for_coin(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.query.get_volume_for_coin("LTC", "buy")
-    logger.info(r)
     assert r['data']['LTC'] == 20
     assert r['data']['LTC-segwit'] == 10
     assert r['data']['LTC-ALL'] == 30
@@ -173,11 +172,8 @@ def test_get_volume_for_coin(setup_swaps_db_data):
 def test_get_uuids(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.query.get_uuids(success_only=True)
-    logger.info(r)
     assert len(r) == 14
     r = DB.query.get_uuids(fail_only=True)
-    logger.info(r)
     assert len(r) == 1
     r = DB.query.get_uuids(success_only=False)
-    logger.info(r)
     assert len(r) == 15

@@ -549,7 +549,6 @@ class SqlQuery(SqlDB):
                     chain.from_iterable((obj, "-") for obj in group_by_cols[:-1])
                 ) + [group_by_cols[-1]]
 
-                logger.info(category)
                 cols = list(
                     set(
                         [
@@ -626,7 +625,6 @@ class SqlQuery(SqlDB):
                 k = transform.derive_app(maker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
-                logger.loop(data[k])
                 data[k].update(
                     {
                         "maker_num_swaps": maker_data[i]["num_swaps"],
@@ -904,8 +902,13 @@ class SqlQuery(SqlDB):
                             if i != j:
                                 variant = f"{i}_{j}"
                                 # exclude duplication for bridge swaps
-                                if bridge_swap and variant != transform.order_pair_by_market_cap(variant, gecko_source=self.gecko_source):
-                                    logger.calc(f"Exluding {variant} to avoid bridge duplication")
+                                if (
+                                    bridge_swap
+                                    and variant
+                                    != transform.order_pair_by_market_cap(
+                                        variant, gecko_source=self.gecko_source
+                                    )
+                                ):
                                     continue
                                 variant_trades = [
                                     k
@@ -1538,7 +1541,6 @@ class SqlFilter:
     def pair(self, q, pair):
         if pair is not None:
             pair = transform.strip_pair_platforms(pair)
-            logger.info(f"Stripped pair: {pair}")
             q = q.filter(
                 or_(
                     pair == self.table.pair_std,

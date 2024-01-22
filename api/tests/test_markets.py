@@ -20,7 +20,6 @@ def test_pairs():
     assert isinstance(data, list)
     r = [i["ticker_id"] for i in data]
     # Markets includes test coins
-    logger.calc(r)
     assert "MORTY_KMD" in r
     # Same mcap, could be either :shrug:
     assert "KMD_KMD-BEP20" in r

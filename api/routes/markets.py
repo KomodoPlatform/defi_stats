@@ -343,6 +343,5 @@ def volumes_history_ticker(
             start_time=start_time,
             end_time=end_time,
         )
-        logger.info(data)
         volumes_dict[d_str] = data['data'][coin]
     return volumes_dict

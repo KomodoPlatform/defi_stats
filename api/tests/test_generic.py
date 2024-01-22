@@ -18,8 +18,6 @@ def test_orderbook(setup_swaps_db_data):
     generic = Generic(db=setup_swaps_db_data, netid="ALL")
     r_all = generic.orderbook("KMD_LTC")
     r_all2 = generic.orderbook("KMD_LTC-segwit")
-    logger.calc(r_all)
-    logger.info(r_all2)
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert r_all["asks"][0] == r_all2["asks"][0]
     assert r_all["pair"] == r_all2["pair"]

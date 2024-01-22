@@ -20,7 +20,6 @@ router = APIRouter()
 )
 def get_swap(uuid: str):
     try:
-        logger.info(uuid)
         query = SqlQuery()
         resp = query.get_swap(uuid=uuid)
         if "error" in resp:
