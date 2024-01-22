@@ -288,6 +288,8 @@ def ticker_to_gecko(i):
         "liquidity_in_usd": format_10f(i["liquidity_in_usd"]),
     }
 
+    if "last_swap_uuid" in i:
+        data.update({"last_swap_uuid": i["last_swap_uuid"]})
     if "included_variants" in i:
         data.update({"included_variants": i["included_variants"]})
     return data
@@ -331,6 +333,8 @@ def ticker_to_statsapi(i, suffix):
             "last_trade": int(i["last_trade"]),
             "last_price": Decimal(i["last_price"]),
         }
+        if "last_swap_uuid" in i:
+            data.update({"last_swap_uuid": i["last_swap_uuid"]})
         if "included_variants" in i:
             data.update({"included_variants": i["included_variants"]})
         return data

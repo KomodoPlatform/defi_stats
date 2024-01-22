@@ -338,11 +338,14 @@ class Pair:  # pragma: no cover
                 pct_change = newest_price / oldest_price - 1
                 data[f"highest_price_{suffix}"] = highest_price
                 data[f"lowest_price_{suffix}"] = lowest_price
+                data[f"price_change_percent_{suffix}"] = pct_change
+                data[f"price_change_{suffix}"] = price_change
+                # TODO: These values are capped to last 24hrs
+                # We could get it from `last traded cache`
+                # for longer term coverage
                 data["last_price"] = self.last_swap["last_price"]
                 data["last_trade"] = self.last_swap["last_swap"]
                 data["last_swap_uuid"] = self.last_swap["last_swap_uuid"]
-                data[f"price_change_percent_{suffix}"] = pct_change
-                data[f"price_change_{suffix}"] = price_change
 
             return data
         except Exception as e:  # pragma: no cover

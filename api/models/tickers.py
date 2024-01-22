@@ -47,7 +47,7 @@ class TickersSummaryItemV2(BaseModel):
     liquidity_in_usd: str = "777.777777"
     last_trade: int = 1777777777
     last_price: str = "1777777777"
-    last_uuid: str = "77777777-7777-7777-7777-777777777777"
+    last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
 
 
 # wraps gecko/tickers,
