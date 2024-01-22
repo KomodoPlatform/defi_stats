@@ -159,9 +159,6 @@ class Generic:  # pragma: no cover
             data = [i for i in data if i is not None]
             data = clean_decimal_dict_list(data, to_string=True, rounding=10)
             data = sort_dict_list(data, "ticker_id")
-            for i in data:
-                if int(i["trades_24hr"]) > 2:
-                    logger.calc(f"{i['ticker_id']}: {i['volume_usd_24hr']}")
             data = {
                 "last_update": int(time.time()),
                 "pairs_count": len(data),
@@ -193,9 +190,6 @@ class Generic:  # pragma: no cover
             data = [i for i in data if i is not None]
             data = clean_decimal_dict_list(data, to_string=True, rounding=10)
             data = sort_dict_list(data, "ticker_id")
-            for i in data:
-                if int(i["trades_24hr"]) > 2:
-                    logger.merge(f"{i['ticker_id']}: {i['volume_usd_24hr']}")
             data = {
                 "last_update": int(time.time()),
                 "pairs_count": len(data),
