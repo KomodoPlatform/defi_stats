@@ -116,6 +116,8 @@ class FixerAPI:  # pragma: no cover
 
     def latest(self):
         try:
+            return requests("https://rates.komodo.earth/api/v1/usd_rates").json()
+            '''
             if self.api_key == "":
                 raise ApiKeyNotFoundException("FIXER_API key not set!")
             r = requests.get(f"{self.base_url}/latest?access_key={self.api_key}")
@@ -132,7 +134,7 @@ class FixerAPI:  # pragma: no cover
             received_rates["rates"]["USD"] = 1.0
             received_rates["rates"].pop("BTC")
             return received_rates
-
+            '''
         except Exception as e:
             return default_error(e)
 

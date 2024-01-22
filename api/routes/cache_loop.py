@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import requests
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from db.sqlitedb_merge import SqliteMerge
@@ -67,11 +68,11 @@ def prices_service():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=900)
+@repeat_every(seconds=300)
 @timed
 def fixer_rates():  # pragma: no cover
     try:
-        lib.CacheItem("fixer_rates").save()
+        return requests("https://rates.komodo.earth/api/v1/usd_rates").json()
     except Exception as e:
         return default_error(e)
     msg = "Fixer rates update loop complete!"
