@@ -21,7 +21,7 @@
             {
                 "coin": "KMD",
                 "price": {
-                    "decimal": "30"
+                    "decimal": "31"
                 },
                 "base_max_volume": {
                     "decimal": "10"
@@ -33,7 +33,7 @@
             {
                 "coin": "KMD",
                 "price": {
-                    "decimal": "28"
+                    "decimal": "29"
                 },
                 "base_max_volume": {
                     "decimal": "100"
@@ -45,7 +45,7 @@
             {
                 "coin": "KMD",
                 "price": {
-                    "decimal": "26"
+                    "decimal": "27"
                 },
                 "base_max_volume": {
                     "decimal": "1"
@@ -59,7 +59,7 @@
             {
                 "coin": "BTC",
                 "price": {
-                    "decimal": "24"
+                    "decimal": "25"
                 },
                 "base_max_volume": {
                     "decimal": "2"
@@ -71,7 +71,7 @@
             {
                 "coin": "BTC",
                 "price": {
-                    "decimal": "22"
+                    "decimal": "23"
                 },
                 "base_max_volume": {
                     "decimal": "200"
@@ -83,7 +83,7 @@
             {
                 "coin": "BTC",
                 "price": {
-                    "decimal": "20"
+                    "decimal": "21"
                 },
                 "base_max_volume": {
                     "decimal": "20"
