@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import time
+import util.cron as cron
 from util.logger import logger
 from models.generic import ErrorMessage, ApiIds
 from util.files import Files
@@ -21,7 +21,7 @@ files = Files()
 def get_gecko_ids():
     try:
         data = {
-            "timestamp": int(time.time()),
+            "timestamp": int(cron.now_utc()),
             "ids": {}
         }
         coins_config = lib.CacheItem('coins_config').data

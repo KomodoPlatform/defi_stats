@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import time
+import util.cron as cron
 from lib.generic import Generic
 from typing import List
 from db.sqlitedb import get_sqlite_db
@@ -24,6 +24,7 @@ router = APIRouter()
 cache = Cache()
 
 
+# TODO: Move to new DB
 @router.get(
     "/atomicdexio",
     description="Simple summary statistics for the Komodo Defi network.",
@@ -123,8 +124,8 @@ def orderbook(
 def trades(
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
+    start_time: int = int(cron.now_utc() - 86400),
+    end_time: int = int(cron.now_utc()),
 ):
     try:
         for value, name in [

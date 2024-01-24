@@ -2,8 +2,7 @@
 import requests
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
-from db.sqlitedb_merge import SqliteMerge
-from db.sqldb import populate_pgsqldb, reset_defi_stats_table
+import db
 
 
 from lib.cache import Cache
@@ -43,7 +42,7 @@ def coins():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=600)
 @timed
 def gecko_data():  # pragma: no cover
     try:
@@ -88,7 +87,6 @@ def fixer_rates():  # pragma: no cover
 def gecko_tickers():
     try:
         lib.CacheItem(name="gecko_tickers").save()
-        lib.CacheItem(name="gecko_tickers_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Gecko tickers (ALL) loop complete!"
@@ -96,54 +94,6 @@ def gecko_tickers():
 
 
 # Derived Cache data for Markets endpoints
-
-
-@timed
-def markets_pairs(netid):
-    try:
-        lib.CacheItem(name="markets_pairs", netid=netid).save()
-    except Exception as e:
-        msg = f"Markets pairs update failed! ({netid}): {e}"
-        return default_error(e, msg)
-
-
-@timed
-def markets_tickers(netid):
-    try:
-        lib.CacheItem(name="markets_tickers", netid=netid).save()
-    except Exception as e:
-        msg = f"Failed for netid {netid}!"
-        return default_error(e, msg)
-    return default_result(
-        msg=f"Market Tickers for netid {netid} Updated!", loglevel="loop"
-    )
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
-def markets_tickers_7777():
-    markets_tickers("7777")
-    msg = "Market tickers (7777) loop complete!"
-    return default_result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
-def markets_tickers_8762():
-    markets_tickers("8762")
-    msg = "Market tickers (8762) loop complete!"
-    return default_result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
-def markets_tickers_all():
-    markets_tickers("ALL")
-    msg = "Market tickers (all) loop complete!"
-    return default_result(msg=msg, loglevel="loop")
 
 
 # Stats API Loops
@@ -178,7 +128,6 @@ def statsapi_summary():
 def generic_last_traded():
     try:
         lib.CacheItem(name="generic_last_traded").save()
-        lib.CacheItem(name="generic_last_traded_old").save()
     except Exception as e:
         return default_error(e)
     msg = "generic_last_traded loop complete!"
@@ -191,7 +140,6 @@ def generic_last_traded():
 def generic_pairs():
     try:
         lib.CacheItem(name="generic_pairs").save()
-        lib.CacheItem(name="generic_pairs_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Generic pairs (ALL) loop complete!"
@@ -204,7 +152,6 @@ def generic_pairs():
 def generic_tickers():
     try:
         lib.CacheItem(name="generic_tickers").save()
-        lib.CacheItem(name="generic_tickers_old").save()
     except Exception as e:
         return default_error(e)
     msg = "Generic tickers (ALL) loop complete!"
@@ -217,7 +164,7 @@ def generic_tickers():
 def import_dbs():
     if NODE_TYPE != "serve":
         try:
-            merge = SqliteMerge()
+            merge = db.SqliteMerge()
             merge.import_source_databases()
         except Exception as e:
             return default_error(e)
@@ -231,21 +178,10 @@ def import_dbs():
 @router.on_event("startup")
 @repeat_every(seconds=300)
 @timed
-def truncate_wal():
-    try:
-        merge = SqliteMerge()
-        merge.truncate_wal()
-    except Exception as e:
-        return default_error(e)
-    msg = "Database wal truncation loop complete!"
-    return default_result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
 def populate_pgsqldb_loop():
+    gecko_source = lib.load_gecko_source()
+    coins_config = lib.load_coins_config()
     if RESET_TABLE:
-        reset_defi_stats_table()
+        db.reset_defi_stats_table()
     # updates last 24 hours swaps
-    populate_pgsqldb()
+    db.populate_pgsqldb(coins_config, gecko_source)

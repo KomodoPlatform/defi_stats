@@ -1,4 +1,4 @@
-import time
+import util.cron as cron
 import pytest
 from decimal import Decimal
 from util.logger import logger
@@ -15,7 +15,7 @@ from lib.markets import Markets
 
 
 def test_pairs():
-    markets = Markets(netid="8762")
+    markets = Markets()
     data = markets.pairs()
     assert isinstance(data, list)
     r = [i["ticker_id"] for i in data]
@@ -29,10 +29,10 @@ def test_pairs():
     assert "LTC_KMD" not in r
 
 
-def test_tickers(setup_swaps_db_data):
-    markets = Markets(netid="8762", db=setup_swaps_db_data)
+def test_tickers():
+    markets = Markets()
     r = markets.tickers()
-    assert r["last_update"] > time.time() - 60
+    assert r["last_update"] > cron.now_utc() - 60
     assert r["pairs_count"] > 0
     assert r["swaps_count"] > 0
     assert float(r["combined_volume_usd"]) > 0

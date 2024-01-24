@@ -1,4 +1,5 @@
-import time
+from typing import List
+import util.cron as cron
 from util.exceptions import NoDefaultForKeyError
 from const import DEXAPI_8762_HOST, IS_TESTING
 from dotenv import load_dotenv
@@ -12,7 +13,7 @@ def arg_defaults():
         "true": ["wal", "order_by_mcap"],
         "none": ["source_url", "db_path", "db"],
         "now": ["end"],
-        "ALL": ["netid"],
+        "ALL": [],
         "default_host": ["mm2_host"],
         "zero": ["trigger"],
         "kmd": ["coin"],
@@ -45,13 +46,13 @@ def default_val(key: str):
             if val.lower() == "default_host":
                 return DEXAPI_8762_HOST
             if val.lower() == "now":
-                return int(time.time())
+                return int(cron.now_utc())
             else:
                 return "debug"
     raise NoDefaultForKeyError(f"No default value for {key}!")  # pragma: no cover
 
 
-def set_params(object: object(), kwargs: dict(), options: list()) -> None:
+def set_params(object: object(), kwargs: dict(), options: List[str] = list()) -> None:
     # Set the defaults from object options if not already set
     try:
         if IS_TESTING:

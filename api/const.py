@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
+from pymemcache.client import base
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -133,3 +135,5 @@ compare_fields = [
 
 MARKETS_PAIRS_DAYS = 30
 GENERIC_PAIRS_DAYS = 30
+
+MEMCACHE = base.Client(('localhost', 11211))

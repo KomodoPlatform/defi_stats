@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -166,7 +166,7 @@ app.include_router(
 def healthcheck():
     cache = Cache()
     return {
-        "timestamp": int(time.time()),
+        "timestamp": int(cron.now_utc()),
         "status": "ok",
         "cache_age_mins": cache.updated_since(),
     }

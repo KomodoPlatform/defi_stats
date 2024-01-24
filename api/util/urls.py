@@ -4,7 +4,7 @@ from util.defaults import set_params
 class Urls:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.options = ["netid"]
+        self.options = []
         set_params(self, self.kwargs, self.options)
         self.bar = "https://api.github.com/users/smk762"
         coins_repo = "https://raw.githubusercontent.com/KomodoPlatform/coins"

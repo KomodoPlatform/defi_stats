@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import List, Dict
-
-from db.sqldb import SqlQuery
-from db.schema import DefiSwap
+import db
 from lib.cache import Cache
 from lib.pair import Pair
 from util.enums import TradeType, GroupBy
@@ -13,6 +11,8 @@ from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 import util.validate as validate
+import util.transform as transform
+from const import GENERIC_PAIRS_DAYS
 
 
 router = APIRouter()
@@ -26,6 +26,25 @@ cache = Cache()
 
 
 @router.get(
+    "/get_pairs",
+    description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Ordered by mcap.",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def get_pairs(remove_platforms: bool = True):
+    try:
+        query = db.SqlQuery()
+        data = query.get_pairs(days=GENERIC_PAIRS_DAYS)
+        if remove_platforms:
+            data = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
+        return data
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
     "/distinct/",
     description="Get Unique values for a column",
     responses={406: {"model": ErrorMessage}},
@@ -35,19 +54,19 @@ cache = Cache()
 def distinct(
     start_time: int = 0,
     end_time: int = 0,
-    column: SqlQuery(with_enums=True).DefiSwapColumnsDistinct | None = None,
-    coin: SqlQuery(with_enums=True).ValidCoins | None = None,
-    pair: SqlQuery(with_enums=True).ValidPairs | None = None,
-    pubkey: SqlQuery(with_enums=True).ValidPubkeys | None = None,
-    gui: SqlQuery(with_enums=True).ValidGuis | None = None,
-    version: SqlQuery(with_enums=True).ValidVersions | None = None,
+    column: str | None = None,
+    coin: str | None = None,
+    pair: str | None = None,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    version: str | None = None,
     success_only: bool = True,
     failed_only: bool = False,
 ):
     try:
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         resp = sorted(
             query.get_distinct(
                 start_time=start_time,
@@ -73,7 +92,7 @@ def distinct(
     "/get_swaps/",
     description="Swaps completed within two epoch timestamps.",
     responses={406: {"model": ErrorMessage}},
-    response_model=List[DefiSwap] | Dict[str, List[DefiSwap]] | Dict,
+    response_model=List[db.DefiSwap] | Dict[str, List[db.DefiSwap]] | Dict,
     status_code=200,
 )
 def get_swaps(
@@ -89,10 +108,10 @@ def get_swaps(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         resp = query.get_swaps(
             start_time=start_time,
             end_time=end_time,
@@ -127,9 +146,9 @@ def historical_trades(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
+            end_time = int(cron.now_utc())
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -163,12 +182,12 @@ def historical_trades(
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
     responses={406: {"model": ErrorMessage}},
-    response_model=DefiSwap,
+    response_model=db.DefiSwap,
     status_code=200,
 )
 def get_swap(uuid: str):
     try:
-        query = SqlQuery()
+        query = db.SqlQuery()
         resp = query.get_swap(uuid=uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
@@ -193,10 +212,10 @@ def swap_uuids(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         uuids = query.swap_uuids(
             start_time=start_time, end_time=end_time, coin=coin, pair=pair
         )
@@ -249,10 +268,10 @@ def coin_trade_volumes_usd(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         volumes = query.coin_trade_volumes(
             start_time=start_time,
             end_time=end_time,
@@ -281,10 +300,10 @@ def pair_trade_volumes_usd(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         volumes = query.pair_trade_volumes(
             start_time=start_time,
             end_time=end_time,
@@ -307,12 +326,9 @@ def pair_trade_volumes_usd(
     # response_model=PairTradeVolumes,
     status_code=200,
 )
-def last_traded(
-    group_by: GroupBy,
-    min_swaps: int = 3
-):
+def last_traded(group_by: GroupBy, min_swaps: int = 3):
     try:
-        query = SqlQuery()
+        query = db.SqlQuery()
         match group_by:
             case GroupBy.pair:
                 return query.pair_last_trade(min_swaps=min_swaps)

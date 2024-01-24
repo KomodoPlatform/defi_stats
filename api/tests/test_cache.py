@@ -16,6 +16,8 @@ from util.helper import (
 from util.logger import logger
 from tests.fixtures_db import setup_swaps_db_data, setup_time
 
+# TODO: Move to memcache
+
 
 def test_cache(setup_swaps_db_data):
     db = setup_swaps_db_data

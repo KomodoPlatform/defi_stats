@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-import time
-from lib.external import FixerAPI, CoinGeckoAPI
-from lib.generic import Generic
-from lib.markets import Markets
-from lib.stats_api import StatsAPI
+import util.cron as cron
 from util.defaults import default_error, set_params, default_result
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
@@ -11,14 +7,16 @@ from util.logger import logger
 from util.urls import Urls
 import util.validate as validate
 from const import MARKETS_PAIRS_DAYS
+import lib
 
 
 class Cache:  # pragma: no cover
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
+            logger.merge(f"TESTING: {self.testing}")
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 
@@ -57,10 +55,10 @@ class CacheItem:
         try:
             self.name = name
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
+            self.options = []
+            self._data = {}
             set_params(self, self.kwargs, self.options)
-
-            self.files = Files(netid=self.netid)
+            self.files = Files()
             self.filename = self.files.get_cache_fn(name)
             if self.filename is None:
                 raise CacheFilenameNotFound(
@@ -69,7 +67,6 @@ class CacheItem:
 
             self.urls = Urls()
             self.source_url = self.urls.get_cache_url(name)
-            self._data = {}
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init CacheItem '{name}': {e}")
 
@@ -85,8 +82,9 @@ class CacheItem:
         data = self.files.load_jsonfile(self.filename)
         if data is None:  # pragma: no cover
             data = self.save()
+            return {}
         if "last_updated" in data:
-            since_updated = int(time.time()) - data["last_updated"]
+            since_updated = int(cron.now_utc()) - data["last_updated"]
             since_updated_min = int(since_updated / 60)
             if since_updated_min > self.cache_expiry:
                 msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
@@ -98,7 +96,7 @@ class CacheItem:
     def since_updated_min(self):  # pragma: no cover
         data = self.files.load_jsonfile(self.filename)
         if "last_updated" in data:
-            since_updated = int(time.time()) - data["last_updated"]
+            since_updated = int(cron.now_utc()) - data["last_updated"]
             return int(since_updated / 60)
         return "unknown"
 
@@ -120,59 +118,46 @@ class CacheItem:
 
     def save(self, data=None):  # pragma: no cover
         try:
+            logger.info(f"Saving {self.name}")
             # Handle external mirrored data easily
             if self.source_url is not None:
                 data = self.files.download_json(self.source_url)
             else:
                 if self.name == "fixer_rates":
-                    data = FixerAPI().latest()
+                    data = lib.FixerAPI().latest()
 
                 if self.name == "gecko_source":
-                    data = CoinGeckoAPI().get_gecko_source()
+                    data = lib.CoinGeckoAPI().get_gecko_source()
 
                 if self.name == "statsapi_summary":
-                    data = StatsAPI(db=self.db).pair_summaries()
+                    data = lib.StatsAPI(db=self.db).pair_summaries()
 
                 if self.name == "statsapi_adex_fortnite":
-                    data = StatsAPI(db=self.db).adex_fortnite()
+                    data = lib.StatsAPI(db=self.db).adex_fortnite()
 
                 if self.name == "gecko_tickers":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers(pairs_days=7)
-
-                if self.name == "gecko_tickers_old":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers_old(pairs_days=7)
+                    data = lib.Generic().traded_tickers(pairs_days=7)
 
                 if self.name == "generic_tickers":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers()
-
-                if self.name == "generic_tickers_old":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers_old()
+                    data = lib.Generic().traded_tickers()
 
                 if self.name == "generic_last_traded":
-                    data = Generic(netid="ALL", db=self.db).last_traded()
-
-                if self.name == "generic_last_traded_old":
-                    data = Generic(netid="ALL", db=self.db).last_traded_old()
+                    data = lib.Generic().last_traded()
 
                 if self.name == "generic_pairs":
-                    data = Generic(netid="ALL", db=self.db).traded_pairs_info()
-
-                if self.name == "generic_pairs_old":
-                    data = Generic(netid="ALL", db=self.db).traded_pairs_info_old()
+                    data = lib.Generic().traded_pairs_info()
 
                 if self.name == "markets_pairs":
-                    data = Markets(netid=self.netid, db=self.db).pairs(
-                        days=MARKETS_PAIRS_DAYS
-                    )
+                    data = lib.Markets(db=self.db).pairs(days=MARKETS_PAIRS_DAYS)
 
                 if self.name == "markets_tickers":
-                    data = Markets(netid=self.netid, db=self.db).tickers(
+                    data = lib.Markets(db=self.db).tickers(
                         pairs_days=MARKETS_PAIRS_DAYS
                     )
 
             if data is not None:
                 if validate.loop_data(data, self, "ALL"):
-                    data = {"last_updated": int(time.time()), "data": data}
+                    data = {"last_updated": int(cron.now_utc()), "data": data}
                     self.files.save_json(self.filename, data)
                 else:
                     msg = {

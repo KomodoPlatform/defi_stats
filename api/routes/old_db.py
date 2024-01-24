@@ -7,8 +7,7 @@ from lib.cache import Cache
 from models.generic import ErrorMessage, SwapItem
 from util.exceptions import UuidNotFoundException
 from util.logger import logger
-
-from const import GENERIC_PAIRS_DAYS
+import util.transform as transform
 
 
 router = APIRouter()
@@ -22,22 +21,6 @@ cache = Cache()
 
 
 @router.get(
-    "/get_pairs",
-    description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Segwit merged & ordered by mcap.",
-    responses={406: {"model": ErrorMessage}},
-    status_code=200,
-)
-def tickers():
-    try:
-        db = get_sqlite_db(netid="ALL")
-        return db.query.get_pairs(days=GENERIC_PAIRS_DAYS)
-    except Exception as e:  # pragma: no cover
-        err = {"error": f"{e}"}
-        logger.warning(err)
-        return JSONResponse(status_code=400, content=err)
-
-
-@router.get(
     "/get_swaps_for_pair",
     description="Swaps for a pairs traded in last 24hrs. Segwit merged & ordered by mcap.",
     responses={406: {"model": ErrorMessage}},
@@ -45,9 +28,9 @@ def tickers():
 )
 def get_swaps_for_pair(pair_str):
     try:
-        base, quote = pair_str.split("_")
+        base, quote = transform.base_quote_from_pair(pair_str)
         db = get_sqlite_db(netid="ALL")
-        return db.query.get_swaps_for_pair(base, quote)
+        return db.query.get_swaps_for_pair_old(base, quote)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

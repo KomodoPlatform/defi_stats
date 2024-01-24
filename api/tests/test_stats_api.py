@@ -12,7 +12,6 @@ def test_pair_summaries(setup_statsapi):
     assert len(r) == 6
     r = stats.pair_summaries(300)
     assert len(r) == 7
-    logger.info(r)
     for i in r:
         if i["trading_pair"] == "KMD_BTC":
             assert i["pair_swaps_count"] == 2
@@ -33,7 +32,7 @@ def test_adex_fortnite(setup_statsapi):
     stats = setup_statsapi
     r = stats.adex_fortnite()
     assert r["days"] == 14
-    assert r["swaps_count"] == 12
+    assert r["swaps_count"] == 11  # 15 - 1x failed - 3x > 14 days old
     assert "KMD_LTC" in r["top_pairs"]["by_current_liquidity_usd"]
 
 

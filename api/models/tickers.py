@@ -35,7 +35,7 @@ class TickersSummaryItemV2(BaseModel):
     ticker_id: str = "XXX_YYY"
     base_currency: str = "XXX"
     target_currency: str = "YYY"
-    included_variants: List[str]
+    variants: List[str]
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
     bid: str = "777.777777"

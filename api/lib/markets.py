@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-import time
-from db.sqlitedb import get_sqlite_db
+import util.cron as cron
 from lib.generic import Generic
-from lib.external import CoinGeckoAPI
-from util.files import Files
 from lib.pair import Pair
 from util.helper import get_coin_variants
 from util.logger import timed, logger
@@ -16,22 +13,16 @@ import lib
 class Markets:
     def __init__(self, **kwargs) -> None:
         try:
+            self.netid = 8762
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
-            if self.db is None:
-                self.db = get_sqlite_db(
-                    netid=self.netid,
-                    db=self.db,
-                )
-            self.files = Files(**kwargs)
-            self.gecko = CoinGeckoAPI(**kwargs)
-            self.generic = Generic(**kwargs)
-            self.last_traded = lib.load_generic_last_traded()
+            logger.info(self.testing)
             if "coins_config" in kwargs:
                 self.coins_config = kwargs["coins_config"]
             else:
                 self.coins_config = lib.load_coins_config()
+            self.generic = Generic(**kwargs)
             self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")
@@ -57,8 +48,8 @@ class Markets:
 
     def trades(self, pair: str, days_in_past: int = 1, all=False):
         try:
-            start_time = int(time.time() - 86400 * days_in_past)
-            end_time = int(time.time())
+            start_time = int(cron.now_utc() - 86400 * days_in_past)
+            end_time = int(cron.now_utc())
 
             data = Pair(pair_str=pair).historical_trades(
                 start_time=start_time,
@@ -66,7 +57,7 @@ class Markets:
             )
 
             resp = []
-            base, quote = pair.split("_")
+            base, quote = transform.base_quote_from_pair(pair)
             if all:
                 resp += data["ALL"]["buy"]
                 resp += data["ALL"]["sell"]

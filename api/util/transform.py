@@ -2,7 +2,6 @@ from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
 from typing import Any, List, Dict
 from util.defaults import default_error
-import util.validate as validate
 
 
 def round_to_str(value: Any, rounding=8):
@@ -157,8 +156,18 @@ def merge_orderbooks(existing, new):
         existing["total_bids_quote_vol"] += new["total_bids_quote_vol"]
         existing["total_asks_base_usd"] += new["total_asks_base_usd"]
         existing["total_bids_quote_usd"] += new["total_bids_quote_usd"]
-        existing["trades_24hr"] += new["trades_24hr"]
-        existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+        if "trades_24hr" in existing and "trades_24hr" in new:
+            existing["trades_24hr"] += new["trades_24hr"]
+        elif "trades_24hr" in new:
+            existing["trades_24hr"] = new["trades_24hr"]
+        else:
+            existing["trades_24hr"] = 0
+        if "volume_usd_24hr" in existing and "volume_usd_24hr" in new:
+            existing["volume_usd_24hr"] += new["volume_usd_24hr"]
+        elif "volume_usd_24hr" in new:
+            existing["volume_usd_24hr"] = new["volume_usd_24hr"]
+        else:
+            existing["volume_usd_24hr"] = 0
 
     except Exception as e:  # pragma: no cover
         err = {"error": f"transform.merge_orderbooks: {e}"}
@@ -290,11 +299,12 @@ def ticker_to_gecko(i):
 
     if "last_swap_uuid" in i:
         data.update({"last_swap_uuid": i["last_swap_uuid"]})
-    if "included_variants" in i:
-        data.update({"included_variants": i["included_variants"]})
+    if "variants" in i:
+        data.update({"variants": i["variants"]})
     return data
 
 
+@timed
 def ticker_to_statsapi(i, suffix):
     try:
         if suffix == "24hr":
@@ -330,13 +340,19 @@ def ticker_to_statsapi(i, suffix):
             f"price_change_percent_{alt_suffix}": Decimal(
                 i[f"price_change_percent_{suffix}"]
             ),
-            "last_trade": int(i["last_trade"]),
-            "last_price": Decimal(i["last_price"]),
         }
+        if "last_trade" in i:
+            data.update({"last_trade": int(i["last_trade"])})
+        if "last_price" in i:
+            data.update({"last_price": i["last_price"]})
+        if "last_swap_price" in i:
+            data.update({"last_swap_price": i["last_swap_price"]})
+        if "last_swap_time" in i:
+            data.update({"last_swap_time": i["last_swap_time"]})
         if "last_swap_uuid" in i:
             data.update({"last_swap_uuid": i["last_swap_uuid"]})
-        if "included_variants" in i:
-            data.update({"included_variants": i["included_variants"]})
+        if "variants" in i:
+            data.update({"variants": i["variants"]})
         return data
 
     except Exception as e:  # pragma: no cover
@@ -401,7 +417,15 @@ def traded_cache_to_stats_api(traded_cache):
         if cleaned_ticker not in resp:
             resp.update({cleaned_ticker: traded_cache[i]})
         else:
-            if resp[cleaned_ticker]["last_swap"] < traded_cache[i]["last_swap"]:
+            if (
+                resp[cleaned_ticker]["last_swap_time"]
+                < traded_cache[i]["last_swap_time"]
+            ):
+                resp.update({cleaned_ticker: traded_cache[i]})
+            elif (
+                resp[cleaned_ticker]["first_swap_time"]
+                > traded_cache[i]["first_swap_time"]
+            ):
                 resp.update({cleaned_ticker: traded_cache[i]})
     return resp
 
@@ -491,8 +515,12 @@ def derive_app_version(appname):
 def derive_defi_version(appname):
     parts = appname.split("_")
     for i in parts:
-        if validate.is_valid_hex(i) and len(i) > 6:
-            return i, i
+        if len(i) > 6:
+            try:
+                int(i, 16)
+                return i, i
+            except ValueError:
+                pass
     return "Unknown", ""
 
 
@@ -556,6 +584,29 @@ DeFiDevices = {
 def sum_num_str(val1, val2):
     x = Decimal(val1) + Decimal(val2)
     return format_10f(x)
+
+
+def base_quote_from_pair(variant):
+    split_variant = variant.split("_")
+    try:
+        if len(split_variant) == 4 and "OLD" in split_variant:
+            if split_variant[1] == "OLD":
+                base = f"{split_variant[0]}_{split_variant[1]}"
+            if split_variant[3] == "OLD":
+                quote = f"{split_variant[2]}_{split_variant[3]}"
+        elif len(split_variant) == 3 and "OLD" in split_variant:
+            if split_variant[2] == "OLD":
+                base = split_variant[0]
+                quote = f"{split_variant[1]}_{split_variant[2]}"
+            elif split_variant[1] == "OLD":
+                base = f"{split_variant[0]}_{split_variant[1]}"
+                quote = split_variant[2]
+        elif len(split_variant) == 2:
+            base = split_variant[0]
+            quote = split_variant[1]
+        return base, quote
+    except Exception as e:  # pragma: no cover
+        return default_error(e)
 
 
 # If  in

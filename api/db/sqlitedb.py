@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 from os.path import basename
-import time
+import util.cron as cron
 import sqlite3
 from typing import List
 from decimal import Decimal
@@ -21,11 +21,11 @@ class SqliteDB:  # pragma: no cover
     def __init__(self, db_path, **kwargs):
         try:
             self.kwargs = kwargs
-            self.start = int(time.time())
+            self.start = int(cron.now_utc())
             self.db_path = db_path
             self.db_file = basename(self.db_path)
             self.netid = get_netid(self.db_file)
-            self.options = ["wal", "netid"]
+            self.options = ["wal", ]
             set_params(self, self.kwargs, self.options)
 
             if "last_traded_cache" in kwargs:
@@ -73,7 +73,7 @@ class SqliteQuery:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["netid"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
             self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.db = db
@@ -92,53 +92,14 @@ class SqliteQuery:  # pragma: no cover
         return [i[0] for i in r.description]
 
     @timed
-    def get_pairs(self, days: int = 7) -> list:
-        """
-        Returns an alphabetically sorted list of pair strings
-        with at least one successful swap in the last 'x' days.
-        Results sorted by market cap to conform to CEX standards.
-        """
-        try:
-            timestamp = int(time.time() - 86400 * days)
-            sql = "SELECT COUNT(*) FROM stats_swaps;"
-            self.db.sql_cursor.execute(sql)
-            data = self.db.sql_cursor.fetchone()
-            sql = f"SELECT DISTINCT maker_coin_ticker, maker_coin_platform, \
-                    taker_coin_ticker, taker_coin_platform FROM stats_swaps \
-                    WHERE finished_at > {timestamp} AND is_success=1;"
-            self.db.sql_cursor.execute(sql)
-            data = self.db.sql_cursor.fetchall()
-
-            # Cover the variants
-            pairs = [
-                pair_without_segwit_suffix(
-                    maker_coin=f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}',
-                    taker_coin=f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}',
-                )
-                for i in data
-            ]
-
-            # Sort pair by ticker to expose duplicates
-            sorted_pairs = set(
-                [
-                    order_pair_by_market_cap(i, gecko_source=self.db.gecko_source)
-                    for i in pairs
-                ]
-            )
-
-        except Exception as e:  # pragma: no cover
-            return default_error(e)
-        return list(sorted_pairs)
-
-    @timed
-    def get_swaps_for_pair(
+    def get_swaps_for_pair_old(
         self,
         base: str,
         quote: str,
         trade_type: TradeType = TradeType.ALL,
         limit: int = 100,
-        start_time: int = int(time.time()) - 86400,
-        end_time: int = int(time.time()),
+        start_time: int = int(cron.now_utc()) - 86400,
+        end_time: int = int(cron.now_utc()),
     ) -> list:
         """
         Returns a list of swaps for a given pair since a timestamp.
@@ -150,9 +111,9 @@ class SqliteQuery:  # pragma: no cover
             # so we need to add it back here if it's present
             bases = [base]
             quotes = [quote]
-            if base in self.segwit_coins:
+            if base in self.segwit_coins and '-' not in base:
                 bases.append(f"{base}-segwit")
-            if quote in self.segwit_coins:
+            if quote in self.segwit_coins and '-' not in base:
                 quotes.append(f"{quote}-segwit")
             swaps_for_pair = []
             for i in bases:
@@ -353,7 +314,7 @@ class SqliteQuery:  # pragma: no cover
 
     # This was a duplicate of SqliteQuery.get_atomicdexio
     @timed
-    def swap_counts(self):
+    def swap_counts_old(self):
         try:
             timestamp_24h_ago = int((datetime.now() - timedelta(1)).strftime("%s"))
             timestamp_30d_ago = int((datetime.now() - timedelta(30)).strftime("%s"))
@@ -452,7 +413,7 @@ class SqliteQuery:  # pragma: no cover
         sql += "WHERE finished_at > ? AND finished_at < ? AND is_success=1;"
         data = self.db.sql_cursor.execute(
             sql,
-            (int(time.time()) - 86400, int(time.time())),
+            (int(cron.now_utc()) - 86400, int(cron.now_utc())),
         )
         resp = [dict(row) for row in data]
         return resp
@@ -463,7 +424,7 @@ class SqliteQuery:  # pragma: no cover
         coin: str,
         trade_type: TradeType = TradeType.ALL,
         limit: int = 100,
-        start_time: int = int(time.time()) - 86400,
+        start_time: int = int(cron.now_utc()) - 86400,
         end_time: int = 0,
     ) -> list:
         """
@@ -479,7 +440,7 @@ class SqliteQuery:  # pragma: no cover
                 if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
             ]
             if end_time == 0:
-                end_time = int(time.time())
+                end_time = int(cron.now_utc())
             resp = {}
             swaps = []
             for i in variants:
@@ -555,8 +516,8 @@ class SqliteQuery:  # pragma: no cover
         self,
         coin: str,
         trade_type: TradeType = TradeType.ALL,
-        start_time: int = int(time.time() - 86400),
-        end_time: int = int(time.time()),
+        start_time: int = int(cron.now_utc() - 86400),
+        end_time: int = int(cron.now_utc()),
     ) -> list:
         """
         Returns volume traded of coin between two timestamps.
@@ -571,7 +532,7 @@ class SqliteQuery:  # pragma: no cover
                 if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
             ]
             if end_time == 0:
-                end_time = int(time.time())
+                end_time = int(cron.now_utc())
 
             # We stripped segwit from the pairs in get_pairs()
             # so we need to add it back here if it's present
@@ -635,7 +596,7 @@ class SqliteUpdate:  # pragma: no cover
     def __init__(self, db, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["netid"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
             self.files = Files()
             self.db = db

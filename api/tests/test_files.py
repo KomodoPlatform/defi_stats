@@ -13,8 +13,8 @@ from util.helper import (
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-files = Files(netid="7777")
-urls = Urls(netid="7777")
+files = Files()
+urls = Urls()
 
 
 def test_save_json():

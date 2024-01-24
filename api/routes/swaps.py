@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import time
-from db.sqldb import SqlQuery
-from db.schema import DefiSwap
+import util.cron as cron
+import db
 from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
@@ -15,12 +14,12 @@ router = APIRouter()
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
     responses={406: {"model": ErrorMessage}},
-    response_model=DefiSwap,
+    response_model=db.DefiSwap,
     status_code=200,
 )
 def get_swap(uuid: str):
     try:
-        query = SqlQuery()
+        query = db.SqlQuery()
         resp = query.get_swap(uuid=uuid)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
@@ -45,10 +44,10 @@ def swap_uuids(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
-        query = SqlQuery()
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
         uuids = query.swap_uuids(
             start_time=start_time, end_time=end_time, coin=coin, pair=pair
         )

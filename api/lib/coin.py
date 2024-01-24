@@ -7,6 +7,7 @@ from lib.cache import (
 from util.defaults import set_params
 from util.helper import get_gecko_mcap, get_gecko_price
 from util.logger import logger
+import db
 
 
 class Coin:
@@ -31,6 +32,10 @@ class Coin:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 self.last_traded_cache = load_generic_last_traded()
+            self.pg_query = db.SqlQuery(
+                gecko_source=self.gecko_source,
+                coins_config=self.coins_config,
+            )
 
             # Designate coin
             if self.coin in self.coins_config:

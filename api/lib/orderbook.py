@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from collections import OrderedDict
 from decimal import Decimal
-from lib.dex_api import DexAPI, get_orderbook
 from util.files import Files
 from util.logger import logger, timed
 from util.defaults import default_error, set_params, default_result
-from util.helper import get_gecko_price
+from util.helper import get_gecko_price, get_pair_variants
 import lib
+import db
 import util.transform as transform
+import util.templates as template
 
 
 class Orderbook:
@@ -18,7 +19,7 @@ class Orderbook:
             self.pair = pair_obj
             self.base = self.pair.base
             self.quote = self.pair.quote
-            self.options = ["netid", "mm2_host"]
+            self.options = ["mm2_host"]
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
@@ -35,85 +36,120 @@ class Orderbook:
             else:
                 self.last_traded_cache = lib.load_generic_last_traded()
 
+            self.pg_query = db.SqlQuery(
+                gecko_source=self.gecko_source,
+                coins_config=self.coins_config
+            )
             self.files = Files(**kwargs)
             segwit_coins = [i.coin for i in lib.COINS.with_segwit]
             self.base_is_segwit_coin = self.base in segwit_coins
             self.quote_is_segwit_coin = self.quote in segwit_coins
-            self.dexapi = DexAPI(**kwargs)
 
         except Exception as e:  # pragma: no cover
             logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
 
     @timed
-    def for_pair(self, depth=100):
+    def for_pair(self, depth=100, all: bool = False):
         try:
-            orderbook_data = OrderedDict()
-            orderbook_data["ticker_id"] = self.pair.as_str
-            orderbook_data["base"] = self.base
-            orderbook_data["quote"] = self.quote
+            if all:
+                variants = get_pair_variants(
+                    self.pair.as_str, coins_config=self.coins_config
+                )
+                combined_orderbook = template.orderbook(
+                    transform.strip_pair_platforms(self.pair.as_str)
+                )
+            else:
+                variants = [self.pair.as_str]
+                combined_orderbook = template.orderbook(self.pair.as_str)
 
-            orderbook_data["timestamp"] = f"{int(time.time())}"
-            data = self.get_and_parse()
+            for variant in variants:
+                orderbook_data = OrderedDict()
+                orderbook_data["ticker_id"] = self.pair.as_str
+                orderbook_data["base"] = self.base
+                orderbook_data["quote"] = self.quote
 
-            orderbook_data["bids"] = data["bids"][:depth][::-1]
-            orderbook_data["asks"] = data["asks"][::-1][:depth]
-            total_bids_base_vol = sum(
-                [Decimal(i["volume"]) for i in orderbook_data["bids"]]
-            )
-            total_asks_base_vol = sum(
-                [Decimal(i["volume"]) for i in orderbook_data["asks"]]
-            )
-            total_bids_quote_vol = sum(
-                [
-                    Decimal(i["volume"]) * Decimal(i["price"])
-                    for i in orderbook_data["bids"]
-                ]
-            )
-            total_asks_quote_vol = sum(
-                [
-                    Decimal(i["volume"]) * Decimal(i["price"])
-                    for i in orderbook_data["asks"]
-                ]
-            )
-            orderbook_data["base_price_usd"] = get_gecko_price(
-                orderbook_data["base"], self.gecko_source
-            )
-            orderbook_data["quote_price_usd"] = get_gecko_price(
-                orderbook_data["quote"], self.gecko_source
-            )
-            orderbook_data["total_asks_base_vol"] = total_asks_base_vol
-            orderbook_data["total_bids_base_vol"] = total_bids_base_vol
-            orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
-            orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
-            orderbook_data["total_asks_base_usd"] = (
-                total_asks_base_vol * orderbook_data["base_price_usd"]
-            )
-            orderbook_data["total_bids_quote_usd"] = (
-                total_bids_quote_vol * orderbook_data["quote_price_usd"]
-            )
+                orderbook_data["timestamp"] = f"{int(cron.now_utc())}"
+                base, quote = transform.base_quote_from_pair(variant)
+                if self.base_is_segwit_coin and len(variants) > 1:
+                    if "-" not in base:
+                        continue
 
-            orderbook_data["liquidity_usd"] = (
-                orderbook_data["total_asks_base_usd"]
-                + orderbook_data["total_bids_quote_usd"]
-            )
-            pair = orderbook_data["ticker_id"]
-            msg = f"orderbook.for_pair {pair} | netid {self.netid} ok!"
-            return default_result(data=orderbook_data, msg=msg)
+                if self.quote_is_segwit_coin and len(variants) > 1:
+                    if "-" not in quote:
+                        continue
+
+                data = self.get_and_parse(base=base, quote=quote)
+
+                orderbook_data["bids"] = data["bids"][:depth][::-1]
+                orderbook_data["asks"] = data["asks"][::-1][:depth]
+                total_bids_base_vol = sum(
+                    [Decimal(i["volume"]) for i in orderbook_data["bids"]]
+                )
+                total_asks_base_vol = sum(
+                    [Decimal(i["volume"]) for i in orderbook_data["asks"]]
+                )
+                total_bids_quote_vol = sum(
+                    [
+                        Decimal(i["volume"]) * Decimal(i["price"])
+                        for i in orderbook_data["bids"]
+                    ]
+                )
+                total_asks_quote_vol = sum(
+                    [
+                        Decimal(i["volume"]) * Decimal(i["price"])
+                        for i in orderbook_data["asks"]
+                    ]
+                )
+                orderbook_data["base_price_usd"] = get_gecko_price(
+                    orderbook_data["base"], self.gecko_source
+                )
+                orderbook_data["quote_price_usd"] = get_gecko_price(
+                    orderbook_data["quote"], self.gecko_source
+                )
+                orderbook_data["total_asks_base_vol"] = total_asks_base_vol
+                orderbook_data["total_bids_base_vol"] = total_bids_base_vol
+                orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
+                orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
+                orderbook_data["total_asks_base_usd"] = (
+                    total_asks_base_vol * orderbook_data["base_price_usd"]
+                )
+                orderbook_data["total_bids_quote_usd"] = (
+                    total_bids_quote_vol * orderbook_data["quote_price_usd"]
+                )
+
+                orderbook_data["liquidity_usd"] = (
+                    orderbook_data["total_asks_base_usd"]
+                    + orderbook_data["total_bids_quote_usd"]
+                )
+                pair = orderbook_data["ticker_id"]
+                msg = f"orderbook.for_pair {pair} ok!"
+
+                combined_orderbook = transform.merge_orderbooks(
+                    combined_orderbook, orderbook_data
+                )
+
+            msg = "Got orderbook for pair"
+            return default_result(data=combined_orderbook, msg=msg, loglevel="muted")
         except Exception as e:  # pragma: no cover
             pair = orderbook_data["ticker_id"]
-            msg = f"orderbook.for_pair {pair} failed | netid {self.netid}: {e}!"
+            msg = f"orderbook.for_pair {pair} failed: {e}!"
             return default_error(e, msg)
 
     @timed
-    def get_and_parse(self):
-        base = self.base
-        quote = self.quote
-        # Handle segwit only coins
-        if self.base_is_segwit_coin:
-            base = f"{self.base.replace('-segwit', '')}-segwit"
-        if self.quote_is_segwit_coin:
-            quote = f"{self.quote.replace('-segwit', '')}-segwit"
-        return get_orderbook(base, quote)
+    def get_and_parse(self, base: str | None = None, quote: str | None = None):
+        if base is None:
+            base = self.base
+        if quote is None:
+            quote = self.quote
+        if base not in self.coins_config:
+            return template.orderbook(f"{base}_{quote}")
+        elif self.coins_config[base]["wallet_only"]:
+            return template.orderbook(f"{base}_{quote}")
+        if quote not in self.coins_config:
+            return template.orderbook(f"{base}_{quote}")
+        elif self.coins_config[quote]["wallet_only"]:
+            return template.orderbook(f"{base}_{quote}")
+        return lib.get_orderbook(base, quote)
 
     @timed
     def find_lowest_ask(self, orderbook: dict) -> str:

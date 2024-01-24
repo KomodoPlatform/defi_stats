@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import time
+import util.cron as cron
 import sqlite3
 import pytest
 

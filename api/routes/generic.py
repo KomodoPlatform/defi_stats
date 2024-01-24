@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import Optional
 from lib.cache import Cache
 from lib.generic import Generic
 from lib.pair import Pair
-from db.sqlitedb import get_sqlite_db
 from util.enums import TradeType
 import util.validate as validate
+import db
+import lib
 from models.generic import (
     ErrorMessage,
 )
@@ -88,7 +89,7 @@ def orderbook(
 ):
     try:
         generic = Generic(netid="ALL")
-        data = generic.orderbook(pair_str=pair_str, depth=depth)
+        data = generic.orderbook(pair_str=pair_str, depth=depth, all=True)
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
@@ -112,9 +113,9 @@ def historical_trades(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
+            end_time = int(cron.now_utc())
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -151,9 +152,9 @@ def swaps_for_pair(
 ):
     try:
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
+            end_time = int(cron.now_utc())
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -166,13 +167,15 @@ def swaps_for_pair(
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         if "_" not in pair_str:
             raise ValueError("pair_str must be in the format: 'KMD_LTC'")
-        base, quote = pair_str.split("_")
+        base, quote = transform.base_quote_from_pair(pair_str)
         days = (end_time - start_time) / 86400
         msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
         msg += f"| {start_time} -> {end_time} | {days} days"
-        logger.query(msg)
-        db = get_sqlite_db(netid="ALL")
-        data = db.query.get_swaps_for_pair(
+
+        coins_config = lib.load_coins_config()
+        gecko_source = lib.load_gecko_source()
+        pg_query = db.SqlQuery(gecko_source=gecko_source, coins_config=coins_config)
+        data = pg_query.get_swaps_for_pair(
             base, quote, trade_type, limit, start_time, end_time
         )
         """
@@ -207,9 +210,14 @@ def swaps_for_pair(
 )
 def last_24h_swaps():
     try:
-        db = get_sqlite_db(netid="ALL")
-        data = db.query.last_24h_swaps()
-        return data
+        start_time = int(cron.now_utc()) - 86400
+        end_time = int(cron.now_utc())
+        query = db.SqlQuery()
+        resp = query.get_swaps(
+            start_time=start_time,
+            end_time=end_time
+        )
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from db.sqlitedb import get_sqlite_db
 from util.logger import logger
 from lib.pair import Pair
-import time
+import db
+import util.cron as cron
 import lib
 from util.defaults import set_params
 import util.transform as transform
@@ -13,8 +13,7 @@ class StatsAPI:  # pragma: no cover
         try:
             # Set params
             self.kwargs = kwargs
-            self.options = ["db"]
-            self.netid = "ALL"
+            self.options = []
             set_params(self, self.kwargs, self.options)
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
@@ -29,23 +28,20 @@ class StatsAPI:  # pragma: no cover
             if "last_traded_cache" in kwargs:
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
-                self.last_traded_cache = lib.load_generic_last_traded()
-            self.last_traded_cache = transform.traded_cache_to_stats_api(
-                self.last_traded_cache
-            )
-            if self.db is None:
-                self.db = get_sqlite_db(
-                    netid=self.netid,
-                    db=self.db,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
+                self.last_traded_cache = transform.traded_cache_to_stats_api(
+                    lib.load_generic_last_traded()
                 )
+            self.pg_query = db.SqlQuery(
+                gecko_source=self.gecko_source, coins_config=self.coins_config
+            )
         except Exception as e:
             logger.error(f"Failed to init Generic: {e}")
 
     def top_pairs(self, summaries: list):
         try:
+            for i in summaries:
+                i["trading_pair"] = transform.strip_pair_platforms(i["trading_pair"])
+
             top_pairs_by_value = {
                 i["trading_pair"]: i["pair_trade_value_usd"]
                 for i in transform.get_top_items(summaries, "pair_trade_value_usd", 5)
@@ -73,7 +69,8 @@ class StatsAPI:  # pragma: no cover
         try:
             if days > pairs_days:
                 pairs_days = days
-            pairs = self.db.query.get_pairs(days=pairs_days)
+            data = self.pg_query.get_pairs(days=pairs_days)
+            pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
             suffix = transform.get_suffix(days)
             if suffix == "24hr":
                 alt_suffix = "24h"
@@ -82,12 +79,10 @@ class StatsAPI:  # pragma: no cover
             ticker_infos = [
                 Pair(
                     pair_str=i,
-                    netid=self.netid,
-                    db=self.db,
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
-                ).ticker_info(days)
+                ).ticker_info(days, all=True)
                 for i in pairs
             ]
             data = [
@@ -215,9 +210,11 @@ class StatsAPI:  # pragma: no cover
 
     def adex_fortnite(self, days=14):
         try:
-            end = int(time.time())
-            start = end - 14 * 86400
-            swaps = self.db.query.get_timespan_swaps(start=start, end=end)
+            end_time = int(cron.now_utc())
+            start_time = end_time - 14 * 86400
+            swaps = self.pg_query.get_timespan_swaps(
+                start_time=start_time, end_time=end_time
+            )
             summaries = self.pair_summaries(days)
             liquidity = transform.sum_json_key(data=summaries, key="pair_liquidity_usd")
             swaps_value = transform.sum_json_key(

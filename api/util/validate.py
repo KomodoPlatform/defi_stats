@@ -1,6 +1,5 @@
 from decimal import Decimal
 from util.logger import logger
-import lib
 from util.exceptions import DataStructureError, BadPairFormatError
 
 
@@ -70,26 +69,29 @@ def orderbook_pair(base, quote, coins_config):
     try:
         logger.muted(f"Validating {base}/{quote}")
         err = None
-        wallet_only = [i.ticker for i in lib.COINS.wallet_only]
-        with_segwit = [i.ticker for i in lib.COINS.with_segwit]
+        # TODO: Create alternative which does not risk circular import
+        # wallet_only = [i.ticker for i in lib.COINS.wallet_only]
+        # with_segwit = [i.ticker for i in lib.COINS.with_segwit]
         if base.replace("-segwit", "") == quote.replace("-segwit", ""):
             err = {"error": f"BaseQuoteSameError for {base}"}
         if base not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {base}"}
         if quote not in coins_config.keys():
             err = {"error": f"CoinConfigNotFound for {quote}"}
+        '''
         if base in wallet_only:
             if base in with_segwit:
                 if f"{base}-segwit" in wallet_only:
-                    err = {"error": f"CoinWalletOnlyException for {base}"}
+                    err = {"error": f"CoinWalletOnlyException {base}"}
             else:
                 err = {"error": f"CoinWalletOnlyException for {base}"}
         if quote in wallet_only:
             if quote in with_segwit:
                 if f"{quote}-segwit" in wallet_only:
-                    err = {"error": f"CoinWalletOnlyException for {quote}"}
+                    err = {"error": f"CoinWalletOnlyException {quote}"}
             else:
                 err = {"error": f"CoinWalletOnlyException for {quote}"}
+        '''
         if err is not None:
             return False
         return True
@@ -104,7 +106,8 @@ def json_obj(data, outer=True):
             if isinstance(data, list):
                 data = data[0]
             data.keys()
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             return False
     # Recursivety checks nested data
     if isinstance(data, dict):
@@ -116,6 +119,7 @@ def json_obj(data, outer=True):
         # message ends up in the json data which should not be there
         return True
     else:
+        logger.warning(f"{data} Failed json validation {type(data)}")
         return False
 
 

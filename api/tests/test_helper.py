@@ -11,6 +11,7 @@ from util.helper import (
     get_pair_info_sorted,
     get_last_trade_item,
     get_coin_variants,
+    get_pair_variants,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from util.logger import logger
@@ -45,7 +46,7 @@ def test_get_chunks():
 def test_get_price_at_finish():
     r = get_price_at_finish(swap_item)
     assert "1700000777" in r
-    assert r["1700000777"] == Decimal(4) / Decimal(5)
+    assert r["1700000777"] == Decimal(5) / Decimal(4)
 
 
 def test_get_pairs_info():
@@ -72,20 +73,26 @@ def test_get_last_trade_item(setup_last_traded_cache):
     r = get_last_trade_item("DOGE_XXX", cache, "last_swap_uuid")
     assert r == ""
 
-    r = get_last_trade_item("DOGE_LTC-segwit", cache, "last_swap")
+    r = get_last_trade_item("DOGE_LTC-segwit", cache, "last_swap_time")
+
     assert r > 0
-    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap")
+    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap_time")
     assert r == r2
-    r = get_last_trade_item("DOGE_XXX", cache, "last_swap")
+    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_time")
     assert r == 0
 
-    r = get_last_trade_item("KMD_LTC", cache, "last_price")
-    assert r == Decimal("20.0000000000")
-    r2 = get_last_trade_item("LTC_KMD", cache, "last_price")
-    assert r2 == Decimal("20.0000000000")
-    assert r == r2
-    r = get_last_trade_item("DOGE_XXX", cache, "last_price")
-    assert r == 0
+    r = get_last_trade_item("KMD_LTC", cache, "last_swap_uuid")
+
+    r = get_last_trade_item("KMD_LTC", cache, "last_swap_price")
+
+    assert r == Decimal(100)
+    r2 = get_last_trade_item("LTC_KMD", cache, "last_swap_price")
+    assert r2 == Decimal(1 / 100.0000000000)
+    assert r != r2
+    assert r != 1 / r2
+    assert 1 / r != r2
+    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_price")
+    assert r == Decimal(0)
 
 
 def test_get_coin_variants():
@@ -93,11 +100,39 @@ def test_get_coin_variants():
     assert "BTC-BEP20" in r
     assert "BTC-segwit" in r
     assert "BTC" in r
-    logger.merge(r)
     assert len(r) > 2
     r = get_coin_variants("BTC", coins_config, True)
     assert "BTC-BEP20" not in r
     assert "BTC-segwit" in r
     assert "BTC" in r
-    logger.merge(r)
     assert len(r) == 2
+
+    r = get_coin_variants("USDC", coins_config)
+    assert "USDC-BEP20" in r
+    assert "USDC-PLG20" in r
+    assert "USDC-PLG20_OLD" in r
+    assert "BTC-segwit" not in r
+    assert "USDC" not in r
+    assert len(r) > 6
+
+
+def test_get_pair_variants():
+    r = get_pair_variants("KMD_LTC", coins_config)
+    assert "KMD_LTC" in r
+    assert "KMD_LTC-segwit" in r
+    assert "KMD-BEP20_LTC" in r
+    assert "KMD-BEP20_LTC-segwit" in r
+    assert len(r) == 4
+
+    r = get_pair_variants("LTC_KMD", coins_config)
+    assert "LTC_KMD" in r
+    assert "LTC-segwit_KMD" in r
+    assert "LTC_KMD-BEP20" in r
+    assert "LTC-segwit_KMD-BEP20" in r
+    assert len(r) == 4
+
+    r = get_pair_variants("KMD_USDC", coins_config)
+    assert "KMD_USDC" not in r
+    assert "KMD_USDC-PLG20" in r
+    assert "KMD_USDC-PLG20_OLD" in r
+    assert "KMD-BEP20_USDC-PLG20_OLD" in r

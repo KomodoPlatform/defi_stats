@@ -11,13 +11,12 @@ class DexAPI:
     def __init__(self, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["netid"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
 
-            if self.netid == "ALL":  # pragma: no cover
-                self.netid = "8762"
+            self.netid = "8762"
             self.mm2_host = MM2_RPC_HOSTS[self.netid]
-            self.mm2_port = MM2_RPC_PORTS[self.netid]
+            self.mm2_port = MM2_RPC_PORTS[str(self.netid)]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
             self.files = Files()
         except Exception as e:  # pragma: no cover
@@ -41,11 +40,17 @@ class DexAPI:
     @timed
     def orderbook_rpc(self, base: str, quote: str) -> dict:
         try:
+            if base == quote:
+                logger.muted(f"{base} == {quote}: Returning template")
+                return template.orderbook(f"{base}_{quote}")
             if self.testing:
                 orderbook = (
                     f"{API_ROOT_PATH}/tests/fixtures/orderbook/{base}_{quote}.json"
                 )
-                return self.files.load_jsonfile(orderbook)
+                data = self.files.load_jsonfile(orderbook)
+                if data is None:
+                    data = template.orderbook(pair_str=f"{base}_{quote}")
+                return data
 
             params = {
                 "mmrpc": "2.0",
@@ -60,7 +65,8 @@ class DexAPI:
             return resp
 
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            msg = f"orderbook rpc failed for {base}_{quote}"
+            return default_error(e, msg=msg)
 
 
 @timed
@@ -68,7 +74,7 @@ def get_orderbook(base, quote):
     try:
         pair = f"{base}_{quote}"
         data = template.orderbook(pair)
-        dexapi = DexAPI(netid="ALL")
+        dexapi = DexAPI()
         x = dexapi.orderbook_rpc(base, quote)
         for i in ["asks", "bids"]:
             items = [
@@ -81,7 +87,7 @@ def get_orderbook(base, quote):
             x[i] = items
             data[i] += x[i]
     except Exception as e:  # pragma: no cover
-        msg = f"orderbook.get_and_parse {base}/{quote} failed | netid ALL: {e}"
+        msg = f"dexapi.get_orderbook {base}/{quote} failed | netid ALL: {e}"
         return default_error(e, msg)
-    msg = f"orderbook.get_and_parse {base}/{quote} ok | netid ALL"
+    msg = f"dexapi.get_orderbook {base}/{quote} ok | netid ALL"
     return default_result(data=data, msg=msg)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from os.path import basename, dirname, abspath
-import time
+import util.cron as cron
 import logging
 import functools
 from util.defaults import set_params
@@ -262,7 +262,7 @@ class StopWatch:
     def get_stopwatch(self, **kwargs):
         options = ["trigger", "msg", "loglevel"]
         set_params(self, kwargs, options)
-        duration = int(time.time()) - int(self.start_time)
+        duration = int(cron.now_utc()) - int(self.start_time)
         if self.trigger == 0:
             self.trigger = 10
         self.trigger = 0
@@ -319,8 +319,8 @@ def show_pallete():
 def timed(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        start_time = int(time.time())
-        duration = int(time.time()) - start_time
+        start_time = int(cron.now_utc())
+        duration = int(cron.now_utc()) - start_time
         trace = get_trace(func)
         msg = "<<< no msg provided >>>"
         try:

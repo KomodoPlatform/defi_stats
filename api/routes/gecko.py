@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
@@ -75,10 +75,9 @@ def gecko_orderbook(
     response: Response,
     ticker_id: str = "KMD_LTC",
     depth: int = 100,
-    netid: NetId = NetId.ALL,
 ):
     try:
-        generic = Generic(netid=netid.value)
+        generic = Generic()
         data = generic.orderbook(pair_str=ticker_id, depth=depth)
         data = orderbook_to_gecko(data)
         return data
@@ -100,8 +99,8 @@ def gecko_historical_trades(
     trade_type: TradeType = TradeType.ALL,
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
+    start_time: int = int(cron.now_utc() - 86400),
+    end_time: int = int(cron.now_utc()),
     netid: NetId = NetId.ALL,
 ):
     try:

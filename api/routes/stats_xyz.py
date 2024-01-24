@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
-import time
+import util.cron as cron
 from const import MARKETS_PAIRS_DAYS
 from db.sqlitedb import get_sqlite_db
 from models.generic import ErrorMessage
@@ -19,6 +19,7 @@ import lib
 router = APIRouter()
 
 
+# TODO: Move to new DB
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
@@ -87,7 +88,7 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
 def pairs_last_traded(
     netid: NetId = NetId.ALL,
     start_time: int = 0,
-    end_time: int = int(time.time()),
+    end_time: int = int(cron.now_utc()),
     min_swaps: int = 5,
 ) -> list:
     data = lib.CacheItem("generic_last_traded", netid=netid.value).data
@@ -285,6 +286,7 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
 
 
+# TODO: Move to new DB
 # TODO: get volumes for x days for ticker
 @router.get(
     "/volumes_ticker/{coin}/{days_in_past}",
@@ -299,7 +301,6 @@ def volumes_history_ticker(
     db = get_sqlite_db(netid=netid.value)
     volumes_dict = {}
     for i in range(0, int(days_in_past)):
-        db = get_sqlite_db(netid=netid.value)
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
         day_ts = int(int(d.strftime("%s")) / 86400) * 86400

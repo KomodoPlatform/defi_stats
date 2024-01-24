@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from decimal import Decimal
 from util.logger import logger
 from tests.fixtures_class import setup_files
@@ -59,9 +59,10 @@ def test_get_and_parse(setup_kmd_ltc_orderbook, setup_ltc_kmd_orderbook):
 
 def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
     orderbook = setup_dgb_doge_orderbook
-    r = orderbook.for_pair()
-    assert r["ticker_id"] == "DGB_DOGE"
-    assert int(r["timestamp"]) > int(time.time()) - 86400
+    r = orderbook.for_pair(all=False)
+
+    assert r["pair"] == "DGB_DOGE"
+    assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 3
     assert len(r["bids"]) == 3
     assert Decimal(r["total_asks_base_vol"]) == Decimal(111)
@@ -69,10 +70,21 @@ def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
     assert Decimal(r["total_bids_base_vol"]) == Decimal(222)
     assert Decimal(r["total_bids_quote_vol"]) == Decimal(4848)
 
+    orderbook = setup_dgb_doge_orderbook
+    r = orderbook.for_pair(all=True)
+    assert r["pair"] == "DGB_DOGE"
+    assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
+    assert len(r["asks"]) == 6
+    assert len(r["bids"]) == 6
+    assert Decimal(r["total_asks_base_vol"]) == Decimal(222)
+    assert Decimal(r["total_asks_quote_vol"]) == Decimal(6363)
+    assert Decimal(r["total_bids_base_vol"]) == Decimal(444)
+    assert Decimal(r["total_bids_quote_vol"]) == Decimal(9918)
+
     orderbook = setup_doge_dgb_orderbook
-    r = orderbook.for_pair()
-    assert r["ticker_id"] == "DOGE_DGB"
-    assert int(r["timestamp"]) > int(time.time()) - 86400
+    r = orderbook.for_pair(all=False)
+    assert r["pair"] == "DOGE_DGB"
+    assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 3
     assert len(r["bids"]) == 3
     assert Decimal(r["total_asks_base_vol"]) == Decimal(111)
@@ -83,11 +95,13 @@ def test_for_pair(setup_dgb_doge_orderbook, setup_doge_dgb_orderbook):
 
 def test_find_lowest_ask(setup_kmd_btc_orderbook, setup_kmd_btc_pair):
     orderbook = setup_kmd_btc_orderbook
-    r = orderbook.find_lowest_ask(orderbook.for_pair())
+    x = orderbook.for_pair(all=True)
+    r = orderbook.find_lowest_ask(x)
     assert r == "26.0000000000"
 
 
 def test_find_highest_bid(setup_kmd_btc_orderbook, setup_kmd_btc_pair):
     orderbook = setup_kmd_btc_orderbook
-    r = orderbook.find_highest_bid(orderbook.for_pair())
+    x = orderbook.for_pair(all=True)
+    r = orderbook.find_highest_bid(x)
     assert r == "24.0000000000"

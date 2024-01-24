@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 
 
 def last_price_for_pair():  # pragma: no cover
     return {"timestamp": 0, "price": 0}
-
-
-def swap_counts():  # pragma: no cover
-    return {"swaps_all_time": 0, "swaps_30d": 0, "swaps_24hr": 0}
 
 
 def liquidity():  # pragma: no cover
@@ -41,7 +37,7 @@ def orderbook(pair_str):
         "pair": f"{base}_{quote}",
         "base": base,
         "quote": quote,
-        "timestamp": f"{int(time.time())}",
+        "timestamp": f"{int(cron.now_utc())}",
         "asks": [],
         "bids": [],
         "liquidity_usd": 0,
@@ -66,12 +62,15 @@ def volumes_and_prices(suffix):
         "quote_volume": 0,
         f"highest_price_{suffix}": 0,
         f"lowest_price_{suffix}": 0,
-        "last_price": 0,
-        "last_trade": 0,
         "trades_24hr": 0,
         f"price_change_percent_{suffix}": 0,
         f"price_change_{suffix}": 0,
         "last_swap_uuid": "",
+        "last_swap_price": 0,
+        "last_swap_time": 0,
+        "first_swap_uuid": "",
+        "first_swap_price": 0,
+        "first_swap_time": 0,
         "oldest_price": 0,
         "newest_price": 0,
         "oldest_price_time": 0,
@@ -86,6 +85,17 @@ def coin_trade_vol_item():
         "maker_volume": 0,
         "trade_volume": 0,
         "swaps": 0,
+    }
+
+
+def first_last_swap():
+    return {
+        "last_swap_time": 0,
+        "last_swap_price": 0,
+        "last_swap_uuid": "",
+        "first_swap_time": 0,
+        "first_swap_price": 0,
+        "first_swap_uuid": "",
     }
 
 

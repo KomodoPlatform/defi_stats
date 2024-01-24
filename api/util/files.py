@@ -10,9 +10,8 @@ import util.validate as validate
 class Files:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.options = ["netid"]
+        self.options = []
         set_params(self, self.kwargs, self.options)
-
         if self.testing:
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"
@@ -29,24 +28,22 @@ class Files:
         self.statsapi_summary = f"{folder}/stats_api/summary.json"
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source.json"
-        self.gecko_tickers = f"{folder}/gecko/tickers_{self.netid}.json"
-        self.gecko_tickers_old = f"{folder}/gecko/tickers_old_{self.netid}.json"
+        self.gecko_tickers = f"{folder}/gecko/tickers.json"
+        self.gecko_tickers_old = f"{folder}/gecko/tickers_old.json"
         # For Markets endpoints
-        self.markets_tickers = f"{folder}/markets/tickers_{self.netid}.json"
+        self.markets_tickers = f"{folder}/markets/tickers.json"
         # For Prices endpoints
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
         # For Generic Cache
-        self.generic_last_traded = f"{folder}/generic/last_traded_{self.netid}.json"
-        self.generic_last_traded_old = (
-            f"{folder}/generic/last_traded_old_{self.netid}.json"
-        )
+        self.generic_last_traded = f"{folder}/generic/last_traded.json"
+        self.generic_last_traded_old = f"{folder}/generic/last_traded_old.json"
 
-        self.generic_pairs = f"{folder}/generic/pairs_{self.netid}.json"
-        self.generic_pairs_old = f"{folder}/generic/pairs_old_{self.netid}.json"
+        self.generic_pairs = f"{folder}/generic/pairs.json"
+        self.generic_pairs_old = f"{folder}/generic/pairs_old.json"
 
-        self.generic_tickers = f"{folder}/generic/tickers_{self.netid}.json"
-        self.generic_tickers_old = f"{folder}/generic/tickers_old_{self.netid}.json"
+        self.generic_tickers = f"{folder}/generic/tickers.json"
+        self.generic_tickers_old = f"{folder}/generic/tickers_old.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)
@@ -66,7 +63,7 @@ class Files:
                 else:
                     return {
                         "result": "error",
-                        "message": f"Not saving {fn}, data not valid json! Data: {data}",
+                        "message": f"Not saving {fn}, data not valid json! Data: ",
                         "loglevel": "warning",
                     }
             else:

@@ -73,6 +73,13 @@ services:
         max-file: "10"
     restart: always
 
+  memcached:
+    container_name: memcached
+    image: memcached:latest
+    ports:
+      - "127.0.0.1:11211:11211"
+    restart: always
+    
   pgsqldb:
     container_name: pgsqldb
     image: postgres:12.17

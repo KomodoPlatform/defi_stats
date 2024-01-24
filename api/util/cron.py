@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-import time
+from datetime import datetime
+
+
+def now_utc():
+    return datetime.utcnow().timestamp()
 
 
 class Time:
-    def __init__(self, from_ts: int = int(time.time())):
-        self.from_ts = from_ts
+    def __init__(self, from_ts: int = 0):
+        if from_ts == 0:
+            self.from_ts = self.now
+        else:
+            self.from_ts = from_ts
         self.minute = 60
         self.hour = self.minute * 60
         self.day = self.hour * 24
         self.week = self.day * 7
 
+    @property
     def now(self):  # pragma: no cover
-        return int(time.time())
+        return int(now_utc())
 
     def minutes_ago(self, num):
         return self.from_ts - num * self.minute

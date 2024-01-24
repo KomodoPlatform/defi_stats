@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from decimal import Decimal
-from db.sqlitedb import get_sqlite_db
+import db
 import lib
-from lib.pair import Pair
 from util.defaults import default_error, set_params, default_result
 from util.exceptions import DataStructureError
 from util.helper import get_pairs_info, get_gecko_price
@@ -14,9 +13,9 @@ from util.transform import (
     sort_dict_list,
     clean_decimal_dict_list,
     format_10f,
-    merge_orderbooks,
 )
 import util.templates as template
+import util.transform as transform
 from const import GENERIC_PAIRS_DAYS
 
 
@@ -24,9 +23,8 @@ class Generic:  # pragma: no cover
     def __init__(self, **kwargs) -> None:
         try:
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
+            self.options = []
             set_params(self, self.kwargs, self.options)
-
             if "gecko_source" in kwargs:
                 self.gecko_source = kwargs["gecko_source"]
             else:
@@ -41,37 +39,31 @@ class Generic:  # pragma: no cover
                 self.last_traded_cache = kwargs["last_traded_cache"]
             else:
                 self.last_traded_cache = lib.load_generic_last_traded()
+            self.pg_query = db.SqlQuery(
+                gecko_source=self.gecko_source, coins_config=self.coins_config
+            )
 
-            if self.db is None:
-                self.db = get_sqlite_db(
-                    netid=self.netid,
-                    db=self.db,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 
     @timed
-    def orderbook(self, pair_str: str = "KMD_LTC", depth: int = 100, v2: bool = False):
+    def orderbook(
+        self,
+        pair_str: str = "KMD_LTC",
+        depth: int = 100,
+        all: bool = False,
+    ):
         try:
             if len(pair_str.split("_")) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
             else:
-                orderbook_data = template.orderbook(pair_str)
-                pair_obj = Pair(
+                pair_obj = lib.Pair(
                     pair_str=pair_str,
-                    netid=self.netid,
-                    db=self.db,
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
                 )
-                vol_price_data = pair_obj.get_volumes_and_prices(days=1, v2=v2)
-                data = merge_orderbooks(
-                    orderbook_data, pair_obj.orderbook_data(vol_price_data)
-                )
+                data = pair_obj.orderbook.for_pair(depth=depth, all=all)
             # Standardise values
             for i in ["bids", "asks"]:
                 for j in data[i]:
@@ -100,9 +92,8 @@ class Generic:  # pragma: no cover
     def traded_pairs_info(self, days: int = GENERIC_PAIRS_DAYS) -> dict:
         """Returns basic pair info and tags as priced/unpriced"""
         try:
-            # TODO: is segwit is coalesced yet?
-            pairs = self.db.query.get_pairs(days=days)
-
+            data = self.pg_query.get_pairs(days=days)
+            pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
             if "error" in pairs:  # pragma: no cover
                 raise DataStructureError(
                     f"'get_pairs' returned an error: {pairs['error']}"
@@ -131,25 +122,35 @@ class Generic:  # pragma: no cover
                 priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
                 unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
                 resp = sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
-
+                resp = clean_decimal_dict_list(resp)
                 for i in resp:
+                    first_last_swap = template.first_last_swap()
                     if i["ticker_id"] in self.last_traded_cache:
-                        i["last_trade"] = self.last_traded_cache[i["ticker_id"]][
-                            "last_swap"
-                        ]
+                        x = self.last_traded_cache[i["ticker_id"]]
+                        first_last_swap = transform.clean_decimal_dict(
+                            {
+                                "last_swap_time": x["last_swap_time"],
+                                "last_swap_price": x["last_swap_price"],
+                                "last_swap_uuid": x["last_swap_uuid"],
+                                "first_swap_time": x["first_swap_time"],
+                                "first_swap_price": x["first_swap_price"],
+                                "first_swap_uuid": x["first_swap_uuid"],
+                            }
+                        )
+                    i.update(first_last_swap)
                 return resp
         except Exception as e:  # pragma: no cover
-            msg = f"traded_pairs failed for netid {self.netid}!"
+            msg = "traded_pairs_info failed!"
             return default_error(e, msg)
 
     @timed
-    def traded_tickers_old(self, trades_days: int = 1, pairs_days: int = 7):
+    def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7):
         try:
-            pairs = self.db.query.get_pairs(days=pairs_days)
+            data = self.pg_query.get_pairs(days=pairs_days)
+            pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
             data = [
-                Pair(
+                lib.Pair(
                     pair_str=i,
-                    db=self.db,
                     gecko_source=self.gecko_source,
                     coins_config=self.coins_config,
                     last_traded_cache=self.last_traded_cache,
@@ -160,55 +161,26 @@ class Generic:  # pragma: no cover
             data = clean_decimal_dict_list(data, to_string=True, rounding=10)
             data = sort_dict_list(data, "ticker_id")
             data = {
-                "last_update": int(time.time()),
+                "last_update": int(cron.now_utc()),
                 "pairs_count": len(data),
                 "swaps_count": int(sum_json_key(data, "trades_24hr")),
                 "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
                 "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
                 "data": data,
             }
-            msg = f"traded_tickers_old for netid {self.netid} complete!"
+            msg = "traded_tickers complete!"
             return default_result(data, msg)
         except Exception as e:  # pragma: no cover
-            msg = f"traded_tickers_old failed for netid {self.netid}!"
-            return default_error(e, msg)
-
-    @timed
-    def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7):
-        try:
-            pairs = self.db.query.get_pairs(days=pairs_days)
-            data = [
-                Pair(
-                    pair_str=i,
-                    db=self.db,
-                    gecko_source=self.gecko_source,
-                    coins_config=self.coins_config,
-                    last_traded_cache=self.last_traded_cache,
-                ).ticker_info(trades_days, v2=True)
-                for i in pairs
-            ]
-            data = [i for i in data if i is not None]
-            data = clean_decimal_dict_list(data, to_string=True, rounding=10)
-            data = sort_dict_list(data, "ticker_id")
-            data = {
-                "last_update": int(time.time()),
-                "pairs_count": len(data),
-                "swaps_count": int(sum_json_key(data, "trades_24hr")),
-                "combined_volume_usd": sum_json_key_10f(data, "volume_usd_24hr"),
-                "combined_liquidity_usd": sum_json_key_10f(data, "liquidity_in_usd"),
-                "data": data,
-            }
-            msg = f"traded_tickers for netid {self.netid} complete!"
-            return default_result(data, msg)
-        except Exception as e:  # pragma: no cover
-            msg = f"traded_tickers failed for netid {self.netid}!"
+            msg = "traded_tickers failed!"
             return default_error(e, msg)
 
     @timed
     def last_traded(self):
         try:
-            data = self.db.query.get_pairs_last_traded()
+            data = self.pg_query.pair_last_trade()
+            for i in data:
+                transform.clean_decimal_dict(data[i])
             return data
         except Exception as e:  # pragma: no cover
-            msg = f"pairs_last_traded failed for netid {self.netid}!"
+            msg = "pairs_last_traded failed!"
             return default_error(e, msg)

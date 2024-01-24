@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 import sqlite3
+from decimal import Decimal
 from db.sqlitedb import (
     is_source_db,
     get_sqlite_db,
@@ -23,7 +24,7 @@ from util.transform import merge_orderbooks, format_10f
 
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 
-now = int(time.time())
+now = int(cron.now_utc())
 hour_ago = now - 3600
 two_hours_ago = now - 7200
 day_ago = now - 86400
@@ -32,56 +33,52 @@ month_ago = now - 2592000
 two_months_ago = now - 5184000
 
 
+# TODO: Use new DB
 def test_get_pairs(setup_swaps_db_data):
     # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
-    pairs = DB.query.get_pairs()
-    logger.calc(pairs)
+    pairs = DB.get_pairs()
     assert ("KMD_LTC") in pairs
     assert ("LTC_KMD") not in pairs
-    assert len(pairs) == 7
-    assert ("DGB_KMD-BEP20") not in pairs
-    assert ("KMD-BEP20_DGB") in pairs
-    pairs = DB.query.get_pairs(90)
     assert len(pairs) == 8
+    assert ("DGB_KMD-BEP20") not in pairs
+    assert ("KMD-BEP20_DGB-segwit") in pairs
+    pairs = DB.get_pairs(90)
+    assert len(pairs) == 11
 
 
 def test_get_swaps_for_pair(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    DB.conn.row_factory = sqlite3.Row
-    DB.sql_cursor = DB.conn.cursor()
 
-    # Test failed excluded
-    swaps = DB.query.get_swaps_for_pair("MCL", "KMD", start_time=day_ago)
-    assert len(swaps) == 0
+    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago)
+    assert len(swaps["ALL"]) == 0
 
-    swaps1 = DB.query.get_swaps_for_pair("LTC", "KMD", start_time=day_ago)
-    swaps2 = DB.query.get_swaps_for_pair("KMD", "LTC", start_time=day_ago)
-    assert len(swaps1) == len(swaps2)
-    for i in swaps1:
-        logger.info(i)
-    assert len(swaps1) == 3
-    assert swaps1[2]["trade_type"] == "buy"
-    for i in swaps2:
-        logger.info(i)
-    assert len(swaps2) == 3
-    assert swaps2[2]["trade_type"] == "sell"
+    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, success_only=False)
+    assert len(swaps["ALL"]) == 1
+    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago)
+    assert len(swaps1["ALL"]) == 3
+    assert swaps1["ALL"][1]["trade_type"] == "buy"
+    assert swaps1["ALL"][2]["trade_type"] == "sell"
 
-    swaps = DB.query.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago)
-    for i in swaps:
-        logger.info(i)
-    assert len(swaps) == 3
-    assert swaps[0]["trade_type"] == "buy"
+    # No inversion here, that happens later
+    swaps2 = DB.get_swaps_for_pair("KMD", "LTC", start_time=day_ago)
+    assert len(swaps1["ALL"]) == len(swaps2["ALL"])
+    assert len(swaps2["ALL"]) == 3
+    assert swaps2["ALL"][2]["trade_type"] == "sell"
+
+    swaps = DB.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago)
+    assert len(swaps["ALL"]) == 3
+    assert swaps["ALL"][0]["trade_type"] == "sell"
 
 
 def test_get_swap(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.query.get_swap("77777777-2762-4633-8add-6ad2e9b1a4e7")
-    assert r["maker_coin"] == "LTC-segwit"
-    assert r["taker_coin"] == "KMD"
-    assert r["maker_amount"] == 10
+    r = DB.get_swap("77777777-2762-4633-8add-6ad2e9b1a4e7")
+    assert r["taker_coin"] == "LTC-segwit"
+    assert r["maker_coin"] == "KMD"
+    assert r["maker_amount"] == 100
     assert r["taker_amount"] == 1
-    r = DB.query.get_swap("x")
+    r = DB.get_swap("x")
     assert "error" in r
 
 
@@ -130,50 +127,71 @@ def test_get_netid():
     assert get_netid("node_file.db") == "ALL"
 
 
-def test_get_row_count(setup_swaps_db_data):
-    DB = setup_swaps_db_data
-    assert DB.query.get_row_count("stats_swaps") == 15
-
-
 def test_swap_counts(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.query.swap_counts()
-    assert len(r) == 3
+    r = DB.swap_counts()
     assert r["swaps_all_time"] == 14
-    assert r["swaps_30d"] == 11
+    assert r["swaps_30d"] == 12
+    assert r["swaps_14d"] == 11
+    assert r["swaps_7d"] == 10
     assert r["swaps_24hr"] == 8
 
 
 def test_get_swaps_for_coin(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.query.get_swaps_for_coin("KMD")
-    logger.info(r['data']['KMD'])
-    assert len(r['data']['KMD']) == 7
+    r = DB.get_swaps_for_coin("KMD")
+    assert len(r["KMD"]) == 5
 
-    r = DB.query.get_swaps_for_coin("LTC")
-    logger.info(r['data']['LTC'])
-    assert len(r['data']['LTC']) == 4
+    r = DB.get_swaps_for_coin("KMD")
+    assert len(r["ALL"]) == 7
+
+    r = DB.get_swaps_for_coin("KMD-BEP20")
+    assert len(r["ALL"]) == 7
+    assert len(r["KMD"]) == 5
+    assert len(r["KMD-BEP20"]) == 2
+
+    r = DB.get_swaps_for_coin("LTC")
+    assert len(r["LTC"]) == 2
+    assert len(r["LTC-segwit"]) == 2
+    assert len(r["ALL"]) == 4
 
 
-def test_get_volume_for_coin(setup_swaps_db_data):
+def test_coin_trade_volumes_usd(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.query.get_volume_for_coin("LTC", "buy")
-    assert r['data']['LTC'] == 20
-    assert r['data']['LTC-segwit'] == 10
-    assert r['data']['LTC-ALL'] == 30
 
-    r = DB.query.get_volume_for_coin("KMD", "sell")
-    logger.info(r)
-    assert r['data']['KMD'] == 2
-    assert r['data']['KMD-BEP20'] == 1.9
-    assert r['data']['KMD-ALL'] == 3.9
+    volumes = DB.coin_trade_volumes(
+        start_time=int(cron.now_utc()) - 86400,
+        end_time=int(cron.now_utc()),
+    )
+
+    r = DB.coin_trade_volumes_usd(volumes)
+    vols = r["volumes"]["LTC"]
+    assert vols["LTC"]["maker_volume"] == 1
+    assert vols["LTC"]["maker_volume_usd"] == 100
+    assert vols["LTC"]["swaps"] == 2
+    assert vols["LTC-segwit"]["swaps"] == 2
+    assert vols["ALL"]["swaps"] == 4
+
+    assert vols["LTC-segwit"]["taker_volume"] == 1
+    assert vols["ALL"]["maker_volume"] == 2
+    assert vols["ALL"]["taker_volume"] == 3
+
+    vols = r["volumes"]["KMD"]
+    assert vols["KMD"]["taker_volume"] == 1000101
+    assert vols["KMD-BEP20"]["maker_volume"] == Decimal(str(1.9))
+    assert vols["KMD-BEP20"]["taker_volume"] == 0
+    assert vols["ALL"]["trade_volume_usd"] == Decimal(str(1000402.9))
 
 
 def test_get_uuids(setup_swaps_db_data):
     DB = setup_swaps_db_data
-    r = DB.query.get_uuids(success_only=True)
+    r = DB.swap_uuids(start_time=1, success_only=True)
     assert len(r) == 14
-    r = DB.query.get_uuids(fail_only=True)
-    assert len(r) == 1
-    r = DB.query.get_uuids(success_only=False)
+    r = DB.swap_uuids(start_time=1, success_only=False)
     assert len(r) == 15
+    r = DB.swap_uuids(failed_only=True)
+    assert len(r) == 1
+    r = DB.swap_uuids(success_only=False)
+    assert len(r) == 9
+    r = DB.swap_uuids()
+    assert len(r) == 8

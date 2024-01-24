@@ -31,7 +31,7 @@ class CoinGeckoAPI:
             else:
                 self.coins_config = lib.load_coins_config()
         except Exception as e:  # pragma: no cover
-            logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
+            logger.error({"error": f"{type(e)} Failed to init CoinGeckoAPI: {e}"})
 
     def get_gecko_coin_ids(self) -> list:
         coin_ids = list(

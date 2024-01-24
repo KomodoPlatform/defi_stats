@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 import sqlite3
 from typing import List
 from const import (
@@ -225,7 +225,7 @@ class SqliteMerge:
         self, src_db, dest_db, table, column, since=None
     ):  # pragma: no cover
         if since is None:
-            since = int(time.time()) - 86400 * 7
+            since = int(cron.now_utc()) - 86400 * 7
         sql = ""
         try:
             src_columns = src_db.query.get_table_columns(table)

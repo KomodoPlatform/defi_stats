@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-import time
+import util.cron as cron
 from decimal import Decimal
 from enum import Enum
 from datetime import datetime, timezone
 from typing import List, Dict
 from itertools import chain
+from dotenv import load_dotenv
 from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
-from sqlalchemy import create_engine, Column, Integer, String, Numeric, DateTime, func
-from db.schema import CipiSwap, DefiSwap, StatsSwap, CipiSwapFailed
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, func
+
 from util.exceptions import InvalidParamCombination
-from dotenv import load_dotenv
 from util.defaults import default_error, default_result
 from util.logger import logger, timed
-from util.helper import get_coin_variants, get_gecko_price
+from util.helper import get_coin_variants, get_gecko_price, get_pair_variants
 import util.transform as transform
 import util.templates as template
-import lib
+from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from const import (
     MYSQL_USERNAME,
     MYSQL_HOSTNAME,
@@ -28,13 +28,22 @@ from const import (
     POSTGRES_PASSWORD,
     POSTGRES_PORT,
     MM2_DB_PATH_ALL,
+    IS_TESTING,
 )
 
 load_dotenv()
 
 
 class SqlDB:
-    def __init__(self, db_type="pgsql", db_path=None, external=False, **kwargs) -> None:
+    def __init__(
+        self,
+        gecko_source,
+        coins_config,
+        db_type="pgsql",
+        db_path=None,
+        external=False,
+        **kwargs,
+    ) -> None:
         self.db_type = db_type
         self.db_path = db_path
         self.external = external
@@ -43,7 +52,10 @@ class SqlDB:
             self.user = POSTGRES_USERNAME
             self.password = POSTGRES_PASSWORD
             self.port = POSTGRES_PORT
-            self.table = DefiSwap
+            if IS_TESTING:
+                self.table = DefiSwapTest
+            else:
+                self.table = DefiSwap
             self.db_url = (
                 f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
             )
@@ -66,19 +78,29 @@ class SqlDB:
 
         self.engine = create_engine(self.db_url)  # ), echo=True)
 
-        if "gecko_source" in kwargs:
-            self.gecko_source = kwargs["gecko_source"]
-        else:
-            self.gecko_source = lib.cache.load_gecko_source()
-        if "coins_config" in kwargs:
-            self.coins_config = kwargs["coins_config"]
-        else:
-            self.coins_config = lib.cache.load_coins_config()
+        self.gecko_source = gecko_source
+        self.coins_config = coins_config
 
 
 class SqlUpdate(SqlDB):
-    def __init__(self, db_type="pgsql", db_path=None, external=False) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
+    def __init__(
+        self,
+        gecko_source,
+        coins_config,
+        db_type="pgsql",
+        db_path=None,
+        external=False,
+    ) -> None:
+        SqlDB.__init__(
+            self,
+            db_type=db_type,
+            db_path=db_path,
+            external=external,
+            gecko_source=gecko_source,
+            coins_config=coins_config,
+        )
+        self.gecko_source = gecko_source
+        self.coins_config = coins_config
 
     def drop(self, table):
         try:
@@ -91,10 +113,25 @@ class SqlUpdate(SqlDB):
 
 class SqlQuery(SqlDB):
     def __init__(
-        self, db_type="pgsql", db_path=None, external=False, with_enums=False
+        self,
+        gecko_source,
+        coins_config,
+        db_type="pgsql",
+        db_path=None,
+        external=False,
+        with_enums=False,
     ) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
+        SqlDB.__init__(
+            self,
+            db_type=db_type,
+            db_path=db_path,
+            external=external,
+            gecko_source=gecko_source,
+            coins_config=coins_config,
+        )
         self.sqlfilter = SqlFilter(self.table)
+        self.gecko_source = gecko_source
+        self.coins_config = coins_config
         if with_enums == True:
             self.enums = self.get_enums()
             self.no_distinct_cols = [
@@ -189,9 +226,36 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
+    def get_pairs(self, days: int = 7) -> list:
+        """
+        Returns an alphabetically sorted list of pair strings
+        with at least one successful swap in the last 'x' days.
+        Results sorted by market cap to conform to CEX standards.
+        """
+        try:
+            start_time = int(cron.now_utc() - 86400 * days)
+            end_time = int(cron.now_utc())
+            pairs = self.get_distinct(
+                column="pair", start_time=start_time, end_time=end_time
+            )
+
+            # Sort pair by ticker to expose duplicates
+            sorted_pairs = set(
+                [
+                    transform.order_pair_by_market_cap(
+                        i, gecko_source=self.gecko_source
+                    )
+                    for i in pairs
+                ]
+            )
+
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+        return sorted(list(sorted_pairs))
+
     def get_distinct(
         self,
-        table: object = DefiSwap,
         start_time: int = 0,
         end_time: int = 0,
         column: str | None = None,
@@ -204,27 +268,27 @@ class SqlQuery(SqlDB):
         failed_only: bool = False,
     ):
         if end_time == 0:
-            end_time = int(time.time())
+            end_time = int(cron.now_utc())
         with Session(self.engine) as session:
             if coin is not None:
-                q = session.query(table.maker_coin, column.taker_coin)
+                q = session.query(self.table.maker_coin, column.taker_coin)
             elif pair is not None:
-                q = session.query(table.maker_coin, table.taker_coin)
+                q = session.query(self.table.maker_coin, self.table.taker_coin)
             elif column is not None:
                 try:
-                    col = getattr(table, column)
+                    col = getattr(self.table, column)
                     q = session.query(col)
                 except AttributeError as e:
-                    logger.info(type(e))
-                    logger.info(e)
+                    logger.warning(type(e))
+                    logger.warning(e)
                     raise InvalidParamCombination(
-                        f"'{column}' does not exist in {table.__tablename__}! Options are {get_columns(table)}"
+                        f"'{column}' does not exist in {self.table.__tablename__}! Options are {get_columns(self.table)}"
                     )
                 except Exception as e:
-                    logger.info(type(e))
-                    logger.info(e)
+                    logger.warning(type(e))
+                    logger.warning(e)
                     raise InvalidParamCombination(
-                        f"'{column}' does not exist in {table.__tablename__}! Options are {get_columns(table)}"
+                        f"'{column}' does not exist in {self.table.__tablename__}! Options are {get_columns(self.table)}"
                     )
             else:
                 raise InvalidParamCombination(
@@ -257,29 +321,32 @@ class SqlQuery(SqlDB):
         """
         try:
             if start_time == 0:
-                start_time = int(time.time()) - 86400
+                start_time = int(cron.now_utc()) - 86400
             if end_time == 0:
-                end_time = int(time.time())
+                end_time = int(cron.now_utc())
 
             resp = {}
             total_swaps = 0
 
             with Session(self.engine) as session:
                 q = session.query(
-                    func.sum(func.cast(DefiSwap.maker_amount, Numeric)).label(
+                    func.sum(func.cast(self.table.maker_amount, Numeric)).label(
                         "maker_volume"
                     ),
-                    DefiSwap.maker_coin.label("coin"),
-                    DefiSwap.maker_coin_ticker.label("ticker"),
-                    func.count(DefiSwap.maker_coin).label("num_swaps"),
+                    self.table.maker_coin.label("coin"),
+                    self.table.maker_coin_ticker.label("ticker"),
+                    func.count(self.table.maker_coin).label("num_swaps"),
                 )
+
                 q = self.sqlfilter.success(q)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
-                q = q.group_by(DefiSwap.maker_coin, DefiSwap.maker_coin_ticker)
-                q = q.order_by(DefiSwap.maker_coin, DefiSwap.maker_coin_ticker.desc())
+                q = q.group_by(self.table.maker_coin, self.table.maker_coin_ticker)
+                q = q.order_by(
+                    self.table.maker_coin, self.table.maker_coin_ticker.desc()
+                )
                 data = [dict(i) for i in q.all()]
 
             for i in data:
@@ -306,20 +373,23 @@ class SqlQuery(SqlDB):
 
             with Session(self.engine) as session:
                 q = session.query(
-                    func.sum(func.cast(DefiSwap.taker_amount, Numeric)).label(
+                    func.sum(func.cast(self.table.taker_amount, Numeric)).label(
                         "taker_volume"
                     ),
-                    DefiSwap.taker_coin.label("coin"),
-                    DefiSwap.taker_coin_ticker.label("ticker"),
-                    func.count(DefiSwap.taker_coin).label("num_swaps"),
+                    self.table.taker_coin.label("coin"),
+                    self.table.taker_coin_ticker.label("ticker"),
+                    func.count(self.table.taker_coin).label("num_swaps"),
                 )
+
                 q = self.sqlfilter.success(q)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
-                q = q.group_by(DefiSwap.taker_coin, DefiSwap.taker_coin_ticker)
-                q = q.order_by(DefiSwap.taker_coin, DefiSwap.taker_coin_ticker.desc())
+                q = q.group_by(self.table.taker_coin, self.table.taker_coin_ticker)
+                q = q.order_by(
+                    self.table.taker_coin, self.table.taker_coin_ticker.desc()
+                )
                 data = [dict(i) for i in q.all()]
 
             for i in data:
@@ -352,7 +422,7 @@ class SqlQuery(SqlDB):
                 "volumes": resp,
             }
             return default_result(
-                data=data, msg="coin_trade_volumes complete", loglevel="query"
+                data=data, msg="coin_trade_volumes complete", loglevel="debug"
             )
         except Exception as e:  # pragma: no cover
             return default_error(e)
@@ -419,33 +489,34 @@ class SqlQuery(SqlDB):
         """
         try:
             if start_time == 0:
-                start_time = int(time.time()) - 86400
+                start_time = int(cron.now_utc()) - 86400
             if end_time == 0:
-                end_time = int(time.time())
+                end_time = int(cron.now_utc())
 
             resp = {}
             num_swaps = 0
 
             with Session(self.engine) as session:
                 q = session.query(
-                    DefiSwap.pair,
-                    DefiSwap.trade_type,
-                    func.sum(func.cast(DefiSwap.maker_amount, Numeric)).label(
+                    self.table.pair,
+                    self.table.trade_type,
+                    func.sum(func.cast(self.table.maker_amount, Numeric)).label(
                         "maker_volume"
                     ),
-                    func.sum(func.cast(DefiSwap.taker_amount, Numeric)).label(
+                    func.sum(func.cast(self.table.taker_amount, Numeric)).label(
                         "taker_volume"
                     ),
-                    func.count(DefiSwap.maker_amount).label("num_swaps"),
+                    func.count(self.table.maker_amount).label("num_swaps"),
                 )
+
                 q = self.sqlfilter.success(q)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
                 q = self.sqlfilter.coin(q, coin)
-                q = q.group_by(DefiSwap.pair, DefiSwap.trade_type)
-                q = q.order_by(DefiSwap.pair.asc())
+                q = q.group_by(self.table.pair, self.table.trade_type)
+                q = q.order_by(self.table.pair.asc())
                 data = [dict(i) for i in q.all()]
 
             for i in data:
@@ -548,29 +619,25 @@ class SqlQuery(SqlDB):
                 category = list(
                     chain.from_iterable((obj, "-") for obj in group_by_cols[:-1])
                 ) + [group_by_cols[-1]]
-
-                cols = list(
-                    set(
-                        [
-                            DefiSwap.uuid.label("last_swap_uuid"),
-                            DefiSwap.finished_at.label("last_swap_time"),
-                            func.concat(*category).label("category"),
-                        ]
-                    )
-                )
+                cols = [
+                    self.table.uuid.label("last_swap_uuid"),
+                    self.table.finished_at.label("last_swap_time"),
+                    self.table.price.label("last_swap_price"),
+                    func.concat(*category).label("category"),
+                ]
                 q = session.query(*cols)
                 q = self.sqlfilter.success(q, is_success)
                 distinct = q.distinct(*group_by_cols)
-                last = distinct.order_by(*group_by_cols, DefiSwap.finished_at.desc())
+                last = distinct.order_by(*group_by_cols, self.table.finished_at.desc())
                 last_data = [dict(i) for i in last.all()]
                 last_data = {i["category"]: i for i in last_data}
-
                 # 2nd query for swap first swap info for category
                 cols = list(
                     set(
                         [
-                            DefiSwap.uuid.label("first_swap_uuid"),
-                            DefiSwap.finished_at.label("first_swap_time"),
+                            self.table.uuid.label("first_swap_uuid"),
+                            self.table.finished_at.label("first_swap_time"),
+                            self.table.price.label("first_swap_price"),
                             func.concat(*category).label("category"),
                         ]
                     )
@@ -578,7 +645,7 @@ class SqlQuery(SqlDB):
                 q = session.query(*cols)
                 q = self.sqlfilter.success(q, is_success)
                 distinct = q.distinct(*group_by_cols)
-                first = distinct.order_by(*group_by_cols, DefiSwap.finished_at.asc())
+                first = distinct.order_by(*group_by_cols, self.table.finished_at.asc())
                 first_data = [dict(i) for i in first.all()]
                 first_data = {i["category"]: i for i in first_data}
 
@@ -614,11 +681,11 @@ class SqlQuery(SqlDB):
         try:
             maker_data = self.last_trade(
                 is_success=is_success,
-                group_by_cols=[DefiSwap.maker_gui, DefiSwap.maker_version],
+                group_by_cols=[self.table.maker_gui, self.table.maker_version],
             )
             taker_data = self.last_trade(
                 is_success=is_success,
-                group_by_cols=[DefiSwap.taker_gui, DefiSwap.taker_version],
+                group_by_cols=[self.table.taker_gui, self.table.taker_version],
             )
             data = {}
             for i in maker_data:
@@ -654,8 +721,6 @@ class SqlQuery(SqlDB):
                 data[k]["total_num_swaps"] += taker_data[i]["num_swaps"]
 
             data = {i: data[i] for i in data if data[i]["total_num_swaps"] > min_swaps}
-            for i in data:
-                data[i].update({})
             # Convert the results to a list of dictionaries
             return default_result(
                 data=data, msg="gui_last_traded complete", loglevel="query"
@@ -667,11 +732,10 @@ class SqlQuery(SqlDB):
     def pair_last_trade(self, is_success: bool = True):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
-                q.group_by(DefiSwap.pair)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
+                group_by_cols = [self.table.pair]
+                results = self.last_trade(
+                    is_success=is_success, group_by_cols=group_by_cols
+                )
                 return default_result(
                     data=results, msg="pair_last_trade complete", loglevel="query"
                 )
@@ -684,11 +748,11 @@ class SqlQuery(SqlDB):
             with Session(self.engine) as session:
                 q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(DefiSwap.maker_coin)
+                    q.group_by(self.table.maker_coin)
                 elif trade_side == "taker":
-                    q.group_by(DefiSwap.taker_coin)
+                    q.group_by(self.table.taker_coin)
                 elif trade_side == "all":
-                    q.group_by(DefiSwap.maker_coin, DefiSwap.taker_coin)
+                    q.group_by(self.table.maker_coin, self.table.taker_coin)
                 results = q.all()
                 # Convert the results to a list of dictionaries
                 results = [dict(zip(result.keys(), result)) for result in results]
@@ -704,11 +768,11 @@ class SqlQuery(SqlDB):
             with Session(self.engine) as session:
                 q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(DefiSwap.maker_ticker)
+                    q.group_by(self.table.maker_ticker)
                 elif trade_side == "taker":
-                    q.group_by(DefiSwap.taker_ticker)
+                    q.group_by(self.table.taker_ticker)
                 elif trade_side == "all":
-                    q.group_by(DefiSwap.maker_ticker, DefiSwap.taker_ticker)
+                    q.group_by(self.table.maker_ticker, self.table.taker_ticker)
                 results = q.all()
                 # Convert the results to a list of dictionaries
                 results = [dict(zip(result.keys(), result)) for result in results]
@@ -724,11 +788,11 @@ class SqlQuery(SqlDB):
             with Session(self.engine) as session:
                 q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(DefiSwap.maker_platform)
+                    q.group_by(self.table.maker_platform)
                 elif trade_side == "taker":
-                    q.group_by(DefiSwap.taker_platform)
+                    q.group_by(self.table.taker_platform)
                 elif trade_side == "all":
-                    q.group_by(DefiSwap.maker_platform, DefiSwap.taker_platform)
+                    q.group_by(self.table.maker_platform, self.table.taker_platform)
                 results = q.all()
                 # Convert the results to a list of dictionaries
                 results = [dict(zip(result.keys(), result)) for result in results]
@@ -744,11 +808,11 @@ class SqlQuery(SqlDB):
             with Session(self.engine) as session:
                 q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(DefiSwap.maker_pubkey)
+                    q.group_by(self.table.maker_pubkey)
                 elif trade_side == "taker":
-                    q.group_by(DefiSwap.taker_pubkey)
+                    q.group_by(self.table.taker_pubkey)
                 elif trade_side == "all":
-                    q.group_by(DefiSwap.maker_pubkey, DefiSwap.taker_pubkey)
+                    q.group_by(self.table.maker_pubkey, self.table.taker_pubkey)
                 results = q.all()
                 # Convert the results to a list of dictionaries
                 results = [dict(zip(result.keys(), result)) for result in results]
@@ -764,11 +828,11 @@ class SqlQuery(SqlDB):
             with Session(self.engine) as session:
                 q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(DefiSwap.maker_version)
+                    q.group_by(self.table.maker_version)
                 elif trade_side == "taker":
-                    q.group_by(DefiSwap.taker_version)
+                    q.group_by(self.table.taker_version)
                 elif trade_side == "all":
-                    q.group_by(DefiSwap.taker_version, DefiSwap.maker_version)
+                    q.group_by(self.table.taker_version, self.table.maker_version)
                 results = q.all()
                 # Convert the results to a list of dictionaries
                 results = [dict(zip(result.keys(), result)) for result in results]
@@ -793,11 +857,10 @@ class SqlQuery(SqlDB):
         failed_only: bool = False,
     ):
         if start_time == 0:
-            start_time = int(time.time()) - 86400
+            start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
-            end_time = int(time.time())
+            end_time = int(cron.now_utc())
         swaps = self.get_swaps(
-            table=DefiSwap,
             start_time=start_time,
             end_time=end_time,
             coin=coin,
@@ -818,10 +881,10 @@ class SqlQuery(SqlDB):
             return [i["uuid"] for i in swaps]
 
     @timed
-    def get_swap(self, table: object = DefiSwap, uuid: str = ""):
+    def get_swap(self, uuid: str = ""):
         try:
             with Session(self.engine) as session:
-                q = select(table).where(table.uuid == uuid)
+                q = select(self.table).where(self.table.uuid == uuid)
                 data = [dict(i) for i in session.exec(q)]
                 if len(data) == 0:
                     return {"error": f"swap uuid {uuid} not found"}
@@ -831,11 +894,31 @@ class SqlQuery(SqlDB):
             return default_error(e)
 
     @timed
+    def get_timespan_swaps(self, start_time: int = 0, end_time: int = 0) -> list:
+        """
+        Returns a list of swaps between two timestamps
+        """
+        try:
+            return self.get_swaps(start_time=start_time, end_time=end_time)
+        except Exception as e:  # pragma: no cover
+            return default_error(e)
+
+    def get_swaps_for_coin(self, coin: str | None = None, **kwargs):
+        return self.get_swaps(coin=coin, **kwargs)
+
+    def get_swaps_for_pair(
+        self, base: str | None = None, quote: str | None = None, **kwargs
+    ):
+        pair = f"{base}_{quote}"
+        return self.get_swaps(pair=pair, **kwargs)
+
+    @timed
     def get_swaps(
         self,
-        table: object = DefiSwap,
         start_time: int = 0,
         end_time: int = 0,
+        limit: int = 100,
+        trade_type: int | None = None,
         coin: str | None = None,
         pair: str | None = None,
         pubkey: str | None = None,
@@ -856,24 +939,26 @@ class SqlQuery(SqlDB):
         (or further filtered) later.
         """
         try:
+            # TODO: Implement limit and trade_type
             if start_time == 0:
-                start_time = int(time.time()) - 86400
+                start_time = int(cron.now_utc()) - 86400
             if end_time == 0:
-                end_time = int(time.time())
-            if table.__tablename__ in ["swaps", "swaps_failed"]:
+                end_time = int(cron.now_utc())
+
+            if self.table.__tablename__ in ["swaps", "swaps_failed"]:
                 start_time = datetime.fromtimestamp(start_time, timezone.utc)
                 end_time = datetime.fromtimestamp(end_time, timezone.utc)
             with Session(self.engine) as session:
-                q = select(table)
+                q = select(self.table)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
                 q = self.sqlfilter.success(q, success_only, failed_only)
-                if table in [CipiSwap, CipiSwapFailed]:
-                    q = q.order_by(table.started_at)
+                if self.table in [CipiSwap, CipiSwapFailed]:
+                    q = q.order_by(self.table.started_at)
                 else:
-                    q = q.order_by(table.finished_at)
+                    q = q.order_by(self.table.finished_at)
 
                 r = session.exec(q)
                 data = [dict(i) for i in r]
@@ -893,55 +978,69 @@ class SqlQuery(SqlDB):
                     root_pairing = transform.strip_pair_platforms(pair)
                     if len(set(root_pairing.split("_"))) == 1:
                         bridge_swap = True
-                    base, quote = pair.split("_")
-                    base_variants = get_coin_variants(base, self.coins_config)
-                    quote_variants = get_coin_variants(quote, self.coins_config)
-                    if root_pairing == " KMD_LTC":
-                        logger.calc(f"base_variants: {base_variants}")
-                        logger.calc(f"quote_variants: {quote_variants}")
-
                     resp = {}
-                    for i in base_variants:
-                        if root_pairing == " KMD_LTC":
-                            logger.calc(f"i: {i}")
-                        for j in quote_variants:
-                            if root_pairing == " KMD_LTC":
-                                logger.calc(f"j: {j}")
-                            if i != j:
-                                variant = f"{i}_{j}"
-                                if root_pairing == " KMD_LTC":
-                                    logger.calc(f"variant: {variant}")
-                                # exclude duplication for bridge swaps
-                                if (
-                                    bridge_swap
-                                    and variant
-                                    != transform.order_pair_by_market_cap(
-                                        variant, gecko_source=self.gecko_source
-                                    )
-                                ):
-                                    continue
-                                variant_trades = [
-                                    k
-                                    for k in data
-                                    if i in [k["taker_coin"], k["maker_coin"]]
-                                    and j in [k["taker_coin"], k["maker_coin"]]
-                                ]
-                                resp.update({variant: variant_trades})
+                    variants = get_pair_variants(pair, coins_config=self.coins_config)
+                    for variant in variants:
+                        # exclude duplication for bridge swaps
+                        if (
+                            bridge_swap
+                            and variant
+                            != transform.order_pair_by_market_cap(
+                                variant, gecko_source=self.gecko_source
+                            )
+                        ):
+                            continue
+                        base, quote = transform.base_quote_from_pair(variant)
+                        variant_trades = [
+                            k
+                            for k in data
+                            if base in [k["taker_coin"], k["maker_coin"]]
+                            and quote in [k["taker_coin"], k["maker_coin"]]
+                        ]
+                        resp.update({variant: variant_trades})
                     all = []
                     for i in resp:
                         all += resp[i]
+                    transform.sort_dict_list(data=all, key="finished_at", reverse=True)
                     resp.update({"ALL": all})
+
                 else:
                     resp = data
         except Exception as e:
             return default_error(e)
-        msg = f"Got {len(data)} swaps from {table.__tablename__}"
+        msg = f"Got {len(data)} swaps from {self.table.__tablename__}"
         msg += f" between {start_time} and {end_time}"
         return default_result(data=resp, msg=msg, loglevel="muted")
 
-    def get_count(self, table: object):
+    def get_count(
+        self,
+        start_time: int = 0,
+        end_time: int = 0,
+        coin: str | None = None,
+        pair: str | None = None,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+        success_only: bool = True,
+        failed_only: bool = False,
+    ):
+        if start_time == 0:
+            start_time = int(cron.now_utc()) - 86400
+        if end_time == 0:
+            end_time = int(cron.now_utc())
+
         with Session(self.engine) as session:
-            r = session.query(func.count(table))
+            q = session.query(func.count(self.table.uuid).label("swaps_count"))
+            q = self.sqlfilter.gui(q, gui=gui)
+            q = self.sqlfilter.coin(q, coin=coin)
+            q = self.sqlfilter.pair(q, pair=pair)
+            q = self.sqlfilter.pubkey(q, pubkey=pubkey)
+            q = self.sqlfilter.version(q, version=version)
+            q = self.sqlfilter.timestamps(q, start_time=start_time, end_time=end_time)
+            q = self.sqlfilter.success(
+                q, success_only=success_only, failed_only=failed_only
+            )
+            r = q.all()
             return r[0][0]
 
     def get_last(self, table: str, limit: int = 3):
@@ -996,7 +1095,7 @@ class SqlQuery(SqlDB):
                     )
                 )
             ),
-            "defi_swap_cols": get_columns(DefiSwap),
+            "defi_swap_cols": get_columns(self.table),
             "maker_guis": sorted(self.get_distinct(column="maker_gui")),
             "taker_guis": sorted(self.get_distinct(column="taker_gui")),
             "guis": sorted(
@@ -1027,6 +1126,19 @@ class SqlQuery(SqlDB):
                     )
                 )
             ),
+        }
+
+    def swap_counts(self):  # pragma: no cover
+        month_ago = int(cron.now_utc()) - 86400 * 30
+        fortnight_ago = int(cron.now_utc()) - 86400 * 14
+        week_ago = int(cron.now_utc()) - 86400 * 7
+        day_ago = int(cron.now_utc()) - 86400
+        return {
+            "swaps_all_time": self.get_count(start_time=1),
+            "swaps_30d": self.get_count(start_time=month_ago),
+            "swaps_14d": self.get_count(start_time=fortnight_ago),
+            "swaps_7d": self.get_count(start_time=week_ago),
+            "swaps_24hr": self.get_count(start_time=day_ago),
         }
 
 
@@ -1092,7 +1204,6 @@ def normalise_swap_data(data, gecko_source, is_success=None):
                 ]:
                     if v in [None, ""]:
                         i.update({k: 0})
-
     except Exception as e:
         return default_error(e)
     msg = "Data normalised"
@@ -1142,7 +1253,7 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 pair_std_reverse=transform.strip_pair_platforms(
                     transform.invert_pair(cipi_data["pair"])
                 ),
-                last_updated=int(time.time()),
+                last_updated=int(cron.now_utc()),
             )
         else:
             for i in [
@@ -1212,7 +1323,7 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
                 pair_std_reverse=transform.strip_pair_platforms(
                     transform.invert_pair(cipi_data["pair"])
                 ),
-                last_updated=int(time.time()),
+                last_updated=int(cron.now_utc()),
             )
         if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
             data.duration = data.finished_at - data.started_at
@@ -1265,7 +1376,7 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 pair_std_reverse=transform.strip_pair_platforms(
                     transform.invert_pair(mm2_data["pair"])
                 ),
-                last_updated=int(time.time()),
+                last_updated=int(cron.now_utc()),
             )
         else:
             for i in [
@@ -1326,7 +1437,7 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
                 pair_std_reverse=transform.strip_pair_platforms(
                     transform.invert_pair(defi_data["pair"])
                 ),
-                last_updated=int(time.time()),
+                last_updated=int(cron.now_utc()),
             )
         if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
             data.duration = data.finished_at - data.started_at
@@ -1343,17 +1454,21 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
 def import_cipi_swaps(
     pgdb: SqlDB,
     pgdb_query: SqlQuery,
-    start=int(time.time() - 86400),
-    end=int(time.time()),
+    coins_config,
+    gecko_source,
+    start_time=int(cron.now_utc() - 86400),
+    end_time=int(cron.now_utc()),
 ):
     try:
         # import Cipi's swap data
-        ext_mysql = SqlQuery("mysql")
-        cipi_swaps = ext_mysql.get_swaps(CipiSwap, start_time=start, end_time=end)
+        ext_mysql = SqlQuery(
+            db_type="mysql", coins_config=coins_config, gecko_source=gecko_source
+        )
+        cipi_swaps = ext_mysql.get_swaps(start_time=start_time, end_time=end_time)
         cipi_swaps = normalise_swap_data(cipi_swaps, ext_mysql.gecko_source)
         if len(cipi_swaps) > 0:
             with Session(pgdb.engine) as session:
-                count = pgdb_query.get_count(DefiSwap.uuid)
+                count = pgdb_query.get_count(start_time=1)
                 cipi_swaps_data = {}
                 for i in cipi_swaps:
                     cipi_swaps_data.update({i["uuid"]: i})
@@ -1403,7 +1518,7 @@ def import_cipi_swaps(
                     if uuid not in updates:
                         session.add(swap)
                 session.commit()
-                count_after = pgdb_query.get_count(DefiSwap.uuid)
+                count_after = pgdb_query.get_count(start_time=1)
                 msg = f"{count_after - count} records added from Cipi database"
                 msg = f" | {len(updates)} records updated from Cipi database"
         else:
@@ -1418,17 +1533,24 @@ def import_cipi_swaps(
 def import_mm2_swaps(
     pgdb: SqlDB,
     pgdb_query: SqlQuery,
-    start=int(time.time() - 86400),
-    end=int(time.time()),
+    coins_config,
+    gecko_source,
+    start_time=int(cron.now_utc() - 86400),
+    end_time=int(cron.now_utc()),
 ):
     try:
         # Import in Sqlite (all) database
-        mm2_sqlite = SqlQuery("sqlite", db_path=MM2_DB_PATH_ALL)
-        mm2_swaps = mm2_sqlite.get_swaps(StatsSwap, start_time=start, end_time=end)
+        mm2_sqlite = SqlQuery(
+            db_type="sqlite",
+            db_path=MM2_DB_PATH_ALL,
+            coins_config=coins_config,
+            gecko_source=gecko_source,
+        )
+        mm2_swaps = mm2_sqlite.get_swaps(start_time=start_time, end_time=end_time)
         mm2_swaps = normalise_swap_data(mm2_swaps, mm2_sqlite.gecko_source)
         if len(mm2_swaps) > 0:
             with Session(pgdb.engine) as session:
-                count = pgdb_query.get_count(DefiSwap.uuid)
+                count = pgdb_query.get_count(start_time=1)
                 mm2_swaps_data = {}
                 for i in mm2_swaps:
                     mm2_swaps_data.update({i["uuid"]: i})
@@ -1479,7 +1601,7 @@ def import_mm2_swaps(
                     if uuid not in updates:
                         session.add(swap)
                 session.commit()
-                count_after = pgdb_query.get_count(DefiSwap.uuid)
+                count_after = pgdb_query.get_count(start_time=1)
                 msg = f"{count_after - count} records added from MM2.db"
                 msg += f" | {len(updates)} records updated from MM2.db"
         else:
@@ -1490,27 +1612,51 @@ def import_mm2_swaps(
 
 
 @timed
-def populate_pgsqldb(start=int(time.time() - 86400), end=int(time.time())):
+def populate_pgsqldb(
+    coins_config,
+    gecko_source,
+    start_time=int(cron.now_utc() - 86400),
+    end_time=int(cron.now_utc()),
+):
     try:
-        pgdb = SqlUpdate("pgsql")
-        pgdb_query = SqlQuery("pgsql")
-        import_cipi_swaps(pgdb, pgdb_query, start=start, end=end)
-        import_mm2_swaps(pgdb, pgdb_query, start=start, end=end)
+        pgdb = SqlUpdate(
+            db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
+        )
+        pgdb_query = SqlQuery(
+            db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
+        )
+        import_cipi_swaps(
+            pgdb,
+            pgdb_query,
+            start_time=start_time,
+            end_time=end_time,
+            coins_config=coins_config,
+            gecko_source=gecko_source,
+        )
+        import_mm2_swaps(
+            pgdb,
+            pgdb_query,
+            start_time=start_time,
+            end_time=end_time,
+            coins_config=coins_config,
+            gecko_source=gecko_source,
+        )
         # pgdb_query.describe('defi_swaps')
 
     except Exception as e:
         return default_error(e)
-    msg = f"Importing swaps from {start} - {end} complete"
+    msg = f"Importing swaps from {start_time} - {end_time} complete"
     return default_result(msg=msg, loglevel="updated")
 
 
-def reset_defi_stats_table():
+def reset_defi_stats_table(coins_config, gecko_source):
     pgdb = SqlUpdate("pgsql")
     pgdb.drop("defi_swaps")
     SQLModel.metadata.create_all(pgdb.engine)
     logger.merge("Recreated PGSQL Table")
-    pgdb_query = SqlQuery("pgsql")
-    logger.merge(pgdb_query.get_count(StatsSwap.uuid))
+    pgdb_query = SqlQuery(
+        db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
+    )
 
 
 def get_tablename(table):
@@ -1570,16 +1716,16 @@ class SqlFilter:
         return q
 
     def success(self, q, success_only=True, failed_only=False):
-        if success_only:
-            if self.table == CipiSwapFailed:
-                return []
-            elif self.table != CipiSwap:
-                q = q.filter(self.table.is_success == 1)
         if failed_only:
             if self.table == CipiSwap:
                 return []
             elif self.table != CipiSwapFailed:
-                q = q.filter(self.table.is_success == 0)
+                return q.filter(self.table.is_success == 0)
+        if success_only:
+            if self.table == CipiSwapFailed:
+                return []
+            elif self.table != CipiSwap:
+                return q.filter(self.table.is_success == 1)
         return q
 
     def timestamps(self, q, start_time, end_time):

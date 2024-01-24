@@ -39,6 +39,7 @@ from util.transform import (
     order_pair_by_market_cap,
     strip_pair_platforms,
     strip_coin_platform,
+    base_quote_from_pair,
 )
 from util.logger import logger
 
@@ -80,8 +81,6 @@ def test_ticker_to_gecko(setup_ticker_to_gecko):
 def test_ticker_to_statsapi(setup_ticker_to_statsapi_24h, setup_ticker_to_statsapi_7d):
     x = setup_ticker_to_statsapi_7d
     y = setup_ticker_to_statsapi_24h
-    logger.info(x)
-    logger.info(y)
     assert x["trading_pair"] == y["trading_pair"]
     assert "price_change_24h" in y
     assert "price_change_7d" in x
@@ -117,7 +116,6 @@ def test_historical_trades_to_gecko():
 
 def test_pairs_to_gecko(setup_pairs_to_gecko):
     x = setup_pairs_to_gecko
-    logger.info([i["pool_id"] for i in x])
     assert "DGB_LTC" in [i["pool_id"] for i in x]
     assert "KMD_DOGE" in [i["pool_id"] for i in x]
     assert "DGB_LTC-segwit" not in [i["pool_id"] for i in x]
@@ -150,7 +148,6 @@ def test_clean_decimal_dict_list():
 def test_clean_decimal_dict():
     x = dirty_dict.copy()
     r = clean_decimal_dict(x)
-    logger.info(r)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)
@@ -248,3 +245,9 @@ def test_strip_pair_platforms():
 def test_strip_coin_platform():
     r = strip_coin_platform("USDC-PLG20")
     assert r == "USDC"
+
+
+def test_base_quote_from_pair():
+    base, quote = base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
+    assert base == "XXX-PLG20_OLD"
+    assert quote == "YYY-PLG20_OLD"

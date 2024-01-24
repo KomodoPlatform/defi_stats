@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from lib.coin import Coin
-from lib.cache import load_coins_config, load_gecko_source, load_generic_last_traded
+import db
+import lib
 
 
 @dataclass
 class Coins:  # pragma: no cover
     def __init__(self):
-        coins_config = load_coins_config()
-        gecko_source = load_gecko_source()
-        last_traded_cache = load_generic_last_traded()
+        coins_config = lib.load_coins_config()
+        gecko_source = lib.load_gecko_source()
+        last_traded_cache = lib.load_generic_last_traded()
+        self.pg_query = db.SqlQuery(
+            gecko_source=gecko_source, coins_config=coins_config
+        )
         self.coins = [
-            Coin(
+            lib.Coin(
                 coin=i,
                 gecko_source=gecko_source,
                 coins_config=coins_config,
