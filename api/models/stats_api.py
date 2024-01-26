@@ -47,7 +47,7 @@ class StatsApiSummary(BaseModel):
     highest_price_24h: float = 777.777777
     lowest_price_24h: float = 777.777777
     price_change_24h: float = 777.777777
-    price_change_percent_24h: float = 777.777777
+    price_change_pct_24h: float = 777.777777
     last_price: float = 777.777777
     last_trade: int = 1777777777
 

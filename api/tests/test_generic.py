@@ -49,7 +49,7 @@ def test_orderbook():
 
 def test_traded_pairs():
     generic = Generic()
-    r = generic.traded_pairs_info()
+    r = generic.pairs()
     assert isinstance(r, list)
     assert isinstance(r[0], dict)
     for i in r:

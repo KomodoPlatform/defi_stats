@@ -3,29 +3,21 @@ import util.cron as cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-from util.logger import logger
+from lib.cache import Cache
+from lib.generic import Generic
+from lib.pair import Pair
+from models.generic import ErrorMessage
 from models.gecko import (
     GeckoPairsItem,
     GeckoTickers,
     GeckoOrderbook,
     GeckoHistoricalTrades,
 )
-from models.generic import ErrorMessage
-from lib.cache import Cache
-from lib.pair import Pair
 from util.enums import TradeType, NetId
-
-import util.validate as validate
-from lib.generic import Generic
-from util.transform import (
-    orderbook_to_gecko,
-    pairs_to_gecko,
-    historical_trades_to_gecko,
-)
-from lib.cache import load_generic_pairs
-
+from util.logger import logger
+import util.memcache as memcache
 import util.transform as transform
-
+import util.validate as validate
 
 router = APIRouter()
 
@@ -40,7 +32,7 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        return pairs_to_gecko(load_generic_pairs())
+        return transform.pairs_to_gecko(memcache.get_pairs())
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -79,7 +71,7 @@ def gecko_orderbook(
     try:
         generic = Generic()
         data = generic.orderbook(pair_str=ticker_id, depth=depth)
-        data = orderbook_to_gecko(data)
+        data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -118,8 +110,8 @@ def gecko_historical_trades(
             start_time=start_time,
             end_time=end_time,
         )
-        data["buy"] = [historical_trades_to_gecko(i) for i in data["buy"]]
-        data["sell"] = [historical_trades_to_gecko(i) for i in data["sell"]]
+        data["buy"] = [transform.historical_trades_to_gecko(i) for i in data["buy"]]
+        data["sell"] = [transform.historical_trades_to_gecko(i) for i in data["sell"]]
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

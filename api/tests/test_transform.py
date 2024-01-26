@@ -200,11 +200,11 @@ def test_generic_orderbook_to_gecko():
     assert len(r["asks"][0][1]) == len(orderbook_as_coords["asks"][0][1])
 
 
-def test_order_pair_by_market_cap(setup_gecko):
-    a = order_pair_by_market_cap(("BTC-segwit_KMD"), setup_gecko.gecko_source)
-    b = order_pair_by_market_cap(("BTC_KMD"), setup_gecko.gecko_source)
-    c = order_pair_by_market_cap(("KMD_BTC-segwit"), setup_gecko.gecko_source)
-    d = order_pair_by_market_cap(("KMD_BTC"), setup_gecko.gecko_source)
+def test_order_pair_by_market_cap():
+    a = order_pair_by_market_cap(("BTC-segwit_KMD"))
+    b = order_pair_by_market_cap(("BTC_KMD"))
+    c = order_pair_by_market_cap(("KMD_BTC-segwit"))
+    d = order_pair_by_market_cap(("KMD_BTC"))
 
     assert a == c
     assert b == d

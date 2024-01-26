@@ -1,5 +1,9 @@
-# from util.enums import *
-# from util.cron import Time
-# from util.exceptions import *
-# from util.enums import NetId, TradeType, TablesEnum, ColumnsEnum
-# from util.files import Files
+import os
+import sys
+
+API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(API_ROOT_PATH)
+import util.memcache as memcache
+from lib.cache import CacheItem
+
+

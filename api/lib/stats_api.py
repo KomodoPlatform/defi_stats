@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from util.logger import logger
-from lib.pair import Pair
 import db
+from lib.pair import Pair
+from util.logger import logger
 import util.cron as cron
-import lib
-from util.defaults import set_params
+import util.defaults as default
+import util.memcache as memcache
 import util.transform as transform
 
 
@@ -14,26 +14,8 @@ class StatsAPI:  # pragma: no cover
             # Set params
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
-            if "gecko_source" in kwargs:
-                self.gecko_source = kwargs["gecko_source"]
-            else:
-                self.gecko_source = lib.load_gecko_source()
-
-            if "coins_config" in kwargs:
-                self.coins_config = kwargs["coins_config"]
-            else:
-                self.coins_config = lib.load_coins_config()
-
-            if "last_traded_cache" in kwargs:
-                self.last_traded_cache = kwargs["last_traded_cache"]
-            else:
-                self.last_traded_cache = transform.traded_cache_to_stats_api(
-                    lib.load_generic_last_traded()
-                )
-            self.pg_query = db.SqlQuery(
-                gecko_source=self.gecko_source, coins_config=self.coins_config
-            )
+            default.params(self, self.kwargs, self.options)
+            self.pg_query = db.SqlQuery()
         except Exception as e:
             logger.error(f"Failed to init Generic: {e}")
 
@@ -67,6 +49,8 @@ class StatsAPI:  # pragma: no cover
 
     def pair_summaries(self, days: int = 1, pairs_days: int = 7, as_dict: bool = False):
         try:
+            
+            last_traded_cache = memcache.get_last_traded()
             if days > pairs_days:
                 pairs_days = days
             data = self.pg_query.get_pairs(days=pairs_days)
@@ -77,16 +61,11 @@ class StatsAPI:  # pragma: no cover
             else:
                 alt_suffix = suffix
             ticker_infos = [
-                Pair(
-                    pair_str=i,
-                    gecko_source=self.gecko_source,
-                    coins_config=self.coins_config,
-                    last_traded_cache=self.last_traded_cache,
-                ).ticker_info(days, all=True)
+                Pair(pair_str=i, last_traded_cache=last_traded_cache).ticker_info(days, all=True)
                 for i in pairs
             ]
             data = [
-                transform.ticker_to_statsapi(i, suffix=suffix) for i in ticker_infos
+                transform.ticker_to_statsapi_summary(i, suffix=suffix) for i in ticker_infos
             ]
             # Drop coin platforms and merge data
             resp_dict = {}
@@ -192,13 +171,13 @@ class StatsAPI:  # pragma: no cover
                     - resp_dict[clean_pair]["oldest_price"]
                 )
                 if resp_dict[clean_pair]["oldest_price"] != 0:
-                    resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = (
+                    resp_dict[clean_pair][f"price_change_pct_{alt_suffix}"] = (
                         resp_dict[clean_pair]["newest_price"]
                         / resp_dict[clean_pair]["oldest_price"]
                         - 1
                     )
                 else:
-                    resp_dict[clean_pair][f"price_change_percent_{alt_suffix}"] = 0
+                    resp_dict[clean_pair][f"price_change_pct_{alt_suffix}"] = 0
             if as_dict:
                 return resp_dict
             data = [resp_dict[i] for i in resp_dict]

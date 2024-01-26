@@ -7,8 +7,8 @@ class GenericTickersItem(BaseModel):
     ticker_id: str = "XXX_YYY"
     base_currency: str = "XXX"
     base_volume: str = "777.777777"
-    target_currency: str = "YYY"
-    target_volume: str = "777.777777"
+    quote_currency: str = "YYY"
+    quote_volume: str = "777.777777"
     highest_bid: str = "777.777777"
     lowest_ask: str = "777.777777"
     highest_price_24hr: str = "777.777777"
@@ -42,14 +42,14 @@ class GenericOrderbookItem(BaseModel):
     liquidity_usd: str = "777.777777"
     trades_24hr: str = "777"
     volume_usd_24hr: str = "777.777777"
-    price_change_percent_24hr: str = "777.777777"
+    price_change_pct_24hr: str = "777.777777"
 
 
 class GenericPairsData(BaseModel):
     ticker_id: str = "XXX_YYY"
     pool_id: str = "XXX_YYY"
     base: str = "XXX"
-    target: str = "YYY"
+    quote: str = "YYY"
     priced: bool = True
 
 

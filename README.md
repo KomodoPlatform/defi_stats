@@ -114,6 +114,7 @@ COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 
 Edit the values for your paths and passwords etc. Some of these are not curently in us in main branch, but will be used later.
 
+
 # Sourcing data
 
 - To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./import_dbs.sh` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/USERNAME/defi_stats/api/db/source/import_dbs.sh`

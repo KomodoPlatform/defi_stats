@@ -10,13 +10,6 @@ from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, func
 
-from util.exceptions import InvalidParamCombination
-from util.defaults import default_error, default_result
-from util.logger import logger, timed
-from util.helper import get_coin_variants, get_gecko_price, get_pair_variants
-import util.transform as transform
-import util.templates as template
-from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from const import (
     MYSQL_USERNAME,
     MYSQL_HOSTNAME,
@@ -30,6 +23,15 @@ from const import (
     MM2_DB_PATH_ALL,
     IS_TESTING,
 )
+from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
+from lib.coins import get_coin_variants, get_gecko_price, get_pair_variants
+from lib.cache import CacheItem
+from util.exceptions import InvalidParamCombination
+from util.logger import logger, timed
+import util.defaults as default
+import util.templates as template
+import util.transform as transform
+import util.memcache as memcache
 
 load_dotenv()
 
@@ -37,12 +39,9 @@ load_dotenv()
 class SqlDB:
     def __init__(
         self,
-        gecko_source,
-        coins_config,
         db_type="pgsql",
         db_path=None,
         external=False,
-        **kwargs,
     ) -> None:
         self.db_type = db_type
         self.db_path = db_path
@@ -77,16 +76,12 @@ class SqlDB:
             self.db_url += f"/{self.database}"
 
         self.engine = create_engine(self.db_url)  # ), echo=True)
-
-        self.gecko_source = gecko_source
-        self.coins_config = coins_config
+        self.sqlfilter = SqlFilter(self.table)
 
 
 class SqlUpdate(SqlDB):
     def __init__(
         self,
-        gecko_source,
-        coins_config,
         db_type="pgsql",
         db_path=None,
         external=False,
@@ -95,12 +90,8 @@ class SqlUpdate(SqlDB):
             self,
             db_type=db_type,
             db_path=db_path,
-            external=external,
-            gecko_source=gecko_source,
-            coins_config=coins_config,
+            external=external
         )
-        self.gecko_source = gecko_source
-        self.coins_config = coins_config
 
     def drop(self, table):
         try:
@@ -114,8 +105,6 @@ class SqlUpdate(SqlDB):
 class SqlQuery(SqlDB):
     def __init__(
         self,
-        gecko_source,
-        coins_config,
         db_type="pgsql",
         db_path=None,
         external=False,
@@ -125,13 +114,8 @@ class SqlQuery(SqlDB):
             self,
             db_type=db_type,
             db_path=db_path,
-            external=external,
-            gecko_source=gecko_source,
-            coins_config=coins_config,
+            external=external
         )
-        self.sqlfilter = SqlFilter(self.table)
-        self.gecko_source = gecko_source
-        self.coins_config = coins_config
         if with_enums == True:
             self.enums = self.get_enums()
             self.no_distinct_cols = [
@@ -219,7 +203,8 @@ class SqlQuery(SqlDB):
 
     @property
     def ValidCoins(self):
-        data = sorted([j for j in self.coins_config.keys()])
+        coins_config = memcache.get_coins_config()
+        data = sorted([j for j in coins_config.keys()])
         return Enum(
             "ValidCoins",
             {i: i for i in data},
@@ -240,19 +225,24 @@ class SqlQuery(SqlDB):
                 column="pair", start_time=start_time, end_time=end_time
             )
 
-            # Sort pair by ticker to expose duplicates
-            sorted_pairs = set(
+            gecko_source = memcache.get_gecko_source()
+            if gecko_source is None:
+                CacheItem("gecko_source").save()
+            # Sort pair by ticker mcap to expose duplicates
+            sorted_pairs = list(set(
                 [
-                    transform.order_pair_by_market_cap(
-                        i, gecko_source=self.gecko_source
-                    )
+                    transform.order_pair_by_market_cap(i)
                     for i in pairs
                 ]
+            ))
+            return default.result(
+                data=sorted_pairs,
+                msg="Got generic pairs from db",
+                loglevel="query",
+                ignore_until=2
             )
-
         except Exception as e:  # pragma: no cover
-            return default_error(e)
-        return sorted(list(sorted_pairs))
+            return default.error(e)        
 
     def get_distinct(
         self,
@@ -421,11 +411,11 @@ class SqlQuery(SqlDB):
                 "swaps": num_swaps,
                 "volumes": resp,
             }
-            return default_result(
+            return default.result(
                 data=data, msg="coin_trade_volumes complete", loglevel="debug"
             )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def coin_trade_volumes_usd(self, volumes: Dict) -> list:
@@ -440,7 +430,7 @@ class SqlQuery(SqlDB):
             total_maker_vol_usd = 0
             total_taker_vol_usd = 0
             for ticker in volumes["volumes"]:
-                usd_price = get_gecko_price(ticker, self.gecko_source)
+                usd_price = get_gecko_price(ticker)
                 for coin in volumes["volumes"][ticker]:
                     taker_vol = volumes["volumes"][ticker][coin]["taker_volume"]
                     maker_vol = volumes["volumes"][ticker][coin]["maker_volume"]
@@ -471,7 +461,7 @@ class SqlQuery(SqlDB):
             return volumes
 
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def pair_trade_volumes(
@@ -549,9 +539,9 @@ class SqlQuery(SqlDB):
                 "swaps": num_swaps,
                 "volumes": resp,
             }
-            return default_result(data=data, msg="pair_trade_volumes", loglevel="query")
+            return default.result(data=data, msg="pair_trade_volumes", loglevel="query")
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def pair_trade_volumes_usd(self, volumes: Dict) -> list:
@@ -567,8 +557,8 @@ class SqlQuery(SqlDB):
             total_quote_vol_usd = 0
             for pair_std in volumes["volumes"]:
                 base, rel = pair_std.split("_")
-                base_usd_price = get_gecko_price(base, self.gecko_source)
-                quote_usd_price = get_gecko_price(rel, self.gecko_source)
+                base_usd_price = get_gecko_price(base)
+                quote_usd_price = get_gecko_price(rel)
 
                 for pair in volumes["volumes"][pair_std]:
                     base_vol = volumes["volumes"][pair_std][pair]["base_volume"]
@@ -602,12 +592,12 @@ class SqlQuery(SqlDB):
                     "trade_volume_usd": total_trade_vol_usd,
                 }
             )
-            return default_result(
+            return default.result(
                 data=volumes, msg="pair_trade_volumes_usd complete", loglevel="query"
             )
 
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     # Todo: Pair swap duration stats. Fastest, slowest, average, [x,y] for graph
 
@@ -615,6 +605,7 @@ class SqlQuery(SqlDB):
     def last_trade(self, group_by_cols, is_success: bool = True):
         try:
             with Session(self.engine) as session:
+                resp = {}
                 # 1st query for most recent swap info for category
                 category = list(
                     chain.from_iterable((obj, "-") for obj in group_by_cols[:-1])
@@ -630,51 +621,42 @@ class SqlQuery(SqlDB):
                 distinct = q.distinct(*group_by_cols)
                 last = distinct.order_by(*group_by_cols, self.table.finished_at.desc())
                 last_data = [dict(i) for i in last.all()]
+
                 last_data = {i["category"]: i for i in last_data}
+                
+                for pair in last_data:
+                    if pair not in resp:
+                        resp.update({pair:{}})
+                    for k, v in last_data[pair].items():
+                        if k != "category":
+                            resp[pair].update({k: v})
+
                 # 2nd query for swap first swap info for category
-                cols = list(
-                    set(
-                        [
-                            self.table.uuid.label("first_swap_uuid"),
-                            self.table.finished_at.label("first_swap_time"),
-                            self.table.price.label("first_swap_price"),
-                            func.concat(*category).label("category"),
-                        ]
-                    )
-                )
+                cols = [
+                    self.table.uuid.label("first_swap_uuid"),
+                    self.table.finished_at.label("first_swap_time"),
+                    self.table.price.label("first_swap_price"),
+                    func.concat(*category).label("category"),
+                ]
                 q = session.query(*cols)
                 q = self.sqlfilter.success(q, is_success)
                 distinct = q.distinct(*group_by_cols)
                 first = distinct.order_by(*group_by_cols, self.table.finished_at.asc())
                 first_data = [dict(i) for i in first.all()]
                 first_data = {i["category"]: i for i in first_data}
+                
+                for pair in first_data:
+                    if pair not in resp:
+                        resp.update({pair:{}})
+                    for k, v in first_data[pair].items():
+                        if k != "category":
+                            resp[pair].update({k: v})
 
-                #  3rd query for aggregates
-                cols = list(
-                    set(
-                        [
-                            func.count(group_by_cols[0]).label("num_swaps"),
-                            func.concat(*category).label("category"),
-                        ]
-                    )
-                )
-                q = session.query(*cols)
-                q = self.sqlfilter.success(q, is_success)
-                aggr = q.group_by(*group_by_cols)
-                aggr_data = [dict(i) for i in aggr.all()]
-                aggr_data = {i["category"]: i for i in aggr_data}
-
-                for i in [last_data, first_data]:
-                    for j in i:
-                        for k, v in i[j].items():
-                            if k != "category":
-                                aggr_data[j].update({k: v})
-
-                return default_result(
-                    data=aggr_data, msg="last_traded complete", loglevel="query"
+                return default.result(
+                    data=resp, msg="last_traded complete", loglevel="query", ignore_until=5
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def gui_last_traded(self, is_success: bool = True, min_swaps: int = 0):
@@ -722,11 +704,11 @@ class SqlQuery(SqlDB):
 
             data = {i: data[i] for i in data if data[i]["total_num_swaps"] > min_swaps}
             # Convert the results to a list of dictionaries
-            return default_result(
-                data=data, msg="gui_last_traded complete", loglevel="query"
+            return default.result(
+                data=data, msg="gui_last_traded complete", loglevel="query", ignore_until=5
             )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def pair_last_trade(self, is_success: bool = True):
@@ -736,112 +718,96 @@ class SqlQuery(SqlDB):
                 results = self.last_trade(
                     is_success=is_success, group_by_cols=group_by_cols
                 )
-                return default_result(
-                    data=results, msg="pair_last_trade complete", loglevel="query"
+                return default.result(
+                    data=results, msg="pair_last_trade complete", loglevel="query", ignore_until=5
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def coin_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(self.table.maker_coin)
+                    group_by_cols = [self.table.maker_coin]
                 elif trade_side == "taker":
-                    q.group_by(self.table.taker_coin)
+                    group_by_cols = [self.table.taker_coin]
                 elif trade_side == "all":
-                    q.group_by(self.table.maker_coin, self.table.taker_coin)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
-                return default_result(
-                    data=results, msg="coin_last_traded complete", loglevel="query"
+                    group_by_cols = [self.table.maker_coin, self.table.taker_coin]
+                results = self.last_trade(is_success=is_success, group_by_cols=group_by_cols)
+                return default.result(
+                    data=results, msg="coin_last_traded complete", loglevel="query", ignore_until=5
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(self.table.maker_ticker)
+                    group_by_cols = [self.table.maker_ticker]
                 elif trade_side == "taker":
-                    q.group_by(self.table.taker_ticker)
+                    group_by_cols = [self.table.taker_ticker]
                 elif trade_side == "all":
-                    q.group_by(self.table.maker_ticker, self.table.taker_ticker)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
-                return default_result(
+                    group_by_cols = [self.table.maker_ticker, self.table.taker_ticker]
+                results = self.last_trade(is_success=is_success, group_by_cols=group_by_cols)
+                return default.result(
                     data=results, msg="ticker_last_traded complete", loglevel="query"
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def platform_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(self.table.maker_platform)
+                    group_by_cols = [self.table.maker_platform]
                 elif trade_side == "taker":
-                    q.group_by(self.table.taker_platform)
+                    group_by_cols = [self.table.taker_platform]
                 elif trade_side == "all":
-                    q.group_by(self.table.maker_platform, self.table.taker_platform)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
-                return default_result(
+                    group_by_cols = [self.table.maker_platform, self.table.taker_platform]
+                results = self.last_trade(is_success=is_success, group_by_cols=group_by_cols)
+                return default.result(
                     data=results, msg="platform_last_traded complete", loglevel="query"
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def pubkey_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(self.table.maker_pubkey)
+                    group_by_cols = [self.table.maker_pubkey]
                 elif trade_side == "taker":
-                    q.group_by(self.table.taker_pubkey)
+                    group_by_cols = [self.table.taker_pubkey]
                 elif trade_side == "all":
-                    q.group_by(self.table.maker_pubkey, self.table.taker_pubkey)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
-                return default_result(
+                    group_by_cols = [self.table.maker_pubkey, self.table.taker_pubkey]
+                results = self.last_trade(is_success=is_success, group_by_cols=group_by_cols)
+                return default.result(
                     data=results, msg="pubkey_last_traded complete", loglevel="query"
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def version_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             with Session(self.engine) as session:
-                q = self.last_trade(is_success=is_success)
                 if trade_side == "maker":
-                    q.group_by(self.table.maker_version)
+                    group_by_cols = [self.table.maker_version]
                 elif trade_side == "taker":
-                    q.group_by(self.table.taker_version)
+                    group_by_cols = [self.table.taker_version]
                 elif trade_side == "all":
-                    q.group_by(self.table.taker_version, self.table.maker_version)
-                results = q.all()
-                # Convert the results to a list of dictionaries
-                results = [dict(zip(result.keys(), result)) for result in results]
-
-                return default_result(
+                    group_by_cols = [self.table.maker_version, self.table.taker_version]
+                results = self.last_trade(is_success=is_success, group_by_cols=group_by_cols)
+                return default.result(
                     data=results, msg="version_last_traded complete", loglevel="query"
                 )
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def swap_uuids(
@@ -891,7 +857,7 @@ class SqlQuery(SqlDB):
                 else:
                     return data[0]
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def get_timespan_swaps(self, start_time: int = 0, end_time: int = 0) -> list:
@@ -901,7 +867,7 @@ class SqlQuery(SqlDB):
         try:
             return self.get_swaps(start_time=start_time, end_time=end_time)
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     def get_swaps_for_coin(self, coin: str | None = None, **kwargs):
         return self.get_swaps(coin=coin, **kwargs)
@@ -963,7 +929,7 @@ class SqlQuery(SqlDB):
                 r = session.exec(q)
                 data = [dict(i) for i in r]
                 if coin is not None:
-                    variants = get_coin_variants(coin, self.coins_config)
+                    variants = get_coin_variants(coin)
 
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
@@ -979,15 +945,12 @@ class SqlQuery(SqlDB):
                     if len(set(root_pairing.split("_"))) == 1:
                         bridge_swap = True
                     resp = {}
-                    variants = get_pair_variants(pair, coins_config=self.coins_config)
+                    variants = get_pair_variants(pair)
                     for variant in variants:
                         # exclude duplication for bridge swaps
                         if (
-                            bridge_swap
-                            and variant
-                            != transform.order_pair_by_market_cap(
-                                variant, gecko_source=self.gecko_source
-                            )
+                            bridge_swap and variant
+                            != transform.order_pair_by_market_cap(variant)
                         ):
                             continue
                         base, quote = transform.base_quote_from_pair(variant)
@@ -1007,10 +970,10 @@ class SqlQuery(SqlDB):
                 else:
                     resp = data
         except Exception as e:
-            return default_error(e)
+            return default.error(e)
         msg = f"Got {len(data)} swaps from {self.table.__tablename__}"
         msg += f" between {start_time} and {end_time}"
-        return default_result(data=resp, msg=msg, loglevel="muted")
+        return default.result(data=resp, msg=msg, loglevel="muted")
 
     def get_count(
         self,
@@ -1079,17 +1042,18 @@ class SqlQuery(SqlDB):
                 logger.merge(i)
 
     def get_enums(self):
+        coins_config = memcache.get_coins_config()
         return {
             "pairs": sorted(self.get_distinct(column="pair")),
             "tickers": sorted(
-                list(set([j.split("-")[0] for j in self.coins_config.keys()]))
+                list(set([j.split("-")[0] for j in coins_config.keys()]))
             ),
             "platforms": sorted(
                 list(
                     set(
                         [
                             j.split("-")[1]
-                            for j in self.coins_config.keys()
+                            for j in coins_config.keys()
                             if len(j.split("-")) > 1
                         ]
                     )
@@ -1143,13 +1107,12 @@ class SqlQuery(SqlDB):
 
 
 @timed
-def normalise_swap_data(data, gecko_source, is_success=None):
+def normalise_swap_data(data, is_success=None):
     try:
+        gecko_source = memcache.get_gecko_source()
         for i in data:
             pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
-            pair = transform.order_pair_by_market_cap(
-                pair_raw, gecko_source=gecko_source
-            )
+            pair = transform.order_pair_by_market_cap(pair_raw)
             pair_reverse = transform.invert_pair(pair)
             pair_std = transform.strip_pair_platforms(pair)
             pair_std_reverse = transform.invert_pair(pair_std)
@@ -1205,9 +1168,9 @@ def normalise_swap_data(data, gecko_source, is_success=None):
                     if v in [None, ""]:
                         i.update({k: 0})
     except Exception as e:
-        return default_error(e)
+        return default.error(e)
     msg = "Data normalised"
-    return default_result(msg=msg, data=data, loglevel="updated")
+    return default.result(msg=msg, data=data, loglevel="updated")
 
 
 @timed
@@ -1330,9 +1293,9 @@ def cipi_to_defi_swap(cipi_data, defi_data=None):
         else:
             data.duration = -1
     except Exception as e:
-        return default_error(e)
+        return default.error(e)
     msg = "cipi to defi conversion complete"
-    return default_result(msg=msg, data=data, loglevel="muted")
+    return default.result(msg=msg, data=data, loglevel="muted")
 
 
 @timed
@@ -1445,27 +1408,23 @@ def mm2_to_defi_swap(mm2_data, defi_data=None):
             data.duration = -1
 
     except Exception as e:
-        return default_error(e)
+        return default.error(e)
     msg = "mm2 to defi conversion complete"
-    return default_result(msg=msg, data=data, loglevel="muted")
+    return default.result(msg=msg, data=data, loglevel="muted")
 
 
 @timed
 def import_cipi_swaps(
     pgdb: SqlDB,
     pgdb_query: SqlQuery,
-    coins_config,
-    gecko_source,
     start_time=int(cron.now_utc() - 86400),
     end_time=int(cron.now_utc()),
 ):
     try:
         # import Cipi's swap data
-        ext_mysql = SqlQuery(
-            db_type="mysql", coins_config=coins_config, gecko_source=gecko_source
-        )
+        ext_mysql = SqlQuery(db_type="mysql")
         cipi_swaps = ext_mysql.get_swaps(start_time=start_time, end_time=end_time)
-        cipi_swaps = normalise_swap_data(cipi_swaps, ext_mysql.gecko_source)
+        cipi_swaps = normalise_swap_data(cipi_swaps)
         if len(cipi_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(start_time=1)
@@ -1525,16 +1484,14 @@ def import_cipi_swaps(
             msg = "Zero Cipi swaps returned!"
 
     except Exception as e:
-        return default_error(e)
-    return default_result(msg=msg, loglevel="updated")
+        return default.error(e)
+    return default.result(msg=msg, loglevel="updated")
 
 
 @timed
 def import_mm2_swaps(
     pgdb: SqlDB,
     pgdb_query: SqlQuery,
-    coins_config,
-    gecko_source,
     start_time=int(cron.now_utc() - 86400),
     end_time=int(cron.now_utc()),
 ):
@@ -1542,12 +1499,10 @@ def import_mm2_swaps(
         # Import in Sqlite (all) database
         mm2_sqlite = SqlQuery(
             db_type="sqlite",
-            db_path=MM2_DB_PATH_ALL,
-            coins_config=coins_config,
-            gecko_source=gecko_source,
+            db_path=MM2_DB_PATH_ALL
         )
         mm2_swaps = mm2_sqlite.get_swaps(start_time=start_time, end_time=end_time)
-        mm2_swaps = normalise_swap_data(mm2_swaps, mm2_sqlite.gecko_source)
+        mm2_swaps = normalise_swap_data(mm2_swaps)
         if len(mm2_swaps) > 0:
             with Session(pgdb.engine) as session:
                 count = pgdb_query.get_count(start_time=1)
@@ -1607,56 +1562,46 @@ def import_mm2_swaps(
         else:
             msg = "Zero MM2 swaps returned!"
     except Exception as e:
-        return default_error(e)
-    return default_result(msg=msg, loglevel="updated")
+        return default.error(e)
+    return default.result(msg=msg, loglevel="updated")
 
 
 @timed
 def populate_pgsqldb(
-    coins_config,
-    gecko_source,
     start_time=int(cron.now_utc() - 86400),
     end_time=int(cron.now_utc()),
 ):
     try:
-        pgdb = SqlUpdate(
-            db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
-        )
-        pgdb_query = SqlQuery(
-            db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
-        )
+        gecko_source = memcache.get_gecko_source()
+        coins_config = memcache.get_coins_config()
+        pgdb = SqlUpdate(db_type="pgsql")
+        pgdb_query = SqlQuery(db_type="pgsql")
         import_cipi_swaps(
             pgdb,
             pgdb_query,
             start_time=start_time,
-            end_time=end_time,
-            coins_config=coins_config,
-            gecko_source=gecko_source,
+            end_time=end_time
         )
         import_mm2_swaps(
             pgdb,
             pgdb_query,
             start_time=start_time,
-            end_time=end_time,
-            coins_config=coins_config,
-            gecko_source=gecko_source,
+            end_time=end_time
         )
         # pgdb_query.describe('defi_swaps')
 
     except Exception as e:
-        return default_error(e)
+        return default.error(e)
     msg = f"Importing swaps from {start_time} - {end_time} complete"
-    return default_result(msg=msg, loglevel="updated")
+    return default.result(msg=msg, loglevel="updated")
 
 
-def reset_defi_stats_table(coins_config, gecko_source):
+def reset_defi_stats_table():
     pgdb = SqlUpdate("pgsql")
     pgdb.drop("defi_swaps")
     SQLModel.metadata.create_all(pgdb.engine)
     logger.merge("Recreated PGSQL Table")
-    pgdb_query = SqlQuery(
-        db_type="pgsql", coins_config=coins_config, gecko_source=gecko_source
-    )
+    pgdb_query = SqlQuery(db_type="pgsql")
 
 
 def get_tablename(table):

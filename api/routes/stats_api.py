@@ -2,10 +2,11 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import util.cron as cron
-from lib.generic import Generic
 from typing import List
 from db.sqlitedb import get_sqlite_db
+import lib
 from lib.cache import Cache
+from lib.generic import Generic
 from lib.pair import Pair
 from models.generic import ErrorMessage
 from models.stats_api import (
@@ -15,10 +16,10 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
+import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
 from util.helper import get_last_trade_item
-import lib
 
 router = APIRouter()
 cache = Cache()
@@ -52,7 +53,7 @@ def atomicdexio():
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
-        return lib.load_adex_fortnite()
+        return memcache.get_adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
@@ -161,8 +162,7 @@ def trades(
 def last_price_for_pair(pair="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
-        last_traded_cache = lib.load_generic_last_traded()
-        return get_last_trade_item(pair, last_traded_cache, "last_price")
+        return get_last_trade_item(pair, "last_price")
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

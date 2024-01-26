@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-import util.cron as cron
-from util.defaults import default_error, set_params, default_result
-from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
-from util.files import Files
-from util.logger import logger
-from util.urls import Urls
-import util.validate as validate
 from const import MARKETS_PAIRS_DAYS
 import lib
+import util.defaults as default
+from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
+from util.files import Files
+from util.logger import logger, timed
+from util.urls import Urls
+import util.cron as cron
+import util.memcache as memcache
+import util.validate as validate
 
 
 class Cache:  # pragma: no cover
@@ -15,8 +16,7 @@ class Cache:  # pragma: no cover
         try:
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
-            logger.merge(f"TESTING: {self.testing}")
+            default.params(self, self.kwargs, self.options)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 
@@ -28,26 +28,30 @@ class Cache:  # pragma: no cover
             raise CacheItemNotFound(msg)
 
     def updated_since(self, healthcheck=False):  # pragma: no cover
-        updated = {}
-        for i in [
-            "coins_config",
-            "gecko_source",
-            "coins",
-            "generic_pairs",
-            "generic_tickers",
-            "generic_last_traded",
-            "fixer_rates",
-            "prices_tickers_v1",
-            "prices_tickers_v2",
-            "statsapi_adex_fortnite",
-            "statsapi_summary",
-        ]:
-            item = self.get_item(i)
-            since_updated = item.since_updated_min()
-            if not healthcheck:
-                logger.loop(f"[{i}] last updated: {since_updated} min")
-            updated.update({i: since_updated})
-        return updated
+        try:
+            updated = {}
+            for i in [
+                "coins_config",
+                "gecko_source",
+                "coins",
+                "generic_pairs",
+                "generic_tickers",
+                "generic_last_traded",
+                "fixer_rates",
+                "prices_tickers_v1",
+                "prices_tickers_v2",
+                "adex_fortnite",
+                "statsapi_summary",
+            ]:
+                item = self.get_item(i)
+                since_updated = item.since_updated_min()
+                memcache.update(i, item.data, 900)
+                if not healthcheck:
+                    logger.loop(f"[{i}] last updated: {since_updated} min")
+                updated.update({i: since_updated})
+            return updated
+        except Exception as e:
+            logger.warning(e)
 
 
 class CacheItem:
@@ -57,7 +61,7 @@ class CacheItem:
             self.kwargs = kwargs
             self.options = []
             self._data = {}
-            set_params(self, self.kwargs, self.options)
+            default.params(self, self.kwargs, self.options)
             self.files = Files()
             self.filename = self.files.get_cache_fn(name)
             if self.filename is None:
@@ -95,9 +99,10 @@ class CacheItem:
 
     def since_updated_min(self):  # pragma: no cover
         data = self.files.load_jsonfile(self.filename)
-        if "last_updated" in data:
-            since_updated = int(cron.now_utc()) - data["last_updated"]
-            return int(since_updated / 60)
+        if data is not None:
+            if "last_updated" in data:
+                since_updated = int(cron.now_utc()) - data["last_updated"]
+                return int(since_updated / 60)
         return "unknown"
 
     def update_data(self):
@@ -116,128 +121,67 @@ class CacheItem:
             return expiry_limits[self.name]
         return 5
 
+    @timed
     def save(self, data=None):  # pragma: no cover
         try:
-            logger.info(f"Saving {self.name}")
             # Handle external mirrored data easily
             if self.source_url is not None:
                 data = self.files.download_json(self.source_url)
+                if self.name == "coins_config":
+                    memcache.set_coins_config(data)
+                if self.name == "coins":
+                    memcache.set_coins(data)
+
             else:
                 if self.name == "fixer_rates":
                     data = lib.FixerAPI().latest()
+                    memcache.set_fixer_rates(data)
 
                 if self.name == "gecko_source":
                     data = lib.CoinGeckoAPI().get_gecko_source()
+                    memcache.set_gecko_source(data)
 
                 if self.name == "statsapi_summary":
-                    data = lib.StatsAPI(db=self.db).pair_summaries()
+                    data = lib.StatsAPI().pair_summaries()
+                    memcache.set_statsapi_summary(data)
 
-                if self.name == "statsapi_adex_fortnite":
-                    data = lib.StatsAPI(db=self.db).adex_fortnite()
+                if self.name == "adex_fortnite":
+                    data = lib.StatsAPI().adex_fortnite()
+                    memcache.set_adex_fortnite(data)
 
                 if self.name == "gecko_tickers":
                     data = lib.Generic().traded_tickers(pairs_days=7)
 
                 if self.name == "generic_tickers":
                     data = lib.Generic().traded_tickers()
+                    memcache.set_tickers(data)
 
                 if self.name == "generic_last_traded":
                     data = lib.Generic().last_traded()
+                    memcache.set_last_traded(data)
 
                 if self.name == "generic_pairs":
-                    data = lib.Generic().traded_pairs_info()
+                    data = lib.Generic().pairs()
+                    memcache.set_pairs(data)
+                    logger.info(">>>>>> generic pairs set complete")
 
                 if self.name == "markets_pairs":
-                    data = lib.Markets(db=self.db).pairs(days=MARKETS_PAIRS_DAYS)
+                    data = lib.Markets().pairs(days=MARKETS_PAIRS_DAYS)
 
                 if self.name == "markets_tickers":
-                    data = lib.Markets(db=self.db).tickers(
-                        pairs_days=MARKETS_PAIRS_DAYS
-                    )
+                    data = lib.Markets().tickers(pairs_days=MARKETS_PAIRS_DAYS)
 
             if data is not None:
-                if validate.loop_data(data, self, "ALL"):
+                if validate.loop_data(data, self):
                     data = {"last_updated": int(cron.now_utc()), "data": data}
-                    self.files.save_json(self.filename, data)
+                    r = self.files.save_json(self.filename, data)
+                    msg = f"{self.filename} saved."
+                    return default.result(data=data, msg=r["msg"], loglevel=r["loglevel"])
                 else:
-                    msg = {
-                        "error": f"failed to save {self.name}, data failed validation: {data}"
-                    }
-                    logger.warning(msg)
-                    return msg
-
+                    logger.warning(f"failed to save {self.name}, data failed validation: {data}")
             else:
-                msg = {"error": f"failed to save {self.name}, data is 'None'"}
-                logger.warning(msg)
-                return msg
+                logger.warning(f"failed to save {self.name}, data is 'None'")                
 
         except Exception as e:  # pragma: no cover
-            return default_error(e)
-        msg = {"success": f"{self.filename} saved."}
-        return default_result(data=data, msg=msg, loglevel="merge")
-
-
-def load_gecko_source():  # pragma: no cover
-    try:
-        # logger.merge("Loading Gecko source")
-        return CacheItem("gecko_source").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_gecko_source]: {e}")
-        return {}
-
-
-def load_coins_config():  # pragma: no cover
-    try:
-        return CacheItem("coins_config").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_coins_config]: {e}")
-        return {}
-
-
-def load_coins():  # pragma: no cover
-    try:
-        return CacheItem("coins").data
-    except Exception as e:
-        logger.error(f"{type(e)} Error in [load_coins]: {e}")
-        return {}
-
-
-def load_generic_last_traded():  # pragma: no cover
-    try:
-        cache_item = CacheItem("generic_last_traded")
-        return cache_item.data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
-        return {}
-
-
-def load_generic_pairs():  # pragma: no cover
-    try:
-        return CacheItem("generic_pairs").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [generic_pairs]: {e}")
-        return {}
-
-
-def load_generic_tickers():  # pragma: no cover
-    try:
-        return CacheItem("generic_tickers").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [generic_tickers]: {e}")
-        return {}
-
-
-def load_adex_fortnite():  # pragma: no cover
-    try:
-        return CacheItem("statsapi_adex_fortnite").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_adex_fortnite]: {e}")
-        return {}
-
-
-def load_statsapi_summary():  # pragma: no cover
-    try:
-        return CacheItem("statsapi_summary").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_statsapi_summary]: {e}")
-        return {}
+            msg = f"{self.filename} Failed. {type(e)}: {e}"
+            return default.error(e)

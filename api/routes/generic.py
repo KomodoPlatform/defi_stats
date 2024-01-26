@@ -3,23 +3,16 @@ import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import Optional
-from lib.cache import Cache
-from lib.generic import Generic
-from lib.pair import Pair
-from util.enums import TradeType
-import util.validate as validate
 import db
-import lib
-from models.generic import (
-    ErrorMessage,
-)
+from lib.pair import Pair
+from models.generic import ErrorMessage
+from util.enums import TradeType
 from util.logger import logger
+import util.memcache as memcache
 import util.transform as transform
-from const import GENERIC_PAIRS_DAYS
-from lib.cache import load_generic_pairs, load_generic_last_traded, load_generic_tickers
+import util.validate as validate
 
 router = APIRouter()
-cache = Cache()
 
 # These endpoints not yet active. Their intent is to
 # expose generic cached data which is reformatted for target specific
@@ -30,13 +23,13 @@ cache = Cache()
 
 @router.get(
     "/tickers",
-    description=f"24-hour price & volume for each pair traded in last {GENERIC_PAIRS_DAYS} days.",
+    description="24-hour price & volume for each pair traded in last 90 days.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def tickers():
     try:
-        return load_generic_tickers()
+        return memcache.get_tickers()
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -45,13 +38,13 @@ def tickers():
 
 @router.get(
     "/pairs",
-    description=f"Pairs traded in last {GENERIC_PAIRS_DAYS} days.",
+    description="Pairs traded in last 90 days.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def pairs():
     try:
-        return load_generic_pairs()
+        return memcache.get_pairs()
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -66,7 +59,7 @@ def pairs():
 )
 def last_traded(pair_str: str = ""):
     try:
-        last_traded = load_generic_last_traded()
+        last_traded = memcache.get_last_traded()
         if pair_str != "":
             if pair_str in last_traded:
                 return last_traded[pair_str]
@@ -88,8 +81,7 @@ def orderbook(
     depth: int = 100,
 ):
     try:
-        generic = Generic(netid="ALL")
-        data = generic.orderbook(pair_str=pair_str, depth=depth, all=True)
+        data = memcache.get(f"orderbook_{pair_str}")
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
@@ -98,6 +90,7 @@ def orderbook(
         return JSONResponse(status_code=400, content=err)
 
 
+# TODO: Cache this
 @router.get(
     "/historical_trades/{pair_str}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
@@ -137,6 +130,7 @@ def historical_trades(
         return JSONResponse(status_code=400, content=err)
 
 
+# TODO: Cache this
 @router.get(
     "/swaps_for_pair/{pair_str}",
     description="Swaps in DB for a given time range. Use format `KMD_LTC`",
@@ -165,28 +159,15 @@ def swaps_for_pair(
             raise ValueError("start_time must be less than end_time")
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        if "_" not in pair_str:
-            raise ValueError("pair_str must be in the format: 'KMD_LTC'")
+        validate.pair(pair_str)
         base, quote = transform.base_quote_from_pair(pair_str)
         days = (end_time - start_time) / 86400
         msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
         msg += f"| {start_time} -> {end_time} | {days} days"
-
-        coins_config = lib.load_coins_config()
-        gecko_source = lib.load_gecko_source()
-        pg_query = db.SqlQuery(gecko_source=gecko_source, coins_config=coins_config)
+        pg_query = db.SqlQuery()
         data = pg_query.get_swaps_for_pair(
             base, quote, trade_type, limit, start_time, end_time
         )
-        """
-        pair = Pair(pair_str=pair_str)
-        data = pair.historical_trades(
-            trade_type=trade_type,
-            limit=limit,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        """
         return {
             "trade_type": trade_type,
             "pair_str": pair_str,
@@ -213,10 +194,7 @@ def last_24h_swaps():
         start_time = int(cron.now_utc()) - 86400
         end_time = int(cron.now_utc())
         query = db.SqlQuery()
-        resp = query.get_swaps(
-            start_time=start_time,
-            end_time=end_time
-        )
+        resp = query.get_swaps(start_time=start_time, end_time=end_time)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

@@ -10,7 +10,7 @@ sys.path.append(API_ROOT_PATH)
 
 from util.transform import (
     pairs_to_gecko,
-    ticker_to_statsapi,
+    ticker_to_statsapi_summary,
     ticker_to_gecko,
     ticker_to_market_ticker_summary,
     ticker_to_market_ticker,
@@ -35,12 +35,12 @@ def setup_ticker_to_gecko():
 
 @pytest.fixture
 def setup_ticker_to_statsapi_24h():
-    yield ticker_to_statsapi(get_ticker_item(), "24hr")
+    yield ticker_to_statsapi_summary(get_ticker_item(), "24hr")
 
 
 @pytest.fixture
 def setup_ticker_to_statsapi_7d():
-    yield ticker_to_statsapi(get_ticker_item("7d"), "7d")
+    yield ticker_to_statsapi_summary(get_ticker_item("7d"), "7d")
 
 
 @pytest.fixture

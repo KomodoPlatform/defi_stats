@@ -24,7 +24,7 @@ from models.markets import (
 from lib.generic import Generic
 
 from lib.markets import Markets
-from util.enums import TradeType, NetId
+from util.enums import TradeType
 from util.logger import logger
 from util.transform import (
     ticker_to_market_ticker,
@@ -48,8 +48,8 @@ router = APIRouter()
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def atomicdex_info_api(netid: NetId = NetId.ALL):
-    db = get_sqlite_db(netid=netid.value)
+def atomicdex_info_api():
+    db = get_sqlite_db()
     return db.query.swap_counts()
 
 
@@ -61,9 +61,9 @@ def atomicdex_info_api(netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def current_liquidity(netid: NetId = NetId.ALL):
+def current_liquidity():
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         return {"current_liquidity": data["combined_liquidity_usd"]}
 
@@ -91,9 +91,9 @@ def fiat_rates():
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int = 100):
+def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
-        generic = Generic(netid=netid.value)
+        generic = Generic()
         return generic.orderbook(pair_str=market_pair, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -109,12 +109,11 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
     status_code=200,
 )
 def pairs_last_traded(
-    netid: NetId = NetId.ALL,
     start_time: int = 0,
     end_time: int = int(cron.now_utc()),
     min_swaps: int = 5,
 ) -> list:
-    data = lib.CacheItem("generic_last_traded", netid=netid.value).data
+    data = lib.CacheItem("generic_last_traded").data
     filtered_data = []
     for i in data:
         if data[i]["swap_count"] > min_swaps:
@@ -133,9 +132,9 @@ def pairs_last_traded(
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def summary(netid: NetId = NetId.ALL):
+def summary():
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -154,12 +153,12 @@ def summary(netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
+def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
         if "_" in coin:
             return {"error": "Coin value '{coin}' looks like a pair."}
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         last_traded = cache.get_item(name="generic_last_traded").data
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
@@ -194,9 +193,9 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
+def swaps24(ticker: str = "KMD") -> dict:
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         trades = 0
         for i in data["data"]:
@@ -212,9 +211,9 @@ def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
 )
-def ticker(netid: NetId = NetId.ALL):
+def ticker():
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -229,9 +228,9 @@ def ticker(netid: NetId = NetId.ALL):
     "/ticker_for_ticker",
     description="Simple last price and liquidity for each market pair for a specific ticker.",
 )
-def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
+def ticker_for_ticker(ticker):
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
@@ -247,9 +246,9 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
     "/tickers_summary",
     description="Total swaps and volume involving for each active ticker in the last 24hrs.",
 )
-def tickers_summary(netid: NetId = NetId.ALL):
+def tickers_summary():
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         resp = {}
         for i in data["data"]:
@@ -307,9 +306,9 @@ def trades(
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def usd_volume_24h(netid: NetId = NetId.ALL):
+def usd_volume_24h():
     try:
-        cache = lib.Cache(netid=netid.value)
+        cache = lib.Cache()
         data = cache.get_item(name="markets_tickers").data
         return {"usd_volume_24hr": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover
@@ -326,10 +325,9 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
 def volumes_history_ticker(
     coin="KMD",
     days_in_past=1,
-    trade_type: TradeType = TradeType.ALL,
-    netid: NetId = NetId.ALL,
+    trade_type: TradeType = TradeType.ALL
 ):
-    db = get_sqlite_db(netid=netid.value)
+    db = get_sqlite_db()
     volumes_dict = {}
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)

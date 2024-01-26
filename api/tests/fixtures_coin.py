@@ -6,7 +6,7 @@ import pytest
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 
-from lib.coin import Coin
+from lib.coins import Coin
 
 
 @pytest.fixture

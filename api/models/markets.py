@@ -76,7 +76,7 @@ class MarketsSummaryItem(BaseModel):
     highest_bid: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     highest_price_24hr: str = "777.777777"
-    price_change_percent_24hr: str = "777.777777"
+    price_change_pct_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_swap: int = 1777777777
     trades_24hr: int = 777
@@ -110,7 +110,7 @@ class MarketsSummaryForTickerItem(BaseModel):
     highest_price_24hr: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     price_change_24hr: str = "777.777777"
-    price_change_percent_24hr: str = "777.777777"
+    price_change_pct_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_trade: int = 1777777777
 
@@ -163,7 +163,7 @@ class GeckoTickersItem(GenericTickersItem):
     last_trade: int = 1777777777
     # trades_24hr: int = "123"
     # volume_usd_24hr: str = "777.777777"
-    # price_change_percent_24hr: str = "777.777777"
+    # price_change_pct_24hr: str = "777.777777"
 
 
 # wraps gecko/tickers

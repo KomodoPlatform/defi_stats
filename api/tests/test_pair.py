@@ -3,10 +3,6 @@ import util.cron as cron
 import pytest
 from decimal import Decimal
 from copy import deepcopy
-from lib.cache import (
-    load_gecko_source,
-    load_coins_config,
-)
 from tests.fixtures_class import helper
 from tests.fixtures_data import (
     trades_info,
@@ -27,10 +23,13 @@ from tests.fixtures_pair import (
     setup_morty_kmd_pair,
 )
 from util.logger import logger
+import util.memcache as memcache
 import util.transform as transform
 
-coins_config = load_coins_config()
-gecko_source = load_gecko_source()
+
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
+last_traded_cache = memcache.get_last_traded()
 
 
 def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
@@ -121,7 +120,7 @@ def test_get_volumes_and_prices(
     assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert float(r["lowest_price_24hr"]) == 100
     assert float(r["price_change_24hr"]) == 0
-    assert float(r["price_change_percent_24hr"]) == 0
+    assert float(r["price_change_pct_24hr"]) == 0
     assert float(r["base_volume_usd"]) == 400
     assert float(r["quote_volume_usd"]) == 400
     # average of base and rel volume

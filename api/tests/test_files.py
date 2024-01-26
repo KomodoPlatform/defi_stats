@@ -57,4 +57,4 @@ def test_download_jsonfile():
 
 def test_get_cache_fn():
     fn = files.get_cache_fn("fixer_rates")
-    assert fn.endswith("fixer_io.json")
+    assert fn.endswith("fixer_rates.json")

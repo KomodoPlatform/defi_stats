@@ -1,7 +1,8 @@
 from decimal import Decimal, InvalidOperation
 from util.logger import logger, timed
 from typing import Any, List, Dict
-from util.defaults import default_error
+import util.defaults as default
+import util.memcache as memcache
 
 
 def round_to_str(value: Any, rounding=8):
@@ -36,7 +37,7 @@ def clean_decimal_dict_list(data, to_string=False, rounding=8):
                         i[j] = round(float(i[j]), rounding)
         return data
     except Exception as e:  # pragma: no cover
-        return default_error(e)
+        return default.error(e)
 
 
 def clean_decimal_dict(data, to_string=False, rounding=8, exclude_keys: List = list()):
@@ -54,7 +55,7 @@ def clean_decimal_dict(data, to_string=False, rounding=8, exclude_keys: List = l
                         data[i] = float(data[i])
         return data
     except Exception as e:  # pragma: no cover
-        return default_error(e)
+        return default.error(e)
 
 
 def get_suffix(days: int) -> str:
@@ -122,22 +123,25 @@ def get_top_items(data: List[Dict], sort_key: str, length: int = 5):
 
 
 @timed
-def order_pair_by_market_cap(pair_str: str, gecko_source: Dict) -> str:
+def order_pair_by_market_cap(pair_str: str, gecko_source=None) -> str:
     try:
-        pair_str.replace("-segwit", "")
-        pair_list = pair_str.split("_")
-        base = pair_list[0]
-        quote = pair_list[1]
-        base_mc = 0
-        quote_mc = 0
-        if base in gecko_source:
-            base_mc = Decimal(gecko_source[base]["usd_market_cap"])
-        if quote in gecko_source:
-            quote_mc = Decimal(gecko_source[quote]["usd_market_cap"])
-        if quote_mc < base_mc:
-            pair_str = invert_pair(pair_str)
-        elif quote_mc == base_mc:
-            pair_str = "_".join(sorted(pair_list))
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
+        if gecko_source is not None:
+            pair_str.replace("-segwit", "")
+            pair_list = pair_str.split("_")
+            base = pair_list[0]
+            quote = pair_list[1]
+            base_mc = 0
+            quote_mc = 0
+            if base in gecko_source:
+                base_mc = Decimal(gecko_source[base]["usd_market_cap"])
+            if quote in gecko_source:
+                quote_mc = Decimal(gecko_source[quote]["usd_market_cap"])
+            if quote_mc < base_mc:
+                pair_str = invert_pair(pair_str)
+            elif quote_mc == base_mc:
+                pair_str = "_".join(sorted(pair_list))
     except Exception as e:  # pragma: no cover
         msg = f"order_pair_by_market_cap failed: {e}"
         logger.warning(msg)
@@ -199,7 +203,7 @@ def to_summary_for_ticker_item(data):  # pragma: no cover
         "highest_price_24hr": data["high"],
         "lowest_price_24hr": data["low"],
         "price_change_24hr": data["price_change_24hr"],
-        "price_change_percent_24hr": data["price_change_percent_24hr"],
+        "price_change_pct_24hr": data["price_change_pct_24hr"],
         "trades_24hr": data["trades_24hr"],
         "volume_usd_24hr": data["volume_usd_24hr"],
         "last_price": data["last_price"],
@@ -222,7 +226,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "highest_price_24h": data["high"],
         "lowest_price_24h": data["low"],
         "price_change_24h": data["price_change_24hr"],
-        "price_change_percent_24h": data["price_change_percent_24hr"],
+        "price_change_pct_24h": data["price_change_pct_24hr"],
         "trades_24h": data["trades_24hr"],
         "volume_usd_24h": data["volume_usd_24hr"],
         "last_price": data["last_price"],
@@ -239,7 +243,7 @@ def ticker_to_market_ticker_summary(i):
         "quote_volume": i["target_volume"],
         "lowest_ask": i["ask"],
         "highest_bid": i["bid"],
-        "price_change_percent_24hr": str(i["price_change_percent_24hr"]),
+        "price_change_pct_24hr": str(i["price_change_pct_24hr"]),
         "highest_price_24hr": i["high"],
         "lowest_price_24hr": i["low"],
         "trades_24hr": int(i["trades_24hr"]),
@@ -258,7 +262,7 @@ def ticker_to_xyz_summary(i):
         "lowest_ask": i["ask"],
         "last_swap_timestamp": int(i["last_trade"]),
         "highest_bid": i["bid"],
-        "price_change_percent_24h": str(i["price_change_percent_24hr"]),
+        "price_change_pct_24h": str(i["price_change_pct_24hr"]),
         "highest_price_24h": i["high"],
         "lowest_price_24h": i["low"],
         "trades_24h": int(i["trades_24hr"]),
@@ -305,7 +309,7 @@ def ticker_to_gecko(i):
 
 
 @timed
-def ticker_to_statsapi(i, suffix):
+def ticker_to_statsapi_summary(i, suffix):
     try:
         if suffix == "24hr":
             alt_suffix = "24h"
@@ -315,7 +319,7 @@ def ticker_to_statsapi(i, suffix):
             "trading_pair": i["ticker_id"],
             "pair_swaps_count": int(i[f"trades_{suffix}"]),
             "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
-            "pair_trade_value_usd": Decimal(i[f"volume_usd_{suffix}"]),
+            "pair_trade_value_usd": Decimal(i[f"combined_volume_usd"]),
             "base_currency": i["base_currency"],
             "base_volume": Decimal(i["base_volume"]),
             "base_price_usd": Decimal(i["base_usd_price"]),
@@ -337,26 +341,16 @@ def ticker_to_statsapi(i, suffix):
             f"highest_price_{alt_suffix}": Decimal(i["high"]),
             f"lowest_price_{alt_suffix}": Decimal(i["low"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
-            f"price_change_percent_{alt_suffix}": Decimal(
-                i[f"price_change_percent_{suffix}"]
-            ),
+            f"price_change_pct_{alt_suffix}": Decimal(i[f"price_change_pct_{suffix}"]),
+            "last_swap_price": i["last_swap_price"],
+            "last_swap_time": i["last_swap_time"],
+            "last_swap_uuid": i["last_swap_uuid"],
+            "variants": i["variants"]
         }
-        if "last_trade" in i:
-            data.update({"last_trade": int(i["last_trade"])})
-        if "last_price" in i:
-            data.update({"last_price": i["last_price"]})
-        if "last_swap_price" in i:
-            data.update({"last_swap_price": i["last_swap_price"]})
-        if "last_swap_time" in i:
-            data.update({"last_swap_time": i["last_swap_time"]})
-        if "last_swap_uuid" in i:
-            data.update({"last_swap_uuid": i["last_swap_uuid"]})
-        if "variants" in i:
-            data.update({"variants": i["variants"]})
         return data
 
     except Exception as e:  # pragma: no cover
-        return default_error(e)
+        return default.error(e)
 
 
 def historical_trades_to_market_trades(i):
@@ -606,7 +600,27 @@ def base_quote_from_pair(variant):
             quote = split_variant[1]
         return base, quote
     except Exception as e:  # pragma: no cover
-        return default_error(e)
+        return default.error(e)
 
 
-# If  in
+def generic_pairs_time_filter(pairs_data, start_time, end_time):
+    # TODO: handle first/last within variants
+    last_traded = memcache.get_last_traded()
+    last_traded = [
+        i for i in last_traded if last_traded[i]["last_swap_time"] > start_time
+    ]
+    last_traded = [
+        i for i in last_traded if last_traded[i]["last_swap_time"] < end_time
+    ]
+    return last_traded
+
+    pass
+    # pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
+
+
+def generic_pairs_deplatform(pairs_data):
+    # TODO: handle first/last within variants
+    last_traded = memcache.get_last_traded()
+
+    pass
+    # pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))

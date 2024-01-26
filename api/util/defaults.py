@@ -52,7 +52,7 @@ def default_val(key: str):
     raise NoDefaultForKeyError(f"No default value for {key}!")  # pragma: no cover
 
 
-def set_params(object: object(), kwargs: dict(), options: List[str] = list()) -> None:
+def params(object: object(), kwargs: dict(), options: List[str] = list()) -> None:
     # Set the defaults from object options if not already set
     try:
         if IS_TESTING:
@@ -67,12 +67,12 @@ def set_params(object: object(), kwargs: dict(), options: List[str] = list()) ->
                     setattr(object, arg, default_val(arg))
     except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"
-        return default_error(e.msg)
+        return error(e.msg)
     msg = "Setting default params complete!"
-    return default_result(msg=msg, loglevel="debug", ignore_until=10)
+    return result(msg=msg, loglevel="debug", ignore_until=10)
 
 
-def default_error(
+def error(
     e, msg=None, loglevel="error", ignore_until=0, data=None
 ):  # pragma: no cover
     if msg is None:
@@ -90,7 +90,7 @@ def default_error(
     return r
 
 
-def default_result(
+def result(
     data=None, msg=None, loglevel="debug", ignore_until=0
 ):  # pragma: no cover
     r = {

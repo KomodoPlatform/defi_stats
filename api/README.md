@@ -112,3 +112,8 @@ For the inverted pair `YYY_XXX`, an inversion of the data above is returned, aft
 - BUY becomes SELL and vice versa.
 - BASE becomes QUOTE (or rel/target) and vice versa.
 - Price becomes 1/price
+
+
+# Update db and generalisation progress
+- [] generic pairs => [markets, gecko, xyz]
+

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-from pymemcache.client import base
 
 from dotenv import load_dotenv
 
@@ -27,7 +26,7 @@ MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 
 
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
-RESET_TABLE = os.getenv("RESET_TABLE") == 'True'
+RESET_TABLE = os.getenv("RESET_TABLE") == "True"
 
 IN_DOCKER = os.getenv("IN_DOCKER")
 if IN_DOCKER == "True":
@@ -136,4 +135,4 @@ compare_fields = [
 MARKETS_PAIRS_DAYS = 30
 GENERIC_PAIRS_DAYS = 30
 
-MEMCACHE = base.Client(('localhost', 11211))
+MEMCACHE_LIMIT = 100 * 1024 * 1024  # 100 MB

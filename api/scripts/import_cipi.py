@@ -7,13 +7,13 @@ from datetime import time as dt_time
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
+import util.memcache as memcache
 from db import populate_pgsqldb
-import util.cron as cron
 from util.logger import logger
-import lib
 
-gecko_source = lib.load_gecko_source()
-coins_config = lib.load_coins_config()
+
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
 
 
 def daterange(start_date, end_date):
@@ -28,12 +28,7 @@ def import_swaps():
         logger.updated(f"Importing swaps from {dt.strftime('%Y-%m-%d')} {dt}")
         start_ts = datetime.combine(dt, dt_time()).timestamp()
         end_ts = datetime.combine(dt, dt_time()).timestamp() + 86400
-        populate_pgsqldb(
-            start_time=start_ts,
-            end_time=end_ts,
-            coins_config=coins_config,
-            gecko_source=gecko_source,
-        )
+        populate_pgsqldb(start_time=start_ts, end_time=end_ts)
         time.sleep(2)
 
 

@@ -95,7 +95,7 @@ def summary_v2():
                 j["price_change_24hr"] = transform.format_10f(
                     Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
                 )
-                j["price_change_percent_24hr"] = transform.format_10f(
+                j["price_change_pct_24hr"] = transform.format_10f(
                     Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
                 )
 

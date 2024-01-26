@@ -3,7 +3,7 @@ from os.path import basename, dirname, abspath
 import util.cron as cron
 import logging
 import functools
-from util.defaults import set_params
+import util.defaults as default
 
 PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
 
@@ -97,6 +97,18 @@ class CustomFormatter(logging.Formatter):
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
+        elif record.levelname == "CACHED":
+            log_fmt = (
+                self.drabgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "SAVED":
+            log_fmt = (
+                self.purple
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
         elif record.levelname == "DEBUG":
             log_fmt = (
                 self.debug
@@ -175,6 +187,14 @@ logger = logging.getLogger("defi-stats")
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
+
+# Shows DB imports
+addLoggingLevel("SAVED", logging.DEBUG + 13)
+logger.setLevel("SAVED")
+
+# Shows DB imports
+addLoggingLevel("CACHED", logging.DEBUG + 12)
+logger.setLevel("CACHED")
 
 # Shows DB imports
 addLoggingLevel("PAIR", logging.DEBUG + 11)
@@ -261,7 +281,7 @@ class StopWatch:
 
     def get_stopwatch(self, **kwargs):
         options = ["trigger", "msg", "loglevel"]
-        set_params(self, kwargs, options)
+        default.params(self, kwargs, options)
         duration = int(cron.now_utc()) - int(self.start_time)
         if self.trigger == 0:
             self.trigger = 10
@@ -343,7 +363,7 @@ def timed(func):
                     loglevel = result["loglevel"]
                     send = True
                 else:
-                    # if not using `default_result`
+                    # if not using `default.result`
                     return result
                 if "message" in result:
                     msg = result["message"]
@@ -353,7 +373,7 @@ def timed(func):
                     send = True
                 if duration >= ignore_until and send:
                     StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
-                # Using `default_result`, with actual data to return
+                # Using `default.result`, with actual data to return
                 if "data" in result:
                     if result["data"] is not None:
                         result = result["data"]

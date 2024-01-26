@@ -5,7 +5,7 @@ import util.cron as cron
 from util.logger import logger
 from models.generic import ErrorMessage, ApiIds
 from util.files import Files
-import lib
+import util.memcache as memcache
 
 router = APIRouter()
 files = Files()
@@ -24,7 +24,7 @@ def get_gecko_ids():
             "timestamp": int(cron.now_utc()),
             "ids": {}
         }
-        coins_config = lib.CacheItem('coins_config').data
+        coins_config = memcache.get_gecko_source()
         for coin in coins_config:
             data["ids"].update({
                 coin: coins_config[coin]["coingecko_id"]

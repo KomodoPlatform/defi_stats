@@ -11,23 +11,6 @@ def is_valid_hex(s):
         return False
 
 
-def ticker_id(ticker_id, valid_tickers, allow_reverse=False, allow_fail=False):
-    if allow_reverse:
-        inverse_valid_tickers = [
-            f'{i.split("_")[1]}_{i.split("_")[0]}' for i in valid_tickers
-        ]
-        if ticker_id in inverse_valid_tickers:
-            return "reversed"
-
-    if ticker_id in valid_tickers:
-        return "standard"
-
-    msg = f"ticker_id '{ticker_id}' not in available pairs."
-    msg += " Check the /api/v3/gecko/pairs endpoint for valid values."
-    if allow_fail:
-        return "failed"
-    raise ValueError(msg)
-
 
 def positive_numeric(value, name, is_int=False):
     try:
@@ -43,61 +26,28 @@ def positive_numeric(value, name, is_int=False):
     return True
 
 
-def loop_data(data, cache_item, netid=None):
+def loop_data(data, cache_item):
     try:
         if data is None:
             return False
         if "error" in data:
             raise DataStructureError(
-                f"Unexpected data structure returned for {cache_item.name} ({netid})"
+                f"Unexpected data structure returned for {cache_item.name}"
             )
         if len(data) > 0:
             return True
         else:
             msg = (
-                f"{cache_item.name} not updated because input data was empty ({netid})"
+                f"{cache_item.name} not updated because input data was empty"
             )
             logger.warning(msg)
             return False
     except Exception as e:
-        msg = f"{cache_item.name} not updated because invalid: {e} ({netid})"
+        msg = f"{cache_item.name} not updated because invalid: {e}"
         logger.warning(msg)
         return False
 
 
-def orderbook_pair(base, quote, coins_config):
-    try:
-        logger.muted(f"Validating {base}/{quote}")
-        err = None
-        # TODO: Create alternative which does not risk circular import
-        # wallet_only = [i.ticker for i in lib.COINS.wallet_only]
-        # with_segwit = [i.ticker for i in lib.COINS.with_segwit]
-        if base.replace("-segwit", "") == quote.replace("-segwit", ""):
-            err = {"error": f"BaseQuoteSameError for {base}"}
-        if base not in coins_config.keys():
-            err = {"error": f"CoinConfigNotFound for {base}"}
-        if quote not in coins_config.keys():
-            err = {"error": f"CoinConfigNotFound for {quote}"}
-        '''
-        if base in wallet_only:
-            if base in with_segwit:
-                if f"{base}-segwit" in wallet_only:
-                    err = {"error": f"CoinWalletOnlyException {base}"}
-            else:
-                err = {"error": f"CoinWalletOnlyException for {base}"}
-        if quote in wallet_only:
-            if quote in with_segwit:
-                if f"{quote}-segwit" in wallet_only:
-                    err = {"error": f"CoinWalletOnlyException {quote}"}
-            else:
-                err = {"error": f"CoinWalletOnlyException for {quote}"}
-        '''
-        if err is not None:
-            return False
-        return True
-    except Exception as e:  # pragma: no cover
-        logger.warning(e)
-        return False
 
 
 def json_obj(data, outer=True):
@@ -108,6 +58,7 @@ def json_obj(data, outer=True):
             data.keys()
         except Exception as e:
             logger.error(e)
+            logger.error(data)
             return False
     # Recursivety checks nested data
     if isinstance(data, dict):

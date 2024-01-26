@@ -14,6 +14,7 @@ from fastapi.openapi.docs import (
 """
 
 from const import API_HOST, API_PORT
+import lib
 from routes import (
     gecko,
     cache_loop,
@@ -28,11 +29,10 @@ from routes import (
     stats_api,
     old_db,
     new_db,
-    stats_xyz,
+    stats_xyz
 )
 from lib.cache import Cache
 from models.generic import ErrorMessage, HealthCheck
-import lib
 
 
 @asynccontextmanager

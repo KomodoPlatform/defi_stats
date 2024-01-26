@@ -6,10 +6,14 @@ from tests.fixtures_validate import (
 )
 from tests.fixtures_data import valid_tickers
 import util.validate as validate
+import util.memcache as memcache
 import lib
 
-coins_config = lib.load_coins_config()
-gecko_source = lib.load_gecko_source()
+
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
+last_traded_cache = memcache.get_last_traded()
+
 
 
 def test_invert_pair(
@@ -24,15 +28,6 @@ def test_validate_pair():
         validate.pair("KMDLTC")
     with pytest.raises(TypeError):
         validate.pair(6521)
-
-
-def test_validate_ticker_id():
-    assert validate.ticker_id("KMD_LTC", valid_tickers) == "standard"
-    assert validate.ticker_id("BTC_KMD", valid_tickers, True) == "reversed"
-    assert validate.ticker_id("BTC_XXX", valid_tickers, True, True) == "failed"
-
-    with pytest.raises(Exception):
-        assert validate.ticker_id("BTC_XXX", valid_tickers)
 
 
 def test_validate_positive_numeric():
@@ -53,21 +48,6 @@ def test_validate_positive_numeric():
         validate.positive_numeric("5.5", "var", True)
     with pytest.raises(ValueError):
         validate.positive_numeric("foo", "var")
-
-
-def test_validate_orderbook_pair():
-    assert not validate.orderbook_pair("KMD", "KMD", coins_config)
-    assert not validate.orderbook_pair("LTC", "LTC-segwit", coins_config)
-    assert not validate.orderbook_pair("KMD", "XXX", coins_config)
-    assert not validate.orderbook_pair("XXX", "KMD", coins_config)
-    # Wallet only test is currently disabled
-    # assert not validate.orderbook_pair("KMD", "ATOM", coins_config)
-    # assert not validate.orderbook_pair("ATOM", "KMD", coins_config)
-    assert validate.orderbook_pair("KMD-BEP20", "KMD", coins_config)
-    assert validate.orderbook_pair("KMD", "LTC-segwit", coins_config)
-    assert validate.orderbook_pair("KMD", "LTC", coins_config)
-    assert validate.orderbook_pair("LTC-segwit", "KMD", coins_config)
-    assert validate.orderbook_pair("LTC", "KMD", coins_config)
 
 
 def test_validate_loop_data():

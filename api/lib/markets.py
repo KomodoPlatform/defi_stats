@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from const import MARKETS_PAIRS_DAYS
 from lib.generic import Generic
 from lib.pair import Pair
-from util.helper import get_coin_variants
+from lib.coins import get_coin_variants, get_segwit_coins
 from util.logger import timed, logger
-from util.defaults import default_error, set_params
+import util.cron as cron
+import util.defaults as default
 import util.transform as transform
-from const import MARKETS_PAIRS_DAYS
-import lib
+import util.memcache as memcache
 
 
 class Markets:
@@ -16,42 +16,42 @@ class Markets:
             self.netid = 8762
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
-            logger.info(self.testing)
-            if "coins_config" in kwargs:
-                self.coins_config = kwargs["coins_config"]
-            else:
-                self.coins_config = lib.load_coins_config()
+            default.params(self, self.kwargs, self.options)
             self.generic = Generic(**kwargs)
-            self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
+            self.segwit_coins = [i for i in get_segwit_coins()]
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")
 
     @timed
     def pairs(self, days=MARKETS_PAIRS_DAYS):
         try:
+            # Todo: Set this cache up for temporal filtering
             # Include unpriced, traded in last 30 days
-            data = lib.load_generic_pairs()
-            return data
+            return memcache.get_pairs()
         except Exception as e:  # pragma: no cover
             msg = f"markets.pairs failed for netid {self.netid}!"
-            return default_error(e, msg)
+            return default.error(e, msg)
 
     @timed
     def tickers(self, trades_days: int = 1, pairs_days: int = MARKETS_PAIRS_DAYS):
         try:
-            data = self.generic.traded_tickers(pairs_days=pairs_days)
-            return data
+            # Todo: Set this cache up for temporal filtering
+            tickers = memcache.get_tickers()
+            return tickers
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
-            return default_error(e, msg)
+            return default.error(e, msg)
 
+    # TODO: Cache this
     def trades(self, pair: str, days_in_past: int = 1, all=False):
         try:
+            last_traded_cache = memcache.get_last_traded()
             start_time = int(cron.now_utc() - 86400 * days_in_past)
             end_time = int(cron.now_utc())
-
-            data = Pair(pair_str=pair).historical_trades(
+            data = Pair(
+                pair_str=pair,
+                last_traded_cache=last_traded_cache
+            ).historical_trades(
                 start_time=start_time,
                 end_time=end_time,
             )
@@ -64,12 +64,10 @@ class Markets:
             elif base in self.segwit_coins or quote in self.segwit_coins:
                 bases = get_coin_variants(
                     base,
-                    self.coins_config,
                     segwit_only=True,
                 )
                 quotes = get_coin_variants(
                     quote,
-                    self.coins_config,
                     segwit_only=True,
                 )
                 for i in bases:
@@ -89,4 +87,4 @@ class Markets:
 
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
-            return default_error(e, msg)
+            return default.error(e, msg)

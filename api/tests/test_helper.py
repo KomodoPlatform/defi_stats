@@ -1,24 +1,23 @@
 import pytest
 from decimal import Decimal
 from tests.fixtures_data import swap_item
-from tests.fixtures_class import setup_last_traded_cache
 from util.helper import (
     get_mm2_rpc_port,
     get_netid_filename,
     get_chunks,
     get_price_at_finish,
+    get_last_trade_item,
+)
+from lib.coins import (
     get_pairs_info,
     get_pair_info_sorted,
-    get_last_trade_item,
     get_coin_variants,
     get_pair_variants,
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from util.logger import logger
 
-from lib.cache import load_gecko_source, load_coins_config, load_generic_last_traded
-
-coins_config = load_coins_config()
+import util.memcache as memcache
 
 
 def test_get_mm2_rpc_port():
@@ -64,50 +63,49 @@ def test_get_pair_info_sorted():
     assert not r[0]["priced"]
 
 
-def test_get_last_trade_item(setup_last_traded_cache):
-    cache = setup_last_traded_cache
-    r = get_last_trade_item("DOGE_LTC", cache, "last_swap_uuid")
+def test_get_last_trade_item():
+    r = get_last_trade_item("DOGE_LTC", "last_swap_uuid")
     assert r == "EEEEEEEE-ee4b-494f-a2fb-48467614b613"
-    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap_uuid")
+    r2 = get_last_trade_item("LTC_DOGE", "last_swap_uuid")
     assert r == r2
-    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_uuid")
+    r = get_last_trade_item("DOGE_XXX", "last_swap_uuid")
     assert r == ""
 
-    r = get_last_trade_item("DOGE_LTC-segwit", cache, "last_swap_time")
+    r = get_last_trade_item("DOGE_LTC-segwit", "last_swap_time")
 
     assert r > 0
-    r2 = get_last_trade_item("LTC_DOGE", cache, "last_swap_time")
+    r2 = get_last_trade_item("LTC_DOGE", "last_swap_time")
     assert r == r2
-    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_time")
+    r = get_last_trade_item("DOGE_XXX", "last_swap_time")
     assert r == 0
 
-    r = get_last_trade_item("KMD_LTC", cache, "last_swap_uuid")
+    r = get_last_trade_item("KMD_LTC", "last_swap_uuid")
 
-    r = get_last_trade_item("KMD_LTC", cache, "last_swap_price")
+    r = get_last_trade_item("KMD_LTC", "last_swap_price")
 
     assert r == Decimal(100)
-    r2 = get_last_trade_item("LTC_KMD", cache, "last_swap_price")
+    r2 = get_last_trade_item("LTC_KMD", "last_swap_price")
     assert r2 == Decimal(1 / 100.0000000000)
     assert r != r2
     assert r != 1 / r2
     assert 1 / r != r2
-    r = get_last_trade_item("DOGE_XXX", cache, "last_swap_price")
+    r = get_last_trade_item("DOGE_XXX", "last_swap_price")
     assert r == Decimal(0)
 
 
 def test_get_coin_variants():
-    r = get_coin_variants("BTC", coins_config)
+    r = get_coin_variants("BTC")
     assert "BTC-BEP20" in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) > 2
-    r = get_coin_variants("BTC", coins_config, True)
+    r = get_coin_variants("BTC", True)
     assert "BTC-BEP20" not in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) == 2
 
-    r = get_coin_variants("USDC", coins_config)
+    r = get_coin_variants("USDC")
     assert "USDC-BEP20" in r
     assert "USDC-PLG20" in r
     assert "USDC-PLG20_OLD" in r
@@ -117,21 +115,21 @@ def test_get_coin_variants():
 
 
 def test_get_pair_variants():
-    r = get_pair_variants("KMD_LTC", coins_config)
+    r = get_pair_variants("KMD_LTC")
     assert "KMD_LTC" in r
     assert "KMD_LTC-segwit" in r
     assert "KMD-BEP20_LTC" in r
     assert "KMD-BEP20_LTC-segwit" in r
     assert len(r) == 4
 
-    r = get_pair_variants("LTC_KMD", coins_config)
+    r = get_pair_variants("LTC_KMD")
     assert "LTC_KMD" in r
     assert "LTC-segwit_KMD" in r
     assert "LTC_KMD-BEP20" in r
     assert "LTC-segwit_KMD-BEP20" in r
     assert len(r) == 4
 
-    r = get_pair_variants("KMD_USDC", coins_config)
+    r = get_pair_variants("KMD_USDC")
     assert "KMD_USDC" not in r
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r

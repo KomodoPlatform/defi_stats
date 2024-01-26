@@ -7,14 +7,14 @@ from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID, compare_fields
-from util.defaults import default_result, set_params, default_error
+from lib.coins import pair_without_segwit_suffix, get_segwit_coins
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import InvalidParamCombination
-from util.helper import pair_without_segwit_suffix
 from util.files import Files
 from util.logger import logger, timed
 from util.transform import sort_dict, order_pair_by_market_cap, format_10f
-import lib
+import util.defaults as default
+import util.memcache as memcache
 
 
 class SqliteDB:  # pragma: no cover
@@ -26,23 +26,7 @@ class SqliteDB:  # pragma: no cover
             self.db_file = basename(self.db_path)
             self.netid = get_netid(self.db_file)
             self.options = ["wal", ]
-            set_params(self, self.kwargs, self.options)
-
-            if "last_traded_cache" in kwargs:
-                self.last_traded_cache = kwargs["last_traded_cache"]
-            else:
-                self.last_traded_cache = lib.load_generic_last_traded()
-
-            if "coins_config" in kwargs:
-                self.coins_config = kwargs["coins_config"]
-            else:
-                self.coins_config = lib.load_coins_config()
-
-            if "gecko_source" in kwargs:
-                self.gecko_source = kwargs["gecko_source"]
-            else:
-                self.gecko_source = lib.load_gecko_source()
-
+            default.params(self, self.kwargs, self.options)
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row
             self.sql_cursor = self.conn.cursor()
@@ -59,7 +43,7 @@ class SqliteDB:  # pragma: no cover
     def close(self):
         self.conn.close()
         msg = f"Connection to {self.db_file} closed"
-        return default_result(msg=msg, loglevel="debug", ignore_until=10)
+        return default.result(msg=msg, loglevel="debug", ignore_until=10)
 
     def connect(self):
         return sqlite3.connect(self.db_path)
@@ -74,8 +58,8 @@ class SqliteQuery:  # pragma: no cover
         try:
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
-            self.segwit_coins = [i.coin for i in lib.COINS.with_segwit]
+            default.params(self, self.kwargs, self.options)
+            self.segwit_coins = [i for i in get_segwit_coins()]
             self.db = db
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteQuery: {e}")
@@ -194,9 +178,9 @@ class SqliteQuery:  # pragma: no cover
 
             return swaps_for_pair
         except sqlite3.OperationalError as e:
-            return default_error(f"{e}")
+            return default.error(f"{e}")
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def get_swap(self, uuid):
@@ -212,7 +196,7 @@ class SqliteQuery:  # pragma: no cover
                 data = data[0]
             return data
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def get_row_count(self, table):
@@ -221,7 +205,7 @@ class SqliteQuery:  # pragma: no cover
             r = self.db.sql_cursor.fetchone()
             return r[0]
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     def get_uuids(self, success_only=True, fail_only=False) -> List:
         try:
@@ -282,9 +266,7 @@ class SqliteQuery:  # pragma: no cover
                     maker_coin=f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}',
                     taker_coin=f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}',
                 )
-                std_pair = order_pair_by_market_cap(
-                    pair, gecko_source=self.db.gecko_source
-                )
+                std_pair = order_pair_by_market_cap(pair)
                 last_price = item["last_maker_amount"] / item["last_taker_amount"]
                 sum_maker = item["sum_maker_traded"]
                 sum_taker = item["sum_taker_traded"]
@@ -310,7 +292,7 @@ class SqliteQuery:  # pragma: no cover
             sorted_dict = sort_dict(by_pair_dict)
             return sorted_dict
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     # This was a duplicate of SqliteQuery.get_atomicdexio
     @timed
@@ -339,7 +321,7 @@ class SqliteQuery:  # pragma: no cover
             }
             return data
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def build_query(self, **kwargs) -> str:
@@ -393,7 +375,7 @@ class SqliteQuery:  # pragma: no cover
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
             return sql
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def get_timespan_swaps(self, **kwargs) -> list:
@@ -405,7 +387,7 @@ class SqliteQuery:  # pragma: no cover
             self.db.sql_cursor.execute(sql)
             data = self.db.sql_cursor.fetchall()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
         return data
 
     def last_24h_swaps(self):
@@ -434,9 +416,10 @@ class SqliteQuery:  # pragma: no cover
         """
         try:
             coin = coin.split("-")[0]
+            coins_config = memcache.get_coins_config()
             variants = [
                 i
-                for i in self.db.coins_config
+                for i in coins_config
                 if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
             ]
             if end_time == 0:
@@ -509,7 +492,7 @@ class SqliteQuery:  # pragma: no cover
                 "data": resp,
             }
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def get_volume_for_coin(
@@ -524,11 +507,12 @@ class SqliteQuery:  # pragma: no cover
         If no timestamp is given, returns all swaps for the coin.
         """
         try:
+            coins_config = memcache.get_coins_config()
             resp = {}
             coin = coin.split("-")[0]
             variants = [
                 i
-                for i in self.db.coins_config
+                for i in coins_config
                 if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
             ]
             if end_time == 0:
@@ -587,7 +571,7 @@ class SqliteQuery:  # pragma: no cover
                 "data": resp,
             }
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     # Post NetId Migration below
 
@@ -597,7 +581,7 @@ class SqliteUpdate:  # pragma: no cover
         try:
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
+            default.params(self, self.kwargs, self.options)
             self.files = Files()
             self.db = db
         except Exception as e:  # pragma: no cover
@@ -615,10 +599,10 @@ class SqliteUpdate:  # pragma: no cover
                 msg = f"{len(overlap)} uuids removed from {remove_db.db_path}"
             else:
                 msg = f"No UUIDs to remove from {remove_db.db_path}"
-            return default_result(msg=msg, loglevel="updated")
+            return default.result(msg=msg, loglevel="updated")
         except Exception as e:  # pragma: no cover
             msg = f"{type(e)} Failed to remove UUIDs from {remove_db.db_path}: {e}"
-            return default_error(e, msg=msg)
+            return default.error(e, msg=msg)
 
     @timed
     def update_stats_swap_row(self, uuid, data):
@@ -629,11 +613,11 @@ class SqliteUpdate:  # pragma: no cover
             sql = f"UPDATE 'stats_swaps' SET {cols} WHERE uuid = ?;"
             self.db.sql_cursor.execute(sql, t)
             self.db.conn.commit()
-            return default_result(msg=f"{uuid} updated in {self.db.db_file}")
+            return default.result(msg=f"{uuid} updated in {self.db.db_file}")
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def clear(self, table):
@@ -642,9 +626,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.conn.commit()
             return
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def create_swap_stats_table(self):
@@ -674,11 +658,11 @@ class SqliteUpdate:  # pragma: no cover
                 """
             )
             msg = f"'stats_swaps' table created for {self.db.db_path}"
-            return default_result(msg=msg, loglevel="muted")
+            return default.result(msg=msg, loglevel="muted")
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.error(e)
 
     @timed
     def remove_uuids(self, remove_list: set(), table: str = "stats_swaps") -> None:
@@ -697,9 +681,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.conn.commit()
             return
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default_error(e, sql)
+            return default.error(e, sql)
         except Exception as e:  # pragma: no cover
-            return default_error(e, sql)
+            return default.error(e, sql)
 
     @timed
     def denullify_stats_swaps(self):
@@ -718,11 +702,11 @@ class SqliteUpdate:  # pragma: no cover
                 self.denullify_table_column("stats_swaps", column, value)
             except sqlite3.OperationalError as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
-                return default_error(e, msg)
+                return default.error(e, msg)
             except Exception as e:  # pragma: no cover
                 msg = f"{type(e)} for {self.db.db_path}: {e}"
-                return default_error(e, msg)
-        return default_result(
+                return default.error(e, msg)
+        return default.result(
             msg=f"Nullification of {len(columns)} columns in {self.db.db_file} complete!",
             loglevel="updated",
             ignore_until=10,
@@ -740,17 +724,17 @@ class SqliteUpdate:  # pragma: no cover
                 t,
             )
             self.db.conn.commit()
-            return default_result(
+            return default.result(
                 msg=f"Nullification of {column} in {self.db.db_file} complete!",
                 loglevel="updated",
                 ignore_until=10,
             )
         except sqlite3.OperationalError as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
-            return default_error(e, msg)
+            return default.error(e, msg)
         except Exception as e:  # pragma: no cover
             msg = f"{type(e)} for {self.db.db_path}: {e}"
-            return default_error(e, msg)
+            return default.error(e, msg)
 
 
 def get_sqlite_db(db_path=None, netid=None, db=None, **kwargs):  # pragma: no cover
@@ -818,7 +802,7 @@ def compare_uuid_fields(swap1, swap2):
                         fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
                     except sqlite3.OperationalError as e:  # pragma: no cover
                         msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
-                        return default_error(e, msg)
+                        return default.error(e, msg)
         return fixed
     except Exception as e:  # pragma: no cover
-        return default_error(e)
+        return default.error(e)

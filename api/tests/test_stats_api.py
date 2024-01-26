@@ -35,7 +35,3 @@ def test_adex_fortnite(setup_statsapi):
     assert r["swaps_count"] == 11  # 15 - 1x failed - 3x > 14 days old
     assert "KMD_LTC" in r["top_pairs"]["by_current_liquidity_usd"]
 
-
-def test_last_cache(setup_statsapi):
-    stats = setup_statsapi
-    assert "KMD-BEP20_BTC" not in stats.last_traded_cache

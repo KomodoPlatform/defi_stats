@@ -5,13 +5,13 @@ from util.logger import logger
 import db
 from util.cron import Time
 import util.cron as cron
+import util.memcache as memcache
 import util.transform as transform
 
 from const import POSTGRES_HOST, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_PORT
-import lib
 
-gecko_source = lib.load_gecko_source()
-coins_config = lib.load_coins_config()
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
 
 
 @pytest.fixture
@@ -27,9 +27,7 @@ logger.info(TEST_DB_URL)
 
 
 def reset_test_defi_stats_table():
-    pgdb = db.SqlUpdate(
-        db_type="pgsql", gecko_source=gecko_source, coins_config=coins_config
-    )
+    pgdb = db.SqlUpdate(db_type="pgsql")
     try:
         pgdb.drop("defi_swaps_test")
     except Exception as e:
@@ -40,17 +38,13 @@ def reset_test_defi_stats_table():
 
 @pytest.fixture
 def setup_actual_db():
-    pgdb_query = db.SqlQuery(
-        db_type="pgsql", gecko_source=gecko_source, coins_config=coins_config
-    )
+    pgdb_query = db.SqlQuery(db_type="pgsql")
     yield pgdb_query
 
 
 @pytest.fixture()
 def setup_swaps_db_data(setup_time):
-    pg_query = db.SqlQuery(
-        db_type="pgsql", gecko_source=gecko_source, coins_config=coins_config
-    )
+    pg_query = db.SqlQuery(db_type="pgsql")
     time_obj = setup_time
     engine = create_engine(TEST_DB_URL)
 

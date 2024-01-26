@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import util.cron as cron
-from tests.fixtures_class import setup_dexapi
-from util.defaults import arg_defaults, set_params
+import util.defaults as default
 from const import DEXAPI_8762_HOST
 
 
@@ -15,9 +14,9 @@ def test_arg_defaults():
     class Test:
         def __init__(self, **kwargs) -> None:
             self.options = []
-            for i in arg_defaults().values():
+            for i in default.arg_defaults().values():
                 self.options += i
-            set_params(self, kwargs, self.options)
+            default.params(self, kwargs, self.options)
 
     test = Test(order_by_mcap=False, source_url="https://app.komodoplatform.com/")
     assert not test.reverse
