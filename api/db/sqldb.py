@@ -23,10 +23,11 @@ from const import (
     IS_TESTING,
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
-from lib.coins import get_coin_variants, get_gecko_price, get_pair_variants
+from lib.coins import get_gecko_price
 from lib.cache import CacheItem
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
+from util.transform import merge, sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -79,7 +80,6 @@ class SqlDB:
 
         self.engine = create_engine(self.db_url)  # ), echo=True)
         self.sqlfilter = SqlFilter(self.table)
-
 
 class SqlFilter:
     def __init__(self, table=DefiSwap) -> None:
@@ -278,7 +278,6 @@ class SqlQuery(SqlDB):
         coins_config = memcache.get_coins_config()
         data = sorted([j for j in coins_config.keys()])
         return Enum("ValidCoins", {i: i for i in data}, type=str)
-
 
     # TODO: Subclass 'volumes'
     @timed
@@ -870,7 +869,7 @@ class SqlQuery(SqlDB):
                 r = session.exec(q)
                 data = [dict(i) for i in r]
                 if coin is not None:
-                    variants = get_coin_variants(coin)
+                    variants = helper.get_coin_variants(coin)
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
@@ -882,12 +881,12 @@ class SqlQuery(SqlDB):
                 elif pair is not None:
                     resp = {}
                     bridge_swap = validate.is_bridge_swap(pair)
-                    variants = get_pair_variants(pair)
+                    variants = helper.get_pair_variants(pair)
                     for variant in variants:
                         # exclude duplication for bridge swaps
                         if (
                             bridge_swap
-                            and variant != transform.order_pair_by_market_cap(variant)
+                            and variant != sortdata.order_pair_by_market_cap(variant)
                         ):
                             continue
                         base, quote = helper.base_quote_from_pair(variant)
@@ -901,7 +900,7 @@ class SqlQuery(SqlDB):
                     all = []
                     for i in resp:
                         all += resp[i]
-                    transform.sort_dict_list(data=all, key="finished_at", reverse=True)
+                    sortdata.sort_dict_list(data=all, key="finished_at", reverse=True)
                     resp.update({"ALL": all})
 
                 else:
@@ -941,8 +940,10 @@ class SqlQuery(SqlDB):
         Optionally, segwit coins can be merged
         """
         swaps = self.get_swaps(coin=coin, **kwargs)
-        variants = get_coin_variants(coin, segwit_only=merge_segwit)
-        return transform.merge_segwit_swaps(variants, swaps)
+        variants = helper.get_coin_variants(coin, segwit_only=merge_segwit)
+        return merge.segwit_swaps(variants, swaps)
+
+
 
     def get_swaps_for_pair(
         self, base: str, quote: str, merge_segwit: bool = True, **kwargs
@@ -953,8 +954,8 @@ class SqlQuery(SqlDB):
         """
         pair = f"{base}_{quote}"
         swaps = self.get_swaps(pair=pair, **kwargs)
-        variants = get_pair_variants(pair, segwit_only=merge_segwit)
-        return transform.merge_segwit_swaps(variants, swaps)
+        variants = helper.get_pair_variants(pair, segwit_only=merge_segwit)
+        return merge.segwit_swaps(variants, swaps)
 
     @timed
     def swap_uuids(
@@ -993,7 +994,6 @@ class SqlQuery(SqlDB):
         else:
             return [i["uuid"] for i in swaps]
 
-
     # Subclass under 'utils'
     @timed
     def get_pairs(self, days: int = 7) -> list:
@@ -1014,7 +1014,7 @@ class SqlQuery(SqlDB):
                 CacheItem("gecko_source").save()
             # Sort pair by ticker mcap to expose duplicates
             sorted_pairs = list(
-                set([transform.order_pair_by_market_cap(i) for i in pairs])
+                set([sortdata.order_pair_by_market_cap(i) for i in pairs])
             )
             return default.result(
                 data=sorted_pairs,
@@ -1208,8 +1208,7 @@ class SqlQuery(SqlDB):
         }
 
 
-
-class SqlSource():
+class SqlSource:
     def __init__(self) -> None:
         pass
 
@@ -1225,7 +1224,7 @@ class SqlSource():
             # import Cipi's swap data
             ext_mysql = SqlQuery(db_type="mysql")
             cipi_swaps = ext_mysql.get_swaps(start_time=start_time, end_time=end_time)
-            cipi_swaps = transform.normalise_swap_data(cipi_swaps)
+            cipi_swaps = self.normalise_swap_data(cipi_swaps)
             if len(cipi_swaps) > 0:
                 with Session(pgdb.engine) as session:
                     count = pgdb_query.get_count(start_time=1)
@@ -1241,7 +1240,7 @@ class SqlSource():
                     updates = []
                     for each in overlapping_swaps:
                         # Get dict row for ex         "isting swaps
-                        cipi_data = transform.cipi_to_defi_swap(
+                        cipi_data = self.cipi_to_defi_swap(
                             cipi_swaps_data[each.uuid], each.__dict__
                         ).__dict__
                         # create bindparam
@@ -1259,7 +1258,9 @@ class SqlSource():
                     if len(updates) > 0:
                         # Update existing records
                         bind_values = {
-                            i: bindparam(i) for i in updates[0].keys() if i not in ["_id"]
+                            i: bindparam(i)
+                            for i in updates[0].keys()
+                            if i not in ["_id"]
                         }
                         stmt = (
                             update(DefiSwap)
@@ -1270,7 +1271,7 @@ class SqlSource():
 
                     # Add new records left in processing queue
                     for uuid in cipi_swaps_data.keys():
-                        swap = transform.cipi_to_defi_swap(cipi_swaps_data[uuid])
+                        swap = self.cipi_to_defi_swap(cipi_swaps_data[uuid])
                         if "_sa_instance_state" in swap:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
@@ -1288,7 +1289,6 @@ class SqlSource():
             return default.error(e)
         return default.result(msg=msg, loglevel="updated")
 
-
     @timed
     def import_mm2_swaps(
         self,
@@ -1301,7 +1301,7 @@ class SqlSource():
             # Import in Sqlite (all) database
             mm2_sqlite = SqlQuery(db_type="sqlite", db_path=MM2_DB_PATH_ALL)
             mm2_swaps = mm2_sqlite.get_swaps(start_time=start_time, end_time=end_time)
-            mm2_swaps = transform.normalise_swap_data(mm2_swaps)
+            mm2_swaps = self.normalise_swap_data(mm2_swaps)
             if len(mm2_swaps) > 0:
                 with Session(pgdb.engine) as session:
                     count = pgdb_query.get_count(start_time=1)
@@ -1318,7 +1318,7 @@ class SqlSource():
                     updates = []
                     for each in overlapping_swaps:
                         # Get dict row for existing swaps
-                        mm2_data = transform.mm2_to_defi_swap(
+                        mm2_data = self.mm2_to_defi_swap(
                             mm2_swaps_data[each.uuid], each.__dict__
                         ).__dict__
                         # create bindparam
@@ -1336,7 +1336,9 @@ class SqlSource():
                     if len(updates) > 0:
                         # Update existing records
                         bind_values = {
-                            i: bindparam(i) for i in updates[0].keys() if i not in ["_id"]
+                            i: bindparam(i)
+                            for i in updates[0].keys()
+                            if i not in ["_id"]
                         }
                         stmt = (
                             update(DefiSwap)
@@ -1347,7 +1349,7 @@ class SqlSource():
 
                     # Add new records left in processing queue
                     for uuid in mm2_swaps_data.keys():
-                        swap = transform.mm2_to_defi_swap(mm2_swaps_data[uuid])
+                        swap = self.mm2_to_defi_swap(mm2_swaps_data[uuid])
                         if "_sa_instance_state" in swap:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
@@ -1364,7 +1366,6 @@ class SqlSource():
             return default.error(e)
         return default.result(msg=msg, loglevel="updated")
 
-
     @timed
     def populate_pgsqldb(
         self,
@@ -1376,15 +1377,18 @@ class SqlSource():
             coins_config = memcache.get_coins_config()
             pgdb = SqlUpdate(db_type="pgsql")
             pgdb_query = SqlQuery(db_type="pgsql")
-            self.import_cipi_swaps(pgdb, pgdb_query, start_time=start_time, end_time=end_time)
-            self.import_mm2_swaps(pgdb, pgdb_query, start_time=start_time, end_time=end_time)
+            self.import_cipi_swaps(
+                pgdb, pgdb_query, start_time=start_time, end_time=end_time
+            )
+            self.import_mm2_swaps(
+                pgdb, pgdb_query, start_time=start_time, end_time=end_time
+            )
             # pgdb_query.describe('defi_swaps')
 
         except Exception as e:
             return default.error(e)
         msg = f"Importing swaps from {start_time} - {end_time} complete"
         return default.result(msg=msg, loglevel="updated")
-
 
     def reset_defi_stats_table(self):
         pgdb = SqlUpdate("pgsql")
@@ -1393,9 +1397,306 @@ class SqlSource():
         logger.merge("Recreated PGSQL Table")
 
 
+    @timed
+    def normalise_swap_data(self, data, is_success=None):
+        try:
+            gecko_source = memcache.get_gecko_source()
+            for i in data:
+                pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
+                pair = sortdata.order_pair_by_market_cap(pair_raw)
+                pair_reverse = transform.invert_pair(pair)
+                pair_std = transform.strip_pair_platforms(pair)
+                pair_std_reverse = transform.invert_pair(pair_std)
+                if pair_raw == pair:
+                    trade_type = "buy"
+                    price = Decimal(i["maker_amount"] / i["taker_amount"])
+                    reverse_price = Decimal(i["taker_amount"] / i["maker_amount"])
+                else:
+                    trade_type = "sell"
+                    price = Decimal(i["taker_amount"] / i["maker_amount"])
+                    reverse_price = Decimal(i["maker_amount"] / i["taker_amount"])
+                i.update(
+                    {
+                        "pair": pair,
+                        "pair_std": pair_std,
+                        "pair_reverse": pair_reverse,
+                        "pair_std_reverse": pair_std_reverse,
+                        "trade_type": trade_type,
+                        "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
+                        "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),
+                        "taker_coin_ticker": transform.strip_coin_platform(i["taker_coin"]),
+                        "taker_coin_platform": transform.get_coin_platform(i["taker_coin"]),
+                        "price": price,
+                        "reverse_price": reverse_price,
+                    }
+                )
+                if "is_success" not in i:
+                    if is_success is not None:
+                        if is_success:
+                            i.update({"is_success": 1})
+                        else:
+                            i.update({"is_success": 0})
+                    else:
+                        i.update({"is_success": -1})
+
+                for k, v in i.items():
+                    if k in [
+                        "maker_pubkey",
+                        "taker_pubkey",
+                        "taker_gui",
+                        "maker_gui",
+                        "taker_version",
+                        "maker_version",
+                    ]:
+                        if v in [None, ""]:
+                            i.update({k: ""})
+                    if k in [
+                        "maker_coin_usd_price",
+                        "taker_coin_usd_price",
+                        "started_at",
+                        "finished_at",
+                    ]:
+                        if v in [None, ""]:
+                            i.update({k: 0})
+        except Exception as e:
+            return default.error(e)
+        msg = "Data normalised"
+        return default.result(msg=msg, data=data, loglevel="updated")
+
+
+    @timed
+    def cipi_to_defi_swap(self, cipi_data, defi_data=None):
+        """
+        Compares with existing to select best value where there is a conflict,
+        or returns normalised data from a source database with derived fields
+        calculated or defaults applied
+        """
+        try:
+            if defi_data is None:
+                for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
+                    if i not in cipi_data:
+                        cipi_data.update({i: ""})
+                data = DefiSwap(
+                    uuid=cipi_data["uuid"],
+                    taker_amount=cipi_data["taker_amount"],
+                    taker_coin=cipi_data["taker_coin"],
+                    taker_gui=cipi_data["taker_gui"],
+                    taker_pubkey=cipi_data["taker_pubkey"],
+                    taker_version=cipi_data["taker_version"],
+                    maker_amount=cipi_data["maker_amount"],
+                    maker_coin=cipi_data["maker_coin"],
+                    maker_gui=cipi_data["maker_gui"],
+                    maker_pubkey=cipi_data["maker_pubkey"],
+                    maker_version=cipi_data["maker_version"],
+                    started_at=int(cipi_data["started_at"].timestamp()),
+                    # Not in Cipi's DB, but better than zero.
+                    finished_at=cipi_data["started_at"],
+                    # Not in Cipi's DB, but able to derive.
+                    price=cipi_data["price"],
+                    reverse_price=cipi_data["reverse_price"],
+                    is_success=cipi_data["is_success"],
+                    maker_coin_platform=cipi_data["maker_coin_platform"],
+                    maker_coin_ticker=cipi_data["maker_coin_ticker"],
+                    taker_coin_platform=cipi_data["taker_coin_platform"],
+                    taker_coin_ticker=cipi_data["taker_coin_ticker"],
+                    # Extra columns
+                    trade_type=cipi_data["trade_type"],
+                    pair=cipi_data["pair"],
+                    pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                    pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
+                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(cipi_data["pair"])),
+                    last_updated=int(cron.now_utc()),
+                )
+            else:
+                for i in [
+                    "taker_coin",
+                    "maker_coin",
+                    "taker_gui",
+                    "maker_gui",
+                    "taker_pubkey",
+                    "maker_pubkey",
+                    "taker_version",
+                    "maker_version",
+                    "taker_coin_ticker",
+                    "taker_coin_ticker",
+                    "taker_coin_platform",
+                    "taker_coin_platform",
+                ]:
+                    if cipi_data[i] != defi_data[i]:
+                        if cipi_data[i] in ["", "None", "unknown", None]:
+                            cipi_data[i] = defi_data[i]
+                        elif defi_data[i] in ["", "None", "unknown", None]:
+                            defi_data[i] = cipi_data[i]
+                        elif isinstance(defi_data[i], str):
+                            if len(defi_data[i]) == 0:
+                                defi_data[i] = cipi_data[i]
+                            pass
+                        else:
+                            # This shouldnt happen
+                            logger.warning("Mismatch on incoming cipi data vs defi data:")
+                            logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
+
+                data = DefiSwap(
+                    uuid=cipi_data["uuid"],
+                    taker_coin=cipi_data["taker_coin"],
+                    taker_gui=cipi_data["taker_gui"],
+                    taker_pubkey=cipi_data["taker_pubkey"],
+                    taker_version=cipi_data["taker_version"],
+                    maker_coin=cipi_data["maker_coin"],
+                    maker_gui=cipi_data["maker_gui"],
+                    maker_pubkey=cipi_data["maker_pubkey"],
+                    maker_version=cipi_data["maker_version"],
+                    maker_coin_platform=cipi_data["maker_coin_platform"],
+                    maker_coin_ticker=cipi_data["maker_coin_ticker"],
+                    taker_coin_platform=cipi_data["taker_coin_platform"],
+                    taker_coin_ticker=cipi_data["taker_coin_ticker"],
+                    taker_amount=max(cipi_data["taker_amount"], defi_data["taker_amount"]),
+                    maker_amount=max(cipi_data["maker_amount"], defi_data["maker_amount"]),
+                    started_at=max(
+                        int(cipi_data["started_at"].timestamp()), defi_data["started_at"]
+                    ),
+                    finished_at=max(
+                        int(cipi_data["started_at"].timestamp()), defi_data["finished_at"]
+                    ),
+                    is_success=max(cipi_data["is_success"], defi_data["is_success"]),
+                    # Not in Cipi's DB, but derived from taker/maker amounts.
+                    price=max(cipi_data["price"], defi_data["price"]),
+                    reverse_price=max(
+                        cipi_data["reverse_price"], defi_data["reverse_price"]
+                    ),
+                    # Not in Cipi's DB
+                    maker_coin_usd_price=max(0, defi_data["maker_coin_usd_price"]),
+                    taker_coin_usd_price=max(0, defi_data["taker_coin_usd_price"]),
+                    # Extra columns
+                    trade_type=defi_data["trade_type"],
+                    pair=defi_data["pair"],
+                    pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                    pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
+                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(cipi_data["pair"])),
+                    last_updated=int(cron.now_utc()),
+                )
+            if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+                data.duration = data.finished_at - data.started_at
+            else:
+                data.duration = -1
+        except Exception as e:
+            return default.error(e)
+        msg = "cipi to defi conversion complete"
+        return default.result(msg=msg, data=data, loglevel="muted")
+
+
+    @timed
+    def mm2_to_defi_swap(self, mm2_data, defi_data=None):
+        """
+        Compares with existing to select best value where there is a conflict
+        """
+        try:
+            if defi_data is None:
+                for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
+                    if i not in mm2_data:
+                        mm2_data.update({i: ""})
+                data = DefiSwap(
+                    uuid=mm2_data["uuid"],
+                    taker_amount=mm2_data["taker_amount"],
+                    taker_coin=mm2_data["taker_coin"],
+                    taker_pubkey=mm2_data["taker_pubkey"],
+                    maker_amount=mm2_data["maker_amount"],
+                    maker_coin=mm2_data["maker_coin"],
+                    maker_pubkey=mm2_data["maker_pubkey"],
+                    is_success=mm2_data["is_success"],
+                    maker_coin_platform=mm2_data["maker_coin_platform"],
+                    maker_coin_ticker=mm2_data["maker_coin_ticker"],
+                    taker_coin_platform=mm2_data["taker_coin_platform"],
+                    taker_coin_ticker=mm2_data["taker_coin_ticker"],
+                    started_at=mm2_data["started_at"],
+                    finished_at=mm2_data["finished_at"],
+                    # Not in MM2 DB, but able to derive.
+                    price=mm2_data["price"],
+                    reverse_price=mm2_data["reverse_price"],
+                    # Not in MM2 DB, using default.
+                    taker_gui=mm2_data["taker_gui"],
+                    taker_version=mm2_data["taker_version"],
+                    maker_gui=mm2_data["maker_gui"],
+                    maker_version=mm2_data["maker_version"],
+                    # Extra columns
+                    trade_type=mm2_data["trade_type"],
+                    pair=mm2_data["pair"],
+                    pair_reverse=transform.invert_pair(mm2_data["pair"]),
+                    pair_std=transform.strip_pair_platforms(mm2_data["pair"]),
+                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(mm2_data["pair"])),
+                    last_updated=int(cron.now_utc()),
+                )
+            else:
+                for i in [
+                    "taker_coin",
+                    "maker_coin",
+                    "taker_pubkey",
+                    "maker_pubkey",
+                    "taker_coin_ticker",
+                    "taker_coin_ticker",
+                    "taker_coin_platform",
+                    "taker_coin_platform",
+                ]:
+                    if mm2_data[i] != defi_data[i]:
+                        if mm2_data[i] in ["", "None", None, -1, "unknown"]:
+                            mm2_data[i] = defi_data[i]
+                        elif defi_data[i] in ["", "None", None, -1, "unknown"]:
+                            pass
+                        elif isinstance(mm2_data[i], str):
+                            if len(mm2_data[i]) == 0:
+                                mm2_data[i] = defi_data[i]
+                        else:
+                            # This shouldnt happen
+                            logger.warning("Mismatch on incoming mm2 data vs defi data:")
+                            logger.warning(f"{mm2_data[i]} vs {defi_data[i]}")
+                            logger.warning(f"{type(mm2_data[i])} vs {type(defi_data[i])}")
+                data = DefiSwap(
+                    uuid=mm2_data["uuid"],
+                    taker_coin=mm2_data["taker_coin"],
+                    taker_pubkey=mm2_data["taker_pubkey"],
+                    maker_coin=mm2_data["maker_coin"],
+                    maker_pubkey=mm2_data["maker_pubkey"],
+                    maker_coin_platform=mm2_data["maker_coin_platform"],
+                    maker_coin_ticker=mm2_data["maker_coin_ticker"],
+                    taker_coin_platform=mm2_data["taker_coin_platform"],
+                    taker_coin_ticker=mm2_data["taker_coin_ticker"],
+                    taker_amount=max(mm2_data["taker_amount"], defi_data["taker_amount"]),
+                    maker_amount=max(mm2_data["maker_amount"], defi_data["maker_amount"]),
+                    started_at=max(mm2_data["started_at"], defi_data["started_at"]),
+                    finished_at=max(mm2_data["finished_at"], defi_data["finished_at"]),
+                    is_success=max(mm2_data["is_success"], defi_data["is_success"]),
+                    maker_coin_usd_price=max(0, defi_data["maker_coin_usd_price"]),
+                    taker_coin_usd_price=max(0, defi_data["taker_coin_usd_price"]),
+                    # Not in MM2 DB, but derived from taker/maker amounts.
+                    price=max(mm2_data["price"], defi_data["price"]),
+                    reverse_price=max(
+                        mm2_data["reverse_price"], defi_data["reverse_price"]
+                    ),
+                    # Not in MM2 DB, keep existing value
+                    taker_gui=defi_data["taker_gui"],
+                    maker_gui=defi_data["maker_gui"],
+                    taker_version=defi_data["taker_version"],
+                    maker_version=defi_data["maker_version"],
+                    # Extra columns
+                    trade_type=defi_data["trade_type"],
+                    pair=defi_data["pair"],
+                    pair_reverse=transform.invert_pair(defi_data["pair"]),
+                    pair_std=transform.strip_pair_platforms(defi_data["pair"]),
+                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(defi_data["pair"])),
+                    last_updated=int(cron.now_utc()),
+                )
+            if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+                data.duration = data.finished_at - data.started_at
+            else:
+                data.duration = -1
+
+        except Exception as e:
+            return default.error(e)
+        msg = "mm2 to defi conversion complete"
+        return default.result(msg=msg, data=data, loglevel="muted")
+
+
 # Subclass 'utils' under SqlQuery
-
-
 def get_tablename(table):
     if isinstance(table, str):
         return table

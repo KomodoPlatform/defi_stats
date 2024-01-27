@@ -10,6 +10,8 @@ import util.transform as transform
 
 from const import POSTGRES_HOST, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_PORT
 
+clean = transform.Clean()
+
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
 
@@ -504,8 +506,8 @@ def setup_swaps_db_data(setup_time):
     ]
 
     with Session(engine) as session:
-        sample_data = db.normalise_swap_data(sample_data, gecko_source)
-        sample_data = transform.clean_decimal_dict_list(sample_data)
+        sample_data = db.SqlSource().normalise_swap_data(sample_data, gecko_source)
+        sample_data = clean.decimal_dict_list(sample_data)
 
         for i in sample_data:
             data = db.DefiSwapTest(

@@ -2,8 +2,9 @@
 from const import MARKETS_PAIRS_DAYS
 from lib.generic import Generic
 from lib.pair import Pair
-from lib.coins import get_coin_variants, get_segwit_coins
+from lib.coins import get_segwit_coins
 from util.logger import timed, logger
+from util.transform import merge, sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -63,11 +64,11 @@ class Markets:
                 resp += data["ALL"]["buy"]
                 resp += data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:
-                bases = get_coin_variants(
+                bases = helper.get_coin_variants(
                     base,
                     segwit_only=True,
                 )
-                quotes = get_coin_variants(
+                quotes = helper.get_coin_variants(
                     quote,
                     segwit_only=True,
                 )
@@ -84,7 +85,7 @@ class Markets:
             else:
                 resp += data[pair]["buy"]
                 resp += data[pair]["sell"]
-            return transform.sort_dict_list(resp, "timestamp", reverse=True)
+            return sortdata.sort_dict_list(resp, "timestamp", reverse=True)
 
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"

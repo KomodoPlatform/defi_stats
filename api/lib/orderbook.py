@@ -6,8 +6,9 @@ from typing import Dict
 import db
 import lib
 from util.files import Files
-from lib.coins import get_gecko_price, get_pair_variants, get_segwit_coins
+from lib.coins import get_gecko_price, get_segwit_coins
 from util.logger import logger, timed
+from util.transform import merge, sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -41,13 +42,13 @@ class Orderbook:
     @timed
     def for_pair(self, depth=100, all: bool = False):
         if all:
-            variants = get_pair_variants(self.pair.as_str)
+            variants = helper.get_pair_variants(self.pair.as_str)
             combined_orderbook = template.orderbook(
                 transform.strip_pair_platforms(self.pair.as_str)
             )
         else:
             # Segwit / non-segwit should always be merged
-            variants = get_pair_variants(self.pair.as_str, segwit_only=True)
+            variants = helper.get_pair_variants(self.pair.as_str, segwit_only=True)
             combined_orderbook = template.orderbook(self.pair.as_str)
         try:
             for variant in variants:
@@ -108,7 +109,7 @@ class Orderbook:
                     orderbook_data["total_asks_base_usd"]
                     + orderbook_data["total_bids_quote_usd"]
                 )
-                combined_orderbook = transform.merge_orderbooks(
+                combined_orderbook = merge.orderbooks(
                     combined_orderbook, orderbook_data
                 )
 

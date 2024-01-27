@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-import os
 from os.path import basename
 import util.cron as cron
 import sqlite3
 from typing import List
-from decimal import Decimal
 from datetime import datetime, timedelta
-from const import MM2_DB_PATHS, MM2_NETID, compare_fields
+from const import MM2_DB_PATHS, MM2_NETID
 from lib.coins import (
-    pair_without_segwit_suffix, get_segwit_coins,
-    get_coin_variants, get_gecko_price,
-    get_pair_variants
+    pair_without_segwit_suffix,
+    get_segwit_coins,
 )
 
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sort_dict, order_pair_by_market_cap, format_10f
+from util.transform import merge, sortdata
 import util.defaults as default
+import util.helper as helper
 import util.memcache as memcache
+import util.transform as transform
+import util.validate as validate
 
 
 class SqliteDB:  # pragma: no cover
@@ -29,8 +29,9 @@ class SqliteDB:  # pragma: no cover
             self.start = int(cron.now_utc())
             self.db_path = db_path
             self.db_file = basename(self.db_path)
-            self.netid = get_netid(self.db_file)
-            self.options = ["wal", ]
+            self.options = [
+                "wal",
+            ]
             default.params(self, self.kwargs, self.options)
             self.conn = self.connect()
             self.conn.row_factory = sqlite3.Row
@@ -43,6 +44,18 @@ class SqliteDB:  # pragma: no cover
             self.update = SqliteUpdate(db=self, **self.kwargs)
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)}: Failed to init SqliteDB {self.db_path}: {e}")
+
+    @property
+    def netid(self):
+        for netid in NetId:
+            if netid.value in self.db_file:
+                return netid.value
+        if validate.is_7777("seed"):
+            return "7777"
+        elif validate.is_source_db("MM2.db"):
+            return "8762"
+        else:
+            return "ALL"
 
     @timed
     def close(self):
@@ -100,9 +113,9 @@ class SqliteQuery:  # pragma: no cover
             # so we need to add it back here if it's present
             bases = [base]
             quotes = [quote]
-            if base in self.segwit_coins and '-' not in base:
+            if base in self.segwit_coins and "-" not in base:
                 bases.append(f"{base}-segwit")
-            if quote in self.segwit_coins and '-' not in base:
+            if quote in self.segwit_coins and "-" not in base:
                 quotes.append(f"{quote}-segwit")
             swaps_for_pair = []
             for i in bases:
@@ -271,13 +284,13 @@ class SqliteQuery:  # pragma: no cover
                     maker_coin=f'{i["maker_coin_ticker"]}-{i["maker_coin_platform"]}',
                     taker_coin=f'{i["taker_coin_ticker"]}-{i["taker_coin_platform"]}',
                 )
-                std_pair = order_pair_by_market_cap(pair)
+                std_pair = sortdata.order_pair_by_market_cap(pair)
                 last_price = item["last_maker_amount"] / item["last_taker_amount"]
                 sum_maker = item["sum_maker_traded"]
                 sum_taker = item["sum_taker_traded"]
                 last_taker_amount = item["last_taker_amount"]
                 last_maker_amount = item["last_maker_amount"]
-                item.update({"last_price": format_10f(last_price)})
+                item.update({"last_price": transform.format_10f(last_price)})
                 swap_count = item["swap_count"]
                 last_uuid = item["last_swap_uuid"]
                 last_swap = item["last_swap"]
@@ -294,7 +307,7 @@ class SqliteQuery:  # pragma: no cover
                     by_pair_dict[std_pair]["sum_taker_traded"] += sum_taker
                     by_pair_dict[std_pair]["swap_count"] += swap_count
 
-            sorted_dict = sort_dict(by_pair_dict)
+            sorted_dict = sortdata.sort_dict(by_pair_dict)
             return sorted_dict
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -422,7 +435,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             coin = coin.split("-")[0]
             coins_config = memcache.get_coins_config()
-            variants = get_coin_variants(coin)
+            variants = helper.get_coin_variants(coin)
             if end_time == 0:
                 end_time = int(cron.now_utc())
             resp = {}
@@ -511,7 +524,7 @@ class SqliteQuery:  # pragma: no cover
             coins_config = memcache.get_coins_config()
             resp = {}
             coin = coin.split("-")[0]
-            variants = get_coin_variants(coin)
+            variants = helper.get_coin_variants(coin)
             if end_time == 0:
                 end_time = int(cron.now_utc())
 
@@ -734,6 +747,7 @@ class SqliteUpdate:  # pragma: no cover
             return default.error(e, msg)
 
 
+# TODO: Move to sqlite_merge
 def get_sqlite_db(db_path=None, netid=None, db=None, **kwargs):  # pragma: no cover
     if db is not None:
         return db
@@ -746,60 +760,12 @@ def get_sqlite_db(db_path=None, netid=None, db=None, **kwargs):  # pragma: no co
     return db
 
 
+# TODO: Move to sqlite_merge
 def get_sqlite_db_paths(netid=MM2_NETID):
     return MM2_DB_PATHS[str(netid)]
-
-
-def list_sqlite_dbs(folder):
-    db_list = [i for i in os.listdir(folder) if i.endswith(".db")]
-    db_list.sort()
-    return db_list
 
 
 def view_locks(cursor):  # pragma: no cover
     sql = "PRAGMA lock_status"
     r = cursor.execute(sql)
     return r.fetchall()
-
-
-def is_source_db(db_file: str) -> bool:
-    if db_file.endswith("MM2.db"):
-        return True
-    return False
-
-
-def is_7777(db_file: str) -> bool:
-    if db_file.startswith("seed"):
-        return True
-    return False
-
-
-def get_netid(db_file):
-    for netid in NetId:
-        if netid.value in db_file:
-            return netid.value
-    if is_7777(db_file):
-        return "7777"
-    elif is_source_db(db_file=db_file):
-        return "8762"
-    else:
-        return "ALL"
-
-
-def compare_uuid_fields(swap1, swap2):
-    uuid = swap1["uuid"]
-    # logger.muted(f"Repairing swap {uuid}")
-    try:
-        fixed = {}
-        for k, v in swap1.items():
-            if k in compare_fields:
-                if v != swap2[k]:
-                    # use higher value for below fields
-                    try:
-                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
-                    except sqlite3.OperationalError as e:  # pragma: no cover
-                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
-                        return default.error(e, msg)
-        return fixed
-    except Exception as e:  # pragma: no cover
-        return default.error(e)

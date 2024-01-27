@@ -16,6 +16,7 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
+from util.transform import merge, sortdata
 import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
@@ -25,7 +26,6 @@ router = APIRouter()
 cache = Cache()
 
 
-# TODO: Move to new DB
 @router.get(
     "/atomicdexio",
     description="Simple summary statistics for the Komodo Defi network.",
@@ -37,6 +37,7 @@ def atomicdexio():
     try:
         cache = Cache(netid="ALL")
         tickers_data = cache.get_item(name="generic_tickers").data
+        # TODO: Move to new DB
         db = get_sqlite_db(netid="ALL")
         counts = db.query.swap_counts()
         counts.update({"current_liquidity": tickers_data["combined_liquidity_usd"]})
@@ -146,7 +147,7 @@ def trades(
             end_time=end_time,
         )['ALL']
         resp = data["buy"] + data["sell"]
-        resp = transform.sort_dict_list(resp, "timestamp", True)
+        resp = sortdata.sort_dict_list(resp, "timestamp", True)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

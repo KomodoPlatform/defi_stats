@@ -8,11 +8,13 @@ import lib
 from lib.coins import get_gecko_price, get_gecko_mcap, get_tradable_coins
 from util.enums import TradeType
 from util.logger import logger, timed
+from util.transform import merge, sortdata
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
+
 
 
 class Pair:  # pragma: no cover
@@ -38,7 +40,7 @@ class Pair:  # pragma: no cover
             # Adjust pair order
             self.as_str = pair_str
             self.as_std_str = transform.strip_pair_platforms(self.as_str)
-            self.is_reversed = self.as_str != transform.order_pair_by_market_cap(
+            self.is_reversed = self.as_str != sortdata.order_pair_by_market_cap(
                 self.as_str
             )
             base, quote = helper.base_quote_from_pair(self.as_str)
@@ -147,9 +149,9 @@ class Pair:  # pragma: no cover
                 buys = transform.list_json_key(trades_info, "type", "buy")
                 sells = transform.list_json_key(trades_info, "type", "sell")
                 if len(buys) > 0:
-                    buys = transform.sort_dict_list(buys, "timestamp", reverse=True)
+                    buys = sortdata.sort_dict_list(buys, "timestamp", reverse=True)
                 if len(sells) > 0:
-                    sells = transform.sort_dict_list(sells, "timestamp", reverse=True)
+                    sells = sortdata.sort_dict_list(sells, "timestamp", reverse=True)
 
                 data = {
                     "ticker_id": self.as_str,
@@ -276,7 +278,7 @@ class Pair:  # pragma: no cover
                 data[f"price_change_{suffix}"] = price_change
 
                 last_swap = self.first_last_swap(data["variants"])
-                if data['base'] == "EMC2_KMD":
+                if data["base"] == "EMC2_KMD":
                     logger.info(last_swap)
                 data["last_swap_price"] = last_swap["last_swap_price"]
                 data["last_swap_time"] = last_swap["last_swap_time"]
@@ -316,7 +318,7 @@ class Pair:  # pragma: no cover
                     data["first_swap_price"] = x["first_swap_price"]
                     data["first_swap_uuid"] = x["first_swap_uuid"]
                     if self.is_reversed:
-                        data["first_swap_price"] = 1 / data["first_swap_price"]                    
+                        data["first_swap_price"] = 1 / data["first_swap_price"]
 
                 if x["first_swap_time"] < data["first_swap_time"]:
                     data["first_swap_time"] = x["first_swap_time"]
@@ -434,7 +436,10 @@ class Pair:  # pragma: no cover
     def get_swap_prices(self, swaps_for_pair, is_reversed):
         data = {}
         try:
-            [data.update(helper.get_price_at_finish(i, is_reversed)) for i in swaps_for_pair]
+            [
+                data.update(helper.get_price_at_finish(i, is_reversed))
+                for i in swaps_for_pair
+            ]
         except Exception as e:  # pragma: no cover
             msg = f"get_swap_prices for {self.as_str} failed!"
             return default.result(data=data, msg=msg, loglevel="warning")
@@ -504,7 +509,7 @@ def get_all_coin_pairs(coin, priced_coins):
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]
-        data = list(set([transform.order_pair_by_market_cap(i) for i in pairs]))
+        data = list(set([sortdata.order_pair_by_market_cap(i) for i in pairs]))
 
     except Exception as e:  # pragma: no cover
         data = []

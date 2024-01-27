@@ -9,7 +9,6 @@ from lib.cache import Cache
 
 from util.helper import (
     get_mm2_rpc_port,
-    get_netid_filename,
     get_chunks,
     get_price_at_finish,
 )

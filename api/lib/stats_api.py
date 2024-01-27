@@ -2,10 +2,12 @@
 import db
 from lib.pair import Pair
 from util.logger import logger
+from util.transform import merge, sortdata
 import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
+clean = transform.Clean()
 
 
 class StatsAPI:  # pragma: no cover
@@ -26,22 +28,22 @@ class StatsAPI:  # pragma: no cover
 
             top_pairs_by_value = {
                 i["trading_pair"]: i["pair_trade_value_usd"]
-                for i in transform.get_top_items(summaries, "pair_trade_value_usd", 5)
+                for i in sortdata.get_top_items(summaries, "pair_trade_value_usd", 5)
             }
             top_pairs_by_liquidity = {
                 i["trading_pair"]: i["pair_liquidity_usd"]
-                for i in transform.get_top_items(summaries, "pair_liquidity_usd", 5)
+                for i in sortdata.get_top_items(summaries, "pair_liquidity_usd", 5)
             }
             top_pairs_by_swaps = {
                 i["trading_pair"]: i["pair_swaps_count"]
-                for i in transform.get_top_items(summaries, "pair_swaps_count", 5)
+                for i in sortdata.get_top_items(summaries, "pair_swaps_count", 5)
             }
             return {
-                "by_value_traded_usd": transform.clean_decimal_dict(top_pairs_by_value),
-                "by_current_liquidity_usd": transform.clean_decimal_dict(
+                "by_value_traded_usd": clean.decimal_dict(top_pairs_by_value),
+                "by_current_liquidity_usd": clean.decimal_dict(
                     top_pairs_by_liquidity
                 ),
-                "by_swaps_count": transform.clean_decimal_dict(top_pairs_by_swaps),
+                "by_swaps_count": clean.decimal_dict(top_pairs_by_swaps),
             }
         except Exception as e:
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
@@ -181,7 +183,7 @@ class StatsAPI:  # pragma: no cover
             if as_dict:
                 return resp_dict
             data = [resp_dict[i] for i in resp_dict]
-            return transform.clean_decimal_dict_list(data)
+            return clean.decimal_dict_list(data)
 
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
@@ -206,7 +208,7 @@ class StatsAPI:  # pragma: no cover
                 "top_pairs": self.top_pairs(summaries),
                 "current_liquidity": round(float(liquidity), 8),
             }
-            data = transform.clean_decimal_dict(data)
+            data = clean.decimal_dict(data)
             return data
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.adex_fortnite]: {e}")

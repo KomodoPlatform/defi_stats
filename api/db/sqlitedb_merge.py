@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import util.cron as cron
+import os
+from decimal import Decimal
+
 import sqlite3
 from typing import List
 from const import (
@@ -15,21 +17,21 @@ from const import (
 )
 from db.sqlitedb import (
     get_sqlite_db,
-    is_source_db,
-    get_netid,
-    list_sqlite_dbs,
-    compare_uuid_fields,
     SqliteDB,
 )
+import util.cron as cron
 from util.enums import NetId
 from util.logger import logger, timed
 import util.defaults as default
+import util.helper as helper
+import util.validate as validate
 
 
 class SqliteMerge:
     def __init__(self):
         self.init_dbs()
-
+        
+    
     @timed
     def import_source_databases(self):  # pragma: no cover
         self.backup_local_dbs()
@@ -47,7 +49,7 @@ class SqliteMerge:
         try:
             source_dbs = list_sqlite_dbs(DB_SOURCE_PATH)
             for fn in source_dbs:
-                if is_source_db(fn):
+                if validate.is_source_db(fn):
                     src_db_path = f"{DB_SOURCE_PATH}/{fn}"
                     src_db = get_sqlite_db(db_path=src_db_path)
                     src_db.update.denullify_stats_swaps()
@@ -123,10 +125,10 @@ class SqliteMerge:
             source_dbs = list_sqlite_dbs(DB_CLEAN_PATH)
             for fn in source_dbs:
                 if not fn.startswith("temp"):
-                    if is_source_db(fn):
+                    if validate.is_source_db(fn):
                         src_db_path = f"{DB_CLEAN_PATH}/{fn}"
                         src_db = get_sqlite_db(db_path=src_db_path)
-                        netid = get_netid(fn)
+                        netid = helper.get_netid(fn)
                         dest_db_path = f"{DB_CLEAN_PATH}/temp_MM2_{netid}.db"
                         dest_db = get_sqlite_db(db_path=dest_db_path)
                         self.merge_db_tables(
@@ -357,6 +359,31 @@ class SqliteMerge:
             master_db.truncate_wal()
         msg = "Database wal truncation complete..."
         return default.result(msg=msg, loglevel="merge", ignore_until=10)
+
+
+def compare_uuid_fields(swap1, swap2):
+    uuid = swap1["uuid"]
+    # logger.muted(f"Repairing swap {uuid}")
+    try:
+        fixed = {}
+        for k, v in swap1.items():
+            if k in compare_fields:
+                if v != swap2[k]:
+                    # use higher value for below fields
+                    try:
+                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                    except sqlite3.OperationalError as e:  # pragma: no cover
+                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        return default.error(e, msg)
+        return fixed
+    except Exception as e:  # pragma: no cover
+        return default.error(e)
+
+def list_sqlite_dbs(folder):
+    db_list = [i for i in os.listdir(folder) if i.endswith(".db")]
+    db_list.sort()
+    return db_list
+
 
 
 if __name__ == "__main__":  # pragma: no cover

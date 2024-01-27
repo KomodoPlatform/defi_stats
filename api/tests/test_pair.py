@@ -23,9 +23,10 @@ from tests.fixtures_pair import (
     setup_morty_kmd_pair,
 )
 from util.logger import logger
+from util.transform import merge, sortdata
 import util.memcache as memcache
 import util.transform as transform
-
+clean = transform.Clean()
 
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
@@ -106,7 +107,7 @@ def test_get_volumes_and_prices(
 ):
     pair = setup_kmd_ltc_pair
     r = pair.get_volumes_and_prices()
-    r = transform.clean_decimal_dict(r)
+    r = clean.decimal_dict(r)
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price"] == 1
@@ -174,7 +175,7 @@ def test_merge_orderbooks(setup_kmd_ltc_pair):
     orderbook_data = setup_kmd_ltc_pair.orderbook.for_pair(depth=100, all=False)
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
-    x = transform.merge_orderbooks(book, book2)
+    x = merge.orderbooks(book, book2)
     assert x["pair"] == orderbook_data["pair"]
     assert x["base"] == orderbook_data["base"]
     assert x["quote"] == orderbook_data["quote"]

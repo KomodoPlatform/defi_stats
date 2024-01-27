@@ -25,8 +25,6 @@ from tests.fixtures_data import (
 from util.transform import (
     get_suffix,
     get_top_items,
-    clean_decimal_dict,
-    clean_decimal_dict_list,
     round_to_str,
     list_json_key,
     sum_json_key,
@@ -42,6 +40,8 @@ from util.transform import (
 )
 from util.logger import logger
 
+import util.transform as transform
+clean = transform.Clean()
 
 def test_format_10f():
     assert format_10f(1.234567890123456789) == "1.2345678901"
@@ -132,7 +132,7 @@ def test_round_to_str():
 
 def test_clean_decimal_dict_list():
     x = [dirty_dict.copy(), dirty_dict.copy()]
-    r = clean_decimal_dict_list(x)
+    r = clean.decimal_dict_list(x)
     assert isinstance(r[0]["a"], float)
     assert isinstance(r[0]["b"], str)
     assert isinstance(r[0]["c"], int)
@@ -140,19 +140,19 @@ def test_clean_decimal_dict_list():
     assert isinstance(r[0]["e"], list)
     assert isinstance(r[0]["f"], dict)
     x = [dirty_dict.copy(), dirty_dict.copy()]
-    r = clean_decimal_dict_list(x, True)
+    r = clean.decimal_dict_list(x, True)
     assert isinstance(r[1]["a"], str)
 
 
 def test_clean_decimal_dict():
     x = dirty_dict.copy()
-    r = clean_decimal_dict(x)
+    r = clean.decimal_dict(x)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)
     assert isinstance(r["d"], bool)
     x = dirty_dict.copy()
-    r = clean_decimal_dict(x, True, 6)
+    r = clean.decimal_dict(x, True, 6)
     assert isinstance(r["a"], str)
 
 

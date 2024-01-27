@@ -6,12 +6,15 @@ from lib.coins import get_pairs_info, get_gecko_price, get_kmd_pairs
 
 from util.exceptions import DataStructureError
 from util.logger import timed, logger
+from util.transform import merge, sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
+
+clean = transform.Clean()
 
 
 class Generic:  # pragma: no cover
@@ -38,14 +41,14 @@ class Generic:  # pragma: no cover
                 )
             else:
                 resp = get_pairs_status(pairs)
-                resp = transform.clean_decimal_dict_list(resp)
+                resp = clean.decimal_dict_list(resp)
                 last_traded_cache = memcache.get_last_traded()
                 for i in resp:
                     first_last_swap = template.first_last_swap()
                     if last_traded_cache is not None:
                         if i["ticker_id"] in last_traded_cache:
                             x = last_traded_cache[i["ticker_id"]]
-                            first_last_swap = transform.clean_decimal_dict(x)
+                            first_last_swap = clean.decimal_dict(x)
                     i.update(first_last_swap)
                 msg = f"{len(pairs)} pairs traded in the last {days} days"
                 return default.result(
@@ -127,8 +130,8 @@ class Generic:  # pragma: no cover
                 for i in pairs
             ]
             data = [i for i in data if i is not None]
-            data = transform.clean_decimal_dict_list(data, to_string=True, rounding=10)
-            data = transform.sort_dict_list(data, "ticker_id")
+            data = clean.decimal_dict_list(data, to_string=True, rounding=10)
+            data = sortdata.sort_dict_list(data, "ticker_id")
             data = {
                 "last_update": int(cron.now_utc()),
                 "pairs_count": len(data),
@@ -155,7 +158,7 @@ class Generic:  # pragma: no cover
             pairs_dict = get_price_status_dict(data.keys())
             
             for i in data:
-                data[i] = transform.clean_decimal_dict(data[i])
+                data[i] = clean.decimal_dict(data[i])
                 if i in pairs_dict["priced_gecko"]:
                     priced = True
                 else:
@@ -191,4 +194,4 @@ def get_pairs_status(pairs):
     pairs_dict = get_price_status_dict(pairs)
     priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
     unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
-    return transform.sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
+    return sortdata.sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")

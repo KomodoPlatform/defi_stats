@@ -16,10 +16,11 @@ import util.validate as validate
 import util.transform as transform
 import lib
 
+clean = transform.Clean()
 router = APIRouter()
 
 
-# TODO: Move to new DB
+
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
@@ -27,6 +28,7 @@ router = APIRouter()
     status_code=200,
 )
 def atomicdex_info_api(netid: NetId = NetId.ALL):
+    # TODO: Move to new DB
     db = get_sqlite_db(netid=netid.value)
     data = db.query.swap_counts()
     data.update({"swaps_24h": data["swaps_24hr"]})
@@ -229,7 +231,7 @@ def tickers_summary(netid: NetId = NetId.ALL):
                     resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
                 elif ticker == rel:
                     resp[ticker]["volume_24h"] += Decimal(i["target_volume"])
-        resp = transform.clean_decimal_dict(resp)
+        resp = clean.decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())
         tickers.sort()
@@ -286,7 +288,6 @@ def usd_volume_24h(netid: NetId = NetId.ALL):
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
 
 
-# TODO: Move to new DB
 # TODO: get volumes for x days for ticker
 @router.get(
     "/volumes_ticker/{coin}/{days_in_past}",
@@ -298,6 +299,7 @@ def volumes_history_ticker(
     trade_type: TradeType = TradeType.ALL,
     netid: NetId = NetId.ALL,
 ):
+    # TODO: Move to new DB
     db = get_sqlite_db(netid=netid.value)
     volumes_dict = {}
     for i in range(0, int(days_in_past)):

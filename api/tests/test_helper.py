@@ -3,20 +3,18 @@ from decimal import Decimal
 from tests.fixtures_data import swap_item
 from util.helper import (
     get_mm2_rpc_port,
-    get_netid_filename,
     get_chunks,
     get_price_at_finish,
     base_quote_from_pair
 )
 from lib.coins import (
     get_pairs_info,
-    get_pair_info_sorted,
-    get_coin_variants,
-    get_pair_variants,
+    get_pair_info_sorted
 )
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
-from util.logger import logger
 
+from util.logger import logger
+import util.helper as helper
 import util.memcache as memcache
 
 
@@ -31,7 +29,7 @@ def test_get_mm2_rpc_port():
 
 
 def test_get_netid_filename():
-    assert get_netid_filename("filename.ext", "7777") == "filename_7777.ext"
+    assert helper.get_netid_filename("filename.ext", "7777") == "filename_7777.ext"
 
 
 def test_get_chunks():
@@ -71,18 +69,18 @@ def test_base_quote_from_pair():
 
 
 def test_get_coin_variants():
-    r = get_coin_variants("BTC")
+    r = helper.get_coin_variants("BTC")
     assert "BTC-BEP20" in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) > 2
-    r = get_coin_variants("BTC", True)
+    r = helper.get_coin_variants("BTC", True)
     assert "BTC-BEP20" not in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) == 2
 
-    r = get_coin_variants("USDC")
+    r = helper.get_coin_variants("USDC")
     assert "USDC-BEP20" in r
     assert "USDC-PLG20" in r
     assert "USDC-PLG20_OLD" in r
@@ -92,21 +90,21 @@ def test_get_coin_variants():
 
 
 def test_get_pair_variants():
-    r = get_pair_variants("KMD_LTC")
+    r = helper.get_pair_variants("KMD_LTC")
     assert "KMD_LTC" in r
     assert "KMD_LTC-segwit" in r
     assert "KMD-BEP20_LTC" in r
     assert "KMD-BEP20_LTC-segwit" in r
     assert len(r) == 4
 
-    r = get_pair_variants("LTC_KMD")
+    r = helper.get_pair_variants("LTC_KMD")
     assert "LTC_KMD" in r
     assert "LTC-segwit_KMD" in r
     assert "LTC_KMD-BEP20" in r
     assert "LTC-segwit_KMD-BEP20" in r
     assert len(r) == 4
 
-    r = get_pair_variants("KMD_USDC")
+    r = helper.get_pair_variants("KMD_USDC")
     assert "KMD_USDC" not in r
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r

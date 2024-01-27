@@ -6,7 +6,6 @@ from tests.fixtures_data import swap_item
 from tests.fixtures_db import setup_swaps_db_data, setup_time
 from util.helper import (
     get_mm2_rpc_port,
-    get_netid_filename,
     get_chunks,
     get_price_at_finish,
 )

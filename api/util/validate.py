@@ -12,7 +12,6 @@ def is_valid_hex(s):
         return False
 
 
-
 def positive_numeric(value, name, is_int=False):
     try:
         if Decimal(value) < 0:
@@ -38,9 +37,7 @@ def loop_data(data, cache_item):
         if len(data) > 0:
             return True
         else:
-            msg = (
-                f"{cache_item.name} not updated because input data was empty"
-            )
+            msg = f"{cache_item.name} not updated because input data was empty"
             logger.warning(msg)
             return False
     except Exception as e:
@@ -54,7 +51,6 @@ def is_bridge_swap(pair):
     if len(set(root_pairing.split("_"))) == 1:
         return True
     return False
-    
 
 
 def json_obj(data, outer=True):
@@ -87,3 +83,15 @@ def pair(pair_str):
     if "_" not in pair_str:
         raise BadPairFormatError(msg="Pair must be in format 'KMD_LTC'!")
     return True
+
+
+def is_source_db(db_file) -> bool:
+    if db_file.endswith("MM2.db"):
+        return True
+    return False
+
+
+def is_7777(db_file) -> bool:
+    if db_file.startswith("seed"):
+        return True
+    return False

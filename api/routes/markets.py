@@ -33,9 +33,10 @@ from util.transform import (
     sum_json_key_10f,
     sum_json_key,
 )
-from util.transform import clean_decimal_dict
+import util.transform as transform
 import util.validate as validate
 import lib
+clean = transform.Clean()
 
 router = APIRouter()
 
@@ -49,6 +50,7 @@ router = APIRouter()
     status_code=200,
 )
 def atomicdex_info_api():
+    # TODO: Use new DB
     db = get_sqlite_db()
     return db.query.swap_counts()
 
@@ -262,7 +264,7 @@ def tickers_summary():
                     resp[ticker]["volume_24hr"] += Decimal(i["base_volume"])
                 elif ticker == rel:
                     resp[ticker]["volume_24hr"] += Decimal(i["target_volume"])
-        resp = clean_decimal_dict(resp)
+        resp = clean.decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())
         tickers.sort()
@@ -327,6 +329,7 @@ def volumes_history_ticker(
     days_in_past=1,
     trade_type: TradeType = TradeType.ALL
 ):
+    # TODO: Use new DB
     db = get_sqlite_db()
     volumes_dict = {}
     for i in range(0, int(days_in_past)):

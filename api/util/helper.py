@@ -16,6 +16,14 @@ def get_mm2_rpc_port(netid=MM2_NETID):
         return default.error(e)
 
 
+def get_netid(filename):
+    if '7777' in filename:
+        return "7777"
+    if filename.startswith("seed"):
+        return "7777"
+    else:
+        return "8762"
+
 def get_netid_filename(filename, netid):
     try:
         parts = filename.split(".")
@@ -127,3 +135,28 @@ def get_swaps_volumes(swaps_for_pair, is_reversed=False):
     except Exception as e:  # pragma: no cover
         msg = "get_swaps_volumes failed!"
         return default.error(e, msg)
+
+
+
+def get_coin_variants(coin, segwit_only=False):
+    coins_config = memcache.get_coins_config()
+    coin = coin.split("-")[0]
+    data = [
+        i
+        for i in coins_config
+        if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
+        and (not segwit_only or i.endswith("segwit") or i.replace(coin, "") == "")
+    ]
+    return data
+
+
+def get_pair_variants(pair, segwit_only=False):
+    base, quote = base_quote_from_pair(pair)
+    base_variants = get_coin_variants(base, segwit_only=segwit_only)
+    quote_variants = get_coin_variants(quote, segwit_only=segwit_only)
+    variants = []
+    for i in base_variants:
+        for j in quote_variants:
+            if i != j:
+                variants.append(f"{i}_{j}")
+    return variants

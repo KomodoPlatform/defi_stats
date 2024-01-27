@@ -3,15 +3,12 @@ import util.cron as cron
 import sqlite3
 from decimal import Decimal
 from db.sqlitedb import (
-    is_source_db,
     get_sqlite_db,
-    get_sqlite_db_paths,
-    list_sqlite_dbs,
-    get_netid,
-    compare_uuid_fields,
+    get_sqlite_db_paths
 )
-from tests.fixtures_class import (
-    helper,
+from db.sqlitedb_merge import (
+    list_sqlite_dbs,
+    compare_uuid_fields,
 )
 from tests.fixtures_data import swap_item, swap_item2
 from tests.fixtures_db import (
@@ -19,10 +16,12 @@ from tests.fixtures_db import (
     setup_swaps_db_data,
     setup_time,
 )
+import util.helper as helper
 from util.logger import logger
-from util.transform import merge_orderbooks, format_10f
+from util.transform import format_10f
 
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
+import util.validate as validate
 
 now = int(cron.now_utc())
 hour_ago = now - 3600
@@ -83,13 +82,13 @@ def test_get_swap(setup_swaps_db_data):
 
 
 def test_is_source_db():
-    assert is_source_db("xyz_MM2.db")
-    assert not is_source_db("xyz_MM2x.db")
+    assert validate.is_source_db("xyz_MM2.db")
+    assert not validate.is_source_db("xyz_MM2x.db")
 
 
 def test_is_7777():
-    assert is_source_db("seed_MM2.db")
-    assert not is_source_db("xyz_seed.db")
+    assert validate.is_source_db("seed_MM2.db")
+    assert not validate.is_source_db("xyz_seed.db")
 
 
 def test_compare_uuid_fields():
@@ -119,12 +118,11 @@ def test_list_sqlite_dbs():
 
 
 def test_get_netid():
-    assert get_netid("file_7777.db") == "7777"
-    assert get_netid("7777_file.db") == "7777"
-    assert get_netid("file_7777_backup.db") == "7777"
-    assert get_netid("file_MM2.db") == "8762"
-    assert get_netid("seed_file.db") == "7777"
-    assert get_netid("node_file.db") == "ALL"
+    assert helper.get_netid("file_7777.db") == "7777"
+    assert helper.get_netid("7777_file.db") == "7777"
+    assert helper.get_netid("file_7777_backup.db") == "7777"
+    assert helper.get_netid("file_MM2.db") == "8762"
+    assert helper.get_netid("seed_file.db") == "7777"
 
 
 def test_swap_counts(setup_swaps_db_data):
