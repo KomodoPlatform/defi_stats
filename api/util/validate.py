@@ -1,6 +1,7 @@
 from decimal import Decimal
 from util.logger import logger
 from util.exceptions import DataStructureError, BadPairFormatError
+import util.transform as transform
 
 
 def is_valid_hex(s):
@@ -48,6 +49,12 @@ def loop_data(data, cache_item):
         return False
 
 
+def is_bridge_swap(pair):
+    root_pairing = transform.strip_pair_platforms(pair)
+    if len(set(root_pairing.split("_"))) == 1:
+        return True
+    return False
+    
 
 
 def json_obj(data, outer=True):

@@ -8,6 +8,7 @@ from util.logger import logger, timed
 import util.defaults as default
 import util.memcache as memcache
 import util.templates as template
+import util.transform as transform
 
 
 class DexAPI:
@@ -74,8 +75,9 @@ class DexAPI:
 
             return default.result(data=resp, msg=msg, loglevel="loop", ignore_until=2)
         except Exception as e:  # pragma: no cover
-            msg = f"orderbook rpc failed for {base}_{quote}: {e} {type(e)}"
-            return default.error(e, msg=msg)
+            data = template.orderbook(pair_str=f"{base}_{quote}")
+            msg = f"orderbook rpc failed for {base}_{quote}: {e} {type(e)}. Returning template."
+            return default.result(data=data, msg=msg, loglevel="warning", ignore_until=0)            
 
 
 @timed
@@ -88,7 +90,7 @@ def get_orderbook(base, quote):
         for i in ["asks", "bids"]:
             items = [
                 {
-                    "price": j["price"]["decimal"],
+                    "price": transform.format_10f(1 / Decimal(j["price"]["decimal"])),
                     "volume": j["base_max_volume"]["decimal"],
                 }
                 for j in x[i]

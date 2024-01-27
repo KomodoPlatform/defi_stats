@@ -10,7 +10,7 @@ from tests.fixtures_transform import (
     setup_ticker_to_gecko,
 )
 from tests.fixtures_db import setup_swaps_db_data, setup_time
-from tests.fixtures_class import setup_gecko, setup_pairs_cache
+from tests.fixtures_class import setup_gecko
 
 from tests.fixtures_data import (
     historical_data,
@@ -39,7 +39,6 @@ from util.transform import (
     order_pair_by_market_cap,
     strip_pair_platforms,
     strip_coin_platform,
-    base_quote_from_pair,
 )
 from util.logger import logger
 
@@ -245,9 +244,3 @@ def test_strip_pair_platforms():
 def test_strip_coin_platform():
     r = strip_coin_platform("USDC-PLG20")
     assert r == "USDC"
-
-
-def test_base_quote_from_pair():
-    base, quote = base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
-    assert base == "XXX-PLG20_OLD"
-    assert quote == "YYY-PLG20_OLD"

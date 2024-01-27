@@ -10,6 +10,7 @@ from lib.coins import get_gecko_price, get_pair_variants, get_segwit_coins
 from util.logger import logger, timed
 import util.cron as cron
 import util.defaults as default
+import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
@@ -45,7 +46,8 @@ class Orderbook:
                 transform.strip_pair_platforms(self.pair.as_str)
             )
         else:
-            variants = [self.pair.as_str]
+            # Segwit / non-segwit should always be merged
+            variants = get_pair_variants(self.pair.as_str, segwit_only=True)
             combined_orderbook = template.orderbook(self.pair.as_str)
         try:
             for variant in variants:
@@ -55,7 +57,7 @@ class Orderbook:
                 orderbook_data["quote"] = self.quote
 
                 orderbook_data["timestamp"] = f"{int(cron.now_utc())}"
-                base, quote = transform.base_quote_from_pair(variant)
+                base, quote = helper.base_quote_from_pair(variant)
                 if self.base_is_segwit_coin and len(variants) > 1:
                     if "-" not in base:
                         continue
@@ -111,18 +113,16 @@ class Orderbook:
                 )
 
             msg = f"orderbook.for_pair {self.pair.as_str} ({len(variants)} variants) complete!"
-            return default.result(data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2)
+            return default.result(
+                data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2
+            )
         except Exception as e:  # pragma: no cover
             msg = f"orderbook.for_pair {self.pair.as_str} ({len(variants)} variants)"
             msg += f" failed: {e}! Returning template!"
             return default.result(data=combined_orderbook, msg=msg, loglevel="pair")
 
     @timed
-    def get_and_parse(
-        self,
-        base: str | None = None,
-        quote: str | None = None
-    ):
+    def get_and_parse(self, base: str | None = None, quote: str | None = None):
         if base is None:
             base = self.base
         if quote is None:
@@ -149,13 +149,18 @@ class Orderbook:
             msg = f"orderbook.for_pair {base}_{quote} failed: {e}! Returning template!"
         return default.result(data=data, msg=msg, loglevel="muted")
 
+
+    # The lowest ask / highest bid needs to be inverted
+    # to result in conventional vaules like seen at 
+    # https://api.binance.com/api/v1/ticker/24hr where
+    # askPrice > bidPrice
     @timed
     def find_lowest_ask(self, orderbook: dict) -> str:
         """Returns lowest ask from provided orderbook"""
         try:
-            if len(orderbook["asks"]) > 0:
+            if len(orderbook["bids"]) > 0:
                 return transform.format_10f(
-                    min([Decimal(ask["price"]) for ask in orderbook["bids"]])
+                    min([Decimal(bid["price"]) for bid in orderbook["bids"]])
                 )
         except KeyError as e:  # pragma: no cover
             return default.error(e, data=transform.format_10f(0))
@@ -167,9 +172,9 @@ class Orderbook:
     def find_highest_bid(self, orderbook: list) -> str:
         """Returns highest bid from provided orderbook"""
         try:
-            if len(orderbook["bids"]) > 0:
+            if len(orderbook["asks"]) > 0:
                 return transform.format_10f(
-                    max([Decimal(bid["price"]) for bid in orderbook["asks"]])
+                    max([Decimal(ask["price"]) for ask in orderbook["asks"]])
                 )
         except KeyError as e:  # pragma: no cover
             return default.error(e, data=transform.format_10f(0))

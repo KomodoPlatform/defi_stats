@@ -7,12 +7,9 @@ import db
 import lib
 from lib.coins import get_gecko_price, get_gecko_mcap, get_tradable_coins
 from util.enums import TradeType
-from util.helper import (
-    get_price_at_finish,
-    get_swaps_volumes,
-)
 from util.logger import logger, timed
 import util.defaults as default
+import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
@@ -44,9 +41,9 @@ class Pair:  # pragma: no cover
             self.is_reversed = self.as_str != transform.order_pair_by_market_cap(
                 self.as_str
             )
-
-            self.base = self.as_str.split("_")[0]
-            self.quote = self.as_str.split("_")[1]
+            base, quote = helper.base_quote_from_pair(self.as_str)
+            self.base = base
+            self.quote = quote
             self.as_tuple = tuple((self.base, self.quote))
             self.as_set = set((self.base, self.quote))
 
@@ -62,7 +59,7 @@ class Pair:  # pragma: no cover
             self.coins_config = coins_config
 
             if self.coins_config is None:
-                self.coins_config = memcache.coins_config()
+                self.coins_config = memcache.get_coins_config()
             self.orderbook = lib.Orderbook(
                 pair_obj=self, coins_config=self.coins_config
             )
@@ -241,7 +238,7 @@ class Pair:  # pragma: no cover
             data["quote_price"] = self.quote_usd_price
             data[f"trades_{suffix}"] = len(swaps_for_pair)
             # Get Volumes
-            swaps_volumes = get_swaps_volumes(swaps_for_pair, self.is_reversed)
+            swaps_volumes = helper.get_swaps_volumes(swaps_for_pair, self.is_reversed)
             data["base_volume"] = swaps_volumes[0]
             data["quote_volume"] = swaps_volumes[1]
             data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(
@@ -371,7 +368,6 @@ class Pair:  # pragma: no cover
             data.update(
                 {
                     "ticker_id": self.as_str,
-                    "pool_id": self.as_str,
                     "base_currency": self.base,
                     "base_usd_price": self.base_usd_price,
                     "quote_currency": self.quote,
@@ -438,7 +434,7 @@ class Pair:  # pragma: no cover
     def get_swap_prices(self, swaps_for_pair, is_reversed):
         data = {}
         try:
-            [data.update(get_price_at_finish(i, is_reversed)) for i in swaps_for_pair]
+            [data.update(helper.get_price_at_finish(i, is_reversed)) for i in swaps_for_pair]
         except Exception as e:  # pragma: no cover
             msg = f"get_swap_prices for {self.as_str} failed!"
             return default.result(data=data, msg=msg, loglevel="warning")

@@ -7,7 +7,12 @@ from typing import List
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MM2_DB_PATHS, MM2_NETID, compare_fields
-from lib.coins import pair_without_segwit_suffix, get_segwit_coins
+from lib.coins import (
+    pair_without_segwit_suffix, get_segwit_coins,
+    get_coin_variants, get_gecko_price,
+    get_pair_variants
+)
+
 from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import InvalidParamCombination
 from util.files import Files
@@ -417,11 +422,7 @@ class SqliteQuery:  # pragma: no cover
         try:
             coin = coin.split("-")[0]
             coins_config = memcache.get_coins_config()
-            variants = [
-                i
-                for i in coins_config
-                if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
-            ]
+            variants = get_coin_variants(coin)
             if end_time == 0:
                 end_time = int(cron.now_utc())
             resp = {}
@@ -510,11 +511,7 @@ class SqliteQuery:  # pragma: no cover
             coins_config = memcache.get_coins_config()
             resp = {}
             coin = coin.split("-")[0]
-            variants = [
-                i
-                for i in coins_config
-                if i.replace(coin, "") == "" or i.replace(coin, "").startswith("-")
-            ]
+            variants = get_coin_variants(coin)
             if end_time == 0:
                 end_time = int(cron.now_utc())
 

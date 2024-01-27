@@ -3,16 +3,18 @@ import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import List, Dict
-import db
+
+from const import GENERIC_PAIRS_DAYS
 from lib.cache import Cache
 from lib.pair import Pair
-from util.enums import TradeType, GroupBy
 from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
+from util.enums import TradeType, GroupBy
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
-import util.validate as validate
+import db
+import util.helper as helper
 import util.transform as transform
-from const import GENERIC_PAIRS_DAYS
+import util.validate as validate
 
 
 router = APIRouter()
@@ -117,6 +119,91 @@ def get_swaps(
             end_time=end_time,
             coin=coin,
             pair=pair,
+            gui=gui,
+            version=version,
+            failed_only=failed_only,
+            success_only=success_only,
+            pubkey=pubkey,
+        )
+        return resp
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/get_swaps_for_coin/{coin}",
+    description="Swaps for an exact coin matching filter.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=List[db.DefiSwap],
+    status_code=200,
+)
+def get_swaps_for_coin(
+    coin: str,
+    start_time: int = 0,
+    end_time: int = 0,
+    merge_segwit: bool = True,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    version: str | None = None,
+    success_only: bool = True,
+    failed_only: bool = False,
+):
+    try:
+        if start_time == 0:
+            start_time = int(cron.now_utc()) - 86400
+        if end_time == 0:
+            end_time = int(cron.now_utc())
+        query = db.SqlQuery()
+        resp = query.get_swaps_for_coin(
+            start_time=start_time,
+            end_time=end_time,
+            coin=coin,
+            gui=gui,
+            version=version,
+            failed_only=failed_only,
+            success_only=success_only,
+            pubkey=pubkey,
+        )
+        return resp
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
+@router.get(
+    "/get_swaps_for_pair/{pair}",
+    description="Swaps for an exact pair matching filter.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=List[db.DefiSwap],
+    status_code=200,
+)
+def get_swaps_for_pair(
+    pair: str,
+    start_time: int = 0,
+    end_time: int = 0,
+    merge_segwit: bool = True,
+    pubkey: str | None = None,
+    gui: str | None = None,
+    version: str | None = None,
+    success_only: bool = True,
+    failed_only: bool = False,
+):
+    try:
+        if start_time == 0:
+            start_time = int(cron.now_utc()) - 86400
+        if end_time == 0:
+            end_time = int(cron.now_utc())
+
+        base, quote = helper.base_quote_from_pair(pair)
+        query = db.SqlQuery()
+        resp = query.get_swaps_for_pair(
+            start_time=start_time,
+            end_time=end_time,
+            base=base,
+            quote=quote,
             gui=gui,
             version=version,
             failed_only=failed_only,

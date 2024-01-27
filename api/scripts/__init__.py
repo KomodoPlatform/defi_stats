@@ -18,8 +18,6 @@ memcache.set_gecko_source(data)
 data = CacheItem("generic_last_traded").data
 memcache.set_last_traded(data)
 
-data = CacheItem("generic_pairs").data
-memcache.set_pairs(data)
 
 data = CacheItem("generic_tickers").data
 memcache.set_tickers(data)

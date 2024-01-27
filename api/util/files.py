@@ -37,7 +37,6 @@ class Files:
         # For Generic Cache
         self.generic_last_traded = f"{folder}/generic/last_traded.json"
 
-        self.generic_pairs = f"{folder}/generic/pairs.json"
 
         self.generic_tickers = f"{folder}/generic/tickers.json"
 

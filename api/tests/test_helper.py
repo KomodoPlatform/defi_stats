@@ -6,7 +6,7 @@ from util.helper import (
     get_netid_filename,
     get_chunks,
     get_price_at_finish,
-    get_last_trade_item,
+    base_quote_from_pair
 )
 from lib.coins import (
     get_pairs_info,
@@ -63,34 +63,11 @@ def test_get_pair_info_sorted():
     assert not r[0]["priced"]
 
 
-def test_get_last_trade_item():
-    r = get_last_trade_item("DOGE_LTC", "last_swap_uuid")
-    assert r == "EEEEEEEE-ee4b-494f-a2fb-48467614b613"
-    r2 = get_last_trade_item("LTC_DOGE", "last_swap_uuid")
-    assert r == r2
-    r = get_last_trade_item("DOGE_XXX", "last_swap_uuid")
-    assert r == ""
+def test_base_quote_from_pair():
+    base, quote = base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
+    assert base == "XXX-PLG20_OLD"
+    assert quote == "YYY-PLG20_OLD"
 
-    r = get_last_trade_item("DOGE_LTC-segwit", "last_swap_time")
-
-    assert r > 0
-    r2 = get_last_trade_item("LTC_DOGE", "last_swap_time")
-    assert r == r2
-    r = get_last_trade_item("DOGE_XXX", "last_swap_time")
-    assert r == 0
-
-    r = get_last_trade_item("KMD_LTC", "last_swap_uuid")
-
-    r = get_last_trade_item("KMD_LTC", "last_swap_price")
-
-    assert r == Decimal(100)
-    r2 = get_last_trade_item("LTC_KMD", "last_swap_price")
-    assert r2 == Decimal(1 / 100.0000000000)
-    assert r != r2
-    assert r != 1 / r2
-    assert 1 / r != r2
-    r = get_last_trade_item("DOGE_XXX", "last_swap_price")
-    assert r == Decimal(0)
 
 
 def test_get_coin_variants():

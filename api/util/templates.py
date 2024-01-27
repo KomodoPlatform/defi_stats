@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import util.cron as cron
+import util.helper as helper
+import util.transform as transform
 
 
 def last_price_for_pair():  # pragma: no cover
@@ -19,10 +21,11 @@ def liquidity():  # pragma: no cover
 
 
 def pair_info(pair_str: str, priced: bool = False) -> dict:
+    base, quote = helper.base_quote_from_pair(pair_str)
     return {
         "ticker_id": pair_str,
-        "base": pair_str.split("_")[0],
-        "target": pair_str.split("_")[1],
+        "base": base,
+        "target": quote,
         "last_swap_time": 0,
         "last_swap_price": 0,
         "last_swap_uuid": "",
@@ -34,9 +37,9 @@ def pair_info(pair_str: str, priced: bool = False) -> dict:
 
 
 def orderbook(pair_str):
-    x = pair_str.split("_")
-    base = x[0].replace("-segwit", "")
-    quote = x[1].replace("-segwit", "")
+    base, quote = helper.base_quote_from_pair(pair_str)
+    base = base.replace("-segwit", "")
+    quote = quote.replace("-segwit", "")
     return {
         "pair": f"{base}_{quote}",
         "base": base,
@@ -93,7 +96,6 @@ def volumes_and_prices(suffix, base, quote):
 def ticker_info(suffix, base, quote):
     return {
         "ticker_id": f"{base}_{quote}",
-        "pool_id": f"{base}_{quote}",
         "variants": [],
         f"trades_{suffix}": 0,
         "base_currency": base,

@@ -4,6 +4,7 @@ from decimal import Decimal
 import lib
 from util.logger import logger
 import util.defaults as default
+import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
@@ -156,16 +157,17 @@ def pair_without_segwit_suffix(maker_coin, taker_coin):
 def get_coin_variants(coin, segwit_only=False):
     coins_config = memcache.get_coins_config()
     coin = coin.split("-")[0]
-    return [
+    data = [
         i
         for i in coins_config
         if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
         and (not segwit_only or i.endswith("segwit") or i.replace(coin, "") == "")
     ]
+    return data
 
 
 def get_pair_variants(pair, segwit_only=False):
-    base, quote = transform.base_quote_from_pair(pair)
+    base, quote = helper.base_quote_from_pair(pair)
     base_variants = get_coin_variants(base, segwit_only=segwit_only)
     quote_variants = get_coin_variants(quote, segwit_only=segwit_only)
     variants = []

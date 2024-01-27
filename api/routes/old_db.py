@@ -8,6 +8,7 @@ from models.generic import ErrorMessage, SwapItem
 from util.exceptions import UuidNotFoundException
 from util.logger import logger
 import util.transform as transform
+import util.helper as helper
 
 
 router = APIRouter()
@@ -28,7 +29,7 @@ cache = Cache()
 )
 def get_swaps_for_pair(pair_str):
     try:
-        base, quote = transform.base_quote_from_pair(pair_str)
+        base, quote = helper.base_quote_from_pair(pair_str)
         db = get_sqlite_db(netid="ALL")
         return db.query.get_swaps_for_pair_old(base, quote)
     except Exception as e:  # pragma: no cover

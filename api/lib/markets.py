@@ -6,6 +6,7 @@ from lib.coins import get_coin_variants, get_segwit_coins
 from util.logger import timed, logger
 import util.cron as cron
 import util.defaults as default
+import util.helper as helper
 import util.transform as transform
 import util.memcache as memcache
 
@@ -57,7 +58,7 @@ class Markets:
             )
 
             resp = []
-            base, quote = transform.base_quote_from_pair(pair)
+            base, quote = helper.base_quote_from_pair(pair)
             if all:
                 resp += data["ALL"]["buy"]
                 resp += data["ALL"]["sell"]

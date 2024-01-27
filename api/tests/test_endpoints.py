@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 import pytest
 from main import app
 from util.logger import logger
+import util.helper as helper
+import util.transform as transform
 
 client = TestClient(app)
 
@@ -18,9 +20,9 @@ def test_gecko_pairs_endpoint():
     for i in data:
         assert isinstance(i, dict)
         assert i["ticker_id"] == i["pool_id"]
-        split = i["ticker_id"].split("_")
-        assert split[0] == i["base"]
-        assert split[1] == i["target"]
+        base, quote = helper.base_quote_from_pair("ticker_id")
+        assert base == i["base"]
+        assert quote == i["target"]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data

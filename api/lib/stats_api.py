@@ -65,7 +65,7 @@ class StatsAPI:  # pragma: no cover
                 for i in pairs
             ]
             data = [
-                transform.ticker_to_statsapi_summary(i, suffix=suffix) for i in ticker_infos
+                transform.ticker_to_statsapi_summary(i) for i in ticker_infos
             ]
             # Drop coin platforms and merge data
             resp_dict = {}

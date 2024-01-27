@@ -71,15 +71,6 @@ def get_last_traded():
     return data
 
 
-def set_pairs(data):
-    update("generic_pairs", data, 900)
-
-
-def get_pairs():
-    data = get("generic_pairs")
-    return data
-
-
 def set_tickers(data):
     update("generic_tickers", data, 900)
 

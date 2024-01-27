@@ -35,11 +35,6 @@ def setup_cache_item():
 
 
 @pytest.fixture
-def setup_pairs_cache():
-    yield lib.CacheItem("generic_pairs").data
-
-
-@pytest.fixture
 def setup_last_traded_cache():
     yield lib.CacheItem("generic_last_traded").data
 

@@ -25,7 +25,6 @@ def test_cache(setup_swaps_db_data):
 
     for i in [
         "generic_last_traded",
-        "generic_pairs",
         "generic_tickers",
     ]:
         cache_item = cache.get_item(i)

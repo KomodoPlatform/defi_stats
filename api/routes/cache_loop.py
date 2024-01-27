@@ -90,18 +90,6 @@ def generic_last_traded():
 @router.on_event("startup")
 @repeat_every(seconds=120)
 @timed
-def generic_pairs():
-    try:
-        CacheItem(name="generic_pairs").save()
-    except Exception as e:
-        return default.error(e)
-    msg = "Generic pairs (ALL) loop complete!"
-    return default.result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
 def generic_tickers():
     try:
         CacheItem(name="generic_tickers").save()

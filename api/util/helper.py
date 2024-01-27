@@ -27,7 +27,7 @@ def get_netid_filename(filename, netid):
 def get_chunks(data, chunk_length):
     try:
         for i in range(0, len(data), chunk_length):
-            yield data[i: i + chunk_length]
+            yield data[i : i + chunk_length]
     except Exception as e:  # pragma: no cover
         return default.error(e)
 
@@ -37,48 +37,57 @@ def daterange(start_date, end_date):
         yield start_date + timedelta(n)
 
 
-def get_last_trade_item(pair_str: str, item: str):
+def get_last_trade_info(pair_str: str, last_traded_cache: Dict, all=False):
     try:
-        
-        last_traded_cache = memcache.get_last_traded()
-        pair_str = pair_str.replace("-segwit", "")
-        reverse_pair = "_".join(pair_str.split("_")[::-1])
-        if pair_str in last_traded_cache:
-            v = last_traded_cache[pair_str][item]
-            is_reversed = False
-        elif reverse_pair in last_traded_cache:
-            v = last_traded_cache[reverse_pair][item]
-            is_reversed = True
-        else:
-            return template.first_last_swap()[item]
-
-        if item in ["first_swap_uuid", "last_swap_uuid"]:
-            return v
-        if item in ["first_swap_time", "last_swap_time"]:
-            return int(v)
-        if item in ["first_swap_price", "last_swap_price"]:
-            if is_reversed:
-                return Decimal(1 / v)
-            return Decimal(v)
-    except Exception as e:  # pragma: no cover
-        logger.warning(default.error(e))
-    if item in ["last_swap_uuid"]:
-        return ""
-    return Decimal(0)
-
-
-def get_last_trade_info(pair_str: str, last_traded_cache: Dict):
-    try:
+        # TODO: cover 'all' case
         pair_str = pair_str.replace("-segwit", "")
         if pair_str in last_traded_cache:
             return last_traded_cache[pair_str]
-        reverse_pair = "_".join(pair_str.split("_")[::-1])
+        reverse_pair = base_quote_from_pair(pair_str, True)
         if reverse_pair in last_traded_cache:
             return last_traded_cache[reverse_pair]
     except Exception as e:  # pragma: no cover
         logger.warning(default.error(e))
     return template.last_trade_info()
 
+
+
+def base_quote_from_pair(variant, reverse=False):
+    # TODO: This workaround fixes the issue
+    # but need to find root cause to avoid 
+    # unexpected related issues
+    if variant == "OLD_USDC-PLG20_USDC-PLG20":
+        variant = "USDC-PLG20_USDC-PLG20_OLD"
+    split_variant = variant.split("_")
+    try:
+        if len(split_variant) == 2:
+            base = split_variant[0]
+            quote = split_variant[1]
+        elif variant.startswith("IRIS_ATOM-IBC"):
+            base = "IRIS_ATOM-IBC"
+            quote = variant.replace(f"{base}_", "")
+        elif variant.endswith("IRIS_ATOM-IBC"):
+            quote = "IRIS_ATOM-IBC"
+            base = variant.replace(f"_{quote}", "")
+        elif len(split_variant) == 4 and "OLD" in split_variant:
+            if split_variant[1] == "OLD":
+                base = f"{split_variant[0]}_{split_variant[1]}"
+            if split_variant[3] == "OLD":
+                quote = f"{split_variant[2]}_{split_variant[3]}"
+        elif len(split_variant) == 3 and "OLD" in split_variant:
+            if split_variant[2] == "OLD":
+                base = split_variant[0]
+                quote = f"{split_variant[1]}_{split_variant[2]}"
+            elif split_variant[1] == "OLD":
+                base = f"{split_variant[0]}_{split_variant[1]}"
+                quote = split_variant[2]
+
+        if reverse:
+            return quote, base
+        return base, quote
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"failed to parse {variant} into base/quote!")
+        return default.error(e)
 
 
 def get_price_at_finish(swap, is_reversed=False):

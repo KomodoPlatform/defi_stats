@@ -8,6 +8,7 @@ from util.exceptions import DataStructureError
 from util.logger import timed, logger
 import util.cron as cron
 import util.defaults as default
+import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
@@ -62,7 +63,9 @@ class Generic:  # pragma: no cover
         all: bool = False,
     ):
         try:
-            if len(pair_str.split("_")) != 2:
+            
+            pair_tpl = helper.base_quote_from_pair(pair_str)
+            if len(pair_tpl) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
             else:
                 pair_obj = lib.Pair(pair_str=pair_str)
@@ -149,27 +152,43 @@ class Generic:  # pragma: no cover
     def last_traded(self):
         try:
             data = self.pg_query.pair_last_trade()
+            pairs_dict = get_price_status_dict(data.keys())
+            
             for i in data:
-                transform.clean_decimal_dict(data[i])
+                data[i] = transform.clean_decimal_dict(data[i])
+                if i in pairs_dict["priced_gecko"]:
+                    priced = True
+                else:
+                    priced = False
+                data[i].update({"priced": priced})
             return data
         except Exception as e:  # pragma: no cover
             msg = "pairs_last_traded failed!"
             return default.error(e, msg)
+        
+
+def get_price_status_dict(pairs):
+    try:
+        pairs_dict = {"priced_gecko": [], "unpriced": []}
+        for pair_str in pairs:
+            base, quote = helper.base_quote_from_pair(pair_str)
+            base_price = get_gecko_price(base)
+            quote_price = get_gecko_price(quote)
+            if base_price > 0 and quote_price > 0:
+                pairs_dict["priced_gecko"].append(pair_str)
+            else:  # pragma: no cover
+                pairs_dict["unpriced"].append(pair_str)
+        return pairs_dict
+    except Exception as e:  # pragma: no cover
+        msg = "pairs_last_traded failed!"
+        return default.error(e, msg)
 
 
 @timed
 def get_pairs_status(pairs):
-    pairs_dict = {"priced_gecko": [], "unpriced": []}
-    # Process pairs returned from DB
     pairs = list(set(pairs + get_kmd_pairs()))
-    for pair_str in pairs:
-        pair_split = pair_str.split("_")
-        base_price = get_gecko_price(pair_split[0])
-        quote_price = get_gecko_price(pair_split[1])
-        if base_price > 0 and quote_price > 0:
-            pairs_dict["priced_gecko"].append(pair_str)
-        else:  # pragma: no cover
-            pairs_dict["unpriced"].append(pair_str)
+    logger.loop("get_pairs_status")
+    pairs_dict = get_price_status_dict(pairs)
     priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
     unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)
     return transform.sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")

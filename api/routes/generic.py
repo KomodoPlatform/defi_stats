@@ -5,9 +5,11 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 import db
 from lib.pair import Pair
+from lib.dex_api import get_orderbook
 from models.generic import ErrorMessage
 from util.enums import TradeType
 from util.logger import logger
+import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
@@ -82,7 +84,10 @@ def orderbook(
 ):
     try:
         data = memcache.get(f"orderbook_{pair_str}")
-        data = transform.orderbook_to_gecko(data)
+        base, quote = helper.base_quote_from_pair(pair_str)
+        if data is None:
+            data = get_orderbook(base, quote)
+        # data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -160,7 +165,7 @@ def swaps_for_pair(
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         validate.pair(pair_str)
-        base, quote = transform.base_quote_from_pair(pair_str)
+        base, quote = helper.base_quote_from_pair(pair_str)
         days = (end_time - start_time) / 86400
         msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
         msg += f"| {start_time} -> {end_time} | {days} days"

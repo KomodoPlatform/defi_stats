@@ -29,9 +29,11 @@ from lib.cache import CacheItem
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 import util.defaults as default
+import util.helper as helper
+import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
-import util.memcache as memcache
+import util.validate as validate
 
 load_dotenv()
 
@@ -556,9 +558,9 @@ class SqlQuery(SqlDB):
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
             for pair_std in volumes["volumes"]:
-                base, rel = pair_std.split("_")
+                base, quote = helper.base_quote_from_pair(pair_std)
                 base_usd_price = get_gecko_price(base)
-                quote_usd_price = get_gecko_price(rel)
+                quote_usd_price = get_gecko_price(quote)
 
                 for pair in volumes["volumes"][pair_std]:
                     base_vol = volumes["volumes"][pair_std][pair]["base_volume"]
@@ -623,7 +625,6 @@ class SqlQuery(SqlDB):
                 last_data = [dict(i) for i in last.all()]
 
                 last_data = {i["category"]: i for i in last_data}
-                
                 for pair in last_data:
                     if pair not in resp:
                         resp.update({pair:{}})
@@ -644,7 +645,6 @@ class SqlQuery(SqlDB):
                 first = distinct.order_by(*group_by_cols, self.table.finished_at.asc())
                 first_data = [dict(i) for i in first.all()]
                 first_data = {i["category"]: i for i in first_data}
-                
                 for pair in first_data:
                     if pair not in resp:
                         resp.update({pair:{}})
@@ -869,14 +869,28 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-    def get_swaps_for_coin(self, coin: str | None = None, **kwargs):
-        return self.get_swaps(coin=coin, **kwargs)
+    def get_swaps_for_coin(self, coin: str, merge_segwit: bool = True, **kwargs):
+        '''
+        Returns swaps for a variant of a coin only.
+        Optionally, segwit coins can be merged
+        '''
+        swaps = self.get_swaps(coin=coin, **kwargs)
+        variants = get_coin_variants(coin, segwit_only=merge_segwit)
+        return transform.merge_segwit_swaps(variants, swaps)        
+                
 
     def get_swaps_for_pair(
-        self, base: str | None = None, quote: str | None = None, **kwargs
+        self, base: str, quote: str,  merge_segwit: bool = True, **kwargs
     ):
+        '''
+        Returns swaps for a variant of a pair only.
+        Optionally, pairs with segwit coins can be merged
+        '''
         pair = f"{base}_{quote}"
-        return self.get_swaps(pair=pair, **kwargs)
+        swaps = self.get_swaps(pair=pair, **kwargs)
+        variants = get_pair_variants(pair, segwit_only=merge_segwit)
+        return transform.merge_segwit_swaps(variants, swaps)        
+    
 
     @timed
     def get_swaps(
@@ -930,7 +944,6 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in r]
                 if coin is not None:
                     variants = get_coin_variants(coin)
-
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
@@ -940,11 +953,8 @@ class SqlQuery(SqlDB):
                         all += resp[i]
                     resp.update({"ALL": all})
                 elif pair is not None:
-                    bridge_swap = False
-                    root_pairing = transform.strip_pair_platforms(pair)
-                    if len(set(root_pairing.split("_"))) == 1:
-                        bridge_swap = True
                     resp = {}
+                    bridge_swap = validate.is_bridge_swap(pair)
                     variants = get_pair_variants(pair)
                     for variant in variants:
                         # exclude duplication for bridge swaps
@@ -953,7 +963,7 @@ class SqlQuery(SqlDB):
                             != transform.order_pair_by_market_cap(variant)
                         ):
                             continue
-                        base, quote = transform.base_quote_from_pair(variant)
+                        base, quote = helper.base_quote_from_pair(variant)
                         variant_trades = [
                             k
                             for k in data

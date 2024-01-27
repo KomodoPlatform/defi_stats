@@ -16,10 +16,10 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
+import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
-from util.helper import get_last_trade_item
 
 router = APIRouter()
 cache = Cache()
@@ -70,7 +70,9 @@ def atomicdex_fortnight():
 )
 def summary():
     try:
-        return lib.load_statsapi_summary()
+        tickers_data = transform.tickers_deplatform(memcache.get_tickers())
+        tickers = [transform.ticker_to_statsapi_summary(tickers_data['data'][i]) for i in tickers_data['data']]
+        return tickers
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats-api/atomicdexio]: {e}"}
@@ -162,7 +164,9 @@ def trades(
 def last_price_for_pair(pair="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
-        return get_last_trade_item(pair, "last_price")
+        last_traded_cache = memcache.get_last_traded()
+        data = helper.get_last_trade_info(pair, last_traded_cache=last_traded_cache)
+        return data["last_swap_price"]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

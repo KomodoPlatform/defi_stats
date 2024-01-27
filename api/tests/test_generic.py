@@ -47,17 +47,6 @@ def test_orderbook():
         assert r6["bids"] == []
 
 
-def test_traded_pairs():
-    generic = Generic()
-    r = generic.pairs()
-    assert isinstance(r, list)
-    assert isinstance(r[0], dict)
-    for i in r:
-        if i["pool_id"] == "MORTY_KMD":
-            assert not i["priced"]
-        if i["pool_id"] == "KMD_BTC":
-            assert i["priced"]
-
 
 def test_traded_tickers():
     generic = Generic()

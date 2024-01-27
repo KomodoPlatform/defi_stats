@@ -23,10 +23,6 @@ def setup_ticker_to_market_ticker():
     yield ticker_to_market_ticker(get_ticker_item())
 
 
-@pytest.fixture
-def setup_pairs_to_gecko(setup_pairs_cache):
-    yield pairs_to_gecko(setup_pairs_cache)
-
 
 @pytest.fixture
 def setup_ticker_to_gecko():
@@ -35,12 +31,12 @@ def setup_ticker_to_gecko():
 
 @pytest.fixture
 def setup_ticker_to_statsapi_24h():
-    yield ticker_to_statsapi_summary(get_ticker_item(), "24hr")
+    yield ticker_to_statsapi_summary(get_ticker_item())
 
 
 @pytest.fixture
 def setup_ticker_to_statsapi_7d():
-    yield ticker_to_statsapi_summary(get_ticker_item("7d"), "7d")
+    yield ticker_to_statsapi_summary(get_ticker_item("7d"))
 
 
 @pytest.fixture

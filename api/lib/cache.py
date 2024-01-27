@@ -34,7 +34,6 @@ class Cache:  # pragma: no cover
                 "coins_config",
                 "gecko_source",
                 "coins",
-                "generic_pairs",
                 "generic_tickers",
                 "generic_last_traded",
                 "fixer_rates",
@@ -160,10 +159,6 @@ class CacheItem:
                     data = lib.Generic().last_traded()
                     memcache.set_last_traded(data)
 
-                if self.name == "generic_pairs":
-                    data = lib.Generic().pairs()
-                    memcache.set_pairs(data)
-                    logger.info(">>>>>> generic pairs set complete")
 
                 if self.name == "markets_pairs":
                     data = lib.Markets().pairs(days=MARKETS_PAIRS_DAYS)
