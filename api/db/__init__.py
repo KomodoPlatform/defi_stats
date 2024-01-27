@@ -1,10 +1,8 @@
 from db.sqldb import (
     SqlDB,
     SqlQuery,
+    SqlSource,
     SqlUpdate,
-    populate_pgsqldb,
-    reset_defi_stats_table,
-    normalise_swap_data
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from db.sqlitedb_merge import SqliteMerge

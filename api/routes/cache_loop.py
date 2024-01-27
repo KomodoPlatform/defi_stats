@@ -121,9 +121,9 @@ def import_dbs():
 @timed
 def populate_pgsqldb_loop():
     if RESET_TABLE:
-        db.reset_defi_stats_table()
+        db.SqlSource().reset_defi_stats_table()
     # updates last 24 hours swaps
-    db.populate_pgsqldb()
+    db.SqlSource().populate_pgsqldb()
 
 '''
 

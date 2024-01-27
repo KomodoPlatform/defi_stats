@@ -1,9 +1,12 @@
 from decimal import Decimal, InvalidOperation
-from util.logger import logger, timed
 from typing import Any, List, Dict
+
+from db.schema import DefiSwap
+from util.logger import logger, timed
+import util.cron as cron
 import util.defaults as default
-import util.memcache as memcache
 import util.helper as helper
+import util.memcache as memcache
 
 
 def round_to_str(value: Any, rounding=8):
@@ -701,3 +704,311 @@ def merge_segwit_swaps(variants, swaps):
     for i in variants:
         resp = resp + swaps[i]
     return sort_dict_list(resp, "finished_at", reverse=True)
+
+
+
+@timed
+def normalise_swap_data(data, is_success=None):
+    try:
+        gecko_source = memcache.get_gecko_source()
+        for i in data:
+            pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
+            pair = order_pair_by_market_cap(pair_raw)
+            pair_reverse = invert_pair(pair)
+            pair_std = strip_pair_platforms(pair)
+            pair_std_reverse = invert_pair(pair_std)
+            if pair_raw == pair:
+                trade_type = "buy"
+                price = Decimal(i["maker_amount"] / i["taker_amount"])
+                reverse_price = Decimal(i["taker_amount"] / i["maker_amount"])
+            else:
+                trade_type = "sell"
+                price = Decimal(i["taker_amount"] / i["maker_amount"])
+                reverse_price = Decimal(i["maker_amount"] / i["taker_amount"])
+            i.update(
+                {
+                    "pair": pair,
+                    "pair_std": pair_std,
+                    "pair_reverse": pair_reverse,
+                    "pair_std_reverse": pair_std_reverse,
+                    "trade_type": trade_type,
+                    "maker_coin_ticker": strip_coin_platform(i["maker_coin"]),
+                    "maker_coin_platform": get_coin_platform(i["maker_coin"]),
+                    "taker_coin_ticker": strip_coin_platform(i["taker_coin"]),
+                    "taker_coin_platform": get_coin_platform(i["taker_coin"]),
+                    "price": price,
+                    "reverse_price": reverse_price,
+                }
+            )
+            if "is_success" not in i:
+                if is_success is not None:
+                    if is_success:
+                        i.update({"is_success": 1})
+                    else:
+                        i.update({"is_success": 0})
+                else:
+                    i.update({"is_success": -1})
+
+            for k, v in i.items():
+                if k in [
+                    "maker_pubkey",
+                    "taker_pubkey",
+                    "taker_gui",
+                    "maker_gui",
+                    "taker_version",
+                    "maker_version",
+                ]:
+                    if v in [None, ""]:
+                        i.update({k: ""})
+                if k in [
+                    "maker_coin_usd_price",
+                    "taker_coin_usd_price",
+                    "started_at",
+                    "finished_at",
+                ]:
+                    if v in [None, ""]:
+                        i.update({k: 0})
+    except Exception as e:
+        return default.error(e)
+    msg = "Data normalised"
+    return default.result(msg=msg, data=data, loglevel="updated")
+
+
+@timed
+def cipi_to_defi_swap(cipi_data, defi_data=None):
+    """
+    Compares with existing to select best value where there is a conflict,
+    or returns normalised data from a source database with derived fields
+    calculated or defaults applied
+    """
+    try:
+        if defi_data is None:
+            for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
+                if i not in cipi_data:
+                    cipi_data.update({i: ""})
+            data = DefiSwap(
+                uuid=cipi_data["uuid"],
+                taker_amount=cipi_data["taker_amount"],
+                taker_coin=cipi_data["taker_coin"],
+                taker_gui=cipi_data["taker_gui"],
+                taker_pubkey=cipi_data["taker_pubkey"],
+                taker_version=cipi_data["taker_version"],
+                maker_amount=cipi_data["maker_amount"],
+                maker_coin=cipi_data["maker_coin"],
+                maker_gui=cipi_data["maker_gui"],
+                maker_pubkey=cipi_data["maker_pubkey"],
+                maker_version=cipi_data["maker_version"],
+                started_at=int(cipi_data["started_at"].timestamp()),
+                # Not in Cipi's DB, but better than zero.
+                finished_at=cipi_data["started_at"],
+                # Not in Cipi's DB, but able to derive.
+                price=cipi_data["price"],
+                reverse_price=cipi_data["reverse_price"],
+                is_success=cipi_data["is_success"],
+                maker_coin_platform=cipi_data["maker_coin_platform"],
+                maker_coin_ticker=cipi_data["maker_coin_ticker"],
+                taker_coin_platform=cipi_data["taker_coin_platform"],
+                taker_coin_ticker=cipi_data["taker_coin_ticker"],
+                # Extra columns
+                trade_type=cipi_data["trade_type"],
+                pair=cipi_data["pair"],
+                pair_reverse=invert_pair(cipi_data["pair"]),
+                pair_std=strip_pair_platforms(cipi_data["pair"]),
+                pair_std_reverse=strip_pair_platforms(
+                    invert_pair(cipi_data["pair"])
+                ),
+                last_updated=int(cron.now_utc()),
+            )
+        else:
+            for i in [
+                "taker_coin",
+                "maker_coin",
+                "taker_gui",
+                "maker_gui",
+                "taker_pubkey",
+                "maker_pubkey",
+                "taker_version",
+                "maker_version",
+                "taker_coin_ticker",
+                "taker_coin_ticker",
+                "taker_coin_platform",
+                "taker_coin_platform",
+            ]:
+                if cipi_data[i] != defi_data[i]:
+                    if cipi_data[i] in ["", "None", "unknown", None]:
+                        cipi_data[i] = defi_data[i]
+                    elif defi_data[i] in ["", "None", "unknown", None]:
+                        defi_data[i] = cipi_data[i]
+                    elif isinstance(defi_data[i], str):
+                        if len(defi_data[i]) == 0:
+                            defi_data[i] = cipi_data[i]
+                        pass
+                    else:
+                        # This shouldnt happen
+                        logger.warning("Mismatch on incoming cipi data vs defi data:")
+                        logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
+
+            data = DefiSwap(
+                uuid=cipi_data["uuid"],
+                taker_coin=cipi_data["taker_coin"],
+                taker_gui=cipi_data["taker_gui"],
+                taker_pubkey=cipi_data["taker_pubkey"],
+                taker_version=cipi_data["taker_version"],
+                maker_coin=cipi_data["maker_coin"],
+                maker_gui=cipi_data["maker_gui"],
+                maker_pubkey=cipi_data["maker_pubkey"],
+                maker_version=cipi_data["maker_version"],
+                maker_coin_platform=cipi_data["maker_coin_platform"],
+                maker_coin_ticker=cipi_data["maker_coin_ticker"],
+                taker_coin_platform=cipi_data["taker_coin_platform"],
+                taker_coin_ticker=cipi_data["taker_coin_ticker"],
+                taker_amount=max(cipi_data["taker_amount"], defi_data["taker_amount"]),
+                maker_amount=max(cipi_data["maker_amount"], defi_data["maker_amount"]),
+                started_at=max(
+                    int(cipi_data["started_at"].timestamp()), defi_data["started_at"]
+                ),
+                finished_at=max(
+                    int(cipi_data["started_at"].timestamp()), defi_data["finished_at"]
+                ),
+                is_success=max(cipi_data["is_success"], defi_data["is_success"]),
+                # Not in Cipi's DB, but derived from taker/maker amounts.
+                price=max(cipi_data["price"], defi_data["price"]),
+                reverse_price=max(
+                    cipi_data["reverse_price"], defi_data["reverse_price"]
+                ),
+                # Not in Cipi's DB
+                maker_coin_usd_price=max(0, defi_data["maker_coin_usd_price"]),
+                taker_coin_usd_price=max(0, defi_data["taker_coin_usd_price"]),
+                # Extra columns
+                trade_type=defi_data["trade_type"],
+                pair=defi_data["pair"],
+                pair_reverse=invert_pair(cipi_data["pair"]),
+                pair_std=strip_pair_platforms(cipi_data["pair"]),
+                pair_std_reverse=strip_pair_platforms(
+                    invert_pair(cipi_data["pair"])
+                ),
+                last_updated=int(cron.now_utc()),
+            )
+        if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+            data.duration = data.finished_at - data.started_at
+        else:
+            data.duration = -1
+    except Exception as e:
+        return default.error(e)
+    msg = "cipi to defi conversion complete"
+    return default.result(msg=msg, data=data, loglevel="muted")
+
+
+@timed
+def mm2_to_defi_swap(mm2_data, defi_data=None):
+    """
+    Compares with existing to select best value where there is a conflict
+    """
+    try:
+        if defi_data is None:
+            for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
+                if i not in mm2_data:
+                    mm2_data.update({i: ""})
+            data = DefiSwap(
+                uuid=mm2_data["uuid"],
+                taker_amount=mm2_data["taker_amount"],
+                taker_coin=mm2_data["taker_coin"],
+                taker_pubkey=mm2_data["taker_pubkey"],
+                maker_amount=mm2_data["maker_amount"],
+                maker_coin=mm2_data["maker_coin"],
+                maker_pubkey=mm2_data["maker_pubkey"],
+                is_success=mm2_data["is_success"],
+                maker_coin_platform=mm2_data["maker_coin_platform"],
+                maker_coin_ticker=mm2_data["maker_coin_ticker"],
+                taker_coin_platform=mm2_data["taker_coin_platform"],
+                taker_coin_ticker=mm2_data["taker_coin_ticker"],
+                started_at=mm2_data["started_at"],
+                finished_at=mm2_data["finished_at"],
+                # Not in MM2 DB, but able to derive.
+                price=mm2_data["price"],
+                reverse_price=mm2_data["reverse_price"],
+                # Not in MM2 DB, using default.
+                taker_gui=mm2_data["taker_gui"],
+                taker_version=mm2_data["taker_version"],
+                maker_gui=mm2_data["maker_gui"],
+                maker_version=mm2_data["maker_version"],
+                # Extra columns
+                trade_type=mm2_data["trade_type"],
+                pair=mm2_data["pair"],
+                pair_reverse=invert_pair(mm2_data["pair"]),
+                pair_std=strip_pair_platforms(mm2_data["pair"]),
+                pair_std_reverse=strip_pair_platforms(
+                    invert_pair(mm2_data["pair"])
+                ),
+                last_updated=int(cron.now_utc()),
+            )
+        else:
+            for i in [
+                "taker_coin",
+                "maker_coin",
+                "taker_pubkey",
+                "maker_pubkey",
+                "taker_coin_ticker",
+                "taker_coin_ticker",
+                "taker_coin_platform",
+                "taker_coin_platform",
+            ]:
+                if mm2_data[i] != defi_data[i]:
+                    if mm2_data[i] in ["", "None", None, -1, "unknown"]:
+                        mm2_data[i] = defi_data[i]
+                    elif defi_data[i] in ["", "None", None, -1, "unknown"]:
+                        pass
+                    elif isinstance(mm2_data[i], str):
+                        if len(mm2_data[i]) == 0:
+                            mm2_data[i] = defi_data[i]
+                    else:
+                        # This shouldnt happen
+                        logger.warning("Mismatch on incoming mm2 data vs defi data:")
+                        logger.warning(f"{mm2_data[i]} vs {defi_data[i]}")
+                        logger.warning(f"{type(mm2_data[i])} vs {type(defi_data[i])}")
+            data = DefiSwap(
+                uuid=mm2_data["uuid"],
+                taker_coin=mm2_data["taker_coin"],
+                taker_pubkey=mm2_data["taker_pubkey"],
+                maker_coin=mm2_data["maker_coin"],
+                maker_pubkey=mm2_data["maker_pubkey"],
+                maker_coin_platform=mm2_data["maker_coin_platform"],
+                maker_coin_ticker=mm2_data["maker_coin_ticker"],
+                taker_coin_platform=mm2_data["taker_coin_platform"],
+                taker_coin_ticker=mm2_data["taker_coin_ticker"],
+                taker_amount=max(mm2_data["taker_amount"], defi_data["taker_amount"]),
+                maker_amount=max(mm2_data["maker_amount"], defi_data["maker_amount"]),
+                started_at=max(mm2_data["started_at"], defi_data["started_at"]),
+                finished_at=max(mm2_data["finished_at"], defi_data["finished_at"]),
+                is_success=max(mm2_data["is_success"], defi_data["is_success"]),
+                maker_coin_usd_price=max(0, defi_data["maker_coin_usd_price"]),
+                taker_coin_usd_price=max(0, defi_data["taker_coin_usd_price"]),
+                # Not in MM2 DB, but derived from taker/maker amounts.
+                price=max(mm2_data["price"], defi_data["price"]),
+                reverse_price=max(
+                    mm2_data["reverse_price"], defi_data["reverse_price"]
+                ),
+                # Not in MM2 DB, keep existing value
+                taker_gui=defi_data["taker_gui"],
+                maker_gui=defi_data["maker_gui"],
+                taker_version=defi_data["taker_version"],
+                maker_version=defi_data["maker_version"],
+                # Extra columns
+                trade_type=defi_data["trade_type"],
+                pair=defi_data["pair"],
+                pair_reverse=invert_pair(defi_data["pair"]),
+                pair_std=strip_pair_platforms(defi_data["pair"]),
+                pair_std_reverse=strip_pair_platforms(
+                    invert_pair(defi_data["pair"])
+                ),
+                last_updated=int(cron.now_utc()),
+            )
+        if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
+            data.duration = data.finished_at - data.started_at
+        else:
+            data.duration = -1
+
+    except Exception as e:
+        return default.error(e)
+    msg = "mm2 to defi conversion complete"
+    return default.result(msg=msg, data=data, loglevel="muted")

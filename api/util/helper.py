@@ -51,10 +51,9 @@ def get_last_trade_info(pair_str: str, last_traded_cache: Dict, all=False):
     return template.last_trade_info()
 
 
-
 def base_quote_from_pair(variant, reverse=False):
     # TODO: This workaround fixes the issue
-    # but need to find root cause to avoid 
+    # but need to find root cause to avoid
     # unexpected related issues
     if variant == "OLD_USDC-PLG20_USDC-PLG20":
         variant = "USDC-PLG20_USDC-PLG20_OLD"
