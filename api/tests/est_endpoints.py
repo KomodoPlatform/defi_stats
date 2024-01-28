@@ -4,7 +4,6 @@ import pytest
 from main import app
 from util.logger import logger
 import util.helper as helper
-import util.transform as transform
 
 client = TestClient(app)
 
@@ -40,13 +39,13 @@ def test_gecko_tickers_endpoint():
     assert "combined_volume_usd" in data
     assert "ticker_id" in data["data"][0]
     assert "base_currency" in data["data"][0]
-    assert "target_currency" in data["data"][0]
-    assert "last_price" in data["data"][0]
+    assert "quote_currency" in data["data"][0]
+    assert "last_swap_price" in data["data"][0]
     assert "base_volume" in data["data"][0]
-    assert "bid" in data["data"][0]
-    assert "ask" in data["data"][0]
-    assert "high" in data["data"][0]
-    assert "low" in data["data"][0]
+    assert "highest_bid" in data["data"][0]
+    assert "lowest_ask" in data["data"][0]
+    assert "highest_price_24hr" in data["data"][0]
+    assert "lowest_price_24hr" in data["data"][0]
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data
@@ -116,14 +115,14 @@ def test_historical_trades_endpoint():
         assert isinstance(data["buy"][0]["trade_id"], str)
         assert isinstance(data["buy"][0]["timestamp"], str)
         assert isinstance(data["buy"][0]["base_volume"], str)
-        assert isinstance(data["buy"][0]["target_volume"], str)
+        assert isinstance(data["buy"][0]["quote_volume"], str)
     assert isinstance(data["sell"], list)
     if len(data["sell"]) > 0:
         assert isinstance(data["sell"][0]["price"], str)
         assert isinstance(data["sell"][0]["trade_id"], str)
         assert isinstance(data["sell"][0]["timestamp"], str)
         assert isinstance(data["sell"][0]["base_volume"], str)
-        assert isinstance(data["sell"][0]["target_volume"], str)
+        assert isinstance(data["sell"][0]["quote_volume"], str)
     with pytest.raises(Exception):
         data = r.json()
         assert "error" in data

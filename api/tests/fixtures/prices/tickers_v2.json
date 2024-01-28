@@ -3,7 +3,7 @@
     "data": {
         "1INCH": {
             "ticker": "1INCH",
-            "last_price": "0.42290000",
+            "last_swap_price": "0.42290000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "70354602.000000",
@@ -16,7 +16,7 @@
         },
         "AAVE": {
             "ticker": "AAVE",
-            "last_price": "94.44000000",
+            "last_swap_price": "94.44000000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "159462845.000000",
@@ -29,7 +29,7 @@
         },
         "ABY": {
             "ticker": "ABY",
-            "last_price": "0.000400",
+            "last_swap_price": "0.000400",
             "last_updated": "2024-01-09T12:51:19Z",
             "last_updated_timestamp": 1704804679,
             "volume24h": "0.077407",
@@ -42,7 +42,7 @@
         },
         "ACTN": {
             "ticker": "ACTN",
-            "last_price": "0.000170",
+            "last_swap_price": "0.000170",
             "last_updated": "2024-01-09T12:46:52.185Z",
             "last_updated_timestamp": 1704804412,
             "volume24h": "582.720000",
@@ -55,7 +55,7 @@
         },
         "ADA": {
             "ticker": "ADA",
-            "last_price": "0.51750000",
+            "last_swap_price": "0.51750000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "592553329.000000",
@@ -68,7 +68,7 @@
         },
         "ADX": {
             "ticker": "ADX",
-            "last_price": "0.17640000",
+            "last_swap_price": "0.17640000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "3054600.000000",
@@ -81,7 +81,7 @@
         },
         "AGEUR": {
             "ticker": "AGEUR",
-            "last_price": "1.096000",
+            "last_swap_price": "1.096000",
             "last_updated": "2024-01-09T12:57:29.289Z",
             "last_updated_timestamp": 1704805049,
             "volume24h": "1400933.000000",
@@ -94,7 +94,7 @@
         },
         "AGIX": {
             "ticker": "AGIX",
-            "last_price": "0.26451000",
+            "last_swap_price": "0.26451000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "42328441.000000",
@@ -107,7 +107,7 @@
         },
         "ANKR": {
             "ticker": "ANKR",
-            "last_price": "0.02406000",
+            "last_swap_price": "0.02406000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "20875001.000000",
@@ -120,7 +120,7 @@
         },
         "ANT": {
             "ticker": "ANT",
-            "last_price": "5.78500000",
+            "last_swap_price": "5.78500000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "10508281.000000",
@@ -133,7 +133,7 @@
         },
         "APE": {
             "ticker": "APE",
-            "last_price": "1.32100000",
+            "last_swap_price": "1.32100000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "53801996.000000",
@@ -146,7 +146,7 @@
         },
         "ARPA": {
             "ticker": "ARPA",
-            "last_price": "0.06002000",
+            "last_swap_price": "0.06002000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "26790016.000000",
@@ -159,7 +159,7 @@
         },
         "ARRR": {
             "ticker": "ARRR",
-            "last_price": "0.209370",
+            "last_swap_price": "0.209370",
             "last_updated": "2024-01-09T12:56:39.792Z",
             "last_updated_timestamp": 1704804999,
             "volume24h": "253477.000000",
@@ -172,7 +172,7 @@
         },
         "ATOM": {
             "ticker": "ATOM",
-            "last_price": "9.78000000",
+            "last_swap_price": "9.78000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "231755073.000000",
@@ -185,7 +185,7 @@
         },
         "AUR": {
             "ticker": "AUR",
-            "last_price": "0.039897",
+            "last_swap_price": "0.039897",
             "last_updated": "2024-01-09T12:53:38.427Z",
             "last_updated_timestamp": 1704804818,
             "volume24h": "49.030000",
@@ -198,7 +198,7 @@
         },
         "AVA": {
             "ticker": "AVA",
-            "last_price": "0.63900000",
+            "last_swap_price": "0.63900000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1414047.000000",
@@ -211,7 +211,7 @@
         },
         "AVAX": {
             "ticker": "AVAX",
-            "last_price": "35.88000000",
+            "last_swap_price": "35.88000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1012385271.000000",
@@ -224,7 +224,7 @@
         },
         "AVN": {
             "ticker": "AVN",
-            "last_price": "0.000115",
+            "last_swap_price": "0.000115",
             "last_updated": "2024-01-09T12:53:29.007Z",
             "last_updated_timestamp": 1704804809,
             "volume24h": "2497.220000",
@@ -237,7 +237,7 @@
         },
         "AXE": {
             "ticker": "AXE",
-            "last_price": "0.002816",
+            "last_swap_price": "0.002816",
             "last_updated": "2024-01-09T12:53:37.664Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "2.990000",
@@ -250,7 +250,7 @@
         },
         "AXS": {
             "ticker": "AXS",
-            "last_price": "7.51000000",
+            "last_swap_price": "7.51000000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "71801888.000000",
@@ -263,7 +263,7 @@
         },
         "AYA": {
             "ticker": "AYA",
-            "last_price": "0.000647",
+            "last_swap_price": "0.000647",
             "last_updated": "2024-01-09T12:56:37.699Z",
             "last_updated_timestamp": 1704804997,
             "volume24h": "125812.000000",
@@ -276,7 +276,7 @@
         },
         "BAL": {
             "ticker": "BAL",
-            "last_price": "3.79500000",
+            "last_swap_price": "3.79500000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "8170151.000000",
@@ -289,7 +289,7 @@
         },
         "BANANO": {
             "ticker": "BANANO",
-            "last_price": "0.004388",
+            "last_swap_price": "0.004388",
             "last_updated": "2024-01-09T12:57:35.941Z",
             "last_updated_timestamp": 1704805055,
             "volume24h": "12302.420000",
@@ -302,7 +302,7 @@
         },
         "BAND": {
             "ticker": "BAND",
-            "last_price": "1.59900000",
+            "last_swap_price": "1.59900000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "13158335.000000",
@@ -315,7 +315,7 @@
         },
         "BAT": {
             "ticker": "BAT",
-            "last_price": "0.23180000",
+            "last_swap_price": "0.23180000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "47141431.000000",
@@ -328,7 +328,7 @@
         },
         "BCH": {
             "ticker": "BCH",
-            "last_price": "247.20000000",
+            "last_swap_price": "247.20000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "316121585.000000",
@@ -341,7 +341,7 @@
         },
         "BEST": {
             "ticker": "BEST",
-            "last_price": "0.366844",
+            "last_swap_price": "0.366844",
             "last_updated": "2024-01-09T07:15:05.369Z",
             "last_updated_timestamp": 1704784505,
             "volume24h": "165.060000",
@@ -354,7 +354,7 @@
         },
         "BIDR": {
             "ticker": "BIDR",
-            "last_price": "0.000064",
+            "last_swap_price": "0.000064",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "1128306.000000",
@@ -367,7 +367,7 @@
         },
         "BITN": {
             "ticker": "BITN",
-            "last_price": "0.000417",
+            "last_swap_price": "0.000417",
             "last_updated": "2024-01-09T12:54:26.719Z",
             "last_updated_timestamp": 1704804866,
             "volume24h": "28917.000000",
@@ -380,7 +380,7 @@
         },
         "BLK": {
             "ticker": "BLK",
-            "last_price": "0.014543",
+            "last_swap_price": "0.014543",
             "last_updated": "2024-01-09T12:53:38.552Z",
             "last_updated_timestamp": 1704804818,
             "volume24h": "1101.260000",
@@ -393,7 +393,7 @@
         },
         "BLOCX": {
             "ticker": "BLOCX",
-            "last_price": "0.122859",
+            "last_swap_price": "0.122859",
             "last_updated": "2024-01-09T12:54:25.187Z",
             "last_updated_timestamp": 1704804865,
             "volume24h": "190957.000000",
@@ -406,7 +406,7 @@
         },
         "BNB": {
             "ticker": "BNB",
-            "last_price": "300.80000000",
+            "last_swap_price": "300.80000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1359459079.000000",
@@ -419,7 +419,7 @@
         },
         "BNT": {
             "ticker": "BNT",
-            "last_price": "0.72430000",
+            "last_swap_price": "0.72430000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "786021.000000",
@@ -432,7 +432,7 @@
         },
         "BOLI": {
             "ticker": "BOLI",
-            "last_price": "0.008419",
+            "last_swap_price": "0.008419",
             "last_updated": "2024-01-09T12:55:06.911Z",
             "last_updated_timestamp": 1704804906,
             "volume24h": "5.270000",
@@ -445,7 +445,7 @@
         },
         "BONE": {
             "ticker": "BONE",
-            "last_price": "0.616692",
+            "last_swap_price": "0.616692",
             "last_updated": "2024-01-09T12:57:37.540Z",
             "last_updated_timestamp": 1704805057,
             "volume24h": "5468744.000000",
@@ -458,7 +458,7 @@
         },
         "BORG": {
             "ticker": "BORG",
-            "last_price": "0.177225",
+            "last_swap_price": "0.177225",
             "last_updated": "2024-01-09T12:56:47.372Z",
             "last_updated_timestamp": 1704805007,
             "volume24h": "1825766.000000",
@@ -471,7 +471,7 @@
         },
         "BRZ": {
             "ticker": "BRZ",
-            "last_price": "0.204704",
+            "last_swap_price": "0.204704",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "494196.000000",
@@ -484,7 +484,7 @@
         },
         "BSTY": {
             "ticker": "BSTY",
-            "last_price": "0.044787",
+            "last_swap_price": "0.044787",
             "last_updated": "2024-01-09T12:56:39.517Z",
             "last_updated_timestamp": 1704804999,
             "volume24h": "221.440000",
@@ -497,7 +497,7 @@
         },
         "BTC": {
             "ticker": "BTC",
-            "last_price": "46631.78000000",
+            "last_swap_price": "46631.78000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "26680446148.000000",
@@ -510,7 +510,7 @@
         },
         "BTCZ": {
             "ticker": "BTCZ",
-            "last_price": "0.000135",
+            "last_swap_price": "0.000135",
             "last_updated": "2024-01-09T12:54:46.886Z",
             "last_updated_timestamp": 1704804886,
             "volume24h": "6057.820000",
@@ -523,7 +523,7 @@
         },
         "BTT": {
             "ticker": "BTT",
-            "last_price": "0.000001",
+            "last_swap_price": "0.000001",
             "last_updated": "2024-01-09T12:57:10.516Z",
             "last_updated_timestamp": 1704805030,
             "volume24h": "2358.390000",
@@ -536,7 +536,7 @@
         },
         "BTTC": {
             "ticker": "BTTC",
-            "last_price": "0.00000107",
+            "last_swap_price": "0.00000107",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "44873349.000000",
@@ -549,7 +549,7 @@
         },
         "BTX": {
             "ticker": "BTX",
-            "last_price": "0.041399",
+            "last_swap_price": "0.041399",
             "last_updated": "2024-01-09T12:54:02.964Z",
             "last_updated_timestamp": 1704804842,
             "volume24h": "19.090000",
@@ -562,7 +562,7 @@
         },
         "BUSD": {
             "ticker": "BUSD",
-            "last_price": "1",
+            "last_swap_price": "1",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "7012430350.000000",
@@ -575,7 +575,7 @@
         },
         "CADC": {
             "ticker": "CADC",
-            "last_price": "0.748363",
+            "last_swap_price": "0.748363",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "15538.600000",
@@ -588,7 +588,7 @@
         },
         "CAKE": {
             "ticker": "CAKE",
-            "last_price": "2.85400000",
+            "last_swap_price": "2.85400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "78093047.000000",
@@ -601,7 +601,7 @@
         },
         "CDN": {
             "ticker": "CDN",
-            "last_price": "0.004515",
+            "last_swap_price": "0.004515",
             "last_updated": "2024-01-09T12:51:19Z",
             "last_updated_timestamp": 1704804679,
             "volume24h": "1.150000",
@@ -614,7 +614,7 @@
         },
         "CEL": {
             "ticker": "CEL",
-            "last_price": "0.189682",
+            "last_swap_price": "0.189682",
             "last_updated": "2024-01-09T12:57:35.189Z",
             "last_updated_timestamp": 1704805055,
             "volume24h": "1184685.000000",
@@ -627,7 +627,7 @@
         },
         "CELR": {
             "ticker": "CELR",
-            "last_price": "0.01831000",
+            "last_swap_price": "0.01831000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "8121716.000000",
@@ -640,7 +640,7 @@
         },
         "CFX": {
             "ticker": "CFX",
-            "last_price": "0.17120000",
+            "last_swap_price": "0.17120000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "49276283.000000",
@@ -653,7 +653,7 @@
         },
         "CHSB": {
             "ticker": "CHSB",
-            "last_price": "0.237276",
+            "last_swap_price": "0.237276",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "1197.000000",
@@ -666,7 +666,7 @@
         },
         "CHZ": {
             "ticker": "CHZ",
-            "last_price": "0.07446000",
+            "last_swap_price": "0.07446000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "59985669.000000",
@@ -679,7 +679,7 @@
         },
         "COMP": {
             "ticker": "COMP",
-            "last_price": "48.58000000",
+            "last_swap_price": "48.58000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "45706822.000000",
@@ -692,7 +692,7 @@
         },
         "CRNC": {
             "ticker": "CRNC",
-            "last_price": "0.000685",
+            "last_swap_price": "0.000685",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "329.000000",
@@ -705,7 +705,7 @@
         },
         "CRO": {
             "ticker": "CRO",
-            "last_price": "0.088967",
+            "last_swap_price": "0.088967",
             "last_updated": "2024-01-09T12:57:27.352Z",
             "last_updated_timestamp": 1704805047,
             "volume24h": "14912566.000000",
@@ -718,7 +718,7 @@
         },
         "CRV": {
             "ticker": "CRV",
-            "last_price": "0.51360000",
+            "last_swap_price": "0.51360000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "64074474.000000",
@@ -731,7 +731,7 @@
         },
         "CUMMIES": {
             "ticker": "CUMMIES",
-            "last_price": "0.003155",
+            "last_swap_price": "0.003155",
             "last_updated": "2024-01-09T12:57:07.083Z",
             "last_updated_timestamp": 1704805027,
             "volume24h": "91155.000000",
@@ -744,7 +744,7 @@
         },
         "CVC": {
             "ticker": "CVC",
-            "last_price": "0.09600000",
+            "last_swap_price": "0.09600000",
             "last_updated": "2024-01-09T13:01:53Z",
             "last_updated_timestamp": 1704805313,
             "volume24h": "4928376.000000",
@@ -757,7 +757,7 @@
         },
         "CVT": {
             "ticker": "CVT",
-            "last_price": "0.000261",
+            "last_swap_price": "0.000261",
             "last_updated": "2024-01-09T12:55:49.039Z",
             "last_updated_timestamp": 1704804949,
             "volume24h": "34378.000000",
@@ -770,7 +770,7 @@
         },
         "CVX": {
             "ticker": "CVX",
-            "last_price": "2.98800000",
+            "last_swap_price": "2.98800000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "6396947.000000",
@@ -783,7 +783,7 @@
         },
         "CY": {
             "ticker": "CY",
-            "last_price": "0.000001",
+            "last_swap_price": "0.000001",
             "last_updated": "2024-01-09T12:53:21.758Z",
             "last_updated_timestamp": 1704804801,
             "volume24h": "5.870000",
@@ -796,7 +796,7 @@
         },
         "DAI": {
             "ticker": "DAI",
-            "last_price": "1",
+            "last_swap_price": "1",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "197705399.000000",
@@ -809,7 +809,7 @@
         },
         "DASH": {
             "ticker": "DASH",
-            "last_price": "27.57000000",
+            "last_swap_price": "27.57000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "40068125.000000",
@@ -822,7 +822,7 @@
         },
         "DDD": {
             "ticker": "DDD",
-            "last_price": "0.000933",
+            "last_swap_price": "0.000933",
             "last_updated": "2024-01-09T12:54:17.458Z",
             "last_updated_timestamp": 1704804857,
             "volume24h": "45908.000000",
@@ -835,7 +835,7 @@
         },
         "DENT": {
             "ticker": "DENT",
-            "last_price": "0.00105500",
+            "last_swap_price": "0.00105500",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "5230999.000000",
@@ -848,7 +848,7 @@
         },
         "DFX": {
             "ticker": "DFX",
-            "last_price": "0.071700",
+            "last_swap_price": "0.071700",
             "last_updated": "2024-01-09T12:56:50.666Z",
             "last_updated_timestamp": 1704805010,
             "volume24h": "5547600.000000",
@@ -861,7 +861,7 @@
         },
         "DGB": {
             "ticker": "DGB",
-            "last_price": "0.00803000",
+            "last_swap_price": "0.00803000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "3236317.000000",
@@ -874,7 +874,7 @@
         },
         "DGC": {
             "ticker": "DGC",
-            "last_price": "0.002347",
+            "last_swap_price": "0.002347",
             "last_updated": "2024-01-09T12:53:37.503Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "4.670000",
@@ -887,7 +887,7 @@
         },
         "DIA": {
             "ticker": "DIA",
-            "last_price": "0.34940000",
+            "last_swap_price": "0.34940000",
             "last_updated": "2024-01-09T13:01:54Z",
             "last_updated_timestamp": 1704805314,
             "volume24h": "7834141.000000",
@@ -900,7 +900,7 @@
         },
         "DIAC": {
             "ticker": "DIAC",
-            "last_price": "7.330000",
+            "last_swap_price": "7.330000",
             "last_updated": "2024-01-09T12:54:26.229Z",
             "last_updated_timestamp": 1704804866,
             "volume24h": "167976.000000",
@@ -913,7 +913,7 @@
         },
         "DIMI": {
             "ticker": "DIMI",
-            "last_price": "2.752158",
+            "last_swap_price": "2.752158",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "0.006732",
@@ -926,7 +926,7 @@
         },
         "DODO": {
             "ticker": "DODO",
-            "last_price": "0.16130000",
+            "last_swap_price": "0.16130000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "9550916.000000",
@@ -939,7 +939,7 @@
         },
         "DOGE": {
             "ticker": "DOGE",
-            "last_price": "0.07814000",
+            "last_swap_price": "0.07814000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "584939759.000000",
@@ -952,7 +952,7 @@
         },
         "DOGEC": {
             "ticker": "DOGEC",
-            "last_price": "0.009007",
+            "last_swap_price": "0.009007",
             "last_updated": "2024-01-09T12:54:46.180Z",
             "last_updated_timestamp": 1704804886,
             "volume24h": "23.850000",
@@ -965,7 +965,7 @@
         },
         "DOGGY": {
             "ticker": "DOGGY",
-            "last_price": "0.000758",
+            "last_swap_price": "0.000758",
             "last_updated": "2024-01-09T12:56:02.965Z",
             "last_updated_timestamp": 1704804962,
             "volume24h": "47731.000000",
@@ -978,7 +978,7 @@
         },
         "DOI": {
             "ticker": "DOI",
-            "last_price": "0.962497",
+            "last_swap_price": "0.962497",
             "last_updated": "2024-01-09T12:53:19.359Z",
             "last_updated_timestamp": 1704804799,
             "volume24h": "79326.000000",
@@ -991,7 +991,7 @@
         },
         "DOT": {
             "ticker": "DOT",
-            "last_price": "7.20700000",
+            "last_swap_price": "7.20700000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "273366739.000000",
@@ -1004,7 +1004,7 @@
         },
         "DX": {
             "ticker": "DX",
-            "last_price": "0.000087",
+            "last_swap_price": "0.000087",
             "last_updated": "2024-01-09T12:54:49.515Z",
             "last_updated_timestamp": 1704804889,
             "volume24h": "34646.000000",
@@ -1017,7 +1017,7 @@
         },
         "ECA": {
             "ticker": "ECA",
-            "last_price": "0.000002",
+            "last_swap_price": "0.000002",
             "last_updated": "2024-01-09T12:54:47.659Z",
             "last_updated_timestamp": 1704804887,
             "volume24h": "0.005253",
@@ -1030,7 +1030,7 @@
         },
         "EFL": {
             "ticker": "EFL",
-            "last_price": "0.347128",
+            "last_swap_price": "0.347128",
             "last_updated": "2024-01-09T12:53:37.977Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "308.150000",
@@ -1043,7 +1043,7 @@
         },
         "EGLD": {
             "ticker": "EGLD",
-            "last_price": "52.92000000",
+            "last_swap_price": "52.92000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "43751032.000000",
@@ -1056,7 +1056,7 @@
         },
         "ELF": {
             "ticker": "ELF",
-            "last_price": "0.55490000",
+            "last_swap_price": "0.55490000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "18893220.000000",
@@ -1069,7 +1069,7 @@
         },
         "EMC2": {
             "ticker": "EMC2",
-            "last_price": "0.000939",
+            "last_swap_price": "0.000939",
             "last_updated": "2024-01-09T12:53:37.822Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "1.230000",
@@ -1082,7 +1082,7 @@
         },
         "ENJ": {
             "ticker": "ENJ",
-            "last_price": "0.29930000",
+            "last_swap_price": "0.29930000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "24117624.000000",
@@ -1095,7 +1095,7 @@
         },
         "EOS": {
             "ticker": "EOS",
-            "last_price": "0.70400000",
+            "last_swap_price": "0.70400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "112186689.000000",
@@ -1108,7 +1108,7 @@
         },
         "ETC": {
             "ticker": "ETC",
-            "last_price": "19.82000000",
+            "last_swap_price": "19.82000000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "169390242.000000",
@@ -1121,7 +1121,7 @@
         },
         "ETH": {
             "ticker": "ETH",
-            "last_price": "2278.23000000",
+            "last_swap_price": "2278.23000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "20219454344.000000",
@@ -1134,7 +1134,7 @@
         },
         "EURE": {
             "ticker": "EURE",
-            "last_price": "1.099000",
+            "last_swap_price": "1.099000",
             "last_updated": "2024-01-09T12:57:14.124Z",
             "last_updated_timestamp": 1704805034,
             "volume24h": "115832.000000",
@@ -1147,7 +1147,7 @@
         },
         "EUROE": {
             "ticker": "EUROE",
-            "last_price": "1.095408",
+            "last_swap_price": "1.095408",
             "last_updated": "2024-01-09T12:51:40Z",
             "last_updated_timestamp": 1704804700,
             "volume24h": "3263.280000",
@@ -1160,7 +1160,7 @@
         },
         "EURS": {
             "ticker": "EURS",
-            "last_price": "1.094131",
+            "last_swap_price": "1.094131",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "2054385.000000",
@@ -1173,7 +1173,7 @@
         },
         "EWT": {
             "ticker": "EWT",
-            "last_price": "2.500000",
+            "last_swap_price": "2.500000",
             "last_updated": "2024-01-09T12:57:13.118Z",
             "last_updated_timestamp": 1704805033,
             "volume24h": "1602965.000000",
@@ -1186,7 +1186,7 @@
         },
         "FEI": {
             "ticker": "FEI",
-            "last_price": "0.999016",
+            "last_swap_price": "0.999016",
             "last_updated": "2024-01-09T12:56:54.074Z",
             "last_updated_timestamp": 1704805014,
             "volume24h": "80.100000",
@@ -1199,7 +1199,7 @@
         },
         "FET": {
             "ticker": "FET",
-            "last_price": "0.64990000",
+            "last_swap_price": "0.64990000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "116799826.000000",
@@ -1212,7 +1212,7 @@
         },
         "FIL": {
             "ticker": "FIL",
-            "last_price": "5.50800000",
+            "last_swap_price": "5.50800000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "301742698.000000",
@@ -1225,7 +1225,7 @@
         },
         "FIRO": {
             "ticker": "FIRO",
-            "last_price": "1.48400000",
+            "last_swap_price": "1.48400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1655363.000000",
@@ -1238,7 +1238,7 @@
         },
         "FLOKI": {
             "ticker": "FLOKI",
-            "last_price": "0.00002910",
+            "last_swap_price": "0.00002910",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "17368077.000000",
@@ -1251,7 +1251,7 @@
         },
         "FLOW": {
             "ticker": "FLOW",
-            "last_price": "0.76700000",
+            "last_swap_price": "0.76700000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "72730291.000000",
@@ -1264,7 +1264,7 @@
         },
         "FLUX": {
             "ticker": "FLUX",
-            "last_price": "0.50540000",
+            "last_swap_price": "0.50540000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "10522058.000000",
@@ -1277,7 +1277,7 @@
         },
         "FTC": {
             "ticker": "FTC",
-            "last_price": "0.001551",
+            "last_swap_price": "0.001551",
             "last_updated": "2024-01-09T12:53:37.698Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "9674.390000",
@@ -1290,7 +1290,7 @@
         },
         "FTM": {
             "ticker": "FTM",
-            "last_price": "0.38120000",
+            "last_swap_price": "0.38120000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "94486349.000000",
@@ -1303,7 +1303,7 @@
         },
         "FXS": {
             "ticker": "FXS",
-            "last_price": "7.79000000",
+            "last_swap_price": "7.79000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "23423530.000000",
@@ -1316,7 +1316,7 @@
         },
         "GALA": {
             "ticker": "GALA",
-            "last_price": "0.02496000",
+            "last_swap_price": "0.02496000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "70154730.777338",
@@ -1329,7 +1329,7 @@
         },
         "GAME": {
             "ticker": "GAME",
-            "last_price": "0.008601",
+            "last_swap_price": "0.008601",
             "last_updated": "2024-01-09T12:57:06.806Z",
             "last_updated_timestamp": 1704805026,
             "volume24h": "1972.690000",
@@ -1342,7 +1342,7 @@
         },
         "GBX": {
             "ticker": "GBX",
-            "last_price": "0.006345",
+            "last_swap_price": "0.006345",
             "last_updated": "2024-01-09T12:53:21.146Z",
             "last_updated_timestamp": 1704804801,
             "volume24h": "6.730000",
@@ -1355,7 +1355,7 @@
         },
         "GFT": {
             "ticker": "GFT",
-            "last_price": "0.01932000",
+            "last_swap_price": "0.01932000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "6134192.000000",
@@ -1368,7 +1368,7 @@
         },
         "GLC": {
             "ticker": "GLC",
-            "last_price": "0.009609",
+            "last_swap_price": "0.009609",
             "last_updated": "2024-01-09T12:54:28.971Z",
             "last_updated_timestamp": 1704804868,
             "volume24h": "8785.250000",
@@ -1381,7 +1381,7 @@
         },
         "GLEEC": {
             "ticker": "GLEEC",
-            "last_price": "0.012684",
+            "last_swap_price": "0.012684",
             "last_updated": "2024-01-09T12:56:36.153Z",
             "last_updated_timestamp": 1704804996,
             "volume24h": "4616.070000",
@@ -1394,7 +1394,7 @@
         },
         "GLM": {
             "ticker": "GLM",
-            "last_price": "0.21940000",
+            "last_swap_price": "0.21940000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "8653814.000000",
@@ -1407,7 +1407,7 @@
         },
         "GLMR": {
             "ticker": "GLMR",
-            "last_price": "0.38690000",
+            "last_swap_price": "0.38690000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "10531084.000000",
@@ -1420,7 +1420,7 @@
         },
         "GM": {
             "ticker": "GM",
-            "last_price": "0.000004",
+            "last_swap_price": "0.000004",
             "last_updated": "2024-01-09T12:57:37.591Z",
             "last_updated_timestamp": 1704805057,
             "volume24h": "91635.000000",
@@ -1433,7 +1433,7 @@
         },
         "GMT": {
             "ticker": "GMT",
-            "last_price": "0.32700000",
+            "last_swap_price": "0.32700000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "301511678.000000",
@@ -1446,7 +1446,7 @@
         },
         "GMX": {
             "ticker": "GMX",
-            "last_price": "49.73000000",
+            "last_swap_price": "49.73000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "22141359.000000",
@@ -1459,7 +1459,7 @@
         },
         "GNO": {
             "ticker": "GNO",
-            "last_price": "186.50000000",
+            "last_swap_price": "186.50000000",
             "last_updated": "2024-01-09T13:01:53Z",
             "last_updated_timestamp": 1704805313,
             "volume24h": "2222186.000000",
@@ -1472,7 +1472,7 @@
         },
         "GNS": {
             "ticker": "GNS",
-            "last_price": "4.93100000",
+            "last_swap_price": "4.93100000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "12074026.000000",
@@ -1485,7 +1485,7 @@
         },
         "GRLC": {
             "ticker": "GRLC",
-            "last_price": "0.015640",
+            "last_swap_price": "0.015640",
             "last_updated": "2024-01-09T12:57:09.927Z",
             "last_updated_timestamp": 1704805029,
             "volume24h": "1087.810000",
@@ -1498,7 +1498,7 @@
         },
         "GRMS": {
             "ticker": "GRMS",
-            "last_price": "0.003427",
+            "last_swap_price": "0.003427",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "2096.000000",
@@ -1511,7 +1511,7 @@
         },
         "GRS": {
             "ticker": "GRS",
-            "last_price": "0.545046",
+            "last_swap_price": "0.545046",
             "last_updated": "2024-01-09T12:57:24.854Z",
             "last_updated_timestamp": 1704805044,
             "volume24h": "3995078.000000",
@@ -1524,7 +1524,7 @@
         },
         "GRT": {
             "ticker": "GRT",
-            "last_price": "0.16210000",
+            "last_swap_price": "0.16210000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "82470077.000000",
@@ -1537,7 +1537,7 @@
         },
         "GST": {
             "ticker": "GST",
-            "last_price": "0.013824",
+            "last_swap_price": "0.013824",
             "last_updated": "2024-01-09T12:57:04.106Z",
             "last_updated_timestamp": 1704805024,
             "volume24h": "361605.000000",
@@ -1550,7 +1550,7 @@
         },
         "GT": {
             "ticker": "GT",
-            "last_price": "5.030000",
+            "last_swap_price": "5.030000",
             "last_updated": "2024-01-09T12:57:04.969Z",
             "last_updated_timestamp": 1704805024,
             "volume24h": "1423311.000000",
@@ -1563,7 +1563,7 @@
         },
         "GUSD": {
             "ticker": "GUSD",
-            "last_price": "1.001000",
+            "last_swap_price": "1.001000",
             "last_updated": "2024-01-09T12:57:11.152Z",
             "last_updated_timestamp": 1704805031,
             "volume24h": "1087697.000000",
@@ -1576,7 +1576,7 @@
         },
         "HEX": {
             "ticker": "HEX",
-            "last_price": "0.005877",
+            "last_swap_price": "0.005877",
             "last_updated": "2024-01-09T12:57:28.004Z",
             "last_updated_timestamp": 1704805048,
             "volume24h": "2527202.000000",
@@ -1589,7 +1589,7 @@
         },
         "HOT": {
             "ticker": "HOT",
-            "last_price": "0.00198400",
+            "last_swap_price": "0.00198400",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "16317159.000000",
@@ -1602,7 +1602,7 @@
         },
         "HPY": {
             "ticker": "HPY",
-            "last_price": "0.000688",
+            "last_swap_price": "0.000688",
             "last_updated": "2024-01-09T12:52:27.114Z",
             "last_updated_timestamp": 1704804747,
             "volume24h": "304469.000000",
@@ -1615,7 +1615,7 @@
         },
         "HT": {
             "ticker": "HT",
-            "last_price": "2.410000",
+            "last_swap_price": "2.410000",
             "last_updated": "2024-01-09T12:56:29.802Z",
             "last_updated_timestamp": 1704804989,
             "volume24h": "14827173.000000",
@@ -1628,7 +1628,7 @@
         },
         "HUSD": {
             "ticker": "HUSD",
-            "last_price": "0.042572",
+            "last_swap_price": "0.042572",
             "last_updated": "2024-01-09T12:57:28.597Z",
             "last_updated_timestamp": 1704805048,
             "volume24h": "1153.330000",
@@ -1641,7 +1641,7 @@
         },
         "IL8P": {
             "ticker": "IL8P",
-            "last_price": "0.031901",
+            "last_swap_price": "0.031901",
             "last_updated": "2024-01-09T12:51:21Z",
             "last_updated_timestamp": 1704804681,
             "volume24h": "14.467954",
@@ -1654,7 +1654,7 @@
         },
         "ILV": {
             "ticker": "ILV",
-            "last_price": "82.50000000",
+            "last_swap_price": "82.50000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "12010403.000000",
@@ -1667,7 +1667,7 @@
         },
         "IMX": {
             "ticker": "IMX",
-            "last_price": "1.89270000",
+            "last_swap_price": "1.89270000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "77431294.000000",
@@ -1680,7 +1680,7 @@
         },
         "INJ": {
             "ticker": "INJ",
-            "last_price": "42.01000000",
+            "last_swap_price": "42.01000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "504403294.000000",
@@ -1693,7 +1693,7 @@
         },
         "INK": {
             "ticker": "INK",
-            "last_price": "0.000534",
+            "last_swap_price": "0.000534",
             "last_updated": "2024-01-09T12:54:19.426Z",
             "last_updated_timestamp": 1704804859,
             "volume24h": "31567.000000",
@@ -1706,7 +1706,7 @@
         },
         "IOTA": {
             "ticker": "IOTA",
-            "last_price": "0.23530000",
+            "last_swap_price": "0.23530000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "21795088.000000",
@@ -1719,7 +1719,7 @@
         },
         "IOTX": {
             "ticker": "IOTX",
-            "last_price": "0.04012000",
+            "last_swap_price": "0.04012000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "17691652.000000",
@@ -1732,7 +1732,7 @@
         },
         "IRIS": {
             "ticker": "IRIS",
-            "last_price": "0.02787000",
+            "last_swap_price": "0.02787000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "864129.000000",
@@ -1745,7 +1745,7 @@
         },
         "JAUD": {
             "ticker": "JAUD",
-            "last_price": "0.669730",
+            "last_swap_price": "0.669730",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1758,7 +1758,7 @@
         },
         "JBRL": {
             "ticker": "JBRL",
-            "last_price": "0.204704",
+            "last_swap_price": "0.204704",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "1.520000",
@@ -1771,7 +1771,7 @@
         },
         "JCAD": {
             "ticker": "JCAD",
-            "last_price": "0.748363",
+            "last_swap_price": "0.748363",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1784,7 +1784,7 @@
         },
         "JCHF": {
             "ticker": "JCHF",
-            "last_price": "1.194153",
+            "last_swap_price": "1.194153",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "1407.000000",
@@ -1797,7 +1797,7 @@
         },
         "JCNY": {
             "ticker": "JCNY",
-            "last_price": "0.140686",
+            "last_swap_price": "0.140686",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1810,7 +1810,7 @@
         },
         "JDB": {
             "ticker": "JDB",
-            "last_price": "0.000203",
+            "last_swap_price": "0.000203",
             "last_updated": "2024-01-09T07:24:07.312Z",
             "last_updated_timestamp": 1704785047,
             "volume24h": "4.750000",
@@ -1823,7 +1823,7 @@
         },
         "JEUR": {
             "ticker": "JEUR",
-            "last_price": "1.110000",
+            "last_swap_price": "1.110000",
             "last_updated": "2024-01-09T12:57:35.464Z",
             "last_updated_timestamp": 1704805055,
             "volume24h": "8155.110000",
@@ -1836,7 +1836,7 @@
         },
         "JGBP": {
             "ticker": "JGBP",
-            "last_price": "1.270000",
+            "last_swap_price": "1.270000",
             "last_updated": "2024-01-09T12:56:51.853Z",
             "last_updated_timestamp": 1704805011,
             "volume24h": "2499.570000",
@@ -1849,7 +1849,7 @@
         },
         "JGOLD": {
             "ticker": "JGOLD",
-            "last_price": "2037.487896",
+            "last_swap_price": "2037.487896",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1862,7 +1862,7 @@
         },
         "JJPY": {
             "ticker": "JJPY",
-            "last_price": "0.006944",
+            "last_swap_price": "0.006944",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "368.330000",
@@ -1875,7 +1875,7 @@
         },
         "JKRW": {
             "ticker": "JKRW",
-            "last_price": "0.000759",
+            "last_swap_price": "0.000759",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1888,7 +1888,7 @@
         },
         "JMXN": {
             "ticker": "JMXN",
-            "last_price": "0.059301",
+            "last_swap_price": "0.059301",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1901,7 +1901,7 @@
         },
         "JNZD": {
             "ticker": "JNZD",
-            "last_price": "0.624375",
+            "last_swap_price": "0.624375",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1914,7 +1914,7 @@
         },
         "JOY": {
             "ticker": "JOY",
-            "last_price": "0.002226",
+            "last_swap_price": "0.002226",
             "last_updated": "2024-01-09T12:30:56.454Z",
             "last_updated_timestamp": 1704803456,
             "volume24h": "23.030000",
@@ -1927,7 +1927,7 @@
         },
         "JPHP": {
             "ticker": "JPHP",
-            "last_price": "0.017837",
+            "last_swap_price": "0.017837",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1940,7 +1940,7 @@
         },
         "JPLN": {
             "ticker": "JPLN",
-            "last_price": "0.251950",
+            "last_swap_price": "0.251950",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1953,7 +1953,7 @@
         },
         "JPYC": {
             "ticker": "JPYC",
-            "last_price": "0.006944",
+            "last_swap_price": "0.006944",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "62334.000000",
@@ -1966,7 +1966,7 @@
         },
         "JRT": {
             "ticker": "JRT",
-            "last_price": "0.006793",
+            "last_swap_price": "0.006793",
             "last_updated": "2024-01-09T12:56:54.713Z",
             "last_updated_timestamp": 1704805014,
             "volume24h": "1581.240000",
@@ -1979,7 +1979,7 @@
         },
         "JSEK": {
             "ticker": "JSEK",
-            "last_price": "0.097625",
+            "last_swap_price": "0.097625",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -1992,7 +1992,7 @@
         },
         "JSGD": {
             "ticker": "JSGD",
-            "last_price": "0.751617",
+            "last_swap_price": "0.751617",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -2005,7 +2005,7 @@
         },
         "JST": {
             "ticker": "JST",
-            "last_price": "0.02861000",
+            "last_swap_price": "0.02861000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "48131965.000000",
@@ -2018,7 +2018,7 @@
         },
         "JTRY": {
             "ticker": "JTRY",
-            "last_price": "0.033402",
+            "last_swap_price": "0.033402",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -2031,7 +2031,7 @@
         },
         "JUSD": {
             "ticker": "JUSD",
-            "last_price": "1.000000",
+            "last_swap_price": "1.000000",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -2044,7 +2044,7 @@
         },
         "KCS": {
             "ticker": "KCS",
-            "last_price": "9.950000",
+            "last_swap_price": "9.950000",
             "last_updated": "2024-01-09T12:57:02.278Z",
             "last_updated_timestamp": 1704805022,
             "volume24h": "186887.000000",
@@ -2057,7 +2057,7 @@
         },
         "KIIRO": {
             "ticker": "KIIRO",
-            "last_price": "0.296598",
+            "last_swap_price": "0.296598",
             "last_updated": "2024-01-09T12:55:00.303Z",
             "last_updated_timestamp": 1704804900,
             "volume24h": "28100.000000",
@@ -2070,7 +2070,7 @@
         },
         "KMD": {
             "ticker": "KMD",
-            "last_price": "0.25100000",
+            "last_swap_price": "0.25100000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "1689563.000000",
@@ -2083,7 +2083,7 @@
         },
         "KNC": {
             "ticker": "KNC",
-            "last_price": "0.63500000",
+            "last_swap_price": "0.63500000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "17835349.000000",
@@ -2096,7 +2096,7 @@
         },
         "KOIN": {
             "ticker": "KOIN",
-            "last_price": "0.477122",
+            "last_swap_price": "0.477122",
             "last_updated": "2024-01-09T12:56:39.457Z",
             "last_updated_timestamp": 1704804999,
             "volume24h": "111342.000000",
@@ -2109,7 +2109,7 @@
         },
         "KSM": {
             "ticker": "KSM",
-            "last_price": "40.21000000",
+            "last_swap_price": "40.21000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "33236824.000000",
@@ -2122,7 +2122,7 @@
         },
         "LBC": {
             "ticker": "LBC",
-            "last_price": "0.005404",
+            "last_swap_price": "0.005404",
             "last_updated": "2024-01-09T12:55:32.857Z",
             "last_updated_timestamp": 1704804932,
             "volume24h": "17073.600000",
@@ -2135,7 +2135,7 @@
         },
         "LCC": {
             "ticker": "LCC",
-            "last_price": "0.004180",
+            "last_swap_price": "0.004180",
             "last_updated": "2024-01-09T12:54:53.883Z",
             "last_updated_timestamp": 1704804893,
             "volume24h": "573.880000",
@@ -2148,7 +2148,7 @@
         },
         "LDO": {
             "ticker": "LDO",
-            "last_price": "3.22400000",
+            "last_swap_price": "3.22400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "157020958.000000",
@@ -2161,7 +2161,7 @@
         },
         "LEASH": {
             "ticker": "LEASH",
-            "last_price": "290.160000",
+            "last_swap_price": "290.160000",
             "last_updated": "2024-01-09T12:57:31.991Z",
             "last_updated_timestamp": 1704805051,
             "volume24h": "1356376.000000",
@@ -2174,7 +2174,7 @@
         },
         "LEO": {
             "ticker": "LEO",
-            "last_price": "4.020000",
+            "last_swap_price": "4.020000",
             "last_updated": "2024-01-09T12:57:25.359Z",
             "last_updated_timestamp": 1704805045,
             "volume24h": "1721002.000000",
@@ -2187,7 +2187,7 @@
         },
         "LINK": {
             "ticker": "LINK",
-            "last_price": "13.64400000",
+            "last_swap_price": "13.64400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "509178552.000000",
@@ -2200,7 +2200,7 @@
         },
         "LOOM": {
             "ticker": "LOOM",
-            "last_price": "0.08564000",
+            "last_swap_price": "0.08564000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "13365757.000000",
@@ -2213,7 +2213,7 @@
         },
         "LOOP": {
             "ticker": "LOOP",
-            "last_price": "0.061966",
+            "last_swap_price": "0.061966",
             "last_updated": "2024-01-09T12:56:59.438Z",
             "last_updated_timestamp": 1704805019,
             "volume24h": "104710.000000",
@@ -2226,7 +2226,7 @@
         },
         "LRC": {
             "ticker": "LRC",
-            "last_price": "0.24230000",
+            "last_swap_price": "0.24230000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "20322783.000000",
@@ -2239,7 +2239,7 @@
         },
         "LSWAP": {
             "ticker": "LSWAP",
-            "last_price": "0.001062",
+            "last_swap_price": "0.001062",
             "last_updated": "2024-01-09T12:57:02.405Z",
             "last_updated_timestamp": 1704805022,
             "volume24h": "9660.200000",
@@ -2252,7 +2252,7 @@
         },
         "LTC": {
             "ticker": "LTC",
-            "last_price": "65.36000000",
+            "last_swap_price": "65.36000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "826267947.000000",
@@ -2265,7 +2265,7 @@
         },
         "LYNX": {
             "ticker": "LYNX",
-            "last_price": "0.000042",
+            "last_swap_price": "0.000042",
             "last_updated": "2024-01-09T12:51:20Z",
             "last_updated_timestamp": 1704804680,
             "volume24h": "1.570000",
@@ -2278,7 +2278,7 @@
         },
         "MANA": {
             "ticker": "MANA",
-            "last_price": "0.43360000",
+            "last_swap_price": "0.43360000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "50278055.000000",
@@ -2291,7 +2291,7 @@
         },
         "MASK": {
             "ticker": "MASK",
-            "last_price": "3.50900000",
+            "last_swap_price": "3.50900000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "279610310.000000",
@@ -2304,7 +2304,7 @@
         },
         "MATIC": {
             "ticker": "MATIC",
-            "last_price": "0.79920000",
+            "last_swap_price": "0.79920000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "500993443.000000",
@@ -2317,7 +2317,7 @@
         },
         "MAZA": {
             "ticker": "MAZA",
-            "last_price": "0.000384",
+            "last_swap_price": "0.000384",
             "last_updated": "2024-01-09T12:53:37.864Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "48.010000",
@@ -2330,7 +2330,7 @@
         },
         "MC": {
             "ticker": "MC",
-            "last_price": "1.850000",
+            "last_swap_price": "1.850000",
             "last_updated": "2024-01-09T12:57:33.844Z",
             "last_updated_timestamp": 1704805053,
             "volume24h": "582513.000000",
@@ -2343,7 +2343,7 @@
         },
         "MCL": {
             "ticker": "MCL",
-            "last_price": "0.071492",
+            "last_swap_price": "0.071492",
             "last_updated": "2024-01-09T12:53:08.817Z",
             "last_updated_timestamp": 1704804788,
             "volume24h": "19968.280000",
@@ -2356,7 +2356,7 @@
         },
         "MED": {
             "ticker": "MED",
-            "last_price": "0.012194",
+            "last_swap_price": "0.012194",
             "last_updated": "2024-01-09T12:57:31.969Z",
             "last_updated_timestamp": 1704805051,
             "volume24h": "1604740.000000",
@@ -2369,7 +2369,7 @@
         },
         "MINDS": {
             "ticker": "MINDS",
-            "last_price": "0.060331",
+            "last_swap_price": "0.060331",
             "last_updated": "2024-01-09T12:56:59.532Z",
             "last_updated_timestamp": 1704805019,
             "volume24h": "4501.080000",
@@ -2382,7 +2382,7 @@
         },
         "MIR": {
             "ticker": "MIR",
-            "last_price": "0.022010",
+            "last_swap_price": "0.022010",
             "last_updated": "2024-01-09T12:57:30.853Z",
             "last_updated_timestamp": 1704805050,
             "volume24h": "237466.000000",
@@ -2395,7 +2395,7 @@
         },
         "MKR": {
             "ticker": "MKR",
-            "last_price": "1809.00000000",
+            "last_swap_price": "1809.00000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "156623716.000000",
@@ -2408,7 +2408,7 @@
         },
         "MLN": {
             "ticker": "MLN",
-            "last_price": "17.68000000",
+            "last_swap_price": "17.68000000",
             "last_updated": "2024-01-09T13:01:47Z",
             "last_updated_timestamp": 1704805307,
             "volume24h": "2726431.000000",
@@ -2421,7 +2421,7 @@
         },
         "MM": {
             "ticker": "MM",
-            "last_price": "2.280000",
+            "last_swap_price": "2.280000",
             "last_updated": "2024-01-09T12:57:14.310Z",
             "last_updated_timestamp": 1704805034,
             "volume24h": "34172.000000",
@@ -2434,7 +2434,7 @@
         },
         "MONA": {
             "ticker": "MONA",
-            "last_price": "0.376629",
+            "last_swap_price": "0.376629",
             "last_updated": "2024-01-09T12:54:52.544Z",
             "last_updated_timestamp": 1704804892,
             "volume24h": "153283.000000",
@@ -2447,7 +2447,7 @@
         },
         "MOVR": {
             "ticker": "MOVR",
-            "last_price": "24.10400000",
+            "last_swap_price": "24.10400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "65943380.000000",
@@ -2460,7 +2460,7 @@
         },
         "NAV": {
             "ticker": "NAV",
-            "last_price": "0.054149",
+            "last_swap_price": "0.054149",
             "last_updated": "2024-01-09T12:57:32.720Z",
             "last_updated_timestamp": 1704805052,
             "volume24h": "26303.000000",
@@ -2473,7 +2473,7 @@
         },
         "NEAR": {
             "ticker": "NEAR",
-            "last_price": "3.28100000",
+            "last_swap_price": "3.28100000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "308093683.000000",
@@ -2486,7 +2486,7 @@
         },
         "NEXO": {
             "ticker": "NEXO",
-            "last_price": "0.96100000",
+            "last_swap_price": "0.96100000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "6454717.000000",
@@ -2499,7 +2499,7 @@
         },
         "NMC": {
             "ticker": "NMC",
-            "last_price": "0.732059",
+            "last_swap_price": "0.732059",
             "last_updated": "2024-01-09T12:56:41.916Z",
             "last_updated_timestamp": 1704805001,
             "volume24h": "17453.560000",
@@ -2512,7 +2512,7 @@
         },
         "NVC": {
             "ticker": "NVC",
-            "last_price": "0.035852",
+            "last_swap_price": "0.035852",
             "last_updated": "2024-01-09T12:53:38.215Z",
             "last_updated_timestamp": 1704804818,
             "volume24h": "508.080000",
@@ -2525,7 +2525,7 @@
         },
         "NZDS": {
             "ticker": "NZDS",
-            "last_price": "0.624375",
+            "last_swap_price": "0.624375",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "0",
@@ -2538,7 +2538,7 @@
         },
         "OCEAN": {
             "ticker": "OCEAN",
-            "last_price": "0.42610000",
+            "last_swap_price": "0.42610000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "27022371.000000",
@@ -2551,7 +2551,7 @@
         },
         "OKB": {
             "ticker": "OKB",
-            "last_price": "53.420000",
+            "last_swap_price": "53.420000",
             "last_updated": "2024-01-09T12:57:26.551Z",
             "last_updated_timestamp": 1704805046,
             "volume24h": "7225860.000000",
@@ -2564,7 +2564,7 @@
         },
         "OMG": {
             "ticker": "OMG",
-            "last_price": "0.67900000",
+            "last_swap_price": "0.67900000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "32120202.000000",
@@ -2577,7 +2577,7 @@
         },
         "ONE": {
             "ticker": "ONE",
-            "last_price": "0.01586000",
+            "last_swap_price": "0.01586000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "9320812.000000",
@@ -2590,7 +2590,7 @@
         },
         "ONT": {
             "ticker": "ONT",
-            "last_price": "0.22840000",
+            "last_swap_price": "0.22840000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "15640668.000000",
@@ -2603,7 +2603,7 @@
         },
         "OSMO": {
             "ticker": "OSMO",
-            "last_price": "1.79320000",
+            "last_swap_price": "1.79320000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "50315150.000000",
@@ -2616,7 +2616,7 @@
         },
         "PAX": {
             "ticker": "PAX",
-            "last_price": "0.999207",
+            "last_swap_price": "0.999207",
             "last_updated": "2024-01-09T12:57:31.158Z",
             "last_updated_timestamp": 1704805051,
             "volume24h": "3477206.000000",
@@ -2629,7 +2629,7 @@
         },
         "PAXG": {
             "ticker": "PAXG",
-            "last_price": "2015.00000000",
+            "last_swap_price": "2015.00000000",
             "last_updated": "2024-01-09T13:01:52Z",
             "last_updated_timestamp": 1704805312,
             "volume24h": "5159824.000000",
@@ -2642,7 +2642,7 @@
         },
         "PGX": {
             "ticker": "PGX",
-            "last_price": "0.020934",
+            "last_swap_price": "0.020934",
             "last_updated": "2024-01-09T12:57:20.296Z",
             "last_updated_timestamp": 1704805040,
             "volume24h": "45104.000000",
@@ -2655,7 +2655,7 @@
         },
         "PINK": {
             "ticker": "PINK",
-            "last_price": "0.000082",
+            "last_swap_price": "0.000082",
             "last_updated": "2024-01-09T12:53:39.488Z",
             "last_updated_timestamp": 1704804819,
             "volume24h": "0.011897",
@@ -2668,7 +2668,7 @@
         },
         "PIVX": {
             "ticker": "PIVX",
-            "last_price": "0.27970000",
+            "last_swap_price": "0.27970000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1771062.000000",
@@ -2681,7 +2681,7 @@
         },
         "PND": {
             "ticker": "PND",
-            "last_price": "0.000042",
+            "last_swap_price": "0.000042",
             "last_updated": "2024-01-09T12:53:18.974Z",
             "last_updated_timestamp": 1704804798,
             "volume24h": "19.070000",
@@ -2694,7 +2694,7 @@
         },
         "PNK": {
             "ticker": "PNK",
-            "last_price": "0.019544",
+            "last_swap_price": "0.019544",
             "last_updated": "2024-01-09T12:57:39.164Z",
             "last_updated_timestamp": 1704805059,
             "volume24h": "136537.000000",
@@ -2707,7 +2707,7 @@
         },
         "POT": {
             "ticker": "POT",
-            "last_price": "0.000930",
+            "last_swap_price": "0.000930",
             "last_updated": "2024-01-09T11:48:06.642Z",
             "last_updated_timestamp": 1704800886,
             "volume24h": "42.870000",
@@ -2720,7 +2720,7 @@
         },
         "POWR": {
             "ticker": "POWR",
-            "last_price": "0.41430000",
+            "last_swap_price": "0.41430000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "404189285.000000",
@@ -2733,7 +2733,7 @@
         },
         "PPC": {
             "ticker": "PPC",
-            "last_price": "0.318015",
+            "last_swap_price": "0.318015",
             "last_updated": "2024-01-09T12:57:13.407Z",
             "last_updated_timestamp": 1704805033,
             "volume24h": "2206.310000",
@@ -2746,7 +2746,7 @@
         },
         "PRCY": {
             "ticker": "PRCY",
-            "last_price": "0.012817",
+            "last_swap_price": "0.012817",
             "last_updated": "2024-01-09T12:51:21Z",
             "last_updated_timestamp": 1704804681,
             "volume24h": "29207.410886",
@@ -2759,7 +2759,7 @@
         },
         "PRUX": {
             "ticker": "PRUX",
-            "last_price": "0.634492",
+            "last_swap_price": "0.634492",
             "last_updated": "2024-01-09T12:51:20Z",
             "last_updated_timestamp": 1704804680,
             "volume24h": "0.161771",
@@ -2772,7 +2772,7 @@
         },
         "PYR": {
             "ticker": "PYR",
-            "last_price": "7.05000000",
+            "last_swap_price": "7.05000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "20869772.000000",
@@ -2785,7 +2785,7 @@
         },
         "QBT": {
             "ticker": "QBT",
-            "last_price": "0.001751",
+            "last_swap_price": "0.001751",
             "last_updated": "2024-01-09T12:54:19.349Z",
             "last_updated_timestamp": 1704804859,
             "volume24h": "17481.780000",
@@ -2798,7 +2798,7 @@
         },
         "QI": {
             "ticker": "QI",
-            "last_price": "0.01833000",
+            "last_swap_price": "0.01833000",
             "last_updated": "2024-01-09T13:01:54Z",
             "last_updated_timestamp": 1704805314,
             "volume24h": "23448.000000",
@@ -2811,7 +2811,7 @@
         },
         "QKC": {
             "ticker": "QKC",
-            "last_price": "0.01010500",
+            "last_swap_price": "0.01010500",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "3038152.000000",
@@ -2824,7 +2824,7 @@
         },
         "QNT": {
             "ticker": "QNT",
-            "last_price": "114.60000000",
+            "last_swap_price": "114.60000000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "32682625.000000",
@@ -2837,7 +2837,7 @@
         },
         "QTUM": {
             "ticker": "QTUM",
-            "last_price": "2.97300000",
+            "last_swap_price": "2.97300000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "34555236.000000",
@@ -2850,7 +2850,7 @@
         },
         "RBTC": {
             "ticker": "RBTC",
-            "last_price": "46631.78000000",
+            "last_swap_price": "46631.78000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "26680446148.000000",
@@ -2863,7 +2863,7 @@
         },
         "RDD": {
             "ticker": "RDD",
-            "last_price": "0.000114",
+            "last_swap_price": "0.000114",
             "last_updated": "2024-01-09T12:54:46.425Z",
             "last_updated_timestamp": 1704804886,
             "volume24h": "1840.060000",
@@ -2876,7 +2876,7 @@
         },
         "REN": {
             "ticker": "REN",
-            "last_price": "0.05484300",
+            "last_swap_price": "0.05484300",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "12943071.000000",
@@ -2889,7 +2889,7 @@
         },
         "REP": {
             "ticker": "REP",
-            "last_price": "0.823768",
+            "last_swap_price": "0.823768",
             "last_updated": "2024-01-09T12:57:40.493Z",
             "last_updated_timestamp": 1704805060,
             "volume24h": "865441.000000",
@@ -2902,7 +2902,7 @@
         },
         "REQ": {
             "ticker": "REQ",
-            "last_price": "0.08150000",
+            "last_swap_price": "0.08150000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "2273723.000000",
@@ -2915,7 +2915,7 @@
         },
         "REV": {
             "ticker": "REV",
-            "last_price": "0.000005",
+            "last_swap_price": "0.000005",
             "last_updated": "2024-01-09T12:57:12.388Z",
             "last_updated_timestamp": 1704805032,
             "volume24h": "32501.000000",
@@ -2928,7 +2928,7 @@
         },
         "RLC": {
             "ticker": "RLC",
-            "last_price": "1.33200000",
+            "last_swap_price": "1.33200000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "17618464.000000",
@@ -2941,7 +2941,7 @@
         },
         "RNDR": {
             "ticker": "RNDR",
-            "last_price": "3.95400000",
+            "last_swap_price": "3.95400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "196667827.774000",
@@ -2954,7 +2954,7 @@
         },
         "RPL": {
             "ticker": "RPL",
-            "last_price": "27.67000000",
+            "last_swap_price": "27.67000000",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "6799951.000000",
@@ -2967,7 +2967,7 @@
         },
         "RSR": {
             "ticker": "RSR",
-            "last_price": "0.00252700",
+            "last_swap_price": "0.00252700",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "12251725.000000",
@@ -2980,7 +2980,7 @@
         },
         "RTM": {
             "ticker": "RTM",
-            "last_price": "0.001470",
+            "last_swap_price": "0.001470",
             "last_updated": "2024-01-09T12:54:25.320Z",
             "last_updated_timestamp": 1704804865,
             "volume24h": "27926.000000",
@@ -2993,7 +2993,7 @@
         },
         "RVN": {
             "ticker": "RVN",
-            "last_price": "0.01896000",
+            "last_swap_price": "0.01896000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "9424491.000000",
@@ -3006,7 +3006,7 @@
         },
         "S4F": {
             "ticker": "S4F",
-            "last_price": "0.000092",
+            "last_swap_price": "0.000092",
             "last_updated": "2024-01-09T12:51:20Z",
             "last_updated_timestamp": 1704804680,
             "volume24h": "1.900000",
@@ -3019,7 +3019,7 @@
         },
         "SAND": {
             "ticker": "SAND",
-            "last_price": "0.47430000",
+            "last_swap_price": "0.47430000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "120243453.000000",
@@ -3032,7 +3032,7 @@
         },
         "SBCH": {
             "ticker": "SBCH",
-            "last_price": "247.20000000",
+            "last_swap_price": "247.20000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "316121585.000000",
@@ -3045,7 +3045,7 @@
         },
         "SCRT": {
             "ticker": "SCRT",
-            "last_price": "0.40810000",
+            "last_swap_price": "0.40810000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "2486635.000000",
@@ -3058,7 +3058,7 @@
         },
         "SEELE": {
             "ticker": "SEELE",
-            "last_price": "0.000022",
+            "last_swap_price": "0.000022",
             "last_updated": "2024-01-09T12:51:19Z",
             "last_updated_timestamp": 1704804679,
             "volume24h": "577.269657",
@@ -3071,7 +3071,7 @@
         },
         "SHIB": {
             "ticker": "SHIB",
-            "last_price": "0.00000929",
+            "last_swap_price": "0.00000929",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "211914602.000000",
@@ -3084,7 +3084,7 @@
         },
         "SHR": {
             "ticker": "SHR",
-            "last_price": "0.001734",
+            "last_swap_price": "0.001734",
             "last_updated": "2024-01-09T12:57:03.235Z",
             "last_updated_timestamp": 1704805023,
             "volume24h": "135077.000000",
@@ -3097,7 +3097,7 @@
         },
         "SIGNA": {
             "ticker": "SIGNA",
-            "last_price": "0.001284",
+            "last_swap_price": "0.001284",
             "last_updated": "2024-01-09T12:53:19.553Z",
             "last_updated_timestamp": 1704804799,
             "volume24h": "4754.740000",
@@ -3110,7 +3110,7 @@
         },
         "SKL": {
             "ticker": "SKL",
-            "last_price": "0.07476000",
+            "last_swap_price": "0.07476000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "46099234.000000",
@@ -3123,7 +3123,7 @@
         },
         "SNT": {
             "ticker": "SNT",
-            "last_price": "0.03786000",
+            "last_swap_price": "0.03786000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "6073262.000000",
@@ -3136,7 +3136,7 @@
         },
         "SNX": {
             "ticker": "SNX",
-            "last_price": "3.25400000",
+            "last_swap_price": "3.25400000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "53461046.000000",
@@ -3149,7 +3149,7 @@
         },
         "SOL": {
             "ticker": "SOL",
-            "last_price": "99.77000000",
+            "last_swap_price": "99.77000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "3932121585.000000",
@@ -3162,7 +3162,7 @@
         },
         "SOLVE": {
             "ticker": "SOLVE",
-            "last_price": "0.022519",
+            "last_swap_price": "0.022519",
             "last_updated": "2024-01-09T12:57:17.249Z",
             "last_updated_timestamp": 1704805037,
             "volume24h": "489473.000000",
@@ -3175,7 +3175,7 @@
         },
         "SPACE": {
             "ticker": "SPACE",
-            "last_price": "0.000773",
+            "last_swap_price": "0.000773",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "13.000000",
@@ -3188,7 +3188,7 @@
         },
         "SPICE": {
             "ticker": "SPICE",
-            "last_price": "0.000009",
+            "last_swap_price": "0.000009",
             "last_updated": "2024-01-09T12:57:19.705Z",
             "last_updated_timestamp": 1704805039,
             "volume24h": "1.260000",
@@ -3201,7 +3201,7 @@
         },
         "SRM": {
             "ticker": "SRM",
-            "last_price": "0.060820",
+            "last_swap_price": "0.060820",
             "last_updated": "2024-01-09T12:57:21.653Z",
             "last_updated_timestamp": 1704805041,
             "volume24h": "1854265.000000",
@@ -3214,7 +3214,7 @@
         },
         "STORJ": {
             "ticker": "STORJ",
-            "last_price": "0.57030000",
+            "last_swap_price": "0.57030000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "42817434.000000",
@@ -3227,7 +3227,7 @@
         },
         "SUSHI": {
             "ticker": "SUSHI",
-            "last_price": "1.05700000",
+            "last_swap_price": "1.05700000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "37065873.000000",
@@ -3240,7 +3240,7 @@
         },
         "SXP": {
             "ticker": "SXP",
-            "last_price": "0.34630000",
+            "last_swap_price": "0.34630000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "16829630.000000",
@@ -3253,7 +3253,7 @@
         },
         "SYS": {
             "ticker": "SYS",
-            "last_price": "0.12380000",
+            "last_swap_price": "0.12380000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1913610.000000",
@@ -3266,7 +3266,7 @@
         },
         "TAMA": {
             "ticker": "TAMA",
-            "last_price": "0.007004",
+            "last_swap_price": "0.007004",
             "last_updated": "2024-01-09T12:57:37.960Z",
             "last_updated_timestamp": 1704805057,
             "volume24h": "811678.000000",
@@ -3279,7 +3279,7 @@
         },
         "TEL": {
             "ticker": "TEL",
-            "last_price": "0.001335",
+            "last_swap_price": "0.001335",
             "last_updated": "2024-01-09T12:57:51.177Z",
             "last_updated_timestamp": 1704805071,
             "volume24h": "2395390.000000",
@@ -3292,7 +3292,7 @@
         },
         "TFT": {
             "ticker": "TFT",
-            "last_price": "0.016750",
+            "last_swap_price": "0.016750",
             "last_updated": "2024-01-09T12:57:31.062Z",
             "last_updated_timestamp": 1704805051,
             "volume24h": "12859.550000",
@@ -3305,7 +3305,7 @@
         },
         "THC": {
             "ticker": "THC",
-            "last_price": "0.000500",
+            "last_swap_price": "0.000500",
             "last_updated": "2024-01-09T12:53:21.167Z",
             "last_updated_timestamp": 1704804801,
             "volume24h": "0.231056",
@@ -3318,7 +3318,7 @@
         },
         "TKL": {
             "ticker": "TKL",
-            "last_price": "0.000559",
+            "last_swap_price": "0.000559",
             "last_updated": "2024-01-09T08:32:20.130Z",
             "last_updated_timestamp": 1704789140,
             "volume24h": "18.810000",
@@ -3331,7 +3331,7 @@
         },
         "TON": {
             "ticker": "TON",
-            "last_price": "2.200000",
+            "last_swap_price": "2.200000",
             "last_updated": "2024-01-09T12:57:37.931Z",
             "last_updated_timestamp": 1704805057,
             "volume24h": "45457477.000000",
@@ -3344,7 +3344,7 @@
         },
         "TRAC": {
             "ticker": "TRAC",
-            "last_price": "0.717374",
+            "last_swap_price": "0.717374",
             "last_updated": "2024-01-09T12:57:22.945Z",
             "last_updated_timestamp": 1704805042,
             "volume24h": "4058511.000000",
@@ -3357,7 +3357,7 @@
         },
         "TRC": {
             "ticker": "TRC",
-            "last_price": "0.007052",
+            "last_swap_price": "0.007052",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "0.000000",
@@ -3370,7 +3370,7 @@
         },
         "TRX": {
             "ticker": "TRX",
-            "last_price": "0.10277000",
+            "last_swap_price": "0.10277000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "390388802.114678",
@@ -3383,7 +3383,7 @@
         },
         "TRYB": {
             "ticker": "TRYB",
-            "last_price": "0.033402",
+            "last_swap_price": "0.033402",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "3366.420000",
@@ -3396,7 +3396,7 @@
         },
         "TSL": {
             "ticker": "TSL",
-            "last_price": "0.000221",
+            "last_swap_price": "0.000221",
             "last_updated": "2024-01-09T12:54:19.466Z",
             "last_updated_timestamp": 1704804859,
             "volume24h": "18764.240000",
@@ -3409,7 +3409,7 @@
         },
         "TUSD": {
             "ticker": "TUSD",
-            "last_price": "0.99570000",
+            "last_swap_price": "0.99570000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "350078033.000000",
@@ -3422,7 +3422,7 @@
         },
         "TWT": {
             "ticker": "TWT",
-            "last_price": "1.08180000",
+            "last_swap_price": "1.08180000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "17436861.000000",
@@ -3435,7 +3435,7 @@
         },
         "UBQ": {
             "ticker": "UBQ",
-            "last_price": "0.008162",
+            "last_swap_price": "0.008162",
             "last_updated": "2024-01-09T11:40:13.611Z",
             "last_updated_timestamp": 1704800413,
             "volume24h": "6.370000",
@@ -3448,7 +3448,7 @@
         },
         "UBT": {
             "ticker": "UBT",
-            "last_price": "0.067978",
+            "last_swap_price": "0.067978",
             "last_updated": "2024-01-09T12:57:35.624Z",
             "last_updated_timestamp": 1704805055,
             "volume24h": "47342.000000",
@@ -3461,7 +3461,7 @@
         },
         "UIS": {
             "ticker": "UIS",
-            "last_price": "0.006653",
+            "last_swap_price": "0.006653",
             "last_updated": "2024-01-09T12:53:38.170Z",
             "last_updated_timestamp": 1704804818,
             "volume24h": "12448.160000",
@@ -3474,7 +3474,7 @@
         },
         "UMA": {
             "ticker": "UMA",
-            "last_price": "1.84800000",
+            "last_swap_price": "1.84800000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "7749338.000000",
@@ -3487,7 +3487,7 @@
         },
         "UNI": {
             "ticker": "UNI",
-            "last_price": "5.92300000",
+            "last_swap_price": "5.92300000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "215405571.000000",
@@ -3500,7 +3500,7 @@
         },
         "UNO": {
             "ticker": "UNO",
-            "last_price": "5.120000",
+            "last_swap_price": "5.120000",
             "last_updated": "2024-01-09T09:30:39.763Z",
             "last_updated_timestamp": 1704792639,
             "volume24h": "0.954218",
@@ -3513,7 +3513,7 @@
         },
         "UOS": {
             "ticker": "UOS",
-            "last_price": "0.203251",
+            "last_swap_price": "0.203251",
             "last_updated": "2024-01-09T12:57:38.555Z",
             "last_updated_timestamp": 1704805058,
             "volume24h": "2670228.000000",
@@ -3526,7 +3526,7 @@
         },
         "UQC": {
             "ticker": "UQC",
-            "last_price": "8.230000",
+            "last_swap_price": "8.230000",
             "last_updated": "2024-01-09T12:57:22.688Z",
             "last_updated_timestamp": 1704805042,
             "volume24h": "322928.000000",
@@ -3539,7 +3539,7 @@
         },
         "USDC": {
             "ticker": "USDC",
-            "last_price": "0.99950000",
+            "last_swap_price": "0.99950000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "9755128143.000000",
@@ -3552,7 +3552,7 @@
         },
         "USDD": {
             "ticker": "USDD",
-            "last_price": "0.989201",
+            "last_swap_price": "0.989201",
             "last_updated": "2024-01-09T12:57:43.320Z",
             "last_updated_timestamp": 1704805063,
             "volume24h": "11620936.000000",
@@ -3565,7 +3565,7 @@
         },
         "USDT": {
             "ticker": "USDT",
-            "last_price": "1.00040000",
+            "last_swap_price": "1.00040000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "65730847993.819336",
@@ -3578,7 +3578,7 @@
         },
         "UTK": {
             "ticker": "UTK",
-            "last_price": "0.06880000",
+            "last_swap_price": "0.06880000",
             "last_updated": "2024-01-09T13:01:51Z",
             "last_updated_timestamp": 1704805311,
             "volume24h": "2216829.000000",
@@ -3591,7 +3591,7 @@
         },
         "VAL": {
             "ticker": "VAL",
-            "last_price": "2.010000",
+            "last_swap_price": "2.010000",
             "last_updated": "2024-01-09T12:57:30.336Z",
             "last_updated_timestamp": 1704805050,
             "volume24h": "563789.000000",
@@ -3604,7 +3604,7 @@
         },
         "VET": {
             "ticker": "VET",
-            "last_price": "0.02972000",
+            "last_swap_price": "0.02972000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "86559643.000000",
@@ -3617,7 +3617,7 @@
         },
         "VGX": {
             "ticker": "VGX",
-            "last_price": "0.12610000",
+            "last_swap_price": "0.12610000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "6074453.000000",
@@ -3630,7 +3630,7 @@
         },
         "VIA": {
             "ticker": "VIA",
-            "last_price": "0.258181",
+            "last_swap_price": "0.258181",
             "last_updated": "2024-01-09T12:54:47.857Z",
             "last_updated_timestamp": 1704804887,
             "volume24h": "0.002269",
@@ -3643,7 +3643,7 @@
         },
         "VITE": {
             "ticker": "VITE",
-            "last_price": "0.01704000",
+            "last_swap_price": "0.01704000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "525041.000000",
@@ -3656,7 +3656,7 @@
         },
         "VPRM": {
             "ticker": "VPRM",
-            "last_price": "0.000762",
+            "last_swap_price": "0.000762",
             "last_updated": "2024-01-09T12:53:20.483Z",
             "last_updated_timestamp": 1704804800,
             "volume24h": "237.390000",
@@ -3669,7 +3669,7 @@
         },
         "VRA": {
             "ticker": "VRA",
-            "last_price": "0.005589",
+            "last_swap_price": "0.005589",
             "last_updated": "2024-01-09T12:57:51.429Z",
             "last_updated_timestamp": 1704805071,
             "volume24h": "21362675.000000",
@@ -3682,7 +3682,7 @@
         },
         "VRSC": {
             "ticker": "VRSC",
-            "last_price": "1.220000",
+            "last_swap_price": "1.220000",
             "last_updated": "2024-01-09T12:53:24.445Z",
             "last_updated_timestamp": 1704804804,
             "volume24h": "13094.430000",
@@ -3695,7 +3695,7 @@
         },
         "VTC": {
             "ticker": "VTC",
-            "last_price": "0.041082",
+            "last_swap_price": "0.041082",
             "last_updated": "2024-01-09T12:56:56.815Z",
             "last_updated_timestamp": 1704805016,
             "volume24h": "39749.000000",
@@ -3708,7 +3708,7 @@
         },
         "WAVES": {
             "ticker": "WAVES",
-            "last_price": "2.36600000",
+            "last_swap_price": "2.36600000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "20095676.000000",
@@ -3721,7 +3721,7 @@
         },
         "WBTC": {
             "ticker": "WBTC",
-            "last_price": "46652.72000000",
+            "last_swap_price": "46652.72000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "367231395.000000",
@@ -3734,7 +3734,7 @@
         },
         "WCN": {
             "ticker": "WCN",
-            "last_price": "0.000873",
+            "last_swap_price": "0.000873",
             "last_updated": "2024-01-09T12:53:24.020Z",
             "last_updated_timestamp": 1704804804,
             "volume24h": "71.070000",
@@ -3747,7 +3747,7 @@
         },
         "WHIVE": {
             "ticker": "WHIVE",
-            "last_price": "0.000501",
+            "last_swap_price": "0.000501",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "0.000000",
@@ -3760,7 +3760,7 @@
         },
         "WLD": {
             "ticker": "WLD",
-            "last_price": "2.63500000",
+            "last_swap_price": "2.63500000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "72548080.000000",
@@ -3773,7 +3773,7 @@
         },
         "WOO": {
             "ticker": "WOO",
-            "last_price": "0.41580000",
+            "last_swap_price": "0.41580000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "52543720.000000",
@@ -3786,7 +3786,7 @@
         },
         "XCN": {
             "ticker": "XCN",
-            "last_price": "0.001348",
+            "last_swap_price": "0.001348",
             "last_updated": "2024-01-09T12:57:22.392Z",
             "last_updated_timestamp": 1704805042,
             "volume24h": "6252014.000000",
@@ -3799,7 +3799,7 @@
         },
         "XEC": {
             "ticker": "XEC",
-            "last_price": "0.00003437",
+            "last_swap_price": "0.00003437",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "48023817.000000",
@@ -3812,7 +3812,7 @@
         },
         "XEP": {
             "ticker": "XEP",
-            "last_price": "0.000297",
+            "last_swap_price": "0.000297",
             "last_updated": "2024-01-09T12:57:38.312Z",
             "last_updated_timestamp": 1704805058,
             "volume24h": "38414.000000",
@@ -3825,7 +3825,7 @@
         },
         "XIDR": {
             "ticker": "XIDR",
-            "last_price": "0.000064",
+            "last_swap_price": "0.000064",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "218286.000000",
@@ -3838,7 +3838,7 @@
         },
         "XLM": {
             "ticker": "XLM",
-            "last_price": "0.11590000",
+            "last_swap_price": "0.11590000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "89262136.000000",
@@ -3851,7 +3851,7 @@
         },
         "XMY": {
             "ticker": "XMY",
-            "last_price": "0.000075",
+            "last_swap_price": "0.000075",
             "last_updated": "2024-01-09T12:46:52.393Z",
             "last_updated_timestamp": 1704804412,
             "volume24h": "1311.330000",
@@ -3864,7 +3864,7 @@
         },
         "XNA": {
             "ticker": "XNA",
-            "last_price": "0.004043",
+            "last_swap_price": "0.004043",
             "last_updated": "2024-01-09T12:54:12.858Z",
             "last_updated_timestamp": 1704804852,
             "volume24h": "1670769.000000",
@@ -3877,7 +3877,7 @@
         },
         "XOR": {
             "ticker": "XOR",
-            "last_price": "0.001208",
+            "last_swap_price": "0.001208",
             "last_updated": "2024-01-09T12:56:47.477Z",
             "last_updated_timestamp": 1704805007,
             "volume24h": "339841.000000",
@@ -3890,7 +3890,7 @@
         },
         "XPM": {
             "ticker": "XPM",
-            "last_price": "0.020782",
+            "last_swap_price": "0.020782",
             "last_updated": "2024-01-09T12:53:37.551Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "187.020000",
@@ -3903,7 +3903,7 @@
         },
         "XRG": {
             "ticker": "XRG",
-            "last_price": "1700.012532",
+            "last_swap_price": "1700.012532",
             "last_updated": "2024-01-09T12:51:21Z",
             "last_updated_timestamp": 1704804681,
             "volume24h": "497.582127",
@@ -3916,7 +3916,7 @@
         },
         "XRP": {
             "ticker": "XRP",
-            "last_price": "0.56240000",
+            "last_swap_price": "0.56240000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "1225782768.000000",
@@ -3929,7 +3929,7 @@
         },
         "XSGD": {
             "ticker": "XSGD",
-            "last_price": "0.751617",
+            "last_swap_price": "0.751617",
             "last_updated": "2024-01-09T13:00:03Z",
             "last_updated_timestamp": 1704805203,
             "volume24h": "9407911.000000",
@@ -3942,7 +3942,7 @@
         },
         "XTZ": {
             "ticker": "XTZ",
-            "last_price": "0.90200000",
+            "last_swap_price": "0.90200000",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "33918796.000000",
@@ -3955,7 +3955,7 @@
         },
         "XVC": {
             "ticker": "XVC",
-            "last_price": "0.043856",
+            "last_swap_price": "0.043856",
             "last_updated": "2024-01-09T12:48:22Z",
             "last_updated_timestamp": 1704804502,
             "volume24h": "0.482677",
@@ -3968,7 +3968,7 @@
         },
         "XVG": {
             "ticker": "XVG",
-            "last_price": "0.00331900",
+            "last_swap_price": "0.00331900",
             "last_updated": "2024-01-09T13:01:55Z",
             "last_updated_timestamp": 1704805315,
             "volume24h": "2559276.000000",
@@ -3981,7 +3981,7 @@
         },
         "XVS": {
             "ticker": "XVS",
-            "last_price": "11.27000000",
+            "last_swap_price": "11.27000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "11153736.000000",
@@ -3994,7 +3994,7 @@
         },
         "YFI": {
             "ticker": "YFI",
-            "last_price": "7506.00000000",
+            "last_swap_price": "7506.00000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "40036429.000000",
@@ -4007,7 +4007,7 @@
         },
         "YFII": {
             "ticker": "YFII",
-            "last_price": "1530.720000",
+            "last_swap_price": "1530.720000",
             "last_updated": "2024-01-09T12:57:29.716Z",
             "last_updated_timestamp": 1704805049,
             "volume24h": "21357042.000000",
@@ -4020,7 +4020,7 @@
         },
         "ZEC": {
             "ticker": "ZEC",
-            "last_price": "19.57000000",
+            "last_swap_price": "19.57000000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "53293521.000000",
@@ -4033,7 +4033,7 @@
         },
         "ZER": {
             "ticker": "ZER",
-            "last_price": "0.014008",
+            "last_swap_price": "0.014008",
             "last_updated": "2024-01-09T12:31:20.148Z",
             "last_updated_timestamp": 1704803480,
             "volume24h": "1.800000",
@@ -4046,7 +4046,7 @@
         },
         "ZET": {
             "ticker": "ZET",
-            "last_price": "0.002300",
+            "last_swap_price": "0.002300",
             "last_updated": "2024-01-09T12:53:37.133Z",
             "last_updated_timestamp": 1704804817,
             "volume24h": "0.660462",
@@ -4059,7 +4059,7 @@
         },
         "ZIL": {
             "ticker": "ZIL",
-            "last_price": "0.02095000",
+            "last_swap_price": "0.02095000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "27035915.000000",
@@ -4072,7 +4072,7 @@
         },
         "ZINU": {
             "ticker": "ZINU",
-            "last_price": "0.001387",
+            "last_swap_price": "0.001387",
             "last_updated": "2024-01-09T13:01:57Z",
             "last_updated_timestamp": 1704805317,
             "volume24h": "3197.000000",
@@ -4085,7 +4085,7 @@
         },
         "ZRX": {
             "ticker": "ZRX",
-            "last_price": "0.32350000",
+            "last_swap_price": "0.32350000",
             "last_updated": "2024-01-09T13:01:56Z",
             "last_updated_timestamp": 1704805316,
             "volume24h": "20705133.000000",

@@ -4,11 +4,10 @@ from lib.generic import Generic
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
-from util.transform import merge, sortdata
+from util.transform import sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
-import util.transform as transform
 import util.memcache as memcache
 
 
@@ -23,16 +22,6 @@ class Markets:
             self.segwit_coins = [i for i in get_segwit_coins()]
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")
-
-    @timed
-    def pairs(self, days=MARKETS_PAIRS_DAYS):
-        try:
-            # Todo: Set this cache up for temporal filtering
-            # Include unpriced, traded in last 30 days
-            return memcache.get_pairs()
-        except Exception as e:  # pragma: no cover
-            msg = f"markets.pairs failed for netid {self.netid}!"
-            return default.error(e, msg)
 
     @timed
     def tickers(self, trades_days: int = 1, pairs_days: int = MARKETS_PAIRS_DAYS):
@@ -51,8 +40,7 @@ class Markets:
             start_time = int(cron.now_utc() - 86400 * days_in_past)
             end_time = int(cron.now_utc())
             data = Pair(
-                pair_str=pair,
-                last_traded_cache=last_traded_cache
+                pair_str=pair, last_traded_cache=last_traded_cache
             ).historical_trades(
                 start_time=start_time,
                 end_time=end_time,

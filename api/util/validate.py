@@ -60,6 +60,8 @@ def json_obj(data, outer=True):
                 data = data[0]
             data.keys()
         except Exception as e:
+            if isinstance(data, str | int | float | Decimal):
+                return False
             logger.error(e)
             logger.error(data)
             return False

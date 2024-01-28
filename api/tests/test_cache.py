@@ -1,29 +1,16 @@
-import os
-import sys
-import pytest
-
-API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(API_ROOT_PATH)
-
+import util.memcache as memcache
 from lib.cache import Cache
 
-from util.helper import (
-    get_mm2_rpc_port,
-    get_chunks,
-    get_price_at_finish,
-)
-from util.logger import logger
-from tests.fixtures_db import setup_swaps_db_data, setup_time
 
-# TODO: Move to memcache
+def test_cache():
+    memcache.update("testing", {"status": True}, 900)
 
-
-def test_cache(setup_swaps_db_data):
-    db = setup_swaps_db_data
-    cache = Cache(db=db)
+    cache = Cache()
 
     for i in [
+        "generic_adex_fortnite",
         "generic_last_traded",
+        "generic_summary",
         "generic_tickers",
     ]:
         cache_item = cache.get_item(i)

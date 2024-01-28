@@ -2,17 +2,18 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, List, Dict
 
 from util.logger import logger, timed
-import util.cron as cron
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
+import util.templates as template
 
-# TODO: Subclass into merge / transform / sort / clean / strip / aggregate / cast
+# TODO: Create Subclasses for transform / strip / aggregate / cast
 
-class Clean():
+
+class Clean:
     def __init__(self):
         pass
-        
+
     def decimal_dict_list(self, data, to_string=False, rounding=8):
         """
         Works for a list of dicts with no nesting
@@ -30,8 +31,9 @@ class Clean():
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-
-    def decimal_dict(self, data, to_string=False, rounding=8, exclude_keys: List = list()):
+    def decimal_dict(
+        self, data, to_string=False, rounding=8, exclude_keys: List = list()
+    ):
         """
         Works for a simple dict with no nesting
         (e.g. summary_cache.json)
@@ -49,17 +51,15 @@ class Clean():
             return default.error(e)
 
 
-class Merge():
+class Merge:
     def __init__(self):
         pass
-    
+
     def segwit_swaps(self, variants, swaps):
         resp = []
         for i in variants:
             resp = resp + swaps[i]
         return sortdata.sort_dict_list(resp, "finished_at", reverse=True)
-
-
 
     def orderbooks(self, existing, new):
         try:
@@ -78,12 +78,12 @@ class Merge():
                 existing["trades_24hr"] = new["trades_24hr"]
             else:
                 existing["trades_24hr"] = 0
-            if "volume_usd_24hr" in existing and "volume_usd_24hr" in new:
-                existing["volume_usd_24hr"] += new["volume_usd_24hr"]
-            elif "volume_usd_24hr" in new:
-                existing["volume_usd_24hr"] = new["volume_usd_24hr"]
+            if "combined_volume_usd" in existing and "combined_volume_usd" in new:
+                existing["combined_volume_usd"] += new["combined_volume_usd"]
+            elif "combined_volume_usd" in new:
+                existing["combined_volume_usd"] = new["combined_volume_usd"]
             else:
-                existing["volume_usd_24hr"] = 0
+                existing["combined_volume_usd"] = 0
 
         except Exception as e:  # pragma: no cover
             err = {"error": f"transform.merge.orderbooks: {e}"}
@@ -91,10 +91,7 @@ class Merge():
         return existing
 
 
-
-
-
-class SortData():
+class SortData:
     def __init__(self):
         pass
 
@@ -104,7 +101,6 @@ class SortData():
         """
         resp = sorted(data, key=lambda k: k[key], reverse=reverse)
         return resp
-
 
     def sort_dict(self, data: dict, reverse=False) -> dict:
         """
@@ -119,11 +115,36 @@ class SortData():
             resp.update({i: data[i]})
         return resp
 
-
     def get_top_items(self, data: List[Dict], sort_key: str, length: int = 5):
         data.sort(key=lambda x: x[sort_key], reverse=True)
         return data[:length]
 
+    @timed
+    def top_pairs(self, summaries: list):
+        try:
+            for i in summaries:
+                i["ticker_id"] = strip_pair_platforms(i["ticker_id"])
+
+            top_pairs_by_value = {
+                i["ticker_id"]: i["pair_trade_value_usd"]
+                for i in self.get_top_items(summaries, "pair_trade_value_usd", 5)
+            }
+            top_pairs_by_liquidity = {
+                i["ticker_id"]: i["pair_liquidity_usd"]
+                for i in self.get_top_items(summaries, "pair_liquidity_usd", 5)
+            }
+            top_pairs_by_swaps = {
+                i["ticker_id"]: i["pair_swaps_count"]
+                for i in self.get_top_items(summaries, "pair_swaps_count", 5)
+            }
+            return {
+                "by_value_traded_usd": clean.decimal_dict(top_pairs_by_value),
+                "by_current_liquidity_usd": clean.decimal_dict(top_pairs_by_liquidity),
+                "by_swaps_count": clean.decimal_dict(top_pairs_by_swaps),
+            }
+        except Exception as e:
+            logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
+            return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
     @timed
     def order_pair_by_market_cap(self, pair_str: str, gecko_source=None) -> str:
@@ -131,14 +152,17 @@ class SortData():
             if gecko_source is None:
                 gecko_source = memcache.get_gecko_source()
             if gecko_source is not None:
-                pair_str.replace("-segwit", "")
                 base, quote = helper.base_quote_from_pair(pair_str)
                 base_mc = 0
                 quote_mc = 0
-                if base in gecko_source:
-                    base_mc = Decimal(gecko_source[base]["usd_market_cap"])
-                if quote in gecko_source:
-                    quote_mc = Decimal(gecko_source[quote]["usd_market_cap"])
+                if base.replace("-segwit", "") in gecko_source:
+                    base_mc = Decimal(
+                        gecko_source[base.replace("-segwit", "")]["usd_market_cap"]
+                    )
+                if quote.replace("-segwit", "") in gecko_source:
+                    quote_mc = Decimal(
+                        gecko_source[quote.replace("-segwit", "")]["usd_market_cap"]
+                    )
                 if quote_mc < base_mc:
                     pair_str = invert_pair(pair_str)
                 elif quote_mc == base_mc:
@@ -149,6 +173,19 @@ class SortData():
 
         return pair_str
 
+
+def label_bids_asks(orderbook_data, pair):
+    data = template.orderbook(pair)
+    for i in ["asks", "bids"]:
+        data[i] = [
+            {
+                "price": format_10f(1 / Decimal(j["price"]["decimal"])),
+                "volume": j["base_max_volume"]["decimal"],
+                "quote_volume": j["rel_max_volume"]["decimal"],
+            }
+            for j in orderbook_data[i]
+        ]
+    return data
 
 
 def round_to_str(value: Any, rounding=8):
@@ -166,7 +203,6 @@ def round_to_str(value: Any, rounding=8):
         logger.error(e)
         value = 0
     return f"{value:.{rounding}f}"
-
 
 
 def get_suffix(days: int) -> str:
@@ -206,8 +242,6 @@ def sum_json_key_10f(data: dict, key: str) -> str:
     return format_10f(sum_json_key(data, key))
 
 
-
-
 def orderbook_to_gecko(data):
     bids = [[i["price"], i["volume"]] for i in data["bids"]]
     asks = [[i["price"], i["volume"]] for i in data["asks"]]
@@ -224,87 +258,87 @@ def to_summary_for_ticker_item(data):  # pragma: no cover
         "liquidity_usd": data["liquidity_in_usd"],
         "base_volume": data["base_volume"],
         "base_usd_price": data["base_usd_price"],
-        "quote": data["target_currency"],
-        "quote_volume": data["target_volume"],
-        "quote_usd_price": data["target_usd_price"],
-        "highest_bid": data["bid"],
-        "lowest_ask": data["ask"],
-        "highest_price_24hr": data["high"],
-        "lowest_price_24hr": data["low"],
+        "quote": data["quote_currency"],
+        "quote_volume": data["quote_volume"],
+        "quote_usd_price": data["quote_usd_price"],
+        "highest_bid": data["highest_bid"],
+        "lowest_ask": data["lowest_ask"],
+        "highest_price_24hr": data["highest_price_24hr"],
+        "lowest_price_24hr": data["lowest_price_24hr"],
         "price_change_24hr": data["price_change_24hr"],
         "price_change_pct_24hr": data["price_change_pct_24hr"],
         "trades_24hr": data["trades_24hr"],
-        "volume_usd_24hr": data["volume_usd_24hr"],
-        "last_price": data["last_price"],
-        "last_trade": data["last_trade"],
+        "combined_volume_usd": data["combined_volume_usd"],
+        "last_swap_price": data["last_swap_price"],
+        "last_swap_time": data["last_swap_time"],
     }
 
 
 def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
     return {
-        "trading_pair": data["ticker_id"],
+        "ticker_id": data["ticker_id"],
         "base_currency": data["base_currency"],
         "liquidity_usd": data["liquidity_in_usd"],
         "base_volume": data["base_volume"],
         "base_usd_price": data["base_usd_price"],
-        "quote_currency": data["target_currency"],
-        "quote_volume": data["target_volume"],
-        "quote_usd_price": data["target_usd_price"],
-        "highest_bid": data["bid"],
-        "lowest_ask": data["ask"],
-        "highest_price_24h": data["high"],
-        "lowest_price_24h": data["low"],
+        "quote_currency": data["quote_currency"],
+        "quote_volume": data["quote_volume"],
+        "quote_usd_price": data["quote_usd_price"],
+        "highest_bid": data["highest_bid"],
+        "lowest_ask": data["lowest_ask"],
+        "highest_price_24h": data["highest_price_24hr"],
+        "lowest_price_24h": data["lowest_price_24hr"],
         "price_change_24h": data["price_change_24hr"],
         "price_change_pct_24h": data["price_change_pct_24hr"],
         "trades_24h": data["trades_24hr"],
-        "volume_usd_24h": data["volume_usd_24hr"],
-        "last_price": data["last_price"],
-        "last_swap_timestamp": data["last_trade"],
+        "volume_usd_24h": data["combined_volume_usd"],
+        "last_swap_price": data["last_swap_price"],
+        "last_swap_timestamp": data["last_swap_time"],
     }
 
 
 def ticker_to_market_ticker_summary(i):
     return {
-        "trading_pair": f"{i['base_currency']}_{i['target_currency']}",
+        "ticker_id": f"{i['base_currency']}_{i['quote_currency']}",
         "base_currency": i["base_currency"],
         "base_volume": i["base_volume"],
-        "quote_currency": i["target_currency"],
-        "quote_volume": i["target_volume"],
-        "lowest_ask": i["ask"],
-        "highest_bid": i["bid"],
+        "quote_currency": i["quote_currency"],
+        "quote_volume": i["quote_volume"],
+        "lowest_ask": i["lowest_ask"],
+        "highest_bid": i["highest_bid"],
         "price_change_pct_24hr": str(i["price_change_pct_24hr"]),
-        "highest_price_24hr": i["high"],
-        "lowest_price_24hr": i["low"],
+        "highest_price_24hr": i["highest_price_24hr"],
+        "lowest_price_24hr": i["lowest_price_24hr"],
         "trades_24hr": int(i["trades_24hr"]),
-        "last_swap": int(i["last_trade"]),
-        "last_price": i["last_price"],
+        "last_swap": int(i["last_swap_time"]),
+        "last_swap_price": i["last_swap_price"],
     }
 
 
 def ticker_to_xyz_summary(i):
     return {
-        "trading_pair": f"{i['base_currency']}_{i['target_currency']}",
+        "ticker_id": f"{i['base_currency']}_{i['quote_currency']}",
         "base_currency": i["base_currency"],
         "base_volume": i["base_volume"],
-        "quote_currency": i["target_currency"],
-        "quote_volume": i["target_volume"],
-        "lowest_ask": i["ask"],
-        "last_swap_timestamp": int(i["last_trade"]),
-        "highest_bid": i["bid"],
+        "quote_currency": i["quote_currency"],
+        "quote_volume": i["quote_volume"],
+        "lowest_ask": i["lowest_ask"],
+        "last_swap_timestamp": int(i["last_swap_time"]),
+        "highest_bid": i["highest_bid"],
         "price_change_pct_24h": str(i["price_change_pct_24hr"]),
-        "highest_price_24h": i["high"],
-        "lowest_price_24h": i["low"],
+        "highest_price_24h": i["highest_price_24hr"],
+        "lowest_price_24h": i["lowest_price_24hr"],
         "trades_24h": int(i["trades_24hr"]),
-        "last_swap": int(i["last_trade"]),
-        "last_price": i["last_price"],
+        "last_swap": int(i["last_swap_time"]),
+        "last_swap_price": i["last_swap_price"],
     }
 
 
 def ticker_to_market_ticker(i):
     return {
-        f"{i['base_currency']}_{i['target_currency']}": {
-            "last_price": i["last_price"],
-            "quote_volume": i["target_volume"],
+        f"{i['base_currency']}_{i['quote_currency']}": {
+            "last_swap_price": i["last_swap_price"],
+            "quote_volume": i["quote_volume"],
             "base_volume": i["base_volume"],
             "isFrozen": "0",
         }
@@ -317,18 +351,18 @@ def ticker_to_gecko(i):
         "pool_id": i["ticker_id"],
         "variants": i["variants"],
         "base_currency": i["base_currency"],
-        "target_currency": i["quote_currency"],
-        "bid": format_10f(i["highest_bid"]),
-        "ask": format_10f(i["lowest_ask"]),
-        "high": format_10f(i["highest_price_24hr"]),
-        "low": format_10f(i["lowest_price_24hr"]),
+        "quote_currency": i["quote_currency"],
+        "highest_bid": format_10f(i["highest_bid"]),
+        "lowest_ask": format_10f(i["lowest_ask"]),
+        "highest_price_24hr": format_10f(i["highest_price_24hr"]),
+        "lowest_price_24hr": format_10f(i["lowest_price_24hr"]),
         "base_volume": format_10f(i["base_volume"]),
-        "target_volume": format_10f(i["quote_volume"]),
-        "last_price": format_10f(i["last_swap_price"]),
-        "last_trade": int(Decimal(i["last_swap_time"])),
+        "quote_volume": format_10f(i["quote_volume"]),
+        "last_swap_price": format_10f(i["last_swap_price"]),
+        "last_swap_time": int(Decimal(i["last_swap_time"])),
         "last_swap_uuid": i["last_swap_uuid"],
         "trades_24hr": int(Decimal(i["trades_24hr"])),
-        "volume_usd_24hr": format_10f(i["combined_volume_usd"]),
+        "combined_volume_usd": format_10f(i["combined_volume_usd"]),
         "liquidity_in_usd": format_10f(i["liquidity_in_usd"]),
     }
     return data
@@ -345,10 +379,10 @@ def ticker_to_statsapi_summary(i):
         else:
             alt_suffix = suffix
         data = {
-            "trading_pair": i["ticker_id"],
+            "ticker_id": i["ticker_id"],
             "pair_swaps_count": int(Decimal(i[f"trades_{suffix}"])),
             "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
-            "pair_trade_value_usd": Decimal(i[f"combined_volume_usd"]),
+            "pair_trade_value_usd": Decimal(i["combined_volume_usd"]),
             "base_currency": i["base_currency"],
             "base_volume": Decimal(i["base_volume"]),
             "base_price_usd": Decimal(i["base_usd_price"]),
@@ -367,13 +401,13 @@ def ticker_to_statsapi_summary(i):
             "oldest_price_time": i["oldest_price_time"],
             "highest_bid": Decimal(i["highest_bid"]),
             "lowest_ask": Decimal(i["lowest_ask"]),
-            f"volume_usd_{alt_suffix}": Decimal(i[f"combined_volume_usd"]),
+            f"volume_usd_{alt_suffix}": Decimal(i["combined_volume_usd"]),
             f"highest_price_{alt_suffix}": Decimal(i[f"highest_price_{suffix}"]),
             f"lowest_price_{alt_suffix}": Decimal(i[f"lowest_price_{suffix}"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
             f"price_change_pct_{alt_suffix}": Decimal(i[f"price_change_pct_{suffix}"]),
-            "last_price": i["last_swap_price"],
-            "last_trade": int(Decimal(i["last_swap_time"])),
+            "last_swap_price": i["last_swap_price"],
+            "last_swap_time": int(Decimal(i["last_swap_time"])),
             "last_swap_uuid": i["last_swap_uuid"],
             "variants": i["variants"],
         }
@@ -388,7 +422,7 @@ def historical_trades_to_market_trades(i):
         "trade_id": i["trade_id"],
         "price": i["price"],
         "base_volume": i["base_volume"],
-        "quote_volume": i["target_volume"],
+        "quote_volume": i["quote_volume"],
         "timestamp": i["timestamp"],
         "type": i["type"],
     }
@@ -399,7 +433,7 @@ def historical_trades_to_gecko(i):
         "trade_id": i["trade_id"],
         "price": i["price"],
         "base_volume": i["base_volume"],
-        "target_volume": i["target_volume"],
+        "quote_volume": i["quote_volume"],
         "timestamp": i["timestamp"],
         "type": i["type"],
     }
@@ -425,7 +459,7 @@ def deplatform_pair_summary_item(i):
     resp = {}
     keys = i.keys()
     for k in keys:
-        if k == "trading_pair":
+        if k == "ticker_id":
             resp.update({k: strip_pair_platforms(i[k])})
         elif k in ["base_currency", "quote_currency"]:
             resp.update({k: strip_coin_platform(i[k])})
@@ -452,6 +486,54 @@ def traded_cache_to_stats_api(traded_cache):
             ):
                 resp.update({cleaned_ticker: traded_cache[i]})
     return resp
+
+
+def invert_orderbook(orderbook):
+    if "rel" in orderbook:
+        quote = orderbook["rel"]
+        total_asks_quote_vol = orderbook["total_asks_rel_vol"]["decimal"]
+        total_bids_quote_vol = orderbook["total_bids_rel_vol"]["decimal"]
+        total_asks_base_vol = orderbook["total_asks_base_vol"]["decimal"]
+        total_bids_base_vol = orderbook["total_bids_base_vol"]["decimal"]
+    if "quote" in orderbook:
+        quote = orderbook["quote"]
+        total_asks_quote_vol = orderbook["total_asks_quote_vol"]
+        total_bids_quote_vol = orderbook["total_bids_quote_vol"]
+        total_asks_base_vol = orderbook["total_asks_base_vol"]
+        total_bids_base_vol = orderbook["total_bids_base_vol"]
+
+    inverted = {
+        "pair": orderbook["pair"],
+        "base": quote,
+        "quote": orderbook["base"],
+        "num_asks": len(orderbook["asks"]),
+        "num_bids": len(orderbook["bids"]),
+        "total_asks_base_vol": {"decimal": total_asks_quote_vol},
+        "total_asks_rel_vol": {"decimal": total_asks_base_vol},
+        "total_bids_base_vol": {"decimal": total_bids_quote_vol},
+        "total_bids_rel_vol": {"decimal": total_bids_base_vol},
+        "asks": [],
+        "bids": [],
+    }
+    for i in orderbook["asks"]:
+        inverted["bids"].append(
+            {
+                "coin": orderbook["rel"],
+                "price": {"decimal": format_10f(1 / Decimal(i["price"]["decimal"]))},
+                "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
+                "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
+            }
+        )
+    for i in orderbook["bids"]:
+        inverted["asks"].append(
+            {
+                "coin": orderbook["base"],
+                "price": {"decimal": format_10f(1 / Decimal(i["price"]["decimal"]))},
+                "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
+                "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
+            }
+        )
+    return inverted
 
 
 def invert_pair(pair_str):
@@ -735,5 +817,6 @@ def tickers_deplatform(tickers_data):
     return tickers_data
 
 
+clean = Clean()
 merge = Merge()
 sortdata = SortData()

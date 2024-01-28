@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from const import MARKETS_PAIRS_DAYS
 import lib
-import util.defaults as default
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
 from util.urls import Urls
 import util.cron as cron
+import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
 
@@ -31,16 +30,16 @@ class Cache:  # pragma: no cover
         try:
             updated = {}
             for i in [
-                "coins_config",
-                "gecko_source",
                 "coins",
-                "generic_tickers",
-                "generic_last_traded",
+                "coins_config",
                 "fixer_rates",
+                "gecko_source",
+                "generic_adex_fortnite",
+                "generic_last_traded",
+                "generic_summary",
+                "generic_tickers",
                 "prices_tickers_v1",
                 "prices_tickers_v2",
-                "adex_fortnite",
-                "statsapi_summary",
             ]:
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
@@ -132,6 +131,7 @@ class CacheItem:
                     memcache.set_coins(data)
 
             else:
+                logger.calc(self.testing)
                 if self.name == "fixer_rates":
                     data = lib.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
@@ -140,43 +140,37 @@ class CacheItem:
                     data = lib.CoinGeckoAPI().get_gecko_source()
                     memcache.set_gecko_source(data)
 
-                if self.name == "statsapi_summary":
-                    data = lib.StatsAPI().pair_summaries()
-                    memcache.set_statsapi_summary(data)
-
-                if self.name == "adex_fortnite":
-                    data = lib.StatsAPI().adex_fortnite()
-                    memcache.set_adex_fortnite(data)
-
-                if self.name == "gecko_tickers":
-                    data = lib.Generic().traded_tickers(pairs_days=7)
-
-                if self.name == "generic_tickers":
-                    data = lib.Generic().traded_tickers()
-                    memcache.set_tickers(data)
-
                 if self.name == "generic_last_traded":
                     data = lib.Generic().last_traded()
                     memcache.set_last_traded(data)
 
+                if self.name == "generic_adex_fortnite":
+                    data = lib.StatsAPI().adex_fortnite()
+                    memcache.set_adex_fortnite(data)
 
-                if self.name == "markets_pairs":
-                    data = lib.Markets().pairs(days=MARKETS_PAIRS_DAYS)
+                if self.name == "generic_summary":
+                    data = lib.StatsAPI().pair_summaries()
+                    memcache.set_summary(data)
 
-                if self.name == "markets_tickers":
-                    data = lib.Markets().tickers(pairs_days=MARKETS_PAIRS_DAYS)
+                if self.name == "generic_tickers":
+                    data = lib.Generic().tickers()
+                    memcache.set_tickers(data)
 
             if data is not None:
                 if validate.loop_data(data, self):
                     data = {"last_updated": int(cron.now_utc()), "data": data}
                     r = self.files.save_json(self.filename, data)
                     msg = f"{self.filename} saved."
-                    return default.result(data=data, msg=r["msg"], loglevel=r["loglevel"])
+                    return default.result(
+                        data=data, msg=r["msg"], loglevel=r["loglevel"]
+                    )
                 else:
-                    logger.warning(f"failed to save {self.name}, data failed validation: {data}")
+                    logger.warning(
+                        f"failed to save {self.name}, data failed validation: {data}"
+                    )
             else:
-                logger.warning(f"failed to save {self.name}, data is 'None'")                
+                logger.warning(f"failed to save {self.name}, data is 'None'")
 
         except Exception as e:  # pragma: no cover
             msg = f"{self.filename} Failed. {type(e)}: {e}"
-            return default.error(e)
+            return default.error(e, msg=msg)

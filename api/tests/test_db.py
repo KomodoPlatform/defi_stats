@@ -2,10 +2,7 @@
 import util.cron as cron
 import sqlite3
 from decimal import Decimal
-from db.sqlitedb import (
-    get_sqlite_db,
-    get_sqlite_db_paths
-)
+from db.sqlitedb import get_sqlite_db, get_sqlite_db_paths
 from db.sqlitedb_merge import (
     list_sqlite_dbs,
     compare_uuid_fields,
@@ -22,6 +19,7 @@ from util.transform import format_10f
 
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 import util.validate as validate
+import util.memcache as memcache
 
 now = int(cron.now_utc())
 hour_ago = now - 3600
@@ -49,25 +47,27 @@ def test_get_pairs(setup_swaps_db_data):
 def test_get_swaps_for_pair(setup_swaps_db_data):
     DB = setup_swaps_db_data
 
-    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago)
-    assert len(swaps["ALL"]) == 0
-
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, success_only=False)
-    assert len(swaps["ALL"]) == 1
-    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago)
-    assert len(swaps1["ALL"]) == 3
-    assert swaps1["ALL"][1]["trade_type"] == "buy"
-    assert swaps1["ALL"][2]["trade_type"] == "sell"
+    logger.calc(swaps)
+    assert len(swaps) == 1
+    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all=True)
+    assert len(swaps1) == 3
+    assert swaps1[1]["trade_type"] == "buy"
+    assert swaps1[2]["trade_type"] == "sell"
 
     # No inversion here, that happens later
-    swaps2 = DB.get_swaps_for_pair("KMD", "LTC", start_time=day_ago)
-    assert len(swaps1["ALL"]) == len(swaps2["ALL"])
-    assert len(swaps2["ALL"]) == 3
-    assert swaps2["ALL"][2]["trade_type"] == "sell"
+    swaps2 = DB.get_swaps_for_pair("KMD", "LTC", start_time=day_ago, all=True)
+    assert len(swaps1) == len(swaps2)
+    assert len(swaps2) == 3
+    assert swaps2[2]["trade_type"] == "sell"
 
-    swaps = DB.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago)
-    assert len(swaps["ALL"]) == 3
-    assert swaps["ALL"][0]["trade_type"] == "sell"
+    swaps = DB.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago, all=True)
+    assert len(swaps) == 3
+    assert swaps[0]["trade_type"] == "sell"
+
+    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, all=True)
+    logger.calc(swaps)
+    assert len(swaps) == 0
 
 
 def test_get_swap(setup_swaps_db_data):
@@ -138,20 +138,26 @@ def test_swap_counts(setup_swaps_db_data):
 def test_get_swaps_for_coin(setup_swaps_db_data):
     DB = setup_swaps_db_data
     r = DB.get_swaps_for_coin("KMD")
-    assert len(r["KMD"]) == 5
-
-    r = DB.get_swaps_for_coin("KMD")
-    assert len(r["ALL"]) == 7
-
-    r = DB.get_swaps_for_coin("KMD-BEP20")
-    assert len(r["ALL"]) == 7
-    assert len(r["KMD"]) == 5
-    assert len(r["KMD-BEP20"]) == 2
+    assert len(r) == 5
+    r = DB.get_swaps_for_coin("KMD-BEP20", all=False)
+    assert len(r) == 2
+    r = DB.get_swaps_for_coin("KMD", all=True)
+    assert len(r) == 7
+    r = DB.get_swaps_for_coin("KMD-BEP20", all=True)
+    assert len(r) == 7
 
     r = DB.get_swaps_for_coin("LTC")
-    assert len(r["LTC"]) == 2
-    assert len(r["LTC-segwit"]) == 2
-    assert len(r["ALL"]) == 4
+    assert len(r) == 2
+    r = DB.get_swaps_for_coin("LTC-segwit")
+    assert len(r) == 2
+    r = DB.get_swaps_for_coin("LTC-segwit", all=True)
+    assert len(r) == 4
+    r = DB.get_swaps_for_coin("LTC", all=True)
+    assert len(r) == 4
+    r = DB.get_swaps_for_coin("LTC", merge_segwit=True)
+    assert len(r) == 4
+    r = DB.get_swaps_for_coin("LTC-segwit", merge_segwit=True)
+    assert len(r) == 4
 
 
 def test_coin_trade_volumes_usd(setup_swaps_db_data):

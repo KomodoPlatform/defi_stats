@@ -60,7 +60,7 @@ services:
     restart: always
     depends_on:
       - pgsqldb
-    
+
   pgsqldb:
     container_name: pgsqldb
     image: postgres:12.17

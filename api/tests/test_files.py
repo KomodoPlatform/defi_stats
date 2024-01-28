@@ -37,7 +37,7 @@ def test_save_json():
 
     data = [{"hello": "world"}]
     resp = files.save_json(fn, data)
-    assert resp["loglevel"] == "save"
+    assert resp["loglevel"] == "saved"
 
 
 def test_load_jsonfile():

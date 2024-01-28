@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 import threading
 import requests
-from const import API_ROOT_PATH, MM2_RPC_PORTS, MM2_RPC_HOSTS, IS_TESTING
+from const import MM2_RPC_PORTS, MM2_RPC_HOSTS
 from util.files import Files
 from util.logger import logger, timed
 import util.defaults as default
@@ -44,20 +43,14 @@ class DexAPI:
     def orderbook_rpc(self, base: str, quote: str, no_cache: bool = False) -> dict:
         try:
             if base != quote:
-                if IS_TESTING:
-                    orderbook = (
-                        f"{API_ROOT_PATH}/tests/fixtures/orderbook/{base}_{quote}.json"
-                    )
-                    data = self.files.load_jsonfile(orderbook)
-                    if data is None:
-                        data = template.orderbook(pair_str=f"{base}_{quote}")
-                        msg = f"Using fixture for {base}_{quote}"
-                    return default.result(data=data, msg=msg, loglevel="loop")
+
                 if not no_cache:
+                    # Get from cache if avialable, otherwise continue
                     cached = memcache.get(f"orderbook_{base}_{quote}")
                     if cached is not None:
                         msg = f"Using cache for {base}_{quote}"
                         return default.result(data=cached, msg=msg, loglevel="loop")
+
                 params = {
                     "mmrpc": "2.0",
                     "method": "orderbook",
@@ -66,7 +59,7 @@ class DexAPI:
                 }
                 resp = self.api(params)
                 if "error" in resp:
-                    msg = f"{resp['error']}: Returning template"
+                    msg = f"{resp}: Returning template"
                     resp = template.orderbook(f"{base}_{quote}")
                 msg = f"Returning {base}_{quote} orderbook from mm2"
             else:
@@ -77,26 +70,17 @@ class DexAPI:
         except Exception as e:  # pragma: no cover
             data = template.orderbook(pair_str=f"{base}_{quote}")
             msg = f"orderbook rpc failed for {base}_{quote}: {e} {type(e)}. Returning template."
-            return default.result(data=data, msg=msg, loglevel="warning", ignore_until=0)            
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
 
 @timed
 def get_orderbook(base, quote):
     try:
         pair = f"{base}_{quote}"
-        data = template.orderbook(pair)
-        dexapi = DexAPI()
-        x = dexapi.orderbook_rpc(base, quote)
-        for i in ["asks", "bids"]:
-            items = [
-                {
-                    "price": transform.format_10f(1 / Decimal(j["price"]["decimal"])),
-                    "volume": j["base_max_volume"]["decimal"],
-                }
-                for j in x[i]
-            ]
-            x[i] = items
-            data[i] += x[i]
+        orderbook_data = DexAPI().orderbook_rpc(base, quote)
+        data = transform.label_bids_asks(orderbook_data, pair)
         # Store orderbooks in memory for up to 30 mins
         cache_name = f"orderbook_{pair}"
         memcache.update(cache_name, data, 1800)

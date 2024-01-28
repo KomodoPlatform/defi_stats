@@ -30,8 +30,7 @@ import util.validate as validate
 class SqliteMerge:
     def __init__(self):
         self.init_dbs()
-        
-    
+
     @timed
     def import_source_databases(self):  # pragma: no cover
         self.backup_local_dbs()
@@ -379,11 +378,11 @@ def compare_uuid_fields(swap1, swap2):
     except Exception as e:  # pragma: no cover
         return default.error(e)
 
+
 def list_sqlite_dbs(folder):
     db_list = [i for i in os.listdir(folder) if i.endswith(".db")]
     db_list.sort()
     return db_list
-
 
 
 if __name__ == "__main__":  # pragma: no cover

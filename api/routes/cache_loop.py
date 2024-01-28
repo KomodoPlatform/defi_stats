@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-import requests
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE, RESET_TABLE
 import db
 from lib.cache import Cache, CacheItem
 import util.defaults as default
-from util.logger import timed, logger
+from util.logger import logger, timed
 
 router = APIRouter()
 
@@ -15,7 +14,7 @@ router = APIRouter()
 @repeat_every(seconds=300)
 @timed
 def check_cache():  # pragma: no cover
-    '''Checks when cache items last updated'''
+    """Checks when cache items last updated"""
     try:
         cache = Cache()
         cache.updated_since(True)
@@ -72,7 +71,8 @@ def fixer_rates():  # pragma: no cover
     except Exception as e:
         return default.error(e)
     msg = "Fixer rates update loop complete!"
-    return default.result( msg=msg, loglevel="loop")
+    return default.result(msg=msg, loglevel="loop")
+
 
 # Generic Loops
 @router.on_event("startup")
@@ -125,57 +125,26 @@ def populate_pgsqldb_loop():
     # updates last 24 hours swaps
     db.SqlSource().populate_pgsqldb()
 
-'''
-
-
-
-
-
-
-
-
-
-
-# Derived Cache data for Gecko endpoints
-
 
 @router.on_event("startup")
 @repeat_every(seconds=120)
 @timed
-def gecko_tickers():
+def generic_adex_fortnite():
     try:
-        CacheItem(name="gecko_tickers").save()
-    except Exception as e:
-        return default.error(e)
-    msg = "Gecko tickers (ALL) loop complete!"
-    return default.result(msg=msg, loglevel="loop")
-
-
-# Derived Cache data for Markets endpoints
-
-
-# Stats API Loops
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
-def statsapi_atomicdex_fortnight():
-    try:
-        CacheItem(name="adex_fortnite").save()
+        CacheItem(name="generic_adex_fortnite").save()
     except Exception as e:
         logger.warning(default.error(e))
-    msg = "Stats API Adex fortnight loop complete!"
+    msg = "Adex fortnight loop complete!"
     return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
 @repeat_every(seconds=120)
 @timed
-def statsapi_summary():
+def generic_summary():
     try:
-        CacheItem(name="statsapi_summary").save()
+        CacheItem(name="generic_summary").save()
     except Exception as e:
         return default.error(e)
-    msg = "Stats API summary loop complete!"
+    msg = "Summary loop complete!"
     return default.result(msg=msg, loglevel="loop")
-
-'''

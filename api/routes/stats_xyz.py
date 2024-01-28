@@ -20,7 +20,6 @@ clean = transform.Clean()
 router = APIRouter()
 
 
-
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
@@ -141,11 +140,11 @@ def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
         for i in resp["data"]:
-            if coin in [i["base_currency"], i["target_currency"]]:
-                if i["last_trade"] == 0:
+            if coin in [i["base_currency"], i["quote_currency"]]:
+                if i["last_swap_time"] == 0:
                     if i["ticker_id"] in last_traded:
-                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
-                        i["last_price"] = last_traded[i["ticker_id"]]["last_swap"]
+                        i["last_swap_time"] = last_traded[i["ticker_id"]]["last_swap"]
+                        i["last_swap_price"] = last_traded[i["ticker_id"]]["last_swap"]
 
                 new_data.append(transform.to_summary_for_ticker_xyz_item(i))
 
@@ -168,7 +167,7 @@ def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
         data = cache.get_item(name="markets_tickers").data
         trades = 0
         for i in data["data"]:
-            if ticker in [i["base_currency"], i["target_currency"]]:
+            if ticker in [i["base_currency"], i["quote_currency"]]:
                 trades += int(i["trades_24hr"])
         return {"ticker": ticker, "swaps_amount_24h": trades}
     except Exception as e:  # pragma: no cover
@@ -203,7 +202,7 @@ def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
-            if ticker in [i["base_currency"], i["target_currency"]]:
+            if ticker in [i["base_currency"], i["quote_currency"]]:
                 resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
@@ -222,7 +221,7 @@ def tickers_summary(netid: NetId = NetId.ALL):
         resp = {}
         for i in data["data"]:
             base = i["base_currency"]
-            rel = i["target_currency"]
+            rel = i["quote_currency"]
             for ticker in [base, rel]:
                 if ticker not in resp:
                     resp.update({ticker: {"trades_24h": 0, "volume_24h": 0}})
@@ -230,7 +229,7 @@ def tickers_summary(netid: NetId = NetId.ALL):
                 if ticker == base:
                     resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
                 elif ticker == rel:
-                    resp[ticker]["volume_24h"] += Decimal(i["target_volume"])
+                    resp[ticker]["volume_24h"] += Decimal(i["quote_volume"])
         resp = clean.decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())

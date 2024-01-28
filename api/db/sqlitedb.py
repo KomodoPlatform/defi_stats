@@ -14,10 +14,9 @@ from util.enums import TradeType, TablesEnum, NetId, ColumnsEnum
 from util.exceptions import InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import merge, sortdata
+from util.transform import sortdata
 import util.defaults as default
 import util.helper as helper
-import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
 
@@ -290,7 +289,7 @@ class SqliteQuery:  # pragma: no cover
                 sum_taker = item["sum_taker_traded"]
                 last_taker_amount = item["last_taker_amount"]
                 last_maker_amount = item["last_maker_amount"]
-                item.update({"last_price": transform.format_10f(last_price)})
+                item.update({"last_swap_price": transform.format_10f(last_price)})
                 swap_count = item["swap_count"]
                 last_uuid = item["last_swap_uuid"]
                 last_swap = item["last_swap"]
@@ -434,7 +433,6 @@ class SqliteQuery:  # pragma: no cover
         """
         try:
             coin = coin.split("-")[0]
-            coins_config = memcache.get_coins_config()
             variants = helper.get_coin_variants(coin)
             if end_time == 0:
                 end_time = int(cron.now_utc())
@@ -521,7 +519,6 @@ class SqliteQuery:  # pragma: no cover
         If no timestamp is given, returns all swaps for the coin.
         """
         try:
-            coins_config = memcache.get_coins_config()
             resp = {}
             coin = coin.split("-")[0]
             variants = helper.get_coin_variants(coin)

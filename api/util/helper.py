@@ -17,12 +17,13 @@ def get_mm2_rpc_port(netid=MM2_NETID):
 
 
 def get_netid(filename):
-    if '7777' in filename:
+    if "7777" in filename:
         return "7777"
     if filename.startswith("seed"):
         return "7777"
     else:
         return "8762"
+
 
 def get_netid_filename(filename, netid):
     try:
@@ -35,7 +36,7 @@ def get_netid_filename(filename, netid):
 def get_chunks(data, chunk_length):
     try:
         for i in range(0, len(data), chunk_length):
-            yield data[i : i + chunk_length]
+            yield data[i: i + chunk_length]
     except Exception as e:  # pragma: no cover
         return default.error(e)
 
@@ -135,7 +136,6 @@ def get_swaps_volumes(swaps_for_pair, is_reversed=False):
     except Exception as e:  # pragma: no cover
         msg = "get_swaps_volumes failed!"
         return default.error(e, msg)
-
 
 
 def get_coin_variants(coin, segwit_only=False):

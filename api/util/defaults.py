@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import util.cron as cron
 from util.exceptions import NoDefaultForKeyError
 from const import DEXAPI_8762_HOST, IS_TESTING
@@ -52,7 +52,7 @@ def default_val(key: str):
     raise NoDefaultForKeyError(f"No default value for {key}!")  # pragma: no cover
 
 
-def params(object: object(), kwargs: dict(), options: List[str] = list()) -> None:
+def params(object, kwargs: Dict, options: List[str] = list()) -> None:
     # Set the defaults from object options if not already set
     try:
         if IS_TESTING:

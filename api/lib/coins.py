@@ -4,10 +4,8 @@ from decimal import Decimal
 import lib
 from util.logger import logger
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
-import util.transform as transform
 
 
 @dataclass
@@ -172,11 +170,11 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
 
 
 def get_segwit_coins():
-    data = memcache.get('coins_with_segwit')
+    data = memcache.get("coins_with_segwit")
     if data is None:
         coins = Coins()
         data = [i.coin for i in coins.with_segwit]
-        memcache.update('coins_with_segwit', data, 86400)
+        memcache.update("coins_with_segwit", data, 86400)
     return data
 
 

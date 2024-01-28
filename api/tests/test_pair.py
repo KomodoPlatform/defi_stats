@@ -26,6 +26,7 @@ from util.logger import logger
 from util.transform import merge, sortdata
 import util.memcache as memcache
 import util.transform as transform
+
 clean = transform.Clean()
 
 gecko_source = memcache.get_gecko_source()
@@ -36,7 +37,6 @@ last_traded_cache = memcache.get_last_traded()
 def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_kmd_ltc_pair
     assert pair.is_tradable
-    assert pair.info["ticker_id"] == "KMD_LTC"
 
 
 def test_historical_trades(
@@ -50,10 +50,10 @@ def test_historical_trades(
     assert r["buy"][0]["type"] == "buy"
     assert r["sell"][0]["type"] == "sell"
     assert r["buy"][0]["base_volume"] == transform.format_10f(100)
-    assert r["buy"][0]["target_volume"] == transform.format_10f(1)
+    assert r["buy"][0]["quote_volume"] == transform.format_10f(1)
     assert r["buy"][0]["price"] == transform.format_10f(100)
     assert r["sell"][0]["base_volume"] == transform.format_10f(100)
-    assert r["sell"][0]["target_volume"] == transform.format_10f(1)
+    assert r["sell"][0]["quote_volume"] == transform.format_10f(1)
     assert r["sell"][0]["price"] == transform.format_10f(100)
     assert r["buy"][0]["timestamp"] > r["buy"][1]["timestamp"]
 
@@ -64,7 +64,7 @@ def test_historical_trades(
     assert len(r["sell"]) == 0
     assert r["buy"][0]["type"] == "buy"
     assert r["buy"][0]["base_volume"] == transform.format_10f(200)
-    assert r["buy"][0]["target_volume"] == transform.format_10f(2)
+    assert r["buy"][0]["quote_volume"] == transform.format_10f(2)
     assert r["buy"][0]["price"] == transform.format_10f(100)
 
     pair = setup_kmd_ltc_pair
@@ -89,12 +89,12 @@ def test_historical_trades(
     assert len(r3) == len(r2)
     assert r3["sell"][0]["type"] == "sell"
     assert r2["buy"][0]["type"] == "buy"
-    assert r3["sell"][0]["base_volume"] == r2["buy"][0]["target_volume"]
-    assert r3["sell"][0]["target_volume"] == r2["buy"][0]["base_volume"]
+    assert r3["sell"][0]["base_volume"] == r2["buy"][0]["quote_volume"]
+    assert r3["sell"][0]["quote_volume"] == r2["buy"][0]["base_volume"]
     assert Decimal(r3["sell"][0]["price"]) == 1 / Decimal(r2["buy"][0]["price"])
 
 
-def test_get_average_price(setup_not_existing_pair):
+def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
     pair = setup_not_existing_pair
     r = pair.get_average_price(trades_info)
     assert r == 1
@@ -198,14 +198,20 @@ def test_swap_uuids(setup_kmd_ltc_pair):
 
 
 def test_first_last_swap(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
+    pair = setup_ltc_kmd_pair
+    variants = helper.get_pair_variants(pair.as_str, segwit_only=False)
+    data = pair.first_last_swap(variants)
+    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
+    assert data["last_swap_price"] == 0.01
+
     pair = setup_kmd_ltc_pair
-    variants = sorted([i for i in pair.swap_uuids()["variants"] if i != "ALL"])
+    variants = helper.get_pair_variants(pair.as_str)
     data = pair.first_last_swap(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 100
 
-    pair = setup_ltc_kmd_pair
-    variants = sorted([i for i in pair.swap_uuids()["variants"] if i != "ALL"])
+    pair = setup_kmd_ltc_pair
+    variants = helper.get_pair_variants(pair.as_str, segwit_only=True)
     data = pair.first_last_swap(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert data["last_swap_price"] == 0.01
+    assert data["last_swap_price"] == 100

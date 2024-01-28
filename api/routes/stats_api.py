@@ -16,7 +16,7 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
-from util.transform import merge, sortdata
+from util.transform import sortdata
 import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
@@ -72,7 +72,10 @@ def atomicdex_fortnight():
 def summary():
     try:
         tickers_data = transform.tickers_deplatform(memcache.get_tickers())
-        tickers = [transform.ticker_to_statsapi_summary(tickers_data['data'][i]) for i in tickers_data['data']]
+        tickers = [
+            transform.ticker_to_statsapi_summary(tickers_data["data"][i])
+            for i in tickers_data["data"]
+        ]
         return tickers
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
@@ -145,7 +148,7 @@ def trades(
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-        )['ALL']
+        )["ALL"]
         resp = data["buy"] + data["sell"]
         resp = sortdata.sort_dict_list(resp, "timestamp", True)
         return resp

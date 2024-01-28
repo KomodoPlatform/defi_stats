@@ -18,7 +18,6 @@ memcache.set_gecko_source(data)
 data = CacheItem("generic_last_traded").data
 memcache.set_last_traded(data)
 
-
 data = CacheItem("generic_tickers").data
 memcache.set_tickers(data)
 
@@ -26,4 +25,4 @@ data = CacheItem("adex_fortnite").data
 memcache.set_adex_fortnite(data)
 
 data = CacheItem("statsapi_summary").data
-memcache.set_statsapi_summary(data)
+memcache.set_summary(data)

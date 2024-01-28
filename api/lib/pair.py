@@ -8,13 +8,12 @@ import lib
 from lib.coins import get_gecko_price, get_gecko_mcap, get_tradable_coins
 from util.enums import TradeType
 from util.logger import logger, timed
-from util.transform import merge, sortdata
+from util.transform import sortdata
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
-
 
 
 class Pair:  # pragma: no cover
@@ -171,12 +170,6 @@ class Pair:  # pragma: no cover
                     "sum_quote_volume_sells": transform.sum_json_key_10f(
                         sells, "quote_volume"
                     ),
-                    "sum_quote_volume_buys": transform.sum_json_key_10f(
-                        buys, "quote_volume"
-                    ),
-                    "sum_quote_volume_sells": transform.sum_json_key_10f(
-                        sells, "quote_volume"
-                    ),
                     "average_price": transform.format_10f(average_price),
                     "buy": buys,
                     "sell": sells,
@@ -196,9 +189,10 @@ class Pair:  # pragma: no cover
     @timed
     def get_average_price(self, trades_info):
         try:
-            if len(trades_info) > 0:
-                data = transform.sum_json_key(trades_info, "price") / len(trades_info)
             data = 0
+            if len(trades_info) > 0:
+                logger.info(trades_info)
+                data = transform.sum_json_key(trades_info, "price") / len(trades_info)
             return default.result(
                 data=data,
                 msg=f"get_average_price for {self.as_str} complete",
@@ -296,7 +290,10 @@ class Pair:  # pragma: no cover
     def first_last_swap(self, variants: List):
         try:
             data = template.first_last_swap()
+            logger.loop(self.last_traded_cache)
             for variant in variants:
+                logger.loop(self.last_traded_cache.keys())
+                logger.calc(variant)
                 x = template.first_last_swap()
 
                 if variant in self.last_traded_cache:
@@ -305,34 +302,45 @@ class Pair:  # pragma: no cover
                     transform.invert_pair(variant) in self.last_traded_cache
                 ):  # pragma: no cover
                     x = self.last_traded_cache[transform.invert_pair(variant)]
+                logger.info(f"{self.as_str} is_reversed: {self.is_reversed}")
+                logger.info(f"{self.as_str} x: {x}")
+                logger.info(f"{self.as_str} data: {data}")
 
                 if x["last_swap_time"] > data["last_swap_time"]:
                     data["last_swap_time"] = x["last_swap_time"]
                     data["last_swap_price"] = x["last_swap_price"]
                     data["last_swap_uuid"] = x["last_swap_uuid"]
-                    if self.is_reversed:
+                    if self.is_reversed and data["last_swap_price"] != 0:
                         data["last_swap_price"] = 1 / data["last_swap_price"]
 
-                if data["first_swap_time"] == 0:
-                    data["first_swap_time"] = x["first_swap_time"]
-                    data["first_swap_price"] = x["first_swap_price"]
-                    data["first_swap_uuid"] = x["first_swap_uuid"]
-                    if self.is_reversed:
-                        data["first_swap_price"] = 1 / data["first_swap_price"]
+                logger.merge(f"{self.as_str} data: {data}")
 
-                if x["first_swap_time"] < data["first_swap_time"]:
+                if data["first_swap_time"] == 0 and x["first_swap_time"] != 0:
                     data["first_swap_time"] = x["first_swap_time"]
                     data["first_swap_price"] = x["first_swap_price"]
                     data["first_swap_uuid"] = x["first_swap_uuid"]
-                    if self.is_reversed:
+                    if self.is_reversed and data["first_swap_price"] != 0:
                         data["first_swap_price"] = 1 / data["first_swap_price"]
+                    logger.query(f"{self.as_str} data: {data}")
+
+                elif x["first_swap_time"] < data["first_swap_time"]:
+                    data["first_swap_time"] = x["first_swap_time"]
+                    data["first_swap_price"] = x["first_swap_price"]
+                    data["first_swap_uuid"] = x["first_swap_uuid"]
+                    if self.is_reversed and data["first_swap_price"] != 0:
+                        data["first_swap_price"] = 1 / data["first_swap_price"]
+                    logger.dexrpc(f"{self.as_str} data: {data}")
+                logger.calc(f"{self.as_str} data: {data}")
+            logger.loop(f"{self.as_str} data: {data}")
 
             msg = f"Got first and last swap for {self.as_str}"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
         except Exception as e:  # pragma: no cover
             data = template.first_last_swap()
             msg = f"Returning template for {self.as_str} ({e})"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
     @timed
     def get_liquidity(self, orderbook_data):
@@ -398,7 +406,7 @@ class Pair:  # pragma: no cover
                         f"highest_price_{suffix}"
                     ],
                     f"lowest_price_{suffix}": vol_price_data[f"lowest_price_{suffix}"],
-                    f"combined_volume_usd": vol_price_data["combined_volume_usd"],
+                    "combined_volume_usd": vol_price_data["combined_volume_usd"],
                     "base_volume_usd": vol_price_data["base_volume_usd"],
                     "quote_volume_usd": vol_price_data["quote_volume_usd"],
                     f"price_change_pct_{suffix}": vol_price_data[
@@ -441,7 +449,7 @@ class Pair:  # pragma: no cover
                 for i in swaps_for_pair
             ]
         except Exception as e:  # pragma: no cover
-            msg = f"get_swap_prices for {self.as_str} failed!"
+            msg = f"get_swap_prices for {self.as_str} failed! {e}"
             return default.result(data=data, msg=msg, loglevel="warning")
         msg = f"Completed get_swap_prices info for {self.as_str}"
         return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
@@ -468,7 +476,7 @@ class Pair:  # pragma: no cover
             )
         except Exception as e:  # pragma: no cover
             data = []
-            msg = f"{self.as_str} pair_swaps failed!"
+            msg = f"{self.as_str} pair_swaps failed! {e}"
             return default.result(data=data, msg=msg, loglevel="warning")
         msg = f"Completed pair_swaps for {self.as_str}"
         return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
@@ -497,7 +505,7 @@ class Pair:  # pragma: no cover
 
         except Exception as e:  # pragma: no cover
             data = {"uuids": [], "variants": [self.as_str]}
-            msg = f"{self.as_str} swap_uuids failed!"
+            msg = f"{self.as_str} swap_uuids failed! {e}"
             return default.result(data=data, msg=msg, loglevel="warning")
         msg = f"Completed swap_uuids for {self.as_str}"
         return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
@@ -513,7 +521,7 @@ def get_all_coin_pairs(coin, priced_coins):
 
     except Exception as e:  # pragma: no cover
         data = []
-        msg = f"{coin} get_all_coin_pairs failed!"
+        msg = f"{coin} get_all_coin_pairs failed! {e}"
         return default.result(data=data, msg=msg, loglevel="warning")
     msg = f"Completed get_all_coin_pairs for {coin}"
     return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)

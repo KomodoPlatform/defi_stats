@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Dict, List
 
+
 # /api/v3/tickers/summary
 class TickersSummaryItem(BaseModel):
     ticker_id: str = "XXX_YYY"

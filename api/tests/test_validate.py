@@ -15,7 +15,6 @@ coins_config = memcache.get_coins_config()
 last_traded_cache = memcache.get_last_traded()
 
 
-
 def test_invert_pair(
     setup_invert_pair_kmd_ltc,
 ):

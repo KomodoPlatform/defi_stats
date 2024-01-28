@@ -4,6 +4,7 @@ import requests
 from const import API_ROOT_PATH, IS_TESTING
 from util.logger import timed, logger
 import util.defaults as default
+import util.memcache as memcache
 import util.validate as validate
 
 
@@ -18,27 +19,26 @@ class Files:
             self.bar = f"{folder}/bar.json"
         else:
             folder = f"{API_ROOT_PATH}/cache"
-        # For Rates endpoints
-        self.fixer_rates = f"{folder}/rates/fixer_rates.json"
+
         # Coins repo data
         self.coins = f"{folder}/coins/coins.json"
         self.coins_config = f"{folder}/coins/coins_config.json"
-        # For Stats API endpoints
-        self.adex_fortnite = f"{folder}/stats_api/adex_fortnite.json"
-        self.statsapi_summary = f"{folder}/stats_api/summary.json"
+
+        # For Rates endpoints
+        self.fixer_rates = f"{folder}/rates/fixer_rates.json"
+
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source.json"
-        self.gecko_tickers = f"{folder}/gecko/tickers.json"
-        # For Markets endpoints
-        self.markets_tickers = f"{folder}/markets/tickers.json"
+
+        # For Generic Cache
+        self.generic_adex_fortnite = f"{folder}/generic/adex_fortnite.json"
+        self.generic_last_traded = f"{folder}/generic/last_traded.json"
+        self.generic_summary = f"{folder}/generic/summary.json"
+        self.generic_tickers = f"{folder}/generic/tickers.json"
+
         # For Prices endpoints
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
-        # For Generic Cache
-        self.generic_last_traded = f"{folder}/generic/last_traded.json"
-
-
-        self.generic_tickers = f"{folder}/generic/tickers.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)
@@ -86,7 +86,8 @@ class Files:
                     return json.load(f)
             except Exception as e:  # pragma: no cover
                 error = f"Error loading {path}: {e}"
-                logger.warning(error)
+                if memcache.get('testing') is None:
+                    logger.warning(error)
             i += 1
             time.sleep(0.1)
         return None

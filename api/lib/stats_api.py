@@ -2,12 +2,11 @@
 import db
 from lib.pair import Pair
 from util.logger import logger
-from util.transform import merge, sortdata
+from util.transform import sortdata, clean
 import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
-clean = transform.Clean()
 
 
 class StatsAPI:  # pragma: no cover
@@ -22,36 +21,11 @@ class StatsAPI:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
 
     def top_pairs(self, summaries: list):
-        try:
-            for i in summaries:
-                i["trading_pair"] = transform.strip_pair_platforms(i["trading_pair"])
-
-            top_pairs_by_value = {
-                i["trading_pair"]: i["pair_trade_value_usd"]
-                for i in sortdata.get_top_items(summaries, "pair_trade_value_usd", 5)
-            }
-            top_pairs_by_liquidity = {
-                i["trading_pair"]: i["pair_liquidity_usd"]
-                for i in sortdata.get_top_items(summaries, "pair_liquidity_usd", 5)
-            }
-            top_pairs_by_swaps = {
-                i["trading_pair"]: i["pair_swaps_count"]
-                for i in sortdata.get_top_items(summaries, "pair_swaps_count", 5)
-            }
-            return {
-                "by_value_traded_usd": clean.decimal_dict(top_pairs_by_value),
-                "by_current_liquidity_usd": clean.decimal_dict(
-                    top_pairs_by_liquidity
-                ),
-                "by_swaps_count": clean.decimal_dict(top_pairs_by_swaps),
-            }
-        except Exception as e:
-            logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
-            return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
+        # TODO: Might need some transformation there
+        return sortdata.top_pairs(summaries=summaries)
 
     def pair_summaries(self, days: int = 1, pairs_days: int = 7, as_dict: bool = False):
         try:
-            
             last_traded_cache = memcache.get_last_traded()
             if days > pairs_days:
                 pairs_days = days
@@ -63,16 +37,16 @@ class StatsAPI:  # pragma: no cover
             else:
                 alt_suffix = suffix
             ticker_infos = [
-                Pair(pair_str=i, last_traded_cache=last_traded_cache).ticker_info(days, all=True)
+                Pair(pair_str=i, last_traded_cache=last_traded_cache).ticker_info(
+                    days, all=True
+                )
                 for i in pairs
             ]
-            data = [
-                transform.ticker_to_statsapi_summary(i) for i in ticker_infos
-            ]
+            data = [transform.ticker_to_statsapi_summary(i) for i in ticker_infos]
             # Drop coin platforms and merge data
             resp_dict = {}
             for i in data:
-                pair = i["trading_pair"]
+                pair = i["ticker_id"]
                 clean_pair = transform.strip_pair_platforms(pair)
                 clean_pair_summary_item = transform.deplatform_pair_summary_item(i)
                 if clean_pair not in resp_dict:
@@ -165,8 +139,8 @@ class StatsAPI:  # pragma: no cover
                     transform.update_if_greater(
                         resp_dict[clean_pair],
                         clean_pair_summary_item,
-                        "last_trade",
-                        "last_price",
+                        "last_swap_time",
+                        "last_swap_price",
                     )
                 resp_dict[clean_pair][f"price_change_{alt_suffix}"] = (
                     resp_dict[clean_pair]["newest_price"]

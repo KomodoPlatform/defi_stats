@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import util.cron as cron
 import util.helper as helper
-import util.transform as transform
 
 
 def last_price_for_pair():  # pragma: no cover
@@ -55,7 +54,7 @@ def orderbook(pair_str):
         "total_asks_base_usd": 0,
         "total_bids_quote_usd": 0,
         "trades_24hr": 0,
-        "volume_usd_24hr": 0,
+        "combined_volume_usd": 0,
     }
 
 
@@ -101,7 +100,7 @@ def ticker_info(suffix, base, quote):
         "base_currency": base,
         "base_volume": 0,
         "base_usd_price": 0,
-        "target_currency": quote,
+        "quote_currency": quote,
         "base_volume": 0,
         "quote_usd_price": 0,
         "last_swap_price": 0,
@@ -174,7 +173,7 @@ def last_trade_info():
         "sum_taker_traded": 0,
         "sum_maker_traded": 0,
         "last_swap": 0,
-        "last_price": 0,
+        "last_swap_price": 0,
         "last_swap_uuid": "",
         "last_taker_amount": 0,
         "last_maker_amount": 0,

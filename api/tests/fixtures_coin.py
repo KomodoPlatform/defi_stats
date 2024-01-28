@@ -35,6 +35,11 @@ def setup_coin():
 
 
 @pytest.fixture
+def setup_coin_kmd():
+    yield Coin(coin="KMD")
+
+
+@pytest.fixture
 def setup_coin_ltc_segwit():
     yield Coin(coin="LTC-segwit")
 

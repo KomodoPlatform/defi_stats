@@ -6,7 +6,7 @@ from lib.coins import get_pairs_info, get_gecko_price, get_kmd_pairs
 
 from util.exceptions import DataStructureError
 from util.logger import timed, logger
-from util.transform import merge, sortdata
+from util.transform import sortdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -33,8 +33,6 @@ class Generic:  # pragma: no cover
         """Returns basic pair info and tags as priced/unpriced"""
         try:
             pairs = self.pg_query.get_pairs(days=days)
-            # We dont merge these down until later, where required.
-            # pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
             if "error" in pairs:  # pragma: no cover
                 raise DataStructureError(
                     f"'get_pairs' returned an error: {pairs['error']}"
@@ -51,9 +49,7 @@ class Generic:  # pragma: no cover
                             first_last_swap = clean.decimal_dict(x)
                     i.update(first_last_swap)
                 msg = f"{len(pairs)} pairs traded in the last {days} days"
-                return default.result(
-                    data=resp, msg=msg, loglevel="loop"
-                )
+                return default.result(data=resp, msg=msg, loglevel="loop")
         except Exception as e:  # pragma: no cover
             msg = "pairs failed!"
             return default.error(e, msg)
@@ -66,7 +62,6 @@ class Generic:  # pragma: no cover
         all: bool = False,
     ):
         try:
-            
             pair_tpl = helper.base_quote_from_pair(pair_str)
             if len(pair_tpl) != 2:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
@@ -80,35 +75,35 @@ class Generic:  # pragma: no cover
                         j[k] = transform.format_10f(Decimal(j[k]))
             data["bids"] = data["bids"][: int(depth)][::-1]
             data["asks"] = data["asks"][::-1][: int(depth)]
+            for i in [
+                "total_asks_base_vol",
+                "total_bids_base_vol",
+                "total_asks_quote_vol",
+                "total_bids_quote_vol",
+                "total_asks_base_usd",
+                "total_bids_quote_usd",
+                "liquidity_usd",
+                "combined_volume_usd",
+            ]:
+                data[i] = transform.format_10f(Decimal(data[i]))
+            return data
         except Exception as e:  # pragma: no cover
             err = {"error": f"Generic.orderbook: {e}"}
             logger.warning(err)
             return template.orderbook(pair_str)
-        for i in [
-            "total_asks_base_vol",
-            "total_bids_base_vol",
-            "total_asks_quote_vol",
-            "total_bids_quote_vol",
-            "total_asks_base_usd",
-            "total_bids_quote_usd",
-            "liquidity_usd",
-            "volume_usd_24hr",
-        ]:
-            data[i] = transform.format_10f(Decimal(data[i]))
-        return data
 
     @timed
-    def traded_tickers(self, trades_days: int = 1, pairs_days: int = 7):
+    def tickers(self, trades_days: int = 1, pairs_days: int = 7):
         try:
             last_traded_cache = memcache.get_last_traded()
             if last_traded_cache is None:
-                msg = "skipping traded_tickers, last_traded_cache is None"
-                return default.result(msg=msg, loglevel='warning', data=None)
+                msg = "skipping generic.tickers, last_traded_cache is None"
+                return default.result(msg=msg, loglevel="warning", data=None)
 
             coins_config = memcache.get_coins_config()
             if coins_config is None:
-                msg = "skipping traded_tickers, coins_config is None"
-                return default.result(msg=msg, loglevel='warning', data=None)
+                msg = "skipping generic.tickers, coins_config is None"
+                return default.result(msg=msg, loglevel="warning", data=None)
 
             suffix = transform.get_suffix(trades_days)
             ts = cron.now_utc() - pairs_days * 86400
@@ -116,10 +111,13 @@ class Generic:  # pragma: no cover
             logger.info(f"{len(last_traded_cache.keys())} pairs in last_traded_cache")
 
             # Filter out those older than requested time and
-            pairs = sorted([
-                i for i in last_traded_cache
-                if last_traded_cache[i]["last_swap_time"] > ts
-            ])
+            pairs = sorted(
+                [
+                    i
+                    for i in last_traded_cache
+                    if last_traded_cache[i]["last_swap_time"] > ts
+                ]
+            )
             logger.info(f"{len(pairs)} pairs in last 90 days")
             data = [
                 lib.Pair(
@@ -137,7 +135,7 @@ class Generic:  # pragma: no cover
                 "pairs_count": len(data),
                 "swaps_count": int(transform.sum_json_key(data, f"trades_{suffix}")),
                 "combined_volume_usd": transform.sum_json_key_10f(
-                    data, f"combined_volume_usd"
+                    data, "combined_volume_usd"
                 ),
                 "combined_liquidity_usd": transform.sum_json_key_10f(
                     data, "liquidity_in_usd"
@@ -148,7 +146,7 @@ class Generic:  # pragma: no cover
             msg += f" in last {pairs_days} days"
             return default.result(data, msg, loglevel="calc")
         except Exception as e:  # pragma: no cover
-            msg = "traded_tickers failed!"
+            msg = "tickers failed!"
             return default.error(e, msg)
 
     @timed
@@ -156,7 +154,7 @@ class Generic:  # pragma: no cover
         try:
             data = self.pg_query.pair_last_trade()
             pairs_dict = get_price_status_dict(data.keys())
-            
+
             for i in data:
                 data[i] = clean.decimal_dict(data[i])
                 if i in pairs_dict["priced_gecko"]:
@@ -168,7 +166,7 @@ class Generic:  # pragma: no cover
         except Exception as e:  # pragma: no cover
             msg = "pairs_last_traded failed!"
             return default.error(e, msg)
-        
+
 
 def get_price_status_dict(pairs):
     try:
@@ -190,7 +188,6 @@ def get_price_status_dict(pairs):
 @timed
 def get_pairs_status(pairs):
     pairs = list(set(pairs + get_kmd_pairs()))
-    logger.loop("get_pairs_status")
     pairs_dict = get_price_status_dict(pairs)
     priced_pairs = get_pairs_info(pairs_dict["priced_gecko"], True)
     unpriced_pairs = get_pairs_info(pairs_dict["unpriced"], False)

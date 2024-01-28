@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 from fastapi import APIRouter
 from util.logger import logger
 from models.tickers import TickersSummary

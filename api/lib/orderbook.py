@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
-from collections import OrderedDict
 from decimal import Decimal
 from typing import Dict
+from const import API_ROOT_PATH
 import db
 import lib
 from util.files import Files
@@ -52,11 +51,7 @@ class Orderbook:
             combined_orderbook = template.orderbook(self.pair.as_str)
         try:
             for variant in variants:
-                orderbook_data = OrderedDict()
-                orderbook_data["ticker_id"] = self.pair.as_str
-                orderbook_data["base"] = self.base
-                orderbook_data["quote"] = self.quote
-
+                orderbook_data = template.orderbook(self.pair.as_str)
                 orderbook_data["timestamp"] = f"{int(cron.now_utc())}"
                 base, quote = helper.base_quote_from_pair(variant)
                 if self.base_is_segwit_coin and len(variants) > 1:
@@ -68,8 +63,9 @@ class Orderbook:
                         continue
 
                 data = self.get_and_parse(base=base, quote=quote)
-                orderbook_data["bids"] = data["bids"][:depth][::-1]
-                orderbook_data["asks"] = data["asks"][::-1][:depth]
+
+                orderbook_data["bids"] += data["bids"][:depth][::-1]
+                orderbook_data["asks"] += data["asks"][::-1][:depth]
                 total_bids_base_vol = sum(
                     [Decimal(i["volume"]) for i in orderbook_data["bids"]]
                 )
@@ -77,16 +73,10 @@ class Orderbook:
                     [Decimal(i["volume"]) for i in orderbook_data["asks"]]
                 )
                 total_bids_quote_vol = sum(
-                    [
-                        Decimal(i["volume"]) * Decimal(i["price"])
-                        for i in orderbook_data["bids"]
-                    ]
+                    [Decimal(i["quote_volume"]) for i in orderbook_data["bids"]]
                 )
                 total_asks_quote_vol = sum(
-                    [
-                        Decimal(i["volume"]) * Decimal(i["price"])
-                        for i in orderbook_data["asks"]
-                    ]
+                    [Decimal(i["quote_volume"]) for i in orderbook_data["asks"]]
                 )
                 orderbook_data["base_price_usd"] = get_gecko_price(
                     orderbook_data["base"]
@@ -112,7 +102,7 @@ class Orderbook:
                 combined_orderbook = merge.orderbooks(
                     combined_orderbook, orderbook_data
                 )
-
+            combined_orderbook["variants"] = variants
             msg = f"orderbook.for_pair {self.pair.as_str} ({len(variants)} variants) complete!"
             return default.result(
                 data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2
@@ -120,6 +110,7 @@ class Orderbook:
         except Exception as e:  # pragma: no cover
             msg = f"orderbook.for_pair {self.pair.as_str} ({len(variants)} variants)"
             msg += f" failed: {e}! Returning template!"
+            logger.warning(msg=msg)
             return default.result(data=combined_orderbook, msg=msg, loglevel="pair")
 
     @timed
@@ -128,7 +119,9 @@ class Orderbook:
             base = self.base
         if quote is None:
             quote = self.quote
-        data = template.orderbook(f"{base}_{quote}")
+        pair = f"{base}_{quote}"
+        data = template.orderbook(pair_str=pair)
+
         try:
             if self.coins_config is None:
                 self.coins_config = memcache.get_coins_config()
@@ -138,21 +131,40 @@ class Orderbook:
                 pass
             elif self.coins_config[quote]["wallet_only"]:
                 pass
+
+            elif memcache.get("testing") is not None:
+                path = f"{API_ROOT_PATH}/tests/fixtures/orderbook"
+                fn = f"{pair}.json"
+                data = self.files.load_jsonfile(f"{path}/{fn}")
+                if data is None:
+                    fn = f"{transform.invert_pair(pair)}.json"
+                    data = self.files.load_jsonfile(f"{path}/{fn}")
+
+                if data is None:
+                    logger.info(f"Returning template for {pair}")
+                    data = template.orderbook(pair_str=pair)
+                is_reversed = pair != sortdata.order_pair_by_market_cap(pair)
+                data["pair"] = pair
+                if is_reversed:
+                    data = transform.invert_orderbook(data)
+                data = transform.label_bids_asks(data, pair)
+
             else:
-                cached = memcache.get(f"orderbook_{base}_{quote}")
-                if cached is None:
+                cached = memcache.get(f"orderbook_{pair}")
+                if cached is None and memcache.get("testing") is None:
                     t = lib.OrderbookRpcThread(base, quote)
                     t.start()
                 else:
                     data = cached
-            msg = f"orderbook.for_pair {base}_{quote} complete!"
+
+            msg = f"orderbook.for_pair {pair} complete!"
         except Exception as e:  # pragma: no cover
-            msg = f"orderbook.for_pair {base}_{quote} failed: {e}! Returning template!"
+            msg = f"orderbook.for_pair {pair} failed: {e}! Returning template!"
+            logger.error(msg)
         return default.result(data=data, msg=msg, loglevel="muted")
 
-
     # The lowest ask / highest bid needs to be inverted
-    # to result in conventional vaules like seen at 
+    # to result in conventional vaules like seen at
     # https://api.binance.com/api/v1/ticker/24hr where
     # askPrice > bidPrice
     @timed

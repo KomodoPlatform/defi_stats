@@ -36,6 +36,7 @@ from util.transform import (
 import util.transform as transform
 import util.validate as validate
 import lib
+
 clean = transform.Clean()
 
 router = APIRouter()
@@ -165,11 +166,11 @@ def summary_for_ticker(coin: str = "KMD"):
         resp = cache.get_item(name="markets_tickers").data
         new_data = []
         for i in resp["data"]:
-            if coin in [i["base_currency"], i["target_currency"]]:
-                if i["last_trade"] == 0:
+            if coin in [i["base_currency"], i["quote_currency"]]:
+                if i["last_swap_time"] == 0:
                     if i["ticker_id"] in last_traded:
-                        i["last_trade"] = last_traded[i["ticker_id"]]["last_swap"]
-                        i["last_price"] = last_traded[i["ticker_id"]]["last_swap"]
+                        i["last_swap_time"] = last_traded[i["ticker_id"]]["last_swap"]
+                        i["last_swap_price"] = last_traded[i["ticker_id"]]["last_swap"]
 
                 new_data.append(to_summary_for_ticker_item(i))
 
@@ -178,7 +179,7 @@ def summary_for_ticker(coin: str = "KMD"):
                 "pairs_count": len(new_data),
                 "swaps_count": int(sum_json_key(new_data, "trades_24hr")),
                 "liquidity_usd": sum_json_key_10f(new_data, "liquidity_usd"),
-                "volume_usd_24hr": sum_json_key_10f(new_data, "volume_usd_24hr"),
+                "combined_volume_usd": sum_json_key_10f(new_data, "combined_volume_usd"),
                 "data": new_data,
             }
         )
@@ -201,7 +202,7 @@ def swaps24(ticker: str = "KMD") -> dict:
         data = cache.get_item(name="markets_tickers").data
         trades = 0
         for i in data["data"]:
-            if ticker in [i["base_currency"], i["target_currency"]]:
+            if ticker in [i["base_currency"], i["quote_currency"]]:
                 trades += int(i["trades_24hr"])
         return {"ticker": ticker, "swaps_amount_24hr": trades}
     except Exception as e:  # pragma: no cover
@@ -236,7 +237,7 @@ def ticker_for_ticker(ticker):
         data = cache.get_item(name="markets_tickers").data
         resp = []
         for i in data["data"]:
-            if ticker in [i["base_currency"], i["target_currency"]]:
+            if ticker in [i["base_currency"], i["quote_currency"]]:
                 resp.append(ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
@@ -255,7 +256,7 @@ def tickers_summary():
         resp = {}
         for i in data["data"]:
             base = i["base_currency"]
-            rel = i["target_currency"]
+            rel = i["quote_currency"]
             for ticker in [base, rel]:
                 if ticker not in resp:
                     resp.update({ticker: {"trades_24hr": 0, "volume_24hr": 0}})
@@ -263,7 +264,7 @@ def tickers_summary():
                 if ticker == base:
                     resp[ticker]["volume_24hr"] += Decimal(i["base_volume"])
                 elif ticker == rel:
-                    resp[ticker]["volume_24hr"] += Decimal(i["target_volume"])
+                    resp[ticker]["volume_24hr"] += Decimal(i["quote_volume"])
         resp = clean.decimal_dict(resp)
         with_action = {}
         tickers = list(resp.keys())
@@ -283,10 +284,10 @@ def tickers_summary():
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = 'false'
+    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = "false"
 ):
     try:
-        all = all.lower() == 'true'
+        all = all.lower() == "true"
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
         data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
@@ -325,9 +326,7 @@ def usd_volume_24h():
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
 def volumes_history_ticker(
-    coin="KMD",
-    days_in_past=1,
-    trade_type: TradeType = TradeType.ALL
+    coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
 ):
     # TODO: Use new DB
     db = get_sqlite_db()
@@ -345,5 +344,5 @@ def volumes_history_ticker(
             start_time=start_time,
             end_time=end_time,
         )
-        volumes_dict[d_str] = data['data'][coin]
+        volumes_dict[d_str] = data["data"][coin]
     return volumes_dict

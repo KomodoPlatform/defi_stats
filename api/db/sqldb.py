@@ -2,12 +2,12 @@
 from decimal import Decimal
 from enum import Enum
 from datetime import datetime, timezone
-from typing import List, Dict
+from typing import Dict
 from itertools import chain
 from dotenv import load_dotenv
 from sqlalchemy.sql.expression import bindparam
-from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, func
+from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
+from sqlalchemy import Numeric, func
 
 from const import (
     MYSQL_USERNAME,
@@ -80,6 +80,7 @@ class SqlDB:
 
         self.engine = create_engine(self.db_url)  # ), echo=True)
         self.sqlfilter = SqlFilter(self.table)
+
 
 class SqlFilter:
     def __init__(self, table=DefiSwap) -> None:
@@ -188,7 +189,7 @@ class SqlQuery(SqlDB):
         with_enums=False,
     ) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
-        if with_enums == True:
+        if with_enums:
             self.enums = self.get_enums()
             self.no_distinct_cols = [
                 "duration",
@@ -583,8 +584,8 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-    # Todo: Pair swap duration stats. Fastest, slowest, average, [x,y] for graph
-
+    # TODO: Pair swap duration stats.
+    # Fastest, slowest, average, [x,y] for graph
     # TODO: Subclass 'last trade'
     @timed
     def last_trade(self, group_by_cols, is_success: bool = True):
@@ -934,19 +935,23 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-    def get_swaps_for_coin(self, coin: str, merge_segwit: bool = True, **kwargs):
+    def get_swaps_for_coin(
+        self, coin: str, merge_segwit: bool = False, all=False, **kwargs
+    ):
         """
         Returns swaps for a variant of a coin only.
         Optionally, segwit coins can be merged
         """
         swaps = self.get_swaps(coin=coin, **kwargs)
-        variants = helper.get_coin_variants(coin, segwit_only=merge_segwit)
-        return merge.segwit_swaps(variants, swaps)
-
-
+        if all:
+            return swaps["ALL"]
+        if merge_segwit:
+            variants = helper.get_coin_variants(coin, segwit_only=True)
+            return merge.segwit_swaps(variants, swaps)
+        return swaps[coin]
 
     def get_swaps_for_pair(
-        self, base: str, quote: str, merge_segwit: bool = True, **kwargs
+        self, base: str, quote: str, merge_segwit: bool = True, all=False, **kwargs
     ):
         """
         Returns swaps for a variant of a pair only.
@@ -954,8 +959,12 @@ class SqlQuery(SqlDB):
         """
         pair = f"{base}_{quote}"
         swaps = self.get_swaps(pair=pair, **kwargs)
-        variants = helper.get_pair_variants(pair, segwit_only=merge_segwit)
-        return merge.segwit_swaps(variants, swaps)
+        if all:
+            return swaps["ALL"]
+        if merge_segwit:
+            variants = helper.get_pair_variants(pair, segwit_only=True)
+            return merge.segwit_swaps(variants, swaps)
+        return swaps[pair]
 
     @timed
     def swap_uuids(
@@ -1052,15 +1061,15 @@ class SqlQuery(SqlDB):
                 except AttributeError as e:
                     logger.warning(type(e))
                     logger.warning(e)
-                    raise InvalidParamCombination(
-                        f"'{column}' does not exist in {self.table.__tablename__}! Options are {get_columns(self.table)}"
-                    )
+                    msg = f"'{column}' does not exist in {self.table.__tablename__}!"
+                    msg += f" Options are {get_columns(self.table)}"
+                    raise InvalidParamCombination(msg=msg)
                 except Exception as e:
                     logger.warning(type(e))
                     logger.warning(e)
-                    raise InvalidParamCombination(
-                        f"'{column}' does not exist in {self.table.__tablename__}! Options are {get_columns(self.table)}"
-                    )
+                    msg = f"'{column}' does not exist in {self.table.__tablename__}!"
+                    msg += f" Options are {get_columns(self.table)}"
+                    raise InvalidParamCombination(msg=msg)
             else:
                 raise InvalidParamCombination(
                     "Unless 'pair' or 'coin' param is set, you must set the 'column' param."
@@ -1373,8 +1382,6 @@ class SqlSource:
         end_time=int(cron.now_utc()),
     ):
         try:
-            gecko_source = memcache.get_gecko_source()
-            coins_config = memcache.get_coins_config()
             pgdb = SqlUpdate(db_type="pgsql")
             pgdb_query = SqlQuery(db_type="pgsql")
             self.import_cipi_swaps(
@@ -1396,11 +1403,9 @@ class SqlSource:
         SQLModel.metadata.create_all(pgdb.engine)
         logger.merge("Recreated PGSQL Table")
 
-
     @timed
     def normalise_swap_data(self, data, is_success=None):
         try:
-            gecko_source = memcache.get_gecko_source()
             for i in data:
                 pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
                 pair = sortdata.order_pair_by_market_cap(pair_raw)
@@ -1422,10 +1427,18 @@ class SqlSource:
                         "pair_reverse": pair_reverse,
                         "pair_std_reverse": pair_std_reverse,
                         "trade_type": trade_type,
-                        "maker_coin_ticker": transform.strip_coin_platform(i["maker_coin"]),
-                        "maker_coin_platform": transform.get_coin_platform(i["maker_coin"]),
-                        "taker_coin_ticker": transform.strip_coin_platform(i["taker_coin"]),
-                        "taker_coin_platform": transform.get_coin_platform(i["taker_coin"]),
+                        "maker_coin_ticker": transform.strip_coin_platform(
+                            i["maker_coin"]
+                        ),
+                        "maker_coin_platform": transform.get_coin_platform(
+                            i["maker_coin"]
+                        ),
+                        "taker_coin_ticker": transform.strip_coin_platform(
+                            i["taker_coin"]
+                        ),
+                        "taker_coin_platform": transform.get_coin_platform(
+                            i["taker_coin"]
+                        ),
                         "price": price,
                         "reverse_price": reverse_price,
                     }
@@ -1463,13 +1476,12 @@ class SqlSource:
         msg = "Data normalised"
         return default.result(msg=msg, data=data, loglevel="updated")
 
-
     @timed
     def cipi_to_defi_swap(self, cipi_data, defi_data=None):
         """
-        Compares with existing to select best value where there is a conflict,
-        or returns normalised data from a source database with derived fields
-        calculated or defaults applied
+        Compares with existing to select best value where there
+        is a conflict, or returns normalised data from a source
+        database with derived fields calculated or defaults applied
         """
         try:
             if defi_data is None:
@@ -1504,7 +1516,9 @@ class SqlSource:
                     pair=cipi_data["pair"],
                     pair_reverse=transform.invert_pair(cipi_data["pair"]),
                     pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(cipi_data["pair"])),
+                    pair_std_reverse=transform.strip_pair_platforms(
+                        transform.invert_pair(cipi_data["pair"])
+                    ),
                     last_updated=int(cron.now_utc()),
                 )
             else:
@@ -1533,7 +1547,9 @@ class SqlSource:
                             pass
                         else:
                             # This shouldnt happen
-                            logger.warning("Mismatch on incoming cipi data vs defi data:")
+                            logger.warning(
+                                "Mismatch on incoming cipi data vs defi data:"
+                            )
                             logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
 
                 data = DefiSwap(
@@ -1550,16 +1566,22 @@ class SqlSource:
                     maker_coin_ticker=cipi_data["maker_coin_ticker"],
                     taker_coin_platform=cipi_data["taker_coin_platform"],
                     taker_coin_ticker=cipi_data["taker_coin_ticker"],
-                    taker_amount=max(cipi_data["taker_amount"], defi_data["taker_amount"]),
-                    maker_amount=max(cipi_data["maker_amount"], defi_data["maker_amount"]),
+                    taker_amount=max(
+                        cipi_data["taker_amount"], defi_data["taker_amount"]
+                    ),
+                    maker_amount=max(
+                        cipi_data["maker_amount"], defi_data["maker_amount"]
+                    ),
                     started_at=max(
-                        int(cipi_data["started_at"].timestamp()), defi_data["started_at"]
+                        int(cipi_data["started_at"].timestamp()),
+                        defi_data["started_at"],
                     ),
                     finished_at=max(
-                        int(cipi_data["started_at"].timestamp()), defi_data["finished_at"]
+                        int(cipi_data["started_at"].timestamp()),
+                        defi_data["finished_at"],
                     ),
                     is_success=max(cipi_data["is_success"], defi_data["is_success"]),
-                    # Not in Cipi's DB, but derived from taker/maker amounts.
+                    # Not in Cipi's DB, derived from taker/maker amounts.
                     price=max(cipi_data["price"], defi_data["price"]),
                     reverse_price=max(
                         cipi_data["reverse_price"], defi_data["reverse_price"]
@@ -1572,7 +1594,9 @@ class SqlSource:
                     pair=defi_data["pair"],
                     pair_reverse=transform.invert_pair(cipi_data["pair"]),
                     pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(cipi_data["pair"])),
+                    pair_std_reverse=transform.strip_pair_platforms(
+                        transform.invert_pair(cipi_data["pair"])
+                    ),
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
@@ -1584,11 +1608,10 @@ class SqlSource:
         msg = "cipi to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
 
-
     @timed
     def mm2_to_defi_swap(self, mm2_data, defi_data=None):
         """
-        Compares with existing to select best value where there is a conflict
+        Compares to select best value where there is a conflict
         """
         try:
             if defi_data is None:
@@ -1623,7 +1646,9 @@ class SqlSource:
                     pair=mm2_data["pair"],
                     pair_reverse=transform.invert_pair(mm2_data["pair"]),
                     pair_std=transform.strip_pair_platforms(mm2_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(mm2_data["pair"])),
+                    pair_std_reverse=transform.strip_pair_platforms(
+                        transform.invert_pair(mm2_data["pair"])
+                    ),
                     last_updated=int(cron.now_utc()),
                 )
             else:
@@ -1647,9 +1672,13 @@ class SqlSource:
                                 mm2_data[i] = defi_data[i]
                         else:
                             # This shouldnt happen
-                            logger.warning("Mismatch on incoming mm2 data vs defi data:")
+                            logger.warning(
+                                "Mismatch on incoming mm2 data vs defi data:"
+                            )
                             logger.warning(f"{mm2_data[i]} vs {defi_data[i]}")
-                            logger.warning(f"{type(mm2_data[i])} vs {type(defi_data[i])}")
+                            logger.warning(
+                                f"{type(mm2_data[i])} vs {type(defi_data[i])}"
+                            )
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_coin=mm2_data["taker_coin"],
@@ -1660,8 +1689,12 @@ class SqlSource:
                     maker_coin_ticker=mm2_data["maker_coin_ticker"],
                     taker_coin_platform=mm2_data["taker_coin_platform"],
                     taker_coin_ticker=mm2_data["taker_coin_ticker"],
-                    taker_amount=max(mm2_data["taker_amount"], defi_data["taker_amount"]),
-                    maker_amount=max(mm2_data["maker_amount"], defi_data["maker_amount"]),
+                    taker_amount=max(
+                        mm2_data["taker_amount"], defi_data["taker_amount"]
+                    ),
+                    maker_amount=max(
+                        mm2_data["maker_amount"], defi_data["maker_amount"]
+                    ),
                     started_at=max(mm2_data["started_at"], defi_data["started_at"]),
                     finished_at=max(mm2_data["finished_at"], defi_data["finished_at"]),
                     is_success=max(mm2_data["is_success"], defi_data["is_success"]),
@@ -1682,7 +1715,9 @@ class SqlSource:
                     pair=defi_data["pair"],
                     pair_reverse=transform.invert_pair(defi_data["pair"]),
                     pair_std=transform.strip_pair_platforms(defi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(transform.invert_pair(defi_data["pair"])),
+                    pair_std_reverse=transform.strip_pair_platforms(
+                        transform.invert_pair(defi_data["pair"])
+                    ),
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):

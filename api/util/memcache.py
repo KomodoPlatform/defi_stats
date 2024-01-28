@@ -26,7 +26,8 @@ try:
     )
     MEMCACHE.get("test")
     logger.info("Connected to memcached docker container")
-except:
+except Exception as e:
+    logger.muted(e)
     MEMCACHE = PooledClient(
         ("localhost", 11211), serde=JsonSerde(), timeout=10, max_pool_size=250
     )
@@ -53,12 +54,29 @@ def get_coins_config():
     return data
 
 
+def set_fixer_rates(data):
+    update("fixer_rates", data, 900)
+
+
+def get_fixer_rates():
+    return get("fixer_rates")
+
+
 def set_gecko_source(data):
     update("gecko_source", data, 900)
 
 
 def get_gecko_source():
     data = get("gecko_source")
+    return data
+
+
+def set_adex_fortnite(data):
+    update("generic_adex_fortnite", data, 900)
+
+
+def get_adex_fortnite():
+    data = get("generic_adex_fortnite")
     return data
 
 
@@ -71,6 +89,15 @@ def get_last_traded():
     return data
 
 
+def set_summary(data):
+    update("generic_summary", data, 900)
+
+
+def get_summary():
+    data = get("summary")
+    return data
+
+
 def set_tickers(data):
     update("generic_tickers", data, 900)
 
@@ -78,32 +105,6 @@ def set_tickers(data):
 def get_tickers():
     data = get("generic_tickers")
     return data
-
-
-def set_adex_fortnite(data):
-    update("adex_fortnite", data, 900)
-
-
-def get_adex_fortnite():
-    data = get("adex_fortnite")
-    return data
-
-
-def set_statsapi_summary(data):
-    update("statsapi_summary", data, 900)
-
-
-def get_statsapi_summary():
-    data = get("statsapi_summary")
-    return data
-
-
-def set_fixer_rates(data):
-    update("fixer_rates", data, 900)
-
-
-def get_fixer_rates():
-    return get("fixer_rates")
 
 
 def get(key):
@@ -115,10 +116,9 @@ def get(key):
         except OSError:
             time.sleep(0.1)
         if cached is not None:
-            # logger.info(f"Using cache for '{key}'")
             return cached
         i += 1
-    if "orderbook" not in key:
+    if "orderbook" not in key and key not in ['testing']:
         logger.warning(f"Failed to get '{key}' from memcache")
     return None
 
