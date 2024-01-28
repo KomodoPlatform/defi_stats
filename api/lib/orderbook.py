@@ -141,7 +141,6 @@ class Orderbook:
                     data = self.files.load_jsonfile(f"{path}/{fn}")
 
                 if data is None:
-                    logger.info(f"Returning template for {pair}")
                     data = template.orderbook(pair_str=pair)
                 is_reversed = pair != sortdata.order_pair_by_market_cap(pair)
                 data["pair"] = pair

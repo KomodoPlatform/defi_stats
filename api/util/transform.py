@@ -736,8 +736,6 @@ def tickers_deplatform(tickers_data):
             i["trades_24hr"] = int(i["trades_24hr"])
             tickers.update({root_pair: i})
         else:
-            if root_pair == "KMD_LTC":
-                logger.calc(i)
             j = tickers[root_pair]
             j["variants"] += i["variants"]
             j["trades_24hr"] += int(i["trades_24hr"])
@@ -774,9 +772,6 @@ def tickers_deplatform(tickers_data):
                 j["newest_price_time"] = i["newest_price_time"]
                 j["newest_price"] = i["newest_price"]
 
-            if root_pair == "KMD_LTC":
-                logger.merge(i["oldest_price_time"])
-                logger.merge(j["oldest_price_time"])
             if (
                 i["oldest_price_time"] < j["oldest_price_time"]
                 or j["oldest_price_time"] == 0
@@ -784,9 +779,6 @@ def tickers_deplatform(tickers_data):
                 j["oldest_price_time"] = i["oldest_price_time"]
                 j["oldest_price"] = i["oldest_price"]
 
-            if root_pair == "KMD_LTC":
-                logger.calc(i["oldest_price_time"])
-                logger.calc(j["oldest_price_time"])
             if Decimal(i["highest_bid"]) > Decimal(j["highest_bid"]):
                 j["highest_bid"] = i["highest_bid"]
 

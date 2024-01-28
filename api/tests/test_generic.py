@@ -18,19 +18,15 @@ def test_orderbook():
     generic = Generic()
     r = generic.orderbook("KMD_DOGE", all=True)
     r2 = generic.orderbook("DOGE_KMD", all=True)
-    logger.info(r)
-    logger.calc(r2)
     assert r["combined_volume_usd"] == r2["combined_volume_usd"]
 
     generic = Generic()
     r3 = generic.orderbook("KMD_DGB", depth=2)
     assert len(r3["asks"]) == 2
     assert len(r3["bids"]) == 2
-    logger.calc(r3)
 
     r5 = generic.orderbook("KMD/DGB", depth=2)
     assert "error" in r5
-    logger.calc(r5)
 
     r6 = generic.orderbook("KMD_XXX", depth=2)
     assert r6["bids"] == []
@@ -38,12 +34,9 @@ def test_orderbook():
     with pytest.raises(Exception):
         r6 = generic.orderbook("KMDXX", depth=2)
         assert r6["bids"] == []
-    logger.calc(r6)
 
     r_all = generic.orderbook("KMD_LTC", all=True)
     r_all2 = generic.orderbook("KMD_LTC-segwit", all=True)
-    logger.info(r_all)
-    logger.calc(r_all2)
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert r_all["asks"][0] == r_all2["asks"][0]
     assert r_all["pair"] == r_all2["pair"]

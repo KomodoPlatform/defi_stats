@@ -143,12 +143,6 @@ class CustomFormatter(logging.Formatter):
                 self.skyblue
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
             )
-        elif record.levelname == "SAVE":
-            log_fmt = (
-                self.drabgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            ) + self.reset
         else:
             log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
@@ -224,11 +218,6 @@ logger.setLevel("LOOP")
 addLoggingLevel("CALC", logging.DEBUG + 4)
 logger.setLevel("CALC")
 
-# Shows cache loop updates
-addLoggingLevel("SAVE", logging.DEBUG + 3)
-logger.setLevel("SAVE")
-
-
 # Shows generally ignorable errors, e.g. CoinConfigNotFound
 addLoggingLevel("MUTED", logging.DEBUG - 1)
 logger.setLevel("MUTED")
@@ -244,8 +233,8 @@ def send_log(loglevel, msg):
             logger.info(f"   {msg}")
         case "muted":
             pass
-        case "save":
-            logger.save(f"   {msg}")
+        case "saved":
+            logger.saved(f"   {msg}")
         case "merge":
             logger.merge(f"  {msg}")
         case "merge":
@@ -326,7 +315,7 @@ def show_pallete():
     logger.critical("critical")
     logger.updated("updated")
     logger.merge("merge")
-    logger.save("save")
+    logger.saved("saved")
     logger.calc("calc")
     logger.dexrpc("dexrpc")
     logger.loop("loop")

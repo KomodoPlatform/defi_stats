@@ -48,7 +48,6 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     DB = setup_swaps_db_data
 
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, success_only=False)
-    logger.calc(swaps)
     assert len(swaps) == 1
     swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all=True)
     assert len(swaps1) == 3
@@ -66,7 +65,6 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     assert swaps[0]["trade_type"] == "sell"
 
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, all=True)
-    logger.calc(swaps)
     assert len(swaps) == 0
 
 

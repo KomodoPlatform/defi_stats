@@ -65,8 +65,6 @@ def test_ticker_to_gecko(setup_ticker_to_gecko):
 def test_ticker_to_statsapi(setup_ticker_to_statsapi_24h, setup_ticker_to_statsapi_7d):
     x = setup_ticker_to_statsapi_7d
     y = setup_ticker_to_statsapi_24h
-    logger.info(x)
-    logger.info(y)
     assert x["ticker_id"] == y["ticker_id"]
     assert "price_change_24h" in y
     assert "price_change_7d" in x

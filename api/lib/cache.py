@@ -131,7 +131,6 @@ class CacheItem:
                     memcache.set_coins(data)
 
             else:
-                logger.calc(self.testing)
                 if self.name == "fixer_rates":
                     data = lib.FixerAPI().latest()
                     memcache.set_fixer_rates(data)

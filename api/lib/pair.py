@@ -191,7 +191,6 @@ class Pair:  # pragma: no cover
         try:
             data = 0
             if len(trades_info) > 0:
-                logger.info(trades_info)
                 data = transform.sum_json_key(trades_info, "price") / len(trades_info)
             return default.result(
                 data=data,
@@ -272,8 +271,6 @@ class Pair:  # pragma: no cover
                 data[f"price_change_{suffix}"] = price_change
 
                 last_swap = self.first_last_swap(data["variants"])
-                if data["base"] == "EMC2_KMD":
-                    logger.info(last_swap)
                 data["last_swap_price"] = last_swap["last_swap_price"]
                 data["last_swap_time"] = last_swap["last_swap_time"]
                 data["last_swap_uuid"] = last_swap["last_swap_uuid"]
@@ -290,10 +287,7 @@ class Pair:  # pragma: no cover
     def first_last_swap(self, variants: List):
         try:
             data = template.first_last_swap()
-            logger.loop(self.last_traded_cache)
             for variant in variants:
-                logger.loop(self.last_traded_cache.keys())
-                logger.calc(variant)
                 x = template.first_last_swap()
 
                 if variant in self.last_traded_cache:
@@ -302,9 +296,6 @@ class Pair:  # pragma: no cover
                     transform.invert_pair(variant) in self.last_traded_cache
                 ):  # pragma: no cover
                     x = self.last_traded_cache[transform.invert_pair(variant)]
-                logger.info(f"{self.as_str} is_reversed: {self.is_reversed}")
-                logger.info(f"{self.as_str} x: {x}")
-                logger.info(f"{self.as_str} data: {data}")
 
                 if x["last_swap_time"] > data["last_swap_time"]:
                     data["last_swap_time"] = x["last_swap_time"]
@@ -313,15 +304,12 @@ class Pair:  # pragma: no cover
                     if self.is_reversed and data["last_swap_price"] != 0:
                         data["last_swap_price"] = 1 / data["last_swap_price"]
 
-                logger.merge(f"{self.as_str} data: {data}")
-
                 if data["first_swap_time"] == 0 and x["first_swap_time"] != 0:
                     data["first_swap_time"] = x["first_swap_time"]
                     data["first_swap_price"] = x["first_swap_price"]
                     data["first_swap_uuid"] = x["first_swap_uuid"]
                     if self.is_reversed and data["first_swap_price"] != 0:
                         data["first_swap_price"] = 1 / data["first_swap_price"]
-                    logger.query(f"{self.as_str} data: {data}")
 
                 elif x["first_swap_time"] < data["first_swap_time"]:
                     data["first_swap_time"] = x["first_swap_time"]
@@ -329,9 +317,6 @@ class Pair:  # pragma: no cover
                     data["first_swap_uuid"] = x["first_swap_uuid"]
                     if self.is_reversed and data["first_swap_price"] != 0:
                         data["first_swap_price"] = 1 / data["first_swap_price"]
-                    logger.dexrpc(f"{self.as_str} data: {data}")
-                logger.calc(f"{self.as_str} data: {data}")
-            logger.loop(f"{self.as_str} data: {data}")
 
             msg = f"Got first and last swap for {self.as_str}"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)

@@ -106,10 +106,6 @@ def test_historical_trades_endpoint():
     data = r.json()
     assert isinstance(data, dict)
     assert isinstance(data["buy"], list)
-    for i in data["buy"]:
-        logger.info(i)
-    for i in data["sell"]:
-        logger.info(i)
     if len(data["buy"]) > 0:
         assert isinstance(data["buy"][0]["price"], str)
         assert isinstance(data["buy"][0]["trade_id"], str)
