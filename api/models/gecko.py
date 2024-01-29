@@ -11,6 +11,7 @@ class GeckoPairsItem(BaseModel):
     pool_id: str = "XXX_YYY"
     base: str = "XXX"
     target: str = "YYY"
+    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 
 # inside gecko/tickers
@@ -28,8 +29,10 @@ class GeckoTickersItem(BaseModel):
     trades_24hr: str = "777"
     last_price: str = "777.777777"
     last_trade: str = "777.777777"
+    last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
     volume_usd_24hr: str = "777.777777"
     liquidity_in_usd: str = "777.777777"
+    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 
 # gecko/tickers

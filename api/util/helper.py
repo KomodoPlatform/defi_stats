@@ -3,10 +3,11 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Dict
 from const import MM2_RPC_PORTS, MM2_NETID
-from util.logger import logger
+from util.logger import logger, timed
 import util.defaults as default
 import util.memcache as memcache
 import util.templates as template
+import util.transform as transform
 
 
 def get_mm2_rpc_port(netid=MM2_NETID):
@@ -64,10 +65,10 @@ def base_quote_from_pair(variant, reverse=False):
     # TODO: This workaround fixes the issue
     # but need to find root cause to avoid
     # unexpected related issues
-    if variant == "OLD_USDC-PLG20_USDC-PLG20":
-        variant = "USDC-PLG20_USDC-PLG20_OLD"
-    split_variant = variant.split("_")
     try:
+        if variant == "OLD_USDC-PLG20_USDC-PLG20":
+            variant = "USDC-PLG20_USDC-PLG20_OLD"
+        split_variant = variant.split("_")
         if len(split_variant) == 2:
             base = split_variant[0]
             quote = split_variant[1]
@@ -77,6 +78,21 @@ def base_quote_from_pair(variant, reverse=False):
         elif variant.endswith("IRIS_ATOM-IBC"):
             quote = "IRIS_ATOM-IBC"
             base = variant.replace(f"_{quote}", "")
+
+        elif variant.startswith("IRIS_ATOM"):
+            base = "IRIS_ATOM"
+            quote = variant.replace(f"{base}_", "")
+        elif variant.endswith("IRIS_ATOM"):
+            quote = "IRIS_ATOM"
+            base = variant.replace(f"_{quote}", "")
+
+        elif variant.startswith("ATOM-IBC_IRIS"):
+            base = "ATOM-IBC_IRIS"
+            quote = variant.replace(f"{base}_", "")
+        elif variant.endswith("ATOM-IBC_IRIS"):
+            quote = "ATOM-IBC_IRIS"
+            base = variant.replace(f"_{quote}", "")
+
         elif len(split_variant) == 4 and "OLD" in split_variant:
             if split_variant[1] == "OLD":
                 base = f"{split_variant[0]}_{split_variant[1]}"
@@ -89,13 +105,14 @@ def base_quote_from_pair(variant, reverse=False):
             elif split_variant[1] == "OLD":
                 base = f"{split_variant[0]}_{split_variant[1]}"
                 quote = split_variant[2]
-
+        # failed to parse ATOM-IBC_IRIS_LTC into base/quote!
         if reverse:
             return quote, base
         return base, quote
     except Exception as e:  # pragma: no cover
-        logger.warning(f"failed to parse {variant} into base/quote!")
-        return default.error(e)
+        msg = f"failed to parse {variant} into base/quote! {e}"
+        data = {"error": msg}
+        return default.result(msg=msg, loglevel='warning', data=data)
 
 
 def get_price_at_finish(swap, is_reversed=False):
@@ -151,12 +168,63 @@ def get_coin_variants(coin, segwit_only=False):
 
 
 def get_pair_variants(pair, segwit_only=False):
+    variants = []
     base, quote = base_quote_from_pair(pair)
     base_variants = get_coin_variants(base, segwit_only=segwit_only)
     quote_variants = get_coin_variants(quote, segwit_only=segwit_only)
-    variants = []
     for i in base_variants:
         for j in quote_variants:
             if i != j:
                 variants.append(f"{i}_{j}")
     return variants
+
+
+# The lowest ask / highest bid needs to be inverted
+# to result in conventional vaules like seen at
+# https://api.binance.com/api/v1/ticker/24hr where
+# askPrice > bidPrice
+@timed
+def find_lowest_ask(orderbook: dict) -> str:
+    """Returns lowest ask from provided orderbook"""
+    try:
+        if len(orderbook["bids"]) > 0:
+            return transform.format_10f(
+                min([Decimal(bid["price"]) for bid in orderbook["bids"]])
+            )
+    except KeyError as e:  # pragma: no cover
+        return default.error(e, data=transform.format_10f(0))
+    except Exception as e:  # pragma: no cover
+        return default.error(e, data=transform.format_10f(0))
+    return transform.format_10f(0)
+
+
+@timed
+def find_highest_bid(orderbook: list) -> str:
+    """Returns highest bid from provided orderbook"""
+    try:
+        if len(orderbook["asks"]) > 0:
+            return transform.format_10f(
+                max([Decimal(ask["price"]) for ask in orderbook["asks"]])
+            )
+    except KeyError as e:  # pragma: no cover
+        return default.error(e, data=transform.format_10f(0))
+    except Exception as e:  # pragma: no cover
+        return default.error(e, data=transform.format_10f(0))
+    return transform.format_10f(0)
+
+
+def get_pairs_info(pair_list: str, priced: bool = False) -> list:
+    try:
+        return [template.pair_info(i, priced) for i in pair_list]
+    except Exception as e:  # pragma: no cover
+        return default.error(e)
+
+
+def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
+    try:
+        return sorted(
+            get_pairs_info(pair_list, priced),
+            key=lambda d: d["ticker_id"],
+        )
+    except Exception as e:  # pragma: no cover
+        return default.error(e)

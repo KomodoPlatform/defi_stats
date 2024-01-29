@@ -5,7 +5,6 @@ import lib
 from util.logger import logger
 import util.defaults as default
 import util.memcache as memcache
-import util.templates as template
 
 
 @dataclass
@@ -15,10 +14,6 @@ class Coins:  # pragma: no cover
         self.coins = [lib.Coin(coin=i) for i in coins_config]
 
     @property
-    def with_price(self):
-        return [i for i in self.coins if i.is_priced]
-
-    @property
     def with_mcap(self):
         return [i for i in self.coins if i.mcap > 0]
 
@@ -26,14 +21,6 @@ class Coins:  # pragma: no cover
     def with_segwit(self):
         data = [i for i in self.coins if i.has_segwit]
         return data
-
-    @property
-    def tradable_only(self):
-        return [i for i in self.coins if i.is_tradable]
-
-    @property
-    def valid_only(self):
-        return [i for i in self.coins if i.is_valid]
 
     @property
     def wallet_only(self):
@@ -106,22 +93,11 @@ class Coin:
             return True
         return False
 
-    @property
-    def is_valid(self):
-        coins_config = memcache.get_coins_config()
-        if self.is_tradable:
-            return True
-        if self.has_segwit:  # pragma: no cover
-            for i in [self.ticker, f"{self.ticker}-segwit"]:
-                if i in coins_config:
-                    if not coins_config[i]["wallet_only"]:
-                        return True
-        return False
 
-
-def get_gecko_price(ticker) -> float:
+def get_gecko_price(ticker, gecko_source=None) -> float:
     try:
-        gecko_source = memcache.get_gecko_source()
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_price"])
     except KeyError as e:  # pragma: no cover
@@ -131,9 +107,10 @@ def get_gecko_price(ticker) -> float:
     return Decimal(0)  # pragma: no cover
 
 
-def get_gecko_mcap(ticker) -> float:
+def get_gecko_mcap(ticker, gecko_source=None) -> float:
     try:
-        gecko_source = memcache.get_gecko_source()
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_market_cap"])
     except KeyError as e:  # pragma: no cover
@@ -141,32 +118,6 @@ def get_gecko_mcap(ticker) -> float:
     except Exception as e:  # pragma: no cover
         logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
     return Decimal(0)  # pragma: no cover
-
-
-def pair_without_segwit_suffix(maker_coin, taker_coin):
-    """Removes `-segwit` suffixes from the tickers of a pair"""
-    if maker_coin.endswith("-"):
-        maker_coin = maker_coin[:-1]
-    if taker_coin.endswith("-"):
-        taker_coin = taker_coin[:-1]
-    return f'{maker_coin.replace("-segwit", "")}_{taker_coin.replace("-segwit", "")}'
-
-
-def get_pairs_info(pair_list: str, priced: bool = False) -> list:
-    try:
-        return [template.pair_info(i, priced) for i in pair_list]
-    except Exception as e:  # pragma: no cover
-        return default.error(e)
-
-
-def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
-    try:
-        return sorted(
-            get_pairs_info(pair_list, priced),
-            key=lambda d: d["ticker_id"],
-        )
-    except Exception as e:  # pragma: no cover
-        return default.error(e)
 
 
 def get_segwit_coins():

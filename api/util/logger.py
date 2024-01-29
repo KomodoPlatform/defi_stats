@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+from datetime import datetime
 from os.path import basename, dirname, abspath
-import util.cron as cron
 import logging
 import functools
-import util.defaults as default
+
 
 PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
 
@@ -234,7 +234,7 @@ def send_log(loglevel, msg):
         case "muted":
             pass
         case "saved":
-            logger.saved(f"   {msg}")
+            logger.saved(f"  {msg}")
         case "merge":
             logger.merge(f"  {msg}")
         case "merge":
@@ -264,34 +264,25 @@ def send_log(loglevel, msg):
 
 
 class StopWatch:
-    def __init__(self, start_time, **kwargs) -> None:
+    def __init__(self, start_time, trace, loglevel="debug", msg="") -> None:
         self.start_time = start_time
-        self.get_stopwatch(**kwargs)
+        self.msg = msg
+        self.trace = trace
+        self.loglevel = loglevel
+        self.get_stopwatch()
 
-    def get_stopwatch(self, **kwargs):
-        options = ["trigger", "msg", "loglevel"]
-        default.params(self, kwargs, options)
-        duration = int(cron.now_utc()) - int(self.start_time)
-        if self.trigger == 0:
-            self.trigger = 10
-        self.trigger = 0
-
-        # if duration < 5
-        #       and not (self.error
-        #       or self.debug or self.warning or self.loop):
-        #    self.muted = True
-        if duration >= self.trigger:
-            if not isinstance(self.msg, str):
-                self.msg = str(self.msg)
-            lineno = self.trace["lineno"]
-            filename = self.trace["file"]
-            func = self.trace["function"]
-            if PROJECT_ROOT_PATH in self.msg:
-                self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-            self.msg = f"{duration:>3} sec | {func:<20} | {str(self.msg):<70} "
-            self.msg += f"| {basename(filename)}:{lineno}"
-
-            send_log(loglevel=self.loglevel, msg=self.msg)
+    def get_stopwatch(self):
+        duration = int(datetime.utcnow().timestamp()) - int(self.start_time)
+        if not isinstance(self.msg, str):
+            self.msg = str(self.msg)
+        lineno = self.trace["lineno"]
+        filename = self.trace["file"]
+        func = self.trace["function"]
+        if PROJECT_ROOT_PATH in self.msg:
+            self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
+        self.msg = f"{duration:>3} sec | {func:<20} | {str(self.msg):<70} "
+        self.msg += f"| {basename(filename)}:{lineno}"
+        send_log(loglevel=self.loglevel, msg=self.msg)
 
 
 def get_trace(func, error=None):
@@ -322,14 +313,15 @@ def show_pallete():
     logger.muted("muted")
     logger.query("query")
     logger.request("request")
+    logger.cached("cached")
 
 
 # A decorator for returning runtime of functions:def timed(func):
 def timed(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        start_time = int(cron.now_utc())
-        duration = int(cron.now_utc()) - start_time
+        start_time = int(datetime.utcnow().timestamp())
+        duration = int(datetime.utcnow().timestamp()) - start_time
         trace = get_trace(func)
         msg = "<<< no msg provided >>>"
         try:

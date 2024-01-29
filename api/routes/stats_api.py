@@ -3,8 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import util.cron as cron
 from typing import List
-from db.sqlitedb import get_sqlite_db
-import lib
+import db
 from lib.cache import Cache
 from lib.generic import Generic
 from lib.pair import Pair
@@ -16,7 +15,7 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
-from util.transform import sortdata
+from util.transform import sortdata, deplatform
 import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
@@ -38,8 +37,8 @@ def atomicdexio():
         cache = Cache(netid="ALL")
         tickers_data = cache.get_item(name="generic_tickers").data
         # TODO: Move to new DB
-        db = get_sqlite_db(netid="ALL")
-        counts = db.query.swap_counts()
+        query = db.SqlQuery()
+        counts = query.swap_counts()
         counts.update({"current_liquidity": tickers_data["combined_liquidity_usd"]})
         return counts
 
@@ -71,11 +70,11 @@ def atomicdex_fortnight():
 )
 def summary():
     try:
-        tickers_data = transform.tickers_deplatform(memcache.get_tickers())
-        tickers = [
-            transform.ticker_to_statsapi_summary(tickers_data["data"][i])
-            for i in tickers_data["data"]
-        ]
+        tickers_data = deplatform.tickers(memcache.get_tickers(), priced_only=True)
+        tickers = []
+        for i in tickers_data['data']:
+            x = transform.ticker_to_statsapi_summary(i)
+            tickers.append(x)
         return tickers
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
@@ -88,8 +87,7 @@ def summary():
 )
 def ticker():
     try:
-        cache = lib.Cache(netid="ALL")
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
             resp.append(transform.ticker_to_market_ticker(i))
@@ -131,8 +129,8 @@ def orderbook(
 def trades(
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = int(cron.now_utc() - 86400),
-    end_time: int = int(cron.now_utc()),
+    start_time: int = 0,
+    end_time: int = 0
 ):
     try:
         for value, name in [
@@ -141,6 +139,10 @@ def trades(
             (end_time, "end_time"),
         ]:
             validate.positive_numeric(value, name)
+        if start_time == 0:
+            start_time = int(cron.now_utc() - 86400)
+        if end_time == 0:
+            end_time = int(cron.now_utc())
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
         pair = Pair(pair_str=ticker_id)
@@ -159,18 +161,18 @@ def trades(
 
 
 @router.get(
-    "/last_price/{pair}",
+    "/last_price/{pair_str}",
     description="Price of last trade for pair. Use format `KMD_LTC`",
     response_model=float,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def last_price_for_pair(pair="KMD_LTC"):
+def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
         last_traded_cache = memcache.get_last_traded()
-        data = helper.get_last_trade_info(pair, last_traded_cache=last_traded_cache)
+        data = helper.get_last_trade_info(pair_str, last_traded_cache=last_traded_cache)
         return data["last_swap_price"]
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair}]: {e}")
+        logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair_str}]: {e}")
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

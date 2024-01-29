@@ -3,36 +3,40 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
-import util.cron as cron
 from const import MARKETS_PAIRS_DAYS
-from db.sqlitedb import get_sqlite_db
-from models.generic import ErrorMessage
-from util.exceptions import BadPairFormatError
 from lib.generic import Generic
-from lib.markets import Markets
-from util.enums import TradeType, NetId
+from lib.pair import Pair
+from models.generic import ErrorMessage
+from models.markets import MarketsAtomicdexIo
+from util.enums import TradeType
 from util.logger import logger
-import util.validate as validate
+from util.exceptions import BadPairFormatError
+from util.transform import sortdata
+import db
+import util.cron as cron
+import util.helper as helper
+import util.memcache as memcache
+import util.templates as template
 import util.transform as transform
-import lib
+import util.validate as validate
+
 
 clean = transform.Clean()
 router = APIRouter()
 
 
+# TODO: Move to new DB
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
+    response_model=MarketsAtomicdexIo,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def atomicdex_info_api(netid: NetId = NetId.ALL):
-    # TODO: Move to new DB
-    db = get_sqlite_db(netid=netid.value)
-    data = db.query.swap_counts()
-    data.update({"swaps_24h": data["swaps_24hr"]})
-    del data["swaps_24hr"]
-    return data
+def atomicdex_info_api():
+    # TODO: Use new DB
+    query = db.SqlQuery()
+    return query.swap_counts()
 
 
 # New endpoint
@@ -42,10 +46,9 @@ def atomicdex_info_api(netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def current_liquidity(netid: NetId = NetId.ALL):
+def current_liquidity():
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         return {"current_liquidity": data["combined_liquidity_usd"]}
 
     except Exception as e:  # pragma: no cover
@@ -60,8 +63,7 @@ def current_liquidity(netid: NetId = NetId.ALL):
     status_code=200,
 )
 def fiat_rates():
-    data = lib.CacheItem("gecko_source").data
-    return data
+    return memcache.get_gecko_source()
 
 
 @router.get(
@@ -70,9 +72,9 @@ def fiat_rates():
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int = 100):
+def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
-        generic = Generic(netid=netid.value)
+        generic = Generic()
         return generic.orderbook(pair_str=market_pair, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -87,19 +89,16 @@ def orderbook(market_pair: str = "KMD_LTC", netid: NetId = NetId.ALL, depth: int
     status_code=200,
 )
 def pairs_last_traded(
-    netid: NetId = NetId.ALL,
     start_time: int = 0,
     end_time: int = int(cron.now_utc()),
-    min_swaps: int = 5,
 ) -> list:
-    data = lib.CacheItem("generic_last_traded", netid=netid.value).data
+    data = memcache.get_last_traded()
     filtered_data = []
     for i in data:
-        if data[i]["swap_count"] > min_swaps:
-            if data[i]["last_swap"] > start_time:
-                if data[i]["last_swap"] < end_time:
-                    data[i].update({"pair": i})
-                    filtered_data.append(data[i])
+        if data[i]["last_swap_time"] > start_time:
+            if data[i]["last_swap_time"] < end_time:
+                data[i].update({"pair": i})
+                filtered_data.append(data[i])
     return filtered_data
 
 
@@ -110,17 +109,16 @@ def pairs_last_traded(
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def summary(netid: NetId = NetId.ALL):
+def summary():
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
             resp.append(transform.ticker_to_xyz_summary(i))
         return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/tickers]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/tickers]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/tickers]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/tickers]: {e}"}
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/summary_for_ticker/KMD
@@ -130,99 +128,91 @@ def summary(netid: NetId = NetId.ALL):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def summary_for_ticker(coin: str = "KMD", netid: NetId = NetId.ALL):
+def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        if "_" in coin:
-            return {"error": "Coin value '{coin}' looks like a pair."}
-        cache = lib.Cache(netid=netid.value)
-        last_traded = cache.get_item(name="generic_last_traded").data
-        resp = cache.get_item(name="markets_tickers").data
+        last_traded = memcache.get_last_traded()
+        resp = memcache.get_tickers()
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap_time"] == 0:
                     if i["ticker_id"] in last_traded:
-                        i["last_swap_time"] = last_traded[i["ticker_id"]]["last_swap"]
-                        i["last_swap_price"] = last_traded[i["ticker_id"]]["last_swap"]
-
+                        i = i | last_traded[i["ticker_id"]]
                 new_data.append(transform.to_summary_for_ticker_xyz_item(i))
-
         return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/summary_for_ticker]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/summary_for_ticker]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}"}
 
 
 @router.get(
-    "/swaps24/{ticker}",
-    description="Total swaps involving a specific ticker (e.g. `KMD`) in the last 24hrs.",
+    "/swaps24/{coin}",
+    description="Total swaps involving a specific coin (e.g. `KMD`) in the last 24hrs.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def swaps24(ticker: str = "KMD", netid: NetId = NetId.ALL) -> dict:
+def swaps24(coin: str = "KMD") -> dict:
     # TODO: Lower than xyz source. Is it combined?
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         trades = 0
         for i in data["data"]:
-            if ticker in [i["base_currency"], i["quote_currency"]]:
+            if coin in [i["base_currency"], i["quote_currency"]]:
                 trades += int(i["trades_24hr"])
-        return {"ticker": ticker, "swaps_amount_24h": trades}
+        return {"ticker": coin, "swaps_amount_24h": trades}
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}"}
 
 
 @router.get(
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
 )
-def ticker(netid: NetId = NetId.ALL):
+def ticker():
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
             resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/ticker]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/ticker]: {e}"}
 
 
 @router.get(
     "/ticker_for_ticker",
     description="Simple last price and liquidity for each market pair for a specific ticker.",
 )
-def ticker_for_ticker(ticker, netid: NetId = NetId.ALL):
+def ticker_for_ticker(ticker):
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
             if ticker in [i["base_currency"], i["quote_currency"]]:
                 resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}"}
 
 
 @router.get(
     "/tickers_summary",
     description="Total swaps and volume involving for each active ticker in the last 24hrs.",
 )
-def tickers_summary(netid: NetId = NetId.ALL):
+def tickers_summary():
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = {}
         for i in data["data"]:
+            logger.calc(i)
             base = i["base_currency"]
             rel = i["quote_currency"]
             for ticker in [base, rel]:
+                logger.calc(ticker)
                 if ticker not in resp:
                     resp.update({ticker: {"trades_24h": 0, "volume_24h": 0}})
                 resp[ticker]["trades_24h"] += int(i["trades_24hr"])
@@ -231,41 +221,48 @@ def tickers_summary(netid: NetId = NetId.ALL):
                 elif ticker == rel:
                     resp[ticker]["volume_24h"] += Decimal(i["quote_volume"])
         resp = clean.decimal_dict(resp)
-        with_action = {}
+        with_action = {}  # has a recent swap
         tickers = list(resp.keys())
+        logger.calc(tickers)
         tickers.sort()
         for ticker in tickers:
+            tickers = list(resp[ticker])
             if resp[ticker]["trades_24h"] > 0:
                 with_action.update({ticker: resp[ticker]})
         return with_action
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}"}
 
 
 @router.get(
-    "/trades/{market_pair}/{days_in_past}",
+    "/trades/{pair_str}/{days_in_past}",
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = "false"
+    pair_str: str = "KMD_LTC", days_in_past: int | None = None
 ):
     try:
-        all = all.lower() == "true"
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
-        if days_in_past > 7:
-            return {"error": "Maximum value for 'days_in_past' is '7'. Try again."}
-        data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
-        for i in data:
-            data["base_volume"] = float(data["base_volume"])
-            data["quote_volume"] = float(data["quote_volume"])
-        return data
+        if days_in_past > 90:
+            return {"error": "Maximum value for 'days_in_past' is '90'. Try again."}
+        start_time = int(cron.now_utc() - 86400 * days_in_past)
+        end_time = int(cron.now_utc())
+
+        pair = Pair(pair_str=pair_str)
+        data = pair.historical_trades(
+            start_time=start_time,
+            end_time=end_time,
+        )["ALL"]
+        resp = data["buy"] + data["sell"]
+        resp = sortdata.sort_dict_list(resp, "timestamp", True)
+        return resp
     except BadPairFormatError as e:
-        err = {"error": f"{e.msg}"}
+        err = f"{type(e)} Error in [/api/v3/stats_xyz/trades]: {e.msg}"
         logger.warning(err)
     except Exception as e:
-        err = {"error": f"{type(e)}: {e}"}
+        err = f"{type(e)} Error in [/api/v3/stats_xyz/trades]: {e}"
         logger.warning(err)
     return JSONResponse(status_code=400, content=err)
 
@@ -277,42 +274,48 @@ def trades(
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def usd_volume_24h(netid: NetId = NetId.ALL):
+def usd_volume_24h():
     try:
-        cache = lib.Cache(netid=netid.value)
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         return {"usd_volume_24h": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
 
 
-# TODO: get volumes for x days for ticker
 @router.get(
     "/volumes_ticker/{coin}/{days_in_past}",
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
 def volumes_history_ticker(
-    coin="KMD",
-    days_in_past=1,
-    trade_type: TradeType = TradeType.ALL,
-    netid: NetId = NetId.ALL,
+    coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
 ):
-    # TODO: Move to new DB
-    db = get_sqlite_db(netid=netid.value)
+    # TODO: Use new DB
     volumes_dict = {}
+    query = db.SqlQuery()
+    # Individual tickers only, no merge except segwit
+    stripped_coin = transform.strip_coin_platform(coin)
+    variants = helper.get_coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
         day_ts = int(int(d.strftime("%s")) / 86400) * 86400
-        # TODO: Align with midnight
         start_time = int(day_ts)
         end_time = int(day_ts) + 86400
-        data = db.query.get_volume_for_coin(
-            coin=coin,
-            trade_type=trade_type,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        volumes_dict[d_str] = data["data"][coin]
+        volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
+        data = query.coin_trade_volumes_usd(volumes)
+        volumes_dict[d_str] = template.volumes_ticker()
+        logger.merge(volumes_dict)
+        for variant in variants:
+            logger.merge(variant)
+            logger.merge(stripped_coin)
+            if stripped_coin in data["volumes"]:
+                logger.loop(variant)
+                logger.loop(stripped_coin)
+                if variant in data["volumes"][stripped_coin]:
+                    logger.calc(volumes_dict[d_str])
+                    logger.calc(data["volumes"][stripped_coin][variant])
+                    volumes_dict[d_str] = (
+                        volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
+                    )
     return volumes_dict

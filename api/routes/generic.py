@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 import db
 from lib.pair import Pair
-from lib.dex_api import get_orderbook
+from lib.generic import Generic
 from models.generic import ErrorMessage
 from util.enums import TradeType
 from util.logger import logger
@@ -13,6 +13,7 @@ import util.helper as helper
 import util.memcache as memcache
 import util.validate as validate
 
+generic = Generic()
 router = APIRouter()
 
 # These endpoints not yet active. Their intent is to
@@ -31,21 +32,6 @@ router = APIRouter()
 def tickers():
     try:
         return memcache.get_tickers()
-    except Exception as e:  # pragma: no cover
-        err = {"error": f"{e}"}
-        logger.warning(err)
-        return JSONResponse(status_code=400, content=err)
-
-
-@router.get(
-    "/pairs",
-    description="Pairs traded in last 90 days.",
-    responses={406: {"model": ErrorMessage}},
-    status_code=200,
-)
-def pairs():
-    try:
-        return memcache.get_pairs()
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -80,13 +66,15 @@ def last_traded(pair_str: str = ""):
 def orderbook(
     pair_str: str = "KMD_LTC",
     depth: int = 100,
+    all: bool = True
 ):
     try:
-        data = memcache.get(f"orderbook_{pair_str}")
-        base, quote = helper.base_quote_from_pair(pair_str)
+        if all:
+            data = memcache.get(f"orderbook_{pair_str}_ALL")
+        else:
+            data = memcache.get(f"orderbook_{pair_str}")
         if data is None:
-            data = get_orderbook(base, quote)
-        # data = transform.orderbook_to_gecko(data)
+            data = generic.orderbook(pair_str=pair_str, all=all)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -170,7 +158,7 @@ def swaps_for_pair(
         msg += f"| {start_time} -> {end_time} | {days} days"
         pg_query = db.SqlQuery()
         data = pg_query.get_swaps_for_pair(
-            base, quote, trade_type, limit, start_time, end_time
+            base, quote, start_time, end_time, all=True
         )
         return {
             "trade_type": trade_type,

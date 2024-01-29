@@ -16,10 +16,6 @@ def setup_ticker_to_market_ticker():
     yield transform.ticker_to_market_ticker(get_ticker_item())
 
 
-@pytest.fixture
-def setup_ticker_to_gecko():
-    yield transform.ticker_to_gecko(get_ticker_item())
-
 
 @pytest.fixture
 def setup_ticker_to_statsapi_24h():

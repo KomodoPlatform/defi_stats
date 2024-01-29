@@ -49,14 +49,11 @@ def test_coin(
     assert not setup_coin_bad.is_testnet
     assert setup_coin_bad.is_wallet_only
     assert setup_coin_doc.is_testnet
-    assert setup_coin_doc.is_valid
     assert not setup_coin_ltc.is_testnet
     assert setup_coin_ltc.has_segwit
     assert setup_coin_ltc_segwit.has_segwit
     assert not setup_coin_doc.has_segwit
     assert setup_coin_atom.is_wallet_only
-    assert not setup_coin_atom.is_valid
-    assert setup_coin_ltc.is_valid
     assert not setup_coin_doc.is_wallet_only
     assert setup_coin_ltc_segwit.coin == "LTC-segwit"
     assert setup_coin_ltc_segwit.ticker == "LTC"
@@ -68,12 +65,3 @@ def test_coin(
     assert setup_coin_ltc.mcap > 0
     assert setup_coin_ltc.usd_price > 0
     assert setup_coin.usd_price > 0
-
-    assert setup_coin_ltc.is_valid
-    assert setup_coin.is_valid
-    assert not setup_coin_atom.is_valid
-    assert not setup_coin_bad.is_valid
-
-    assert not setup_coin_atom.is_tradable
-    assert setup_coin_kmd.is_tradable
-    assert setup_coin_ltc.is_tradable

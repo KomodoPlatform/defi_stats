@@ -47,7 +47,7 @@ def get_pairs(remove_platforms: bool = True):
 
 
 @router.get(
-    "/distinct/",
+    "/distinct",
     description="Get Unique values for a column",
     responses={406: {"model": ErrorMessage}},
     response_model=List,
@@ -91,7 +91,7 @@ def distinct(
 
 
 @router.get(
-    "/get_swaps/",
+    "/get_swaps",
     description="Swaps completed within two epoch timestamps.",
     responses={406: {"model": ErrorMessage}},
     response_model=List[db.DefiSwap] | Dict[str, List[db.DefiSwap]] | Dict,
@@ -143,7 +143,6 @@ def get_swaps_for_coin(
     coin: str,
     start_time: int = 0,
     end_time: int = 0,
-    merge_segwit: bool = True,
     pubkey: str | None = None,
     gui: str | None = None,
     version: str | None = None,
@@ -174,17 +173,16 @@ def get_swaps_for_coin(
 
 
 @router.get(
-    "/get_swaps_for_pair/{pair}",
+    "/get_swaps_for_pair/{pair_str}",
     description="Swaps for an exact pair matching filter.",
     responses={406: {"model": ErrorMessage}},
     response_model=List[db.DefiSwap],
     status_code=200,
 )
 def get_swaps_for_pair(
-    pair: str,
+    pair_str: str,
     start_time: int = 0,
     end_time: int = 0,
-    merge_segwit: bool = True,
     pubkey: str | None = None,
     gui: str | None = None,
     version: str | None = None,
@@ -197,7 +195,7 @@ def get_swaps_for_pair(
         if end_time == 0:
             end_time = int(cron.now_utc())
 
-        base, quote = helper.base_quote_from_pair(pair)
+        base, quote = helper.base_quote_from_pair(pair_str)
         query = db.SqlQuery()
         resp = query.get_swaps_for_pair(
             start_time=start_time,
@@ -406,31 +404,34 @@ def pair_trade_volumes_usd(
         return JSONResponse(status_code=400, content=err)
 
 
+# Unfinished phase 3 endpoints below
+
+
 @router.get(
-    "/last_traded",
+    "/last_traded/{category}",
     description="Trade volumes for each pair over the selected time period.",
     responses={406: {"model": ErrorMessage}},
     # response_model=PairTradeVolumes,
     status_code=200,
 )
-def last_traded(group_by: GroupBy, min_swaps: int = 3):
+def last_traded(category: GroupBy, min_swaps: int = 3):
     try:
         query = db.SqlQuery()
-        match group_by:
+        match category:
             case GroupBy.pair:
-                return query.pair_last_trade(min_swaps=min_swaps)
+                return query.pair_last_trade()
             case GroupBy.gui:
-                return query.gui_last_traded(min_swaps=min_swaps)
+                return query.gui_last_traded()
             case GroupBy.coin:
-                return query.coin_last_traded(min_swaps=min_swaps)
+                return query.coin_last_traded()
             case GroupBy.ticker:
-                return query.ticker_last_traded(min_swaps=min_swaps)
+                return query.ticker_last_traded()
             case GroupBy.platform:
-                return query.platform_last_traded(min_swaps=min_swaps)
+                return query.platform_last_traded()
             case GroupBy.pubkey:
-                return query.pubkey_last_traded(min_swaps=min_swaps)
+                return query.pubkey_last_traded()
             case GroupBy.version:
-                return query.version_last_traded(min_swaps=min_swaps)
+                return query.version_last_traded()
             case _:
                 return {"error": "Invalid selection for `group_by`"}
     except Exception as e:

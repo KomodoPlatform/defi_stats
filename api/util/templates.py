@@ -46,6 +46,7 @@ def orderbook(pair_str):
         "timestamp": f"{int(cron.now_utc())}",
         "asks": [],
         "bids": [],
+        "variants": [],
         "liquidity_usd": 0,
         "total_asks_base_vol": 0,
         "total_bids_base_vol": 0,
@@ -89,6 +90,18 @@ def volumes_and_prices(suffix, base, quote):
         "first_swap_price": 0,
         "first_swap_uuid": "",
         "first_swap_time": 0,
+    }
+
+
+def volumes_ticker():
+    return {
+        "taker_volume": 0,
+        "maker_volume": 0,
+        "trade_volume": 0,
+        "swaps": 0,
+        "taker_volume_usd": 0,
+        "maker_volume_usd": 0,
+        "trade_volume_usd": 0,
     }
 
 

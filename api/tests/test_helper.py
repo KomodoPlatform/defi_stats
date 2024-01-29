@@ -1,28 +1,23 @@
 import pytest
 from decimal import Decimal
+from lib.generic import Generic
 from tests.fixtures_data import swap_item
-from util.helper import (
-    get_mm2_rpc_port,
-    get_chunks,
-    get_price_at_finish,
-    base_quote_from_pair,
-)
-from lib.coins import get_pairs_info, get_pair_info_sorted
-from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
-
 from util.logger import logger
 import util.helper as helper
 import util.memcache as memcache
+import util.transform as transform
+
+generic = Generic()
 
 
 def test_get_mm2_rpc_port():
-    assert get_mm2_rpc_port("7777") == 7877
-    assert get_mm2_rpc_port(7777) == 7877
-    assert get_mm2_rpc_port("8762") == 7862
-    assert get_mm2_rpc_port("ALL") == 7862
+    assert helper.get_mm2_rpc_port("7777") == 7877
+    assert helper.get_mm2_rpc_port(7777) == 7877
+    assert helper.get_mm2_rpc_port("8762") == 7862
+    assert helper.get_mm2_rpc_port("ALL") == 7862
 
     with pytest.raises(Exception):
-        assert get_mm2_rpc_port("nope") == 7862
+        assert helper.get_mm2_rpc_port("nope") == 7862
 
 
 def test_get_netid_filename():
@@ -31,35 +26,35 @@ def test_get_netid_filename():
 
 def test_get_chunks():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    chunks = list(get_chunks(data, 3))
+    chunks = list(helper.get_chunks(data, 3))
     assert len(chunks) == 4
     assert len(chunks[0]) == 3
     assert len(chunks[3]) == 1
 
 
 def test_get_price_at_finish():
-    r = get_price_at_finish(swap_item)
+    r = helper.get_price_at_finish(swap_item)
     assert "1700000777" in r
     assert r["1700000777"] == Decimal(5) / Decimal(4)
 
 
 def test_get_pairs_info():
     pairs = ["KMD_LTC", "LTC-segwit_KMD", "DOC_LTC"]
-    r = get_pairs_info(pairs, True)
+    r = helper.get_pairs_info(pairs, True)
     assert len(r) == 3
     assert r[0]["priced"]
 
 
 def test_get_pair_info_sorted():
     pairs = ["KMD_LTC", "LTC-segwit_KMD", "DOC_LTC", "BTC_DGB-segwit"]
-    r = get_pair_info_sorted(pairs, False)
+    r = helper.get_pair_info_sorted(pairs, False)
     assert len(r) == 4
     assert r[0]["ticker_id"] == "BTC_DGB-segwit"
     assert not r[0]["priced"]
 
 
 def test_base_quote_from_pair():
-    base, quote = base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
+    base, quote = helper.base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
     assert base == "XXX-PLG20_OLD"
     assert quote == "YYY-PLG20_OLD"
 
@@ -105,3 +100,15 @@ def test_get_pair_variants():
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r
     assert "KMD-BEP20_USDC-PLG20_OLD" in r
+
+
+def test_find_lowest_ask():
+    orderbook = generic.orderbook("KMD_BTC", all=True)
+    r = helper.find_lowest_ask(orderbook)
+    assert r == transform.format_10f(1 / 24)
+
+
+def test_find_highest_bid():
+    orderbook = generic.orderbook("KMD_BTC", all=True)
+    r = helper.find_highest_bid(orderbook)
+    assert r == transform.format_10f(1 / 26)

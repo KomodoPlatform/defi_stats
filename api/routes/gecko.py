@@ -3,7 +3,6 @@ import util.cron as cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-from lib.cache import Cache
 from lib.generic import Generic
 from lib.pair import Pair
 from models.generic import ErrorMessage
@@ -13,11 +12,13 @@ from models.gecko import (
     GeckoOrderbook,
     GeckoHistoricalTrades,
 )
-from util.enums import TradeType, NetId
+from util.enums import TradeType
 from util.logger import logger
+from util.transform import convert, deplatform
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
+
 
 router = APIRouter()
 
@@ -32,7 +33,8 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        return transform.pairs_to_gecko(memcache.get_pairs())
+        tickers = deplatform.tickers(memcache.get_tickers(), priced_only=True)
+        return [convert.ticker_to_gecko_pair(i) for i in tickers["data"]]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -47,10 +49,9 @@ def gecko_pairs():
 )
 def gecko_tickers():
     try:
-        cache = Cache(netid="ALL")
-        data = cache.get_item(name="generic_tickers").data
-        data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
-        return data
+        tickers = deplatform.tickers(memcache.get_tickers(), priced_only=True)
+        tickers["data"] = [convert.ticker_to_gecko_ticker(i) for i in tickers["data"]]
+        return tickers
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}
@@ -92,8 +93,7 @@ def gecko_historical_trades(
     ticker_id: str = "KMD_LTC",
     limit: int = 100,
     start_time: int = int(cron.now_utc() - 86400),
-    end_time: int = int(cron.now_utc()),
-    netid: NetId = NetId.ALL,
+    end_time: int = int(cron.now_utc())
 ):
     try:
         for value, name in [
@@ -109,9 +109,9 @@ def gecko_historical_trades(
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-        )
-        data["buy"] = [transform.historical_trades_to_gecko(i) for i in data["buy"]]
-        data["sell"] = [transform.historical_trades_to_gecko(i) for i in data["sell"]]
+        )['ALL']
+        data["buy"] = [convert.historical_trades_to_gecko(i) for i in data["buy"]]
+        data["sell"] = [convert.historical_trades_to_gecko(i) for i in data["sell"]]
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

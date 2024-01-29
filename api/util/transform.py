@@ -174,6 +174,159 @@ class SortData:
         return pair_str
 
 
+class Convert:
+    def __init__(self):
+        pass
+
+    def ticker_to_gecko_pair(self, pair_data):
+        return {
+            "ticker_id": pair_data["ticker_id"],
+            "pool_id": pair_data["ticker_id"],
+            "base": pair_data["base_currency"],
+            "target": pair_data["quote_currency"],
+            "variants": pair_data["variants"],
+        }
+
+    def ticker_to_gecko_ticker(self, ticker_data):
+        return {
+            "ticker_id": ticker_data["ticker_id"],
+            "pool_id": ticker_data["ticker_id"],
+            "base_currency": ticker_data["base_currency"],
+            "target_currency": ticker_data["quote_currency"],
+            "base_volume": ticker_data["base_volume"],
+            "target_volume": ticker_data["quote_volume"],
+            "bid": ticker_data["highest_bid"],
+            "ask": ticker_data["lowest_ask"],
+            "high": ticker_data["highest_price_24hr"],
+            "low": ticker_data["lowest_price_24hr"],
+            "trades_24hr": ticker_data["trades_24hr"],
+            "last_price": ticker_data["last_swap_price"],
+            "last_trade": ticker_data["last_swap_time"],
+            "last_swap_uuid": ticker_data["last_swap_uuid"],
+            "volume_usd_24hr": ticker_data["combined_volume_usd"],
+            "liquidity_in_usd": ticker_data["liquidity_in_usd"],
+            "variants": ticker_data["variants"],
+        }
+
+    def historical_trades_to_gecko(self, i):
+        return {
+            "trade_id": i["trade_id"],
+            "price": i["price"],
+            "base_volume": i["base_volume"],
+            "target_volume": i["quote_volume"],
+            "timestamp": i["timestamp"],
+            "type": i["type"],
+        }
+
+    def traded_cache_to_stats_api(self, traded_cache):
+        resp = {}
+        for i in traded_cache:
+            cleaned_ticker = strip_pair_platforms(i)
+            if cleaned_ticker not in resp:
+                resp.update({cleaned_ticker: traded_cache[i]})
+            else:
+                if (
+                    resp[cleaned_ticker]["last_swap_time"]
+                    < traded_cache[i]["last_swap_time"]
+                ):
+                    resp.update({cleaned_ticker: traded_cache[i]})
+                elif (
+                    resp[cleaned_ticker]["first_swap_time"]
+                    > traded_cache[i]["first_swap_time"]
+                ):
+                    resp.update({cleaned_ticker: traded_cache[i]})
+        return resp
+
+
+class Deplatform:
+    def __init__(self):
+        pass
+
+    def tickers(self, tickers_data, priced_only=False):
+        data = {}
+        # Combine to pair without platforms
+        for i in tickers_data["data"]:
+            if priced_only and not i["priced"]:
+                continue
+            root_pair = strip_pair_platforms(i["ticker_id"])
+            i["ticker_id"] = root_pair
+            i["base_currency"] = strip_coin_platform(i["base_currency"])
+            i["quote_currency"] = strip_coin_platform(i["quote_currency"])
+            if root_pair not in data:
+                i["trades_24hr"] = int(i["trades_24hr"])
+                data.update({root_pair: i})
+            else:
+                j = data[root_pair]
+                j["variants"] += i["variants"]
+                j["trades_24hr"] += int(i["trades_24hr"])
+                for key in [
+                    "combined_volume_usd",
+                    "liquidity_in_usd",
+                    "base_volume",
+                    "base_volume_usd",
+                    "base_liquidity_coins",
+                    "base_liquidity_usd",
+                    "quote_volume",
+                    "quote_volume_usd",
+                    "quote_liquidity_coins",
+                    "quote_liquidity_usd",
+                ]:
+                    # Add to cumulative sum
+                    j[key] = sum_num_str(i[key], j[key])
+                if Decimal(i["last_swap_time"]) > Decimal(j["last_swap_time"]):
+                    j["last_swap_price"] = i["last_swap_price"]
+                    j["last_swap_time"] = i["last_swap_time"]
+                    j["last_swap_uuid"] = i["last_swap_uuid"]
+
+                if (
+                    Decimal(i["first_swap_time"]) < Decimal(j["first_swap_time"])
+                    or j["first_swap_time"] == 0
+                ):
+                    j["first_swap_price"] = i["first_swap_price"]
+                    j["first_swap_time"] = i["first_swap_time"]
+                    j["first_swap_uuid"] = i["first_swap_uuid"]
+
+                if int(Decimal(j["newest_price_time"])) < int(
+                    Decimal(i["newest_price_time"])
+                ):
+                    j["newest_price_time"] = i["newest_price_time"]
+                    j["newest_price"] = i["newest_price"]
+
+                if (
+                    j["oldest_price_time"] > i["oldest_price_time"]
+                    or j["oldest_price_time"] == 0
+                ):
+                    j["oldest_price_time"] = i["oldest_price_time"]
+                    j["oldest_price"] = i["oldest_price"]
+
+                if Decimal(j["highest_bid"]) < Decimal(i["highest_bid"]):
+                    j["highest_bid"] = i["highest_bid"]
+
+                if Decimal(j["lowest_ask"]) > Decimal(i["lowest_ask"]):
+                    j["lowest_ask"] = i["lowest_ask"]
+
+                if Decimal(j["highest_price_24hr"]) < Decimal(i["highest_price_24hr"]):
+                    j["highest_price_24hr"] = i["highest_price_24hr"]
+
+                if (
+                    Decimal(j["lowest_price_24hr"]) > Decimal(i["lowest_price_24hr"])
+                    or j["lowest_price_24hr"] == 0
+                ):
+                    j["lowest_price_24hr"] = i["lowest_price_24hr"]
+
+                j["price_change_24hr"] = format_10f(
+                    Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
+                )
+                if Decimal(j["oldest_price"]) > 0:
+                    j["price_change_pct_24hr"] = format_10f(
+                        Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
+                    )
+                else:
+                    j["price_change_pct_24hr"] = format_10f(0)
+                j["variants"].sort()
+        return tickers_data
+
+
 def label_bids_asks(orderbook_data, pair):
     data = template.orderbook(pair)
     for i in ["asks", "bids"]:
@@ -345,7 +498,7 @@ def ticker_to_market_ticker(i):
     }
 
 
-def ticker_to_gecko(i):
+def ticker_to_gecko_summary(i):
     data = {
         "ticker_id": i["ticker_id"],
         "pool_id": i["ticker_id"],
@@ -370,6 +523,8 @@ def ticker_to_gecko(i):
 
 @timed
 def ticker_to_statsapi_summary(i):
+    if i is None:
+        return i
     try:
         suffix = [k for k in i.keys() if k.startswith("trades_")][0].replace(
             "trades_", ""
@@ -428,17 +583,6 @@ def historical_trades_to_market_trades(i):
     }
 
 
-def historical_trades_to_gecko(i):
-    return {
-        "trade_id": i["trade_id"],
-        "price": i["price"],
-        "base_volume": i["base_volume"],
-        "quote_volume": i["quote_volume"],
-        "timestamp": i["timestamp"],
-        "type": i["type"],
-    }
-
-
 def strip_pair_platforms(pair):
     base, quote = helper.base_quote_from_pair(pair)
     return f"{strip_coin_platform(base)}_{strip_coin_platform(quote)}"
@@ -465,26 +609,6 @@ def deplatform_pair_summary_item(i):
             resp.update({k: strip_coin_platform(i[k])})
         else:
             resp.update({k: i[k]})
-    return resp
-
-
-def traded_cache_to_stats_api(traded_cache):
-    resp = {}
-    for i in traded_cache:
-        cleaned_ticker = strip_pair_platforms(i)
-        if cleaned_ticker not in resp:
-            resp.update({cleaned_ticker: traded_cache[i]})
-        else:
-            if (
-                resp[cleaned_ticker]["last_swap_time"]
-                < traded_cache[i]["last_swap_time"]
-            ):
-                resp.update({cleaned_ticker: traded_cache[i]})
-            elif (
-                resp[cleaned_ticker]["first_swap_time"]
-                > traded_cache[i]["first_swap_time"]
-            ):
-                resp.update({cleaned_ticker: traded_cache[i]})
     return resp
 
 
@@ -539,11 +663,6 @@ def invert_orderbook(orderbook):
 def invert_pair(pair_str):
     base, quote = helper.base_quote_from_pair(pair_str, True)
     return f"{base}_{quote}"
-
-
-def pairs_to_gecko(generic_data):
-    # Remove unpriced
-    return [i for i in generic_data if i["priced"]]
 
 
 def update_if_greater(existing, new, key, secondary_key=None):
@@ -724,91 +843,8 @@ def last_trade_deplatform(last_traded):
     return data
 
 
-def tickers_deplatform(tickers_data):
-    tickers = {}
-    # Combine to pair without platforms
-    for i in tickers_data["data"]:
-        root_pair = strip_pair_platforms(i["ticker_id"])
-        i["ticker_id"] = root_pair
-        i["base_currency"] = strip_coin_platform(i["base_currency"])
-        i["quote_currency"] = strip_coin_platform(i["quote_currency"])
-        if root_pair not in tickers:
-            i["trades_24hr"] = int(i["trades_24hr"])
-            tickers.update({root_pair: i})
-        else:
-            j = tickers[root_pair]
-            j["variants"] += i["variants"]
-            j["trades_24hr"] += int(i["trades_24hr"])
-            for key in [
-                "combined_volume_usd",
-                "liquidity_in_usd",
-                "base_volume",
-                "base_volume_usd",
-                "base_liquidity_coins",
-                "base_liquidity_usd",
-                "quote_volume",
-                "quote_volume_usd",
-                "quote_liquidity_coins",
-                "quote_liquidity_usd",
-            ]:
-                # Add to cumulative sum
-                j[key] = sum_num_str(i[key], j[key])
-            if Decimal(i["last_swap_time"]) > Decimal(j["last_swap_time"]):
-                j["last_swap_price"] = i["last_swap_price"]
-                j["last_swap_time"] = i["last_swap_time"]
-                j["last_swap_uuid"] = i["last_swap_uuid"]
-
-            if (
-                Decimal(i["first_swap_time"]) < Decimal(j["first_swap_time"])
-                or j["first_swap_time"] == 0
-            ):
-                j["first_swap_price"] = i["first_swap_price"]
-                j["first_swap_time"] = i["first_swap_time"]
-                j["first_swap_uuid"] = i["first_swap_uuid"]
-
-            if int(Decimal(i["newest_price_time"])) > int(
-                Decimal(j["newest_price_time"])
-            ):
-                j["newest_price_time"] = i["newest_price_time"]
-                j["newest_price"] = i["newest_price"]
-
-            if (
-                i["oldest_price_time"] < j["oldest_price_time"]
-                or j["oldest_price_time"] == 0
-            ):
-                j["oldest_price_time"] = i["oldest_price_time"]
-                j["oldest_price"] = i["oldest_price"]
-
-            if Decimal(i["highest_bid"]) > Decimal(j["highest_bid"]):
-                j["highest_bid"] = i["highest_bid"]
-
-            if Decimal(i["lowest_ask"]) < Decimal(j["lowest_ask"]):
-                j["lowest_ask"] = i["lowest_ask"]
-
-            if Decimal(i["highest_price_24hr"]) > Decimal(j["highest_price_24hr"]):
-                j["highest_price_24hr"] = i["highest_price_24hr"]
-
-            if (
-                Decimal(i["lowest_price_24hr"]) < Decimal(j["lowest_price_24hr"])
-                or j["lowest_price_24hr"] == 0
-            ):
-                j["lowest_price_24hr"] = i["lowest_price_24hr"]
-
-            j["price_change_24hr"] = format_10f(
-                Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
-            )
-            if Decimal(j["oldest_price"]) > 0:
-                j["price_change_pct_24hr"] = format_10f(
-                    Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
-                )
-            else:
-                j["price_change_pct_24hr"] = format_10f(0)
-            if root_pair == "KMD_LTC":
-                logger.merge(j)
-    tickers_data["data"] = tickers
-    return tickers_data
-
-
 clean = Clean()
+convert = Convert()
+deplatform = Deplatform()
 merge = Merge()
 sortdata = SortData()

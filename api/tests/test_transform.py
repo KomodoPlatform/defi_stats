@@ -6,7 +6,6 @@ from tests.fixtures_transform import (
     setup_ticker_to_market_ticker,
     setup_ticker_to_market_ticker_summary,
     setup_historical_trades_to_market_trades,
-    setup_ticker_to_gecko,
 )
 from tests.fixtures_db import setup_swaps_db_data, setup_time
 from tests.fixtures_class import setup_gecko
@@ -23,7 +22,7 @@ from tests.fixtures_data import (
 
 
 from util.logger import logger
-from util.transform import merge, sortdata, clean
+from util.transform import convert, sortdata, clean
 import util.transform as transform
 import util.memcache as memcache
 
@@ -57,8 +56,8 @@ def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
     assert x[ticker]["last_swap_price"] == ticker_item["last_swap_price"]
 
 
-def test_ticker_to_gecko(setup_ticker_to_gecko):
-    x = setup_ticker_to_gecko
+def test_ticker_to_gecko_summary():
+    x = transform.ticker_to_gecko_summary(get_ticker_item())
     assert x["ticker_id"] == x["pool_id"]
 
 
@@ -88,12 +87,12 @@ def test_historical_trades_to_market_trades(setup_historical_trades_to_market_tr
 
 
 def test_historical_trades_to_gecko():
-    x = transform.historical_trades_to_gecko(trades_info[0])
+    x = convert.historical_trades_to_gecko(trades_info[0])
     assert trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
     assert trades_info[0]["trade_id"] == x["trade_id"]
     assert trades_info[0]["price"] == x["price"]
     assert trades_info[0]["base_volume"] == x["base_volume"]
-    assert trades_info[0]["quote_volume"] == x["quote_volume"]
+    assert trades_info[0]["quote_volume"] == x["target_volume"]
     assert trades_info[0]["timestamp"] == x["timestamp"]
     assert trades_info[0]["type"] == x["type"]
 

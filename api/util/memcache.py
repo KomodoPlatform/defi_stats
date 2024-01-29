@@ -1,9 +1,14 @@
+#!/usr/bin/env python3
+import os
 import time
 import json
 from pymemcache.client.base import PooledClient
 from util.logger import logger, timed
 from const import MEMCACHE_LIMIT
 import util.defaults as default
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class JsonSerde(object):
@@ -109,6 +114,8 @@ def get_tickers():
 
 def get(key):
     i = 0
+    if os.getenv("IS_TESTING"):
+        key = f"{key}-testing"
     while i < 7:
         cached = None
         try:
@@ -118,16 +125,22 @@ def get(key):
         if cached is not None:
             return cached
         i += 1
-    if "orderbook" not in key and key not in ['testing']:
+    if "orderbook" not in key and "ticker_info" not in key and key not in ["testing"]:
         logger.warning(f"Failed to get '{key}' from memcache")
     return None
 
 
 @timed
 def update(key, value, expiry):
-    if value is not None:
-        MEMCACHE.set(key, value, expiry)
-        default.result(data=None, msg=f"{key} memcache updated", loglevel="cache")
-    default.result(
-        data=None, msg=f"{key} memcache not updated, data is empty", loglevel="warning"
-    )
+    try:
+        if os.getenv("IS_TESTING"):
+            key = f"{key}-testing"
+        if value is not None:
+            MEMCACHE.set(key, value, expiry)
+            msg = f"{key} memcache updated"
+            return default.result(data=key, msg=msg, loglevel="cached", ignore_until=3)
+        msg = f"{key} memcache not updated, data is empty"
+    except Exception as e:
+        msg = f"{key} memcache not updated: {e}"
+        logger.warning(f"Failed to cache {key}! {e}")
+    return default.result(data=key, msg=msg, loglevel="warning")

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import util.cron as cron
 from util.logger import logger
 from models.generic import FixerRates, ErrorMessage
 from lib.cache import Cache
@@ -19,15 +18,20 @@ cache = Cache()
 )
 def get_fixer_rates():
     try:
-        cache = Cache(netid="ALL")
+        cache = Cache()
         data = cache.get_item(name="fixer_rates").data
-        if "timestamp" not in data:
-            raise ValueError("No timestamp in data!")
-        elif data["timestamp"] < cron.now_utc() - 900:
-            raise ValueError("Data expired! No updates for > 15 mins.")
-        if "error" in data:
-            raise ValueError(data["error"])
-        return data
+        if data is not None:
+            return data
+        return {}
+        '''
+            if "timestamp" not in data:
+                raise ValueError("No timestamp in data!")
+            elif data["timestamp"] < cron.now_utc() - 900:
+                raise ValueError("Data expired! No updates for > 15 min")
+            if "error" in data:
+                raise ValueError(data["error"])
+            return data
+        '''
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/rates/fixer_io]: {e}"}
         logger.warning(err)

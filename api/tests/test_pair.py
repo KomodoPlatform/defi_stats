@@ -22,21 +22,17 @@ from tests.fixtures_pair import (
     setup_1inch_usdc_pair,
     setup_morty_kmd_pair,
 )
+from lib.generic import Generic
 from util.logger import logger
-from util.transform import merge, sortdata
+from util.transform import merge, sortdata, clean
 import util.memcache as memcache
 import util.transform as transform
 
-clean = transform.Clean()
 
+generic = Generic()
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
 last_traded_cache = memcache.get_last_traded()
-
-
-def test_kmd_ltc_pair(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
-    pair = setup_kmd_ltc_pair
-    assert pair.is_tradable
 
 
 def test_historical_trades(
@@ -148,15 +144,12 @@ def test_get_volumes_and_prices(
 def test_pair(
     setup_ltc_kmd_pair,
     setup_kmd_dgb_pair,
-    setup_not_existing_pair,
-    setup_morty_kmd_pair,
 ):
     pair = setup_ltc_kmd_pair
     assert pair.base == "LTC"
     assert pair.quote == "KMD"
     assert pair.as_str == "LTC_KMD"
     assert pair.as_tuple == ("LTC", "KMD")
-    assert pair.is_priced
     pair = setup_kmd_dgb_pair
     assert not pair.as_str == "DGB_KMD"
     assert pair.as_str == "KMD_DGB"
@@ -164,15 +157,10 @@ def test_pair(
     assert not pair.base == "DGB"
     assert pair.base == "KMD"
     assert pair.quote == "DGB"
-    assert pair.is_priced
-    pair = setup_not_existing_pair
-    assert not pair.is_priced
-    pair = setup_morty_kmd_pair
-    assert not pair.is_priced
 
 
-def test_merge_orderbooks(setup_kmd_ltc_pair):
-    orderbook_data = setup_kmd_ltc_pair.orderbook.for_pair(depth=100, all=False)
+def test_merge_orderbooks():
+    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)

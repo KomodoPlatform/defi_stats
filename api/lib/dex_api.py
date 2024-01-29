@@ -40,17 +40,9 @@ class DexAPI:
     # tuple, string, string -> list
     # returning orderbook for given trading pair
     @timed
-    def orderbook_rpc(self, base: str, quote: str, no_cache: bool = False) -> dict:
+    def orderbook_rpc(self, base: str, quote: str) -> dict:
         try:
             if base != quote:
-
-                if not no_cache:
-                    # Get from cache if avialable, otherwise continue
-                    cached = memcache.get(f"orderbook_{base}_{quote}")
-                    if cached is not None:
-                        msg = f"Using cache for {base}_{quote}"
-                        return default.result(data=cached, msg=msg, loglevel="loop")
-
                 params = {
                     "mmrpc": "2.0",
                     "method": "orderbook",
@@ -79,11 +71,16 @@ class DexAPI:
 def get_orderbook(base, quote):
     try:
         pair = f"{base}_{quote}"
+        # Get from cache if avialable, otherwise continue
+        cached = memcache.get(f"orderbook_{base}_{quote}")
+        if cached is not None:
+            msg = f"Using cache for orderbook_{base}_{quote}"
+            return default.result(data=cached, msg=msg, loglevel="loop", ignore_until=2)
         orderbook_data = DexAPI().orderbook_rpc(base, quote)
         data = transform.label_bids_asks(orderbook_data, pair)
-        # Store orderbooks in memory for up to 30 mins
+        # Store orderbooks in memory for up to 5 mins
         cache_name = f"orderbook_{pair}"
-        memcache.update(cache_name, data, 1800)
+        memcache.update(cache_name, data, 300)
         msg = f"{cache_name} added to memcache"
     except Exception as e:  # pragma: no cover
         msg = f"dexapi.get_orderbook {base}/{quote} failed | netid ALL: {e}"

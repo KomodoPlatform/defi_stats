@@ -24,7 +24,6 @@ from const import (
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from lib.coins import get_gecko_price
-from lib.cache import CacheItem
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 from util.transform import merge, sortdata
@@ -393,7 +392,7 @@ class SqlQuery(SqlDB):
                 "start_time": start_time,
                 "end_time": end_time,
                 "range_days": (end_time - start_time) / 86400,
-                "swaps": num_swaps,
+                "swaps": total_swaps,
                 "volumes": resp,
             }
             return default.result(
@@ -495,7 +494,8 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                pair_std = i["pair_std"]
+                logger.calc(i)
+                pair_std = i["pair"]
                 if pair_std not in resp:
                     resp.update({pair_std: {"ALL": template.pair_trade_vol_item()}})
                 if i["pair"] not in resp[pair_std]:
@@ -540,6 +540,7 @@ class SqlQuery(SqlDB):
             total_swaps = 0
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
+            logger.calc(volumes)
             for pair_std in volumes["volumes"]:
                 base, quote = helper.base_quote_from_pair(pair_std)
                 base_usd_price = get_gecko_price(base)
@@ -646,7 +647,7 @@ class SqlQuery(SqlDB):
             return default.error(e)
 
     @timed
-    def gui_last_traded(self, is_success: bool = True, min_swaps: int = 0):
+    def gui_last_traded(self, is_success: bool = True):
         try:
             maker_data = self.last_trade(
                 is_success=is_success,
@@ -658,6 +659,7 @@ class SqlQuery(SqlDB):
             )
             data = {}
             for i in maker_data:
+                logger.info(maker_data)
                 k = transform.derive_app(maker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -674,6 +676,7 @@ class SqlQuery(SqlDB):
                 data[k]["total_num_swaps"] += maker_data[i]["num_swaps"]
 
             for i in taker_data:
+                logger.info(taker_data)
                 k = transform.derive_app(taker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -689,7 +692,6 @@ class SqlQuery(SqlDB):
                 )
                 data[k]["total_num_swaps"] += taker_data[i]["num_swaps"]
 
-            data = {i: data[i] for i in data if data[i]["total_num_swaps"] > min_swaps}
             # Convert the results to a list of dictionaries
             return default.result(
                 data=data,
@@ -951,14 +953,39 @@ class SqlQuery(SqlDB):
         return swaps[coin]
 
     def get_swaps_for_pair(
-        self, base: str, quote: str, merge_segwit: bool = True, all=False, **kwargs
+        self,
+        base: str,
+        quote: str,
+        merge_segwit: bool = True,
+        start_time: int = 0,
+        end_time: int = 0,
+        limit: int = 100,
+        trade_type: int | None = None,
+        pair: str | None = None,
+        pubkey: str | None = None,
+        gui: str | None = None,
+        version: str | None = None,
+        success_only: bool = True,
+        failed_only: bool = False,
+        all=False,
     ):
         """
         Returns swaps for a variant of a pair only.
         Optionally, pairs with segwit coins can be merged
         """
         pair = f"{base}_{quote}"
-        swaps = self.get_swaps(pair=pair, **kwargs)
+        swaps = self.get_swaps(
+            pair=pair,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+            trade_type=trade_type,
+            pubkey=pubkey,
+            gui=gui,
+            version=version,
+            success_only=success_only,
+            failed_only=failed_only,
+        )
         if all:
             return swaps["ALL"]
         if merge_segwit:
@@ -1019,11 +1046,9 @@ class SqlQuery(SqlDB):
             )
 
             gecko_source = memcache.get_gecko_source()
-            if gecko_source is None:
-                CacheItem("gecko_source").save()
             # Sort pair by ticker mcap to expose duplicates
             sorted_pairs = list(
-                set([sortdata.order_pair_by_market_cap(i) for i in pairs])
+                set([sortdata.order_pair_by_market_cap(i, gecko_source=gecko_source) for i in pairs])
             )
             return default.result(
                 data=sorted_pairs,
@@ -1051,9 +1076,9 @@ class SqlQuery(SqlDB):
             end_time = int(cron.now_utc())
         with Session(self.engine) as session:
             if coin is not None:
-                q = session.query(self.table.maker_coin, column.taker_coin)
-            elif pair is not None:
                 q = session.query(self.table.maker_coin, self.table.taker_coin)
+            elif pair is not None:
+                q = session.query(self.table.pair)
             elif column is not None:
                 try:
                     col = getattr(self.table, column)

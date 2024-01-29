@@ -88,7 +88,7 @@ def generic_last_traded():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=60)
 @timed
 def generic_tickers():
     try:

@@ -7,6 +7,7 @@ import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
+import util.validate as validate
 
 
 class StatsAPI:  # pragma: no cover
@@ -17,6 +18,7 @@ class StatsAPI:  # pragma: no cover
             self.options = []
             default.params(self, self.kwargs, self.options)
             self.pg_query = db.SqlQuery()
+            self.gecko_source = memcache.get_gecko_source()
         except Exception as e:
             logger.error(f"Failed to init Generic: {e}")
 
@@ -24,140 +26,37 @@ class StatsAPI:  # pragma: no cover
         # TODO: Might need some transformation there
         return sortdata.top_pairs(summaries=summaries)
 
-    def pair_summaries(self, days: int = 1, pairs_days: int = 7, as_dict: bool = False):
+    def pair_summaries(self, days: int = 1, pairs_days: int = 7):
         try:
             last_traded_cache = memcache.get_last_traded()
             if days > pairs_days:
                 pairs_days = days
-            data = self.pg_query.get_pairs(days=pairs_days)
-            pairs = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
+            pairs = sorted(
+                list(
+                    set([transform.strip_pair_platforms(i) for i in last_traded_cache])
+                )
+            )
             suffix = transform.get_suffix(days)
-            if suffix == "24hr":
-                alt_suffix = "24h"
-            else:
-                alt_suffix = suffix
-            ticker_infos = [
-                Pair(pair_str=i, last_traded_cache=last_traded_cache).ticker_info(
-                    days, all=True
-                )
-                for i in pairs
-            ]
-            data = [transform.ticker_to_statsapi_summary(i) for i in ticker_infos]
-            # Drop coin platforms and merge data
-            resp_dict = {}
-            for i in data:
-                pair = i["ticker_id"]
-                clean_pair = transform.strip_pair_platforms(pair)
-                clean_pair_summary_item = transform.deplatform_pair_summary_item(i)
-                if clean_pair not in resp_dict:
-                    resp_dict.update({clean_pair: clean_pair_summary_item})
-                else:
-                    resp_dict[clean_pair][
-                        "pair_swaps_count"
-                    ] += clean_pair_summary_item["pair_swaps_count"]
-                    resp_dict[clean_pair][
-                        "pair_liquidity_usd"
-                    ] += clean_pair_summary_item["pair_liquidity_usd"]
-                    resp_dict[clean_pair][
-                        "pair_trade_value_usd"
-                    ] += clean_pair_summary_item["pair_trade_value_usd"]
-                    resp_dict[clean_pair]["base_volume"] += clean_pair_summary_item[
-                        "base_volume"
-                    ]
-                    resp_dict[clean_pair][
-                        "base_trade_value_usd"
-                    ] += clean_pair_summary_item["base_trade_value_usd"]
-                    resp_dict[clean_pair][
-                        "base_liquidity_coins"
-                    ] += clean_pair_summary_item["base_liquidity_coins"]
-                    resp_dict[clean_pair][
-                        "base_liquidity_usd"
-                    ] += clean_pair_summary_item["base_liquidity_usd"]
-                    resp_dict[clean_pair]["quote_volume"] += clean_pair_summary_item[
-                        "quote_volume"
-                    ]
-                    resp_dict[clean_pair][
-                        "quote_trade_value_usd"
-                    ] += clean_pair_summary_item["quote_trade_value_usd"]
-                    resp_dict[clean_pair][
-                        "quote_liquidity_coins"
-                    ] += clean_pair_summary_item["quote_liquidity_coins"]
-                    resp_dict[clean_pair][
-                        "quote_liquidity_usd"
-                    ] += clean_pair_summary_item["quote_liquidity_usd"]
-                    resp_dict[clean_pair][
-                        "base_trade_value_usd"
-                    ] += clean_pair_summary_item["base_trade_value_usd"]
-                    resp_dict[clean_pair][
-                        "base_trade_value_usd"
-                    ] += clean_pair_summary_item["base_trade_value_usd"]
-                    resp_dict[clean_pair][
-                        "base_trade_value_usd"
-                    ] += clean_pair_summary_item["base_trade_value_usd"]
-                    resp_dict[clean_pair][
-                        "base_trade_value_usd"
-                    ] += clean_pair_summary_item["base_trade_value_usd"]
+            ticker_infos = []
+            if self.gecko_source is None:
+                self.gecko_source = memcache.get_gecko_source()
+            for i in pairs:
+                if validate.is_pair_priced(i, gecko_source=self.gecko_source):
+                    cache_name = f"ticker_info_{i}_{suffix}_ALL"
+                    # logger.merge(f"Loading {cache_name}")
+                    d = memcache.get(cache_name)
+                    if d is None:
+                        d = Pair(
+                            pair_str=i, last_traded_cache=last_traded_cache
+                        ).ticker_info(days=days, all=True)
+                    ticker_infos.append(d)
 
-                    transform.update_if_greater(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        "highest_bid",
-                    )
+            logger.merge(
+                f"Pair summary ticker infos ({days} days): {len(ticker_infos)}"
+            )
 
-                    transform.update_if_lesser(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        "lowest_ask",
-                    )
-
-                    transform.update_if_greater(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        f"highest_price_{alt_suffix}",
-                    )
-
-                    transform.update_if_lesser(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        f"lowest_price_{alt_suffix}",
-                    )
-
-                    transform.update_if_greater(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        "newest_price_time",
-                        "newest_price",
-                    )
-
-                    transform.update_if_lesser(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        "oldest_price_time",
-                        "oldest_price",
-                    )
-
-                    transform.update_if_greater(
-                        resp_dict[clean_pair],
-                        clean_pair_summary_item,
-                        "last_swap_time",
-                        "last_swap_price",
-                    )
-                resp_dict[clean_pair][f"price_change_{alt_suffix}"] = (
-                    resp_dict[clean_pair]["newest_price"]
-                    - resp_dict[clean_pair]["oldest_price"]
-                )
-                if resp_dict[clean_pair]["oldest_price"] != 0:
-                    resp_dict[clean_pair][f"price_change_pct_{alt_suffix}"] = (
-                        resp_dict[clean_pair]["newest_price"]
-                        / resp_dict[clean_pair]["oldest_price"]
-                        - 1
-                    )
-                else:
-                    resp_dict[clean_pair][f"price_change_pct_{alt_suffix}"] = 0
-            if as_dict:
-                return resp_dict
-            data = [resp_dict[i] for i in resp_dict]
-            return clean.decimal_dict_list(data)
+            resp = [transform.ticker_to_statsapi_summary(i) for i in ticker_infos]
+            return clean.decimal_dict_list(resp)
 
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
@@ -167,9 +66,6 @@ class StatsAPI:  # pragma: no cover
         try:
             end_time = int(cron.now_utc())
             start_time = end_time - 14 * 86400
-            swaps = self.pg_query.get_timespan_swaps(
-                start_time=start_time, end_time=end_time
-            )
             summaries = self.pair_summaries(days)
             liquidity = transform.sum_json_key(data=summaries, key="pair_liquidity_usd")
             swaps_value = transform.sum_json_key(
@@ -177,7 +73,9 @@ class StatsAPI:  # pragma: no cover
             )
             data = {
                 "days": days,
-                "swaps_count": len(swaps),
+                "swaps_count": db.SqlQuery().get_count(
+                    start_time=start_time, end_time=end_time
+                ),
                 "swaps_value": round(float(swaps_value), 8),
                 "top_pairs": self.top_pairs(summaries),
                 "current_liquidity": round(float(liquidity), 8),

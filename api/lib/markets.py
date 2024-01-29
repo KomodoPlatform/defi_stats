@@ -45,12 +45,11 @@ class Markets:
                 start_time=start_time,
                 end_time=end_time,
             )
-
             resp = []
             base, quote = helper.base_quote_from_pair(pair)
             if all:
-                resp += data["ALL"]["buy"]
-                resp += data["ALL"]["sell"]
+                resp = data["ALL"]["buy"]
+                resp = data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:
                 bases = helper.get_coin_variants(
                     base,

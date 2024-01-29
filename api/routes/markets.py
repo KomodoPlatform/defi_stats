@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import util.cron as cron
 from typing import List, Dict
 from const import MARKETS_PAIRS_DAYS
-from db.sqlitedb import get_sqlite_db
 from models.generic import ErrorMessage
 from util.exceptions import BadPairFormatError
 from models.markets import (
@@ -22,27 +21,22 @@ from models.markets import (
     MarketsSummaryForTicker,
 )
 from lib.generic import Generic
-
 from lib.markets import Markets
+
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import (
-    ticker_to_market_ticker,
-    ticker_to_market_ticker_summary,
-    to_summary_for_ticker_item,
-    sum_json_key_10f,
-    sum_json_key,
-)
+from util.transform import clean
+import util.helper as helper
+import util.memcache as memcache
+import util.templates as template
 import util.transform as transform
 import util.validate as validate
-import lib
+import db
 
-clean = transform.Clean()
 
 router = APIRouter()
 
 
-# TODO: Move to new DB
 @router.get(
     "/atomicdexio",
     description="Returns atomic swap counts over a variety of periods",
@@ -51,9 +45,8 @@ router = APIRouter()
     status_code=200,
 )
 def atomicdex_info_api():
-    # TODO: Use new DB
-    db = get_sqlite_db()
-    return db.query.swap_counts()
+    query = db.SqlQuery()
+    return query.swap_counts()
 
 
 # New endpoint
@@ -66,8 +59,7 @@ def atomicdex_info_api():
 )
 def current_liquidity():
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         return {"current_liquidity": data["combined_liquidity_usd"]}
 
     except Exception as e:  # pragma: no cover
@@ -83,8 +75,7 @@ def current_liquidity():
     status_code=200,
 )
 def fiat_rates():
-    data = lib.CacheItem("gecko_source").data
-    return data
+    return memcache.get_gecko_source()
 
 
 @router.get(
@@ -114,16 +105,14 @@ def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
 def pairs_last_traded(
     start_time: int = 0,
     end_time: int = int(cron.now_utc()),
-    min_swaps: int = 5,
 ) -> list:
-    data = lib.CacheItem("generic_last_traded").data
+    data = memcache.get_last_traded()
     filtered_data = []
     for i in data:
-        if data[i]["swap_count"] > min_swaps:
-            if data[i]["last_swap"] > start_time:
-                if data[i]["last_swap"] < end_time:
-                    data[i].update({"pair": i})
-                    filtered_data.append(data[i])
+        if data[i]["last_swap_time"] > start_time:
+            if data[i]["last_swap_time"] < end_time:
+                data[i].update({"pair": i})
+                filtered_data.append(data[i])
     return filtered_data
 
 
@@ -137,11 +126,10 @@ def pairs_last_traded(
 )
 def summary():
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
-            resp.append(ticker_to_market_ticker_summary(i))
+            resp.append(transform.ticker_to_market_ticker_summary(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/tickers]: {e}")
@@ -160,26 +148,25 @@ def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
         if "_" in coin:
-            return {"error": "Coin value '{coin}' looks like a pair."}
-        cache = lib.Cache()
-        last_traded = cache.get_item(name="generic_last_traded").data
-        resp = cache.get_item(name="markets_tickers").data
+            return {"error": f"Coin value '{coin}' looks like a pair."}
+        resp = memcache.get_tickers()
+        last_traded = memcache.get_last_traded()
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap_time"] == 0:
                     if i["ticker_id"] in last_traded:
-                        i["last_swap_time"] = last_traded[i["ticker_id"]]["last_swap"]
-                        i["last_swap_price"] = last_traded[i["ticker_id"]]["last_swap"]
-
-                new_data.append(to_summary_for_ticker_item(i))
+                        i = i | last_traded[i["ticker_id"]]
+                new_data.append(transform.to_summary_for_ticker_item(i))
 
         resp.update(
             {
                 "pairs_count": len(new_data),
-                "swaps_count": int(sum_json_key(new_data, "trades_24hr")),
-                "liquidity_usd": sum_json_key_10f(new_data, "liquidity_usd"),
-                "combined_volume_usd": sum_json_key_10f(new_data, "combined_volume_usd"),
+                "swaps_count": int(transform.sum_json_key(new_data, "trades_24hr")),
+                "liquidity_usd": transform.sum_json_key_10f(new_data, "liquidity_usd"),
+                "combined_volume_usd": transform.sum_json_key_10f(
+                    new_data, "combined_volume_usd"
+                ),
                 "data": new_data,
             }
         )
@@ -198,8 +185,7 @@ def summary_for_ticker(coin: str = "KMD"):
 )
 def swaps24(ticker: str = "KMD") -> dict:
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         trades = 0
         for i in data["data"]:
             if ticker in [i["base_currency"], i["quote_currency"]]:
@@ -216,11 +202,10 @@ def swaps24(ticker: str = "KMD") -> dict:
 )
 def ticker():
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
-            resp.append(ticker_to_market_ticker(i))
+            resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
@@ -233,12 +218,11 @@ def ticker():
 )
 def ticker_for_ticker(ticker):
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
             if ticker in [i["base_currency"], i["quote_currency"]]:
-                resp.append(ticker_to_market_ticker(i))
+                resp.append(transform.ticker_to_market_ticker(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
@@ -251,8 +235,7 @@ def ticker_for_ticker(ticker):
 )
 def tickers_summary():
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         resp = {}
         for i in data["data"]:
             base = i["base_currency"]
@@ -284,10 +267,9 @@ def tickers_summary():
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: str = "false"
+    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: bool = False
 ):
     try:
-        all = all.lower() == "true"
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
         data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
@@ -311,16 +293,13 @@ def trades(
 )
 def usd_volume_24h():
     try:
-        cache = lib.Cache()
-        data = cache.get_item(name="markets_tickers").data
+        data = memcache.get_tickers()
         return {"usd_volume_24hr": data["combined_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
 
 
-# TODO: Move to new DB
-# TODO: get volumes for x days for ticker
 @router.get(
     "/volumes_ticker/{coin}/{days_in_past}",
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
@@ -329,20 +308,24 @@ def volumes_history_ticker(
     coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
 ):
     # TODO: Use new DB
-    db = get_sqlite_db()
     volumes_dict = {}
+    query = db.SqlQuery()
+    # Individual tickers only, no merge except segwit
+    stripped_coin = transform.strip_coin_platform(coin)
+    variants = helper.get_coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
         day_ts = int(int(d.strftime("%s")) / 86400) * 86400
-        # TODO: Align with midnight
         start_time = int(day_ts)
         end_time = int(day_ts) + 86400
-        data = db.query.get_volume_for_coin(
-            coin=coin,
-            trade_type=trade_type,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        volumes_dict[d_str] = data["data"][coin]
+        volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
+        data = query.coin_trade_volumes_usd(volumes)
+        volumes_dict[d_str] = template.volumes_ticker()
+        for variant in variants:
+            if stripped_coin in data["volumes"]:
+                if variant in data["volumes"][stripped_coin]:
+                    volumes_dict[d_str] = (
+                        volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
+                    )
     return volumes_dict

@@ -11,7 +11,7 @@ def test_pair_summaries(setup_statsapi):
     r = stats.pair_summaries(1)
     assert len(r) == 6
     r = stats.pair_summaries(300)
-    assert len(r) == 7
+    assert len(r) == 6
     for i in r:
         if i["ticker_id"] == "KMD_BTC":
             assert i["pair_swaps_count"] == 2

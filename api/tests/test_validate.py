@@ -4,7 +4,6 @@ from util.exceptions import BadPairFormatError
 from tests.fixtures_validate import (
     setup_invert_pair_kmd_ltc,
 )
-from tests.fixtures_data import valid_tickers
 import util.validate as validate
 import util.memcache as memcache
 import lib

@@ -5,15 +5,18 @@ from decimal import Decimal
 from typing import Optional, List, Dict
 import db
 import lib
-from lib.coins import get_gecko_price, get_gecko_mcap, get_tradable_coins
-from util.enums import TradeType
+from lib.coins import get_gecko_price, get_gecko_mcap
+from lib.generic import Generic
 from util.logger import logger, timed
-from util.transform import sortdata
+from util.transform import sortdata, clean
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
+
+
+generic = Generic()
 
 
 class Pair:  # pragma: no cover
@@ -55,6 +58,11 @@ class Pair:  # pragma: no cover
             self.quote_mcap = get_gecko_mcap(self.quote)
             self.last_traded_cache = last_traded_cache
 
+            if self.quote_usd_price == 0 or self.base_usd_price == 0:
+                self.priced = False
+            else:
+                self.priced = True
+
             if self.last_traded_cache is None:
                 self.last_traded_cache = memcache.get_last_traded()
             self.coins_config = coins_config
@@ -68,18 +76,6 @@ class Pair:  # pragma: no cover
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed!"
             logger.error(f"{type(e)} {msg}: {e}")
-
-    @property
-    def is_tradable(self):
-        if len(set(get_tradable_coins()).intersection(self.as_set)) != 2:
-            return True
-        return False  # pragma: no cover
-
-    @property
-    def is_priced(self):
-        if self.base_usd_price > 0 and self.quote_usd_price > 0:
-            return True
-        return False
 
     @timed
     def historical_trades(
@@ -151,7 +147,6 @@ class Pair:  # pragma: no cover
                     buys = sortdata.sort_dict_list(buys, "timestamp", reverse=True)
                 if len(sells) > 0:
                     sells = sortdata.sort_dict_list(sells, "timestamp", reverse=True)
-
                 data = {
                     "ticker_id": self.as_str,
                     "start_time": str(start_time),
@@ -175,10 +170,12 @@ class Pair:  # pragma: no cover
                     "sell": sells,
                 }
                 resp.update({variant: data})
-
         except Exception as e:  # pragma: no cover
-            msg = f"pair.historical_trades {self.as_str} failed!"
-            return default.error(e, msg)
+            return default.result(
+                data=resp,
+                msg=f"pair.historical_trades {self.as_str} failed! {e}",
+                loglevel="warning",
+            )
         return default.result(
             data=resp,
             msg=f"historical_trades for {self.as_str} complete",
@@ -199,7 +196,7 @@ class Pair:  # pragma: no cover
                 ignore_until=2,
             )
         except Exception as e:  # pragma: no cover
-            msg = f"{self.as_str} get_average_price failed!"
+            msg = f"{self.as_str} get_average_price failed! {e}"
             return default.error(e, msg)
 
     @timed
@@ -357,16 +354,26 @@ class Pair:  # pragma: no cover
     def ticker_info(self, days=1, all: bool = False):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
-        suffix = transform.get_suffix(days)
-        data = template.ticker_info(suffix, self.base, self.quote)
         try:
+            suffix = transform.get_suffix(days)
+            if all:
+                cache_name = f"ticker_info_{self.as_str}_{suffix}_ALL"
+            else:
+                cache_name = f"ticker_info_{self.as_str}_{suffix}"
+
+            data = memcache.get(cache_name)
+            if data is not None:
+                return data
+
+            data = template.ticker_info(suffix, self.base, self.quote)
             data.update(
                 {
                     "ticker_id": self.as_str,
                     "base_currency": self.base,
-                    "base_usd_price": self.base_usd_price,
                     "quote_currency": self.quote,
+                    "base_usd_price": self.base_usd_price,
                     "quote_usd_price": self.quote_usd_price,
+                    "priced": self.priced,
                 }
             )
 
@@ -401,11 +408,11 @@ class Pair:  # pragma: no cover
                 }
             )
 
-            orderbook_data = self.orderbook.for_pair(depth=100, all=all)
+            orderbook_data = generic.orderbook(self.as_str, depth=100, all=all)
             data.update(
                 {
-                    "highest_bid": self.orderbook.find_highest_bid(orderbook_data),
-                    "lowest_ask": self.orderbook.find_lowest_ask(orderbook_data),
+                    "highest_bid": helper.find_highest_bid(orderbook_data),
+                    "lowest_ask": helper.find_lowest_ask(orderbook_data),
                 }
             )
 
@@ -419,11 +426,15 @@ class Pair:  # pragma: no cover
                     "quote_liquidity_usd": liquidity["rel_liquidity_usd"],
                 }
             )
-            msg = f"Completed ticker info for {self.as_str}"
+            data = clean.decimal_dict(data)
+            memcache.update(cache_name, data, 120)
+            msg = f" {cache_name} added to memcache"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
         except Exception as e:  # pragma: no cover
-            msg = f"ticker_info for {self.as_str} failed! {e}"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
+            msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
     @timed
     def get_swap_prices(self, swaps_for_pair, is_reversed):
@@ -437,33 +448,6 @@ class Pair:  # pragma: no cover
             msg = f"get_swap_prices for {self.as_str} failed! {e}"
             return default.result(data=data, msg=msg, loglevel="warning")
         msg = f"Completed get_swap_prices info for {self.as_str}"
-        return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
-
-    def pair_swaps(
-        self,
-        limit: int = 100,
-        trade_type: TradeType = TradeType.ALL,
-        start_time: Optional[int] = 0,
-        end_time: Optional[int] = 0,
-    ):
-        try:
-            if start_time == 0:
-                start_time = int(cron.now_utc()) - 86400
-            if end_time == 0:
-                end_time = int(cron.now_utc())
-            data = self.pg_query.get_swaps_for_pair(
-                base=self.base,
-                quote=self.quote,
-                limit=limit,
-                trade_type=trade_type,
-                start_time=start_time,
-                end_time=end_time,
-            )
-        except Exception as e:  # pragma: no cover
-            data = []
-            msg = f"{self.as_str} pair_swaps failed! {e}"
-            return default.result(data=data, msg=msg, loglevel="warning")
-        msg = f"Completed pair_swaps for {self.as_str}"
         return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
 
     @timed
