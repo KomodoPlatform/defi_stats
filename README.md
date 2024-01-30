@@ -141,6 +141,8 @@ Alternative APIs are hosted at:
 
 These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
 
+## Warning
+Some data is cached with memcache. if the size of this data grows too large, it might fail to enter the cache. It should be split into smaller parts.
 
 ## Endpoints
 

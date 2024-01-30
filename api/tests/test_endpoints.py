@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import requests
 from fastapi.testclient import TestClient
 import pytest
@@ -90,6 +91,9 @@ def test_gecko_tickers_endpoint():
 
 
 def test_orderbook_endpoint():
+    r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
+    assert r.status_code == 200
+    time.sleep(1)
     r = client.get("/api/v3/gecko/orderbook/KMD_LTC")
     assert r.status_code == 200
     data = r.json()

@@ -63,22 +63,12 @@ def last_traded(pair_str: str = ""):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def orderbook(
-    pair_str: str = "KMD_LTC",
-    depth: int = 100,
-    all: bool = True
-):
+def orderbook(pair_str: str = "KMD_LTC", depth: int = 100, all: bool = True):
     try:
-        if all:
-            data = memcache.get(f"orderbook_{pair_str}_ALL")
-        else:
-            data = memcache.get(f"orderbook_{pair_str}")
-        if data is None:
-            data = generic.orderbook(pair_str=pair_str, all=all)
-        return data
+        logger.calc(f"Getting orderbook for {pair_str}")
+        return generic.orderbook(pair_str=pair_str, all=all, depth=depth)
     except Exception as e:  # pragma: no cover
-        err = {"error": f"{e}"}
-        logger.warning(err)
+        err = {"error": f"{type(e)}: {e}"}
         return JSONResponse(status_code=400, content=err)
 
 
@@ -157,9 +147,7 @@ def swaps_for_pair(
         msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
         msg += f"| {start_time} -> {end_time} | {days} days"
         pg_query = db.SqlQuery()
-        data = pg_query.get_swaps_for_pair(
-            base, quote, start_time, end_time, all=True
-        )
+        data = pg_query.get_swaps_for_pair(base, quote, start_time, end_time, all=True)
         return {
             "trade_type": trade_type,
             "pair_str": pair_str,

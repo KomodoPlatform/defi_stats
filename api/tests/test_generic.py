@@ -1,3 +1,4 @@
+import time
 import util.cron as cron
 import pytest
 from decimal import Decimal
@@ -11,6 +12,17 @@ import util.memcache as memcache
 
 def test_orderbook():
     generic = Generic()
+    r = generic.orderbook("KMD_DOGE", all=True)
+    r2 = generic.orderbook("DOGE_KMD", all=True)
+    r3 = generic.orderbook("KMD_DGB", depth=2)
+    r5 = generic.orderbook("KMD/DGB", depth=2)
+    r6 = generic.orderbook("KMD_XXX", depth=2)
+    r6 = generic.orderbook("KMDXX", depth=2)
+    r_all = generic.orderbook("KMD_LTC", all=True)
+    r_all2 = generic.orderbook("KMD_LTC-segwit", all=True)
+    r = generic.orderbook("DGB_DOGE", all=True)
+
+    time.sleep(1)
     r = generic.orderbook("KMD_DOGE", all=True)
     r2 = generic.orderbook("DOGE_KMD", all=True)
     assert Decimal(r["combined_volume_usd"]) == Decimal(r2["combined_volume_usd"])
@@ -39,7 +51,7 @@ def test_orderbook():
     assert r_all["pair"] == r_all2["pair"]
     assert r_all["quote"] == r_all2["quote"]
     assert r_all["base"] == r_all2["base"]
-    assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
+    assert r_all["liquidity_in_usd"] == r_all2["liquidity_in_usd"]
 
     r = generic.orderbook("DGB_DOGE", all=True)
     assert r["pair"] == "DGB_DOGE"
@@ -49,7 +61,7 @@ def test_orderbook():
     assert Decimal(r["total_asks_base_vol"]) == Decimal(4959)
     assert Decimal(r["total_asks_quote_vol"]) == Decimal(3348)
     assert Decimal(r["total_bids_base_vol"]) == Decimal(3348)
-    assert Decimal(r["total_bids_quote_vol"]) == Decimal(4959)
+    assert Decimal(r["total_bids_quote_vol"]) == Decimal(5089)
 
     r = generic.orderbook("DGB_DOGE", all=False)
     assert r["pair"] == "DGB_DOGE"

@@ -2,11 +2,10 @@ from lib.coins import Coins, Coin
 from lib.external import FixerAPI, CoinGeckoAPI
 from lib.cache import Cache, CacheItem
 from lib.generic import Generic
-from lib.orderbook import Orderbook
 from lib.markets import Markets
 from lib.stats_api import StatsAPI
 from lib.pair import Pair, get_all_coin_pairs
-from lib.dex_api import DexAPI, OrderbookRpcThread, get_orderbook
+from lib.dex_api import DexAPI
 import util.memcache as memcache
 from util.logger import logger
 

@@ -60,17 +60,19 @@ class GenericPairs(BaseModel):
 
 class GenericLastTradedData(BaseModel):
     swap_count: int = 777
-    last_swap: int = 1777777777
+    last_swap_price: float = 777.777777
+    last_swap_time: int = 1777777777
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
-    last_price: float = 777.777777
-    last_taker_amount: float = 777.777777
-    last_maker_amount: float = 777.777777
-    sum_taker_traded: float = 777.777777
-    sum_maker_traded: float = 777.777777
+    base_volume_24hr: float = 777.777777
+    trade_volume_usd_24hr: float = 777.777777
+    base_volume_usd_24hr: float = 777.777777
+    quote_volume_24hr: float = 777.777777
+    quote_volume_usd_24hr: float = 777.777777
+    priced: bool = True
 
 
 class GenericLastTraded(BaseModel):
-    timestamp: int = 1777777777
+    last_updated: int = 1777777777
     data: Dict[str, GenericLastTradedData]
 
 

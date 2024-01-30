@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import util.cron as cron
 import util.helper as helper
+from util.logger import logger
 
 
 def last_price_for_pair():  # pragma: no cover
@@ -10,12 +11,12 @@ def last_price_for_pair():  # pragma: no cover
 def liquidity():  # pragma: no cover
     return {
         "rel_usd_price": 0,
-        "rel_liquidity_coins": 0,
-        "rel_liquidity_usd": 0,
+        "quote_liquidity_coins": 0,
+        "quote_liquidity_usd": 0,
         "base_usd_price": 0,
         "base_liquidity_coins": 0,
         "base_liquidity_usd": 0,
-        "liquidity_usd": 0,
+        "liquidity_in_usd": 0,
     }
 
 
@@ -28,9 +29,6 @@ def pair_info(pair_str: str, priced: bool = False) -> dict:
         "last_swap_time": 0,
         "last_swap_price": 0,
         "last_swap_uuid": "",
-        "first_swap_time": 0,
-        "first_swap_price": 0,
-        "first_swap_uuid": "",
         "priced": priced,
     }
 
@@ -39,7 +37,7 @@ def orderbook(pair_str):
     base, quote = helper.base_quote_from_pair(pair_str)
     base = base.replace("-segwit", "")
     quote = quote.replace("-segwit", "")
-    return {
+    data = {
         "pair": f"{base}_{quote}",
         "base": base,
         "quote": quote,
@@ -47,7 +45,7 @@ def orderbook(pair_str):
         "asks": [],
         "bids": [],
         "variants": [],
-        "liquidity_usd": 0,
+        "liquidity_in_usd": 0,
         "total_asks_base_vol": 0,
         "total_bids_base_vol": 0,
         "total_asks_quote_vol": 0,
@@ -56,7 +54,15 @@ def orderbook(pair_str):
         "total_bids_quote_usd": 0,
         "trades_24hr": 0,
         "combined_volume_usd": 0,
+        "highest_bid": 0,
+        "lowest_ask": 0,
+        "liquidity_in_usd": 0,
+        "base_liquidity_coins": 0,
+        "base_liquidity_usd": 0,
+        "quote_liquidity_coins": 0,
+        "quote_liquidity_usd": 0,
     }
+    return data
 
 
 def gecko_info(coin_id):
@@ -87,9 +93,6 @@ def volumes_and_prices(suffix, base, quote):
         "last_swap_price": 0,
         "last_swap_uuid": "",
         "last_swap_time": 0,
-        "first_swap_price": 0,
-        "first_swap_uuid": "",
-        "first_swap_time": 0,
     }
 
 
@@ -119,9 +122,6 @@ def ticker_info(suffix, base, quote):
         "last_swap_price": 0,
         "last_swap_uuid": "",
         "last_swap_time": 0,
-        "first_swap_price": 0,
-        "first_swap_uuid": "",
-        "first_swap_time": 0,
         "oldest_price_time": 0,
         "newest_price_time": 0,
         "oldest_price": 0,
@@ -166,9 +166,6 @@ def first_last_swap():
         "last_swap_time": 0,
         "last_swap_price": 0,
         "last_swap_uuid": "",
-        "first_swap_time": 0,
-        "first_swap_price": 0,
-        "first_swap_uuid": "",
     }
 
 
@@ -200,10 +197,6 @@ def last_traded_item():
         "taker_num_swaps": 0,
         "maker_last_swap_uuid": 0,
         "maker_last_swap_time": 0,
-        "maker_first_swap_uuid": 0,
-        "maker_first_swap_time": 0,
         "taker_last_swap_uuid": 0,
         "taker_last_swap_time": 0,
-        "taker_first_swap_uuid": 0,
-        "taker_first_swap_time": 0,
     }

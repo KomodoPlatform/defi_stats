@@ -110,7 +110,7 @@ class MarketsSummaryForTickerItem(BaseModel):
     highest_price_24hr: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     price_change_24hr: str = "777.777777"
-    price_change_pct_24hr: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_trade: int = 1777777777
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"

@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import pytest
-
-
 from lib.external import CoinGeckoAPI
-from lib.dex_api import DexAPI
 from util.files import Files
 from util.urls import Urls
 from lib.markets import Markets
@@ -11,11 +8,6 @@ from lib.cache import Cache
 from lib.stats_api import StatsAPI
 import util.helper as helper
 import lib
-
-
-@pytest.fixture
-def setup_dexapi():
-    yield DexAPI()
 
 
 @pytest.fixture

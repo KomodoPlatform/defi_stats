@@ -16,7 +16,6 @@ def setup_ticker_to_market_ticker():
     yield transform.ticker_to_market_ticker(get_ticker_item())
 
 
-
 @pytest.fixture
 def setup_ticker_to_statsapi_24h():
     yield transform.ticker_to_statsapi_summary(get_ticker_item())

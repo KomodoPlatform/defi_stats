@@ -4,9 +4,9 @@ from collections import OrderedDict
 from decimal import Decimal
 from typing import Optional, List, Dict
 import db
-import lib
 from lib.coins import get_gecko_price, get_gecko_mcap
 from lib.generic import Generic
+from lib.dex_api import OrderbookRpcThread
 from util.logger import logger, timed
 from util.transform import sortdata, clean
 import util.defaults as default
@@ -69,9 +69,6 @@ class Pair:  # pragma: no cover
 
             if self.coins_config is None:
                 self.coins_config = memcache.get_coins_config()
-            self.orderbook = lib.Orderbook(
-                pair_obj=self, coins_config=self.coins_config
-            )
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed!"
@@ -242,7 +239,7 @@ class Pair:  # pragma: no cover
             # Halving the combined volume to not double count, and
             # get average between base and quote
             data["combined_volume_usd"] = (
-                data["base_volume_usd"] + data["quote_volume_usd"]
+                Decimal(data["base_volume_usd"]) + Decimal(data["quote_volume_usd"])
             ) / 2
 
             # Get Prices
@@ -271,9 +268,6 @@ class Pair:  # pragma: no cover
                 data["last_swap_price"] = last_swap["last_swap_price"]
                 data["last_swap_time"] = last_swap["last_swap_time"]
                 data["last_swap_uuid"] = last_swap["last_swap_uuid"]
-                data["first_swap_price"] = last_swap["first_swap_price"]
-                data["first_swap_time"] = last_swap["first_swap_time"]
-                data["first_swap_uuid"] = last_swap["first_swap_uuid"]
             msg = f"get_volumes_and_prices for {self.as_str} complete!"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
         except Exception as e:  # pragma: no cover
@@ -301,19 +295,7 @@ class Pair:  # pragma: no cover
                     if self.is_reversed and data["last_swap_price"] != 0:
                         data["last_swap_price"] = 1 / data["last_swap_price"]
 
-                if data["first_swap_time"] == 0 and x["first_swap_time"] != 0:
-                    data["first_swap_time"] = x["first_swap_time"]
-                    data["first_swap_price"] = x["first_swap_price"]
-                    data["first_swap_uuid"] = x["first_swap_uuid"]
-                    if self.is_reversed and data["first_swap_price"] != 0:
-                        data["first_swap_price"] = 1 / data["first_swap_price"]
 
-                elif x["first_swap_time"] < data["first_swap_time"]:
-                    data["first_swap_time"] = x["first_swap_time"]
-                    data["first_swap_price"] = x["first_swap_price"]
-                    data["first_swap_uuid"] = x["first_swap_uuid"]
-                    if self.is_reversed and data["first_swap_price"] != 0:
-                        data["first_swap_price"] = 1 / data["first_swap_price"]
 
             msg = f"Got first and last swap for {self.as_str}"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
@@ -323,32 +305,6 @@ class Pair:  # pragma: no cover
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
-
-    @timed
-    def get_liquidity(self, orderbook_data):
-        """Liquidity for pair from current orderbook & usd price."""
-        try:
-            base_liq_coins = Decimal(orderbook_data["total_asks_base_vol"])
-            rel_liq_coins = Decimal(orderbook_data["total_bids_quote_vol"])
-            base_liq_usd = Decimal(self.base_usd_price) * Decimal(base_liq_coins)
-            rel_liq_usd = Decimal(self.quote_usd_price) * Decimal(rel_liq_coins)
-            base_liq_usd = Decimal(base_liq_usd)
-            rel_liq_usd = Decimal(rel_liq_usd)
-            data = {
-                "rel_usd_price": self.quote_usd_price,
-                "rel_liquidity_coins": rel_liq_coins,
-                "rel_liquidity_usd": rel_liq_usd,
-                "base_usd_price": self.base_usd_price,
-                "base_liquidity_coins": base_liq_coins,
-                "base_liquidity_usd": base_liq_usd,
-                "liquidity_usd": base_liq_usd + rel_liq_usd,
-            }
-            msg = f"Got Liquidity for {self.as_str}"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
-        except Exception as e:  # pragma: no cover
-            data = template.liquidity()
-            msg = f"Returning template for {self.as_str} ({e})"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
 
     @timed
     def ticker_info(self, days=1, all: bool = False):
@@ -363,7 +319,8 @@ class Pair:  # pragma: no cover
 
             data = memcache.get(cache_name)
             if data is not None:
-                return data
+                if Decimal(data["liquidity_in_usd"]) != 0:
+                    return data
 
             data = template.ticker_info(suffix, self.base, self.quote)
             data.update(
@@ -387,9 +344,6 @@ class Pair:  # pragma: no cover
                     "last_swap_price": vol_price_data["last_swap_price"],
                     "last_swap_time": vol_price_data["last_swap_time"],
                     "last_swap_uuid": vol_price_data["last_swap_uuid"],
-                    "first_swap_price": vol_price_data["first_swap_price"],
-                    "first_swap_time": vol_price_data["first_swap_time"],
-                    "first_swap_uuid": vol_price_data["first_swap_uuid"],
                     "oldest_price": vol_price_data["oldest_price"],
                     "newest_price": vol_price_data["newest_price"],
                     "oldest_price_time": vol_price_data["oldest_price_time"],
@@ -415,19 +369,22 @@ class Pair:  # pragma: no cover
                     "lowest_ask": helper.find_lowest_ask(orderbook_data),
                 }
             )
+            for i in [
+                "liquidity_in_usd",
+                "base_liquidity_coins",
+                "base_liquidity_usd",
+                "quote_liquidity_coins",
+                "quote_liquidity_usd",
+            ]:
+                if i in orderbook_data:
+                    data.update({i: orderbook_data[i]})
+                else:
+                    data.update({"liquidity_in_usd": 0})
 
-            liquidity = self.get_liquidity(orderbook_data)
-            data.update(
-                {
-                    "liquidity_in_usd": liquidity["liquidity_usd"],
-                    "base_liquidity_coins": liquidity["base_liquidity_coins"],
-                    "base_liquidity_usd": liquidity["base_liquidity_usd"],
-                    "quote_liquidity_coins": liquidity["rel_liquidity_coins"],
-                    "quote_liquidity_usd": liquidity["rel_liquidity_usd"],
-                }
-            )
             data = clean.decimal_dict(data)
             memcache.update(cache_name, data, 120)
+            if "-segwit" in cache_name:
+                memcache.update(cache_name.replace("-segwit", ""), data, 240)
             msg = f" {cache_name} added to memcache"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
         except Exception as e:  # pragma: no cover

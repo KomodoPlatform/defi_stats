@@ -25,9 +25,9 @@ def summary():
         tickers = {}
         tickers_data = deplatform.tickers(memcache.get_tickers())
         for i in tickers_data["data"]:
-            tickers.update({i['ticker_id']: transform.ticker_to_gecko_summary(i)})
+            tickers.update({i["ticker_id"]: transform.ticker_to_gecko_summary(i)})
         tickers_data.update({"data": tickers})
-        
+
         return tickers_data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/tickers/summary]: {e}")

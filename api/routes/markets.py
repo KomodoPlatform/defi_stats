@@ -25,7 +25,7 @@ from lib.markets import Markets
 
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean
+from util.transform import clean, convert
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
@@ -112,7 +112,9 @@ def pairs_last_traded(
         if data[i]["last_swap_time"] > start_time:
             if data[i]["last_swap_time"] < end_time:
                 data[i].update({"pair": i})
-                filtered_data.append(data[i])
+                filtered_data.append(
+                    data[i]
+                )
     return filtered_data
 
 
@@ -157,15 +159,14 @@ def summary_for_ticker(coin: str = "KMD"):
                 if i["last_swap_time"] == 0:
                     if i["ticker_id"] in last_traded:
                         i = i | last_traded[i["ticker_id"]]
-                new_data.append(transform.to_summary_for_ticker_item(i))
-
+                new_data.append(convert.ticker_to_summary_for_ticker(i))
         resp.update(
             {
                 "pairs_count": len(new_data),
                 "swaps_count": int(transform.sum_json_key(new_data, "trades_24hr")),
                 "liquidity_usd": transform.sum_json_key_10f(new_data, "liquidity_usd"),
-                "combined_volume_usd": transform.sum_json_key_10f(
-                    new_data, "combined_volume_usd"
+                "volume_usd_24hr": transform.sum_json_key_10f(
+                    new_data, "volume_usd_24hr"
                 ),
                 "data": new_data,
             }
@@ -328,4 +329,5 @@ def volumes_history_ticker(
                     volumes_dict[d_str] = (
                         volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
                     )
-    return volumes_dict
+        data = {d_str: volumes_dict[d_str]["trade_volume"] for d_str in volumes_dict}
+    return data

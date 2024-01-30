@@ -1,3 +1,4 @@
+import time
 import pytest
 from decimal import Decimal
 from lib.generic import Generic
@@ -88,6 +89,13 @@ def test_get_pair_variants():
     assert "KMD-BEP20_LTC-segwit" in r
     assert len(r) == 4
 
+    r = helper.get_pair_variants("KMD_LTC-segwit")
+    assert "KMD_LTC" in r
+    assert "KMD_LTC-segwit" in r
+    assert "KMD-BEP20_LTC" in r
+    assert "KMD-BEP20_LTC-segwit" in r
+    assert len(r) == 4
+
     r = helper.get_pair_variants("LTC_KMD")
     assert "LTC_KMD" in r
     assert "LTC-segwit_KMD" in r
@@ -101,14 +109,25 @@ def test_get_pair_variants():
     assert "KMD_USDC-PLG20_OLD" in r
     assert "KMD-BEP20_USDC-PLG20_OLD" in r
 
+    r = helper.get_pair_variants("KMD_USDC-PLG20")
+    assert "KMD_USDC" not in r
+    assert "KMD_USDC-PLG20" in r
+    assert "KMD_USDC-PLG20_OLD" in r
+    assert "KMD-BEP20_USDC-PLG20_OLD" in r
+
 
 def test_find_lowest_ask():
     orderbook = generic.orderbook("KMD_BTC", all=True)
+    time.sleep(1)
+    orderbook = generic.orderbook("KMD_BTC", all=True)
+    
     r = helper.find_lowest_ask(orderbook)
     assert r == transform.format_10f(1 / 24)
 
 
 def test_find_highest_bid():
+    orderbook = generic.orderbook("KMD_BTC", all=True)
+    time.sleep(1)
     orderbook = generic.orderbook("KMD_BTC", all=True)
     r = helper.find_highest_bid(orderbook)
     assert r == transform.format_10f(1 / 26)

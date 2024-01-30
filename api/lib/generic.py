@@ -3,7 +3,6 @@ from decimal import Decimal
 import db
 import lib
 from lib.coins import get_gecko_price, get_kmd_pairs
-import lib.orderbook as orderbook
 from util.exceptions import DataStructureError
 from util.logger import timed, logger
 from util.transform import sortdata, clean, merge
@@ -13,7 +12,7 @@ import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
-import util.validate as validate
+import lib.dex_api as dex
 
 
 class Generic:  # pragma: no cover
@@ -54,7 +53,9 @@ class Generic:  # pragma: no cover
                 return default.result(data=resp, msg=msg, loglevel="loop")
         except Exception as e:  # pragma: no cover
             msg = f"Generic.pairs failed! {e}"
-            return default.result(data=resp, msg=msg, loglevel="warning", ignore_until=2)
+            return default.result(
+                data=resp, msg=msg, loglevel="warning", ignore_until=2
+            )
 
     @timed
     def orderbook(
@@ -69,125 +70,96 @@ class Generic:  # pragma: no cover
                 pair_tpl = helper.base_quote_from_pair(pair_str)
                 cache_name = f"orderbook_{pair_str}_ALL"
                 variants = helper.get_pair_variants(pair_str)
+                # logger.loop(f"{pair_str}: {variants}")
             else:
                 # This will be a single ticker_pair unless for segwit
-                pair_tpl = helper.base_quote_from_pair(
-                    transform.strip_pair_platforms(pair_str)
-                )
+                pair_tpl = helper.base_quote_from_pair(pair_str)
                 cache_name = f"orderbook_{pair_str}"
                 variants = helper.get_pair_variants(pair_str, segwit_only=True)
+                # logger.calc(f"{pair_str}: {variants}")
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
-
-            orderbook_data = memcache.get(cache_name)
-            if orderbook_data is not None:
-                return orderbook_data
-
-            if self.coins_config is None:
-                self.coins_config = memcache.get_coins_config()
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-
             combined_orderbook = template.orderbook(pair_str)
             combined_orderbook.update({"variants": variants})
 
-            for variant in variants:
-                base, quote = helper.base_quote_from_pair(variant)
-                if validate.is_segwit(base, self.coins_config) and len(variants) > 1:
-                    if "-" not in base:
-                        continue
-
-                if validate.is_segwit(quote, self.coins_config) and len(variants) > 1:
-                    if "-" not in quote:
-                        continue
-
-                orderbook_data = template.orderbook(pair_str)
-                orderbook_data["timestamp"] = f"{int(cron.now_utc())}"
-                data = orderbook.get_and_parse(
-                    base=base, quote=quote, coins_config=self.coins_config
-                )
-
-                orderbook_data["bids"] += data["bids"][:depth][::-1]
-                orderbook_data["asks"] += data["asks"][::-1][:depth]
-                total_bids_base_vol = sum(
-                    [Decimal(i["volume"]) for i in orderbook_data["bids"]]
-                )
-                total_asks_base_vol = sum(
-                    [Decimal(i["volume"]) for i in orderbook_data["asks"]]
-                )
-                total_bids_quote_vol = sum(
-                    [Decimal(i["quote_volume"]) for i in orderbook_data["bids"]]
-                )
-                total_asks_quote_vol = sum(
-                    [Decimal(i["quote_volume"]) for i in orderbook_data["asks"]]
-                )
-                orderbook_data["base_price_usd"] = get_gecko_price(
-                    orderbook_data["base"], gecko_source=self.gecko_source
-                )
-                orderbook_data["quote_price_usd"] = get_gecko_price(
-                    orderbook_data["quote"], gecko_source=self.gecko_source
-                )
-                orderbook_data["total_asks_base_vol"] = total_asks_base_vol
-                orderbook_data["total_bids_base_vol"] = total_bids_base_vol
-                orderbook_data["total_asks_quote_vol"] = total_asks_quote_vol
-                orderbook_data["total_bids_quote_vol"] = total_bids_quote_vol
-                orderbook_data["total_asks_base_usd"] = (
-                    total_asks_base_vol * orderbook_data["base_price_usd"]
-                )
-                orderbook_data["total_bids_quote_usd"] = (
-                    total_bids_quote_vol * orderbook_data["quote_price_usd"]
-                )
-
-                orderbook_data["liquidity_usd"] = (
-                    orderbook_data["total_asks_base_usd"]
-                    + orderbook_data["total_bids_quote_usd"]
-                )
-                combined_orderbook = merge.orderbooks(
-                    combined_orderbook, orderbook_data
-                )
-            combined_orderbook["bids"] = combined_orderbook["bids"][: int(depth)][::-1]
-            combined_orderbook["asks"] = combined_orderbook["asks"][::-1][: int(depth)]
-
-            # Standardise values
-            for i in ["bids", "asks"]:
-                for j in combined_orderbook[i]:
-                    for k in ["price", "volume"]:
-                        j[k] = transform.format_10f(Decimal(j[k]))
-            for i in [
-                "total_asks_base_vol",
-                "total_bids_base_vol",
-                "total_asks_quote_vol",
-                "total_bids_quote_vol",
-                "total_asks_base_usd",
-                "total_bids_quote_usd",
-                "liquidity_usd",
-                "combined_volume_usd",
-            ]:
-                combined_orderbook[i] = transform.format_10f(
-                    Decimal(combined_orderbook[i])
-                )
-            combined_orderbook["pair"] = pair_str
-            combined_orderbook["base"] = pair_tpl[0]
-            combined_orderbook["quote"] = pair_tpl[1]
-            if all:
-                memcache.update(f"orderbook_{pair_str}_ALL", combined_orderbook, 300)
+            # Use combined cache if valid
+            orderbook_data = memcache.get(cache_name)
+            if (
+                orderbook_data is not None
+                and len(orderbook_data["asks"]) > 0
+                and len(orderbook_data["bids"]) > 0
+            ):
+                # logger.calc(f"{cache_name} exists and is populated!")
+                combined_orderbook = orderbook_data
             else:
-                memcache.update(f"orderbook_{pair_str}", combined_orderbook, 300)
-            msg = (
-                f"Generic.orderbook for {pair_str} ({len(variants)} variants) complete"
-            )
+                if self.coins_config is None:
+                    self.coins_config = memcache.get_coins_config()
+
+                if self.gecko_source is None:
+                    self.gecko_source = memcache.get_gecko_source()
+
+                for variant in variants:
+                    variant_cache_name = f"orderbook_{variant}"
+                    # Use variant cache if valid
+                    data = memcache.get(variant_cache_name)
+                    if data is not None and (
+                        len(data["asks"]) > 0 or len(data["bids"]) > 0
+                    ):
+                        pass
+                        # logger.calc(f"variant {variant_cache_name} exists, and is populated!")
+                    else:
+                        base, quote = helper.base_quote_from_pair(variant)
+                        # Avoid duplication for utxo coins with segwit
+                        # TODO: cover where legacy is wallet only
+                        if base.endswith("-segwit") and len(variants) > 1:
+                            continue
+                        if quote.endswith("-segwit") and len(variants) > 1:
+                            continue
+                        data = dex.get_orderbook(
+                            base=base,
+                            quote=quote,
+                            coins_config=self.coins_config,
+                            gecko_source=self.gecko_source,
+                            variant_cache_name=variant_cache_name,
+                            depth=depth,
+                        )
+                    # Apply depth limit after caching so the cache is complete.
+                    data["bids"] = data["bids"][:depth][::-1]
+                    data["asks"] = data["asks"][::-1][:depth]
+                    # TODO: Recalc liquidity if depth is less than data.
+                    # Merge with other variants
+                    combined_orderbook = merge.orderbooks(combined_orderbook, data)
+                # Sort variant bids / asks
+                combined_orderbook["bids"] = combined_orderbook["bids"][: int(depth)][
+                    ::-1
+                ]
+                combined_orderbook["asks"] = combined_orderbook["asks"][::-1][
+                    : int(depth)
+                ]
+                combined_orderbook = clean.orderbook_data(combined_orderbook)
+                combined_orderbook["pair"] = pair_str
+                combined_orderbook["base"] = pair_tpl[0]
+                combined_orderbook["quote"] = pair_tpl[1]
+                # logger.info(combined_orderbook['liquidity_in_usd'])
+
+                # update the combined cache
+                memcache.update(cache_name, combined_orderbook, 240)
+
+            msg = f"Generic.orderbook for {pair_str} ({len(variants)} variants) complete with ${combined_orderbook['liquidity_in_usd']} liquidity"
+
             return default.result(
-                data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=3
+                data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2
             )
         except Exception as e:  # pragma: no cover
-            msg = f"Generic.orderbook {pair_str}"
+            msg = f"Generic.orderbook {pair_str} failed: {e}!"
             try:
                 data = template.orderbook(pair_str)
-                msg += f"{pair_str} failed: {e}! Returning template!"
+                msg += f" Returning template!"
             except Exception as e:
                 data = {"error": msg}
-                msg += f"{pair_str} failed: {e}!"
-            return default.result(data=data, msg=msg, loglevel="warning")
+                return default.result(
+                    data=data, msg=msg, loglevel="warning", ignore_until=0
+                )
 
     @timed
     def tickers(self, trades_days: int = 1, pairs_days: int = 7):
@@ -215,7 +187,7 @@ class Generic:  # pragma: no cover
                     if self.last_traded_cache[i]["last_swap_time"] > ts
                 ]
             )
-            logger.info(f"{len(pairs)} pairs in last 90 days")
+            # logger.info(f"{len(pairs)} pairs in last 90 days")
 
             data = [
                 lib.Pair(
@@ -254,20 +226,23 @@ class Generic:  # pragma: no cover
             if self.gecko_source is None:
                 self.gecko_source = memcache.get_gecko_source()
             data = self.pg_query.pair_last_trade()
-            pairs_dict = get_price_status_dict(data.keys(), self.gecko_source)
-
+            price_status_dict = get_price_status_dict(data.keys(), self.gecko_source)
             for i in data:
                 data[i] = clean.decimal_dict(data[i])
-                if i in pairs_dict["priced_gecko"]:
-                    priced = True
-                else:
-                    priced = False
-                data[i].update({"priced": priced})
+                data[i].update({"priced": get_pair_priced_status(i,  price_status_dict)})
+                
             return data
         except Exception as e:  # pragma: no cover
             msg = "pairs_last_traded failed!"
-            return default.error(e, msg)
+            logger.warning(msg)
 
+
+def get_pair_priced_status(pair,  price_status_dict):
+    if pair in price_status_dict["priced_gecko"]:
+        return True
+    else:
+        return False
+    
 
 def get_price_status_dict(pairs, gecko_source=None):
     try:

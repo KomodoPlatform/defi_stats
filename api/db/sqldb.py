@@ -494,7 +494,6 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                logger.calc(i)
                 pair_std = i["pair"]
                 if pair_std not in resp:
                     resp.update({pair_std: {"ALL": template.pair_trade_vol_item()}})
@@ -540,7 +539,6 @@ class SqlQuery(SqlDB):
             total_swaps = 0
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
-            logger.calc(volumes)
             for pair_std in volumes["volumes"]:
                 base, quote = helper.base_quote_from_pair(pair_std)
                 base_usd_price = get_gecko_price(base)
@@ -617,6 +615,8 @@ class SqlQuery(SqlDB):
                         if k != "category":
                             resp[pair].update({k: v})
 
+                # TODO: use separate chache for the below
+                '''
                 # 2nd query for swap first swap info for category
                 cols = [
                     self.table.uuid.label("first_swap_uuid"),
@@ -629,6 +629,7 @@ class SqlQuery(SqlDB):
                 distinct = q.distinct(*group_by_cols)
                 first = distinct.order_by(*group_by_cols, self.table.finished_at.asc())
                 first_data = [dict(i) for i in first.all()]
+
                 first_data = {i["category"]: i for i in first_data}
                 for pair in first_data:
                     if pair not in resp:
@@ -636,12 +637,15 @@ class SqlQuery(SqlDB):
                     for k, v in first_data[pair].items():
                         if k != "category":
                             resp[pair].update({k: v})
+                '''
+
+
 
                 return default.result(
                     data=resp,
                     msg="last_traded complete",
                     loglevel="query",
-                    ignore_until=5,
+                    ignore_until=0,
                 )
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -705,118 +709,129 @@ class SqlQuery(SqlDB):
     @timed
     def pair_last_trade(self, is_success: bool = True):
         try:
-            with Session(self.engine) as session:
-                group_by_cols = [self.table.pair]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results,
-                    msg="pair_last_trade complete",
-                    loglevel="query",
-                    ignore_until=5,
-                )
+            group_by_cols = [self.table.pair]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            '''
+            volumes = self.pair_trade_volumes()
+            volumes_usd = self.pair_trade_volumes_usd(volumes=volumes)
+            
+            for i in volumes_usd['volumes']:
+                for j in volumes_usd['volumes'][i]:
+                    if j in results:
+                        results[j].update({
+                            "swap_count": volumes_usd['volumes'][i][j]['swaps'],
+                            "base_volume_24hr": volumes_usd['volumes'][i][j]['base_volume'],
+                            "trade_volume_usd_24hr": volumes_usd['volumes'][i][j]['trade_volume_usd'],
+                            "base_volume_usd_24hr": volumes_usd['volumes'][i][j]['base_volume_usd'],
+                            "quote_volume_24hr": volumes_usd['volumes'][i][j]['quote_volume'],
+                            "quote_volume_usd_24hr": volumes_usd['volumes'][i][j]['quote_volume_usd'],
+                            
+                        })
+            '''
+            return default.result(
+                data=results,
+                msg="pair_last_trade complete",
+                loglevel="query",
+                ignore_until=0,
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
     def coin_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
-            with Session(self.engine) as session:
-                if trade_side == "maker":
-                    group_by_cols = [self.table.maker_coin]
-                elif trade_side == "taker":
-                    group_by_cols = [self.table.taker_coin]
-                elif trade_side == "all":
-                    group_by_cols = [self.table.maker_coin, self.table.taker_coin]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results,
-                    msg="coin_last_traded complete",
-                    loglevel="query",
-                    ignore_until=5,
-                )
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_coin]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_coin]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_coin, self.table.taker_coin]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results,
+                msg="coin_last_traded complete",
+                loglevel="query",
+                ignore_until=5,
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
     def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
-            with Session(self.engine) as session:
-                if trade_side == "maker":
-                    group_by_cols = [self.table.maker_ticker]
-                elif trade_side == "taker":
-                    group_by_cols = [self.table.taker_ticker]
-                elif trade_side == "all":
-                    group_by_cols = [self.table.maker_ticker, self.table.taker_ticker]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results, msg="ticker_last_traded complete", loglevel="query"
-                )
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_ticker]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_ticker]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_ticker, self.table.taker_ticker]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="ticker_last_traded complete", loglevel="query"
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
     def platform_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
-            with Session(self.engine) as session:
-                if trade_side == "maker":
-                    group_by_cols = [self.table.maker_platform]
-                elif trade_side == "taker":
-                    group_by_cols = [self.table.taker_platform]
-                elif trade_side == "all":
-                    group_by_cols = [
-                        self.table.maker_platform,
-                        self.table.taker_platform,
-                    ]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results, msg="platform_last_traded complete", loglevel="query"
-                )
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_platform]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_platform]
+            elif trade_side == "all":
+                group_by_cols = [
+                    self.table.maker_platform,
+                    self.table.taker_platform,
+                ]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="platform_last_traded complete", loglevel="query"
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
     def pubkey_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
-            with Session(self.engine) as session:
-                if trade_side == "maker":
-                    group_by_cols = [self.table.maker_pubkey]
-                elif trade_side == "taker":
-                    group_by_cols = [self.table.taker_pubkey]
-                elif trade_side == "all":
-                    group_by_cols = [self.table.maker_pubkey, self.table.taker_pubkey]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results, msg="pubkey_last_traded complete", loglevel="query"
-                )
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_pubkey]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_pubkey]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_pubkey, self.table.taker_pubkey]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="pubkey_last_traded complete", loglevel="query"
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
     def version_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
-            with Session(self.engine) as session:
-                if trade_side == "maker":
-                    group_by_cols = [self.table.maker_version]
-                elif trade_side == "taker":
-                    group_by_cols = [self.table.taker_version]
-                elif trade_side == "all":
-                    group_by_cols = [self.table.maker_version, self.table.taker_version]
-                results = self.last_trade(
-                    is_success=is_success, group_by_cols=group_by_cols
-                )
-                return default.result(
-                    data=results, msg="version_last_traded complete", loglevel="query"
-                )
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_version]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_version]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_version, self.table.taker_version]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="version_last_traded complete", loglevel="query"
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
@@ -1048,7 +1063,12 @@ class SqlQuery(SqlDB):
             gecko_source = memcache.get_gecko_source()
             # Sort pair by ticker mcap to expose duplicates
             sorted_pairs = list(
-                set([sortdata.order_pair_by_market_cap(i, gecko_source=gecko_source) for i in pairs])
+                set(
+                    [
+                        sortdata.order_pair_by_market_cap(i, gecko_source=gecko_source)
+                        for i in pairs
+                    ]
+                )
             )
             return default.result(
                 data=sorted_pairs,
