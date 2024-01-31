@@ -12,39 +12,43 @@ import util.memcache as memcache
 
 def test_orderbook():
     generic = Generic()
-    r = generic.orderbook("KMD_DOGE", all=True)
-    r2 = generic.orderbook("DOGE_KMD", all=True)
-    r3 = generic.orderbook("KMD_DGB", depth=2)
-    r5 = generic.orderbook("KMD/DGB", depth=2)
-    r6 = generic.orderbook("KMD_XXX", depth=2)
-    r6 = generic.orderbook("KMDXX", depth=2)
-    r_all = generic.orderbook("KMD_LTC", all=True)
-    r_all2 = generic.orderbook("KMD_LTC-segwit", all=True)
-    r = generic.orderbook("DGB_DOGE", all=True)
+    r = generic.orderbook("KMD_DOGE", all=True, no_cache=True, no_threading=True)
+    r2 = generic.orderbook("DOGE_KMD", all=True, no_cache=True, no_threading=True)
+    r3 = generic.orderbook("KMD_DGB", depth=2, no_cache=True, no_threading=True)
+    r5 = generic.orderbook("KMD/DGB", depth=2, no_cache=True, no_threading=True)
+    r6 = generic.orderbook("KMD_XXX", depth=2, no_cache=True, no_threading=True)
+    r6 = generic.orderbook("KMDXX", depth=2, no_cache=True, no_threading=True)
+    r_all = generic.orderbook("KMD_LTC", all=True, no_cache=True, no_threading=True)
+    r_all2 = generic.orderbook(
+        "KMD_LTC-segwit", all=True, no_cache=True, no_threading=True
+    )
+    r = generic.orderbook("DGB_DOGE", all=True, no_cache=True, no_threading=True)
 
     time.sleep(1)
-    r = generic.orderbook("KMD_DOGE", all=True)
-    r2 = generic.orderbook("DOGE_KMD", all=True)
+    r = generic.orderbook("KMD_DOGE", all=True, no_cache=True, no_threading=True)
+    r2 = generic.orderbook("DOGE_KMD", all=True, no_cache=True, no_threading=True)
     assert Decimal(r["combined_volume_usd"]) == Decimal(r2["combined_volume_usd"])
 
-    r3 = generic.orderbook("KMD_DGB", depth=2)
+    r3 = generic.orderbook("KMD_DGB", depth=2, no_cache=True, no_threading=True)
     assert len(r3["asks"]) == 2
     assert len(r3["bids"]) == 2
 
-    r5 = generic.orderbook("KMD/DGB", depth=2)
+    r5 = generic.orderbook("KMD/DGB", depth=2, no_cache=True, no_threading=True)
     logger.info(r5)
     assert "error" in r5
 
-    r6 = generic.orderbook("KMD_XXX", depth=2)
+    r6 = generic.orderbook("KMD_XXX", depth=2, no_cache=True, no_threading=True)
     assert r6["bids"] == []
 
     with pytest.raises(Exception):
-        r6 = generic.orderbook("KMDXX", depth=2)
+        r6 = generic.orderbook("KMDXX", depth=2, no_cache=True, no_threading=True)
         assert r6["bids"] == []
 
-    r_all = generic.orderbook("KMD_LTC", all=True)
+    r_all = generic.orderbook("KMD_LTC", all=True, no_cache=True, no_threading=True)
     logger.calc(r_all)
-    r_all2 = generic.orderbook("KMD_LTC-segwit", all=True)
+    r_all2 = generic.orderbook(
+        "KMD_LTC-segwit", all=True, no_cache=True, no_threading=True
+    )
     logger.loop(r_all2)
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert r_all["asks"][0] == r_all2["asks"][0]
@@ -53,7 +57,7 @@ def test_orderbook():
     assert r_all["base"] == r_all2["base"]
     assert r_all["liquidity_in_usd"] == r_all2["liquidity_in_usd"]
 
-    r = generic.orderbook("DGB_DOGE", all=True)
+    r = generic.orderbook("DGB_DOGE", all=True, no_cache=True, no_threading=True)
     assert r["pair"] == "DGB_DOGE"
     assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 6
@@ -63,7 +67,7 @@ def test_orderbook():
     assert Decimal(r["total_bids_base_vol"]) == Decimal(3348)
     assert Decimal(r["total_bids_quote_vol"]) == Decimal(5089)
 
-    r = generic.orderbook("DGB_DOGE", all=False)
+    r = generic.orderbook("DGB_DOGE", all=False, no_cache=True, no_threading=True)
     assert r["pair"] == "DGB_DOGE"
     assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 3
@@ -73,7 +77,7 @@ def test_orderbook():
     assert Decimal(r["total_bids_base_vol"]) == Decimal(222)
     assert Decimal(r["total_bids_quote_vol"]) == Decimal(4848)
 
-    r = generic.orderbook("DOGE_DGB", all=False)
+    r = generic.orderbook("DOGE_DGB", all=False, no_cache=True, no_threading=True)
     assert r["pair"] == "DOGE_DGB"
     assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 3

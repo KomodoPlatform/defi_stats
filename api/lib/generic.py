@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 import db
 import lib
 from lib.coins import get_gecko_price, get_kmd_pairs
@@ -63,6 +62,8 @@ class Generic:  # pragma: no cover
         pair_str: str = "KMD_LTC",
         depth: int = 100,
         all: bool = False,
+        no_cache=False,
+        no_threading=False
     ):
         try:
             if all:
@@ -86,10 +87,11 @@ class Generic:  # pragma: no cover
             orderbook_data = memcache.get(cache_name)
             if (
                 orderbook_data is not None
+                and not no_cache
                 and len(orderbook_data["asks"]) > 0
                 and len(orderbook_data["bids"]) > 0
             ):
-                # logger.calc(f"{cache_name} exists and is populated!")
+                logger.calc(f"{cache_name} exists and is populated!")
                 combined_orderbook = orderbook_data
             else:
                 if self.coins_config is None:
@@ -100,29 +102,23 @@ class Generic:  # pragma: no cover
 
                 for variant in variants:
                     variant_cache_name = f"orderbook_{variant}"
-                    # Use variant cache if valid
-                    data = memcache.get(variant_cache_name)
-                    if data is not None and (
-                        len(data["asks"]) > 0 or len(data["bids"]) > 0
-                    ):
-                        pass
-                        # logger.calc(f"variant {variant_cache_name} exists, and is populated!")
-                    else:
-                        base, quote = helper.base_quote_from_pair(variant)
-                        # Avoid duplication for utxo coins with segwit
-                        # TODO: cover where legacy is wallet only
-                        if base.endswith("-segwit") and len(variants) > 1:
-                            continue
-                        if quote.endswith("-segwit") and len(variants) > 1:
-                            continue
-                        data = dex.get_orderbook(
-                            base=base,
-                            quote=quote,
-                            coins_config=self.coins_config,
-                            gecko_source=self.gecko_source,
-                            variant_cache_name=variant_cache_name,
-                            depth=depth,
-                        )
+                    base, quote = helper.base_quote_from_pair(variant)
+                    # Avoid duplication for utxo coins with segwit
+                    # TODO: cover where legacy is wallet only
+                    if base.endswith("-segwit") and len(variants) > 1:
+                        continue
+                    if quote.endswith("-segwit") and len(variants) > 1:
+                        continue
+                    data = dex.get_orderbook(
+                        base=base,
+                        quote=quote,
+                        coins_config=self.coins_config,
+                        gecko_source=self.gecko_source,
+                        variant_cache_name=variant_cache_name,
+                        depth=depth,    
+                        no_cache=no_cache,
+                        no_threading=no_threading
+                    )
                     # Apply depth limit after caching so the cache is complete.
                     data["bids"] = data["bids"][:depth][::-1]
                     data["asks"] = data["asks"][::-1][:depth]
@@ -154,9 +150,9 @@ class Generic:  # pragma: no cover
             msg = f"Generic.orderbook {pair_str} failed: {e}!"
             try:
                 data = template.orderbook(pair_str)
-                msg += f" Returning template!"
+                msg += " Returning template!"
             except Exception as e:
-                data = {"error": msg}
+                data = {"error": f"{msg}: {e}"}
                 return default.result(
                     data=data, msg=msg, loglevel="warning", ignore_until=0
                 )
@@ -229,20 +225,20 @@ class Generic:  # pragma: no cover
             price_status_dict = get_price_status_dict(data.keys(), self.gecko_source)
             for i in data:
                 data[i] = clean.decimal_dict(data[i])
-                data[i].update({"priced": get_pair_priced_status(i,  price_status_dict)})
-                
+                data[i].update({"priced": get_pair_priced_status(i, price_status_dict)})
+
             return data
         except Exception as e:  # pragma: no cover
-            msg = "pairs_last_traded failed!"
+            msg = f"pairs_last_traded failed! {e}"
             logger.warning(msg)
 
 
-def get_pair_priced_status(pair,  price_status_dict):
+def get_pair_priced_status(pair, price_status_dict):
     if pair in price_status_dict["priced_gecko"]:
         return True
     else:
         return False
-    
+
 
 def get_price_status_dict(pairs, gecko_source=None):
     try:

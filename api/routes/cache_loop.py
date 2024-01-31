@@ -17,7 +17,7 @@ def check_cache():  # pragma: no cover
     """Checks when cache items last updated"""
     try:
         cache = Cache()
-        cache.updated_since(True)
+        cache.healthcheck(to_console=True)
     except Exception as e:
         return default.error(e)
 
@@ -88,7 +88,7 @@ def generic_last_traded():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=180)
 @timed
 def generic_tickers():
     try:

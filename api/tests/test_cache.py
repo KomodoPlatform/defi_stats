@@ -3,7 +3,6 @@ from lib.cache import Cache
 
 
 def test_cache():
-    memcache.update("testing", {"status": True}, 900)
 
     cache = Cache()
 

@@ -6,7 +6,6 @@ from typing import Optional, List, Dict
 import db
 from lib.coins import get_gecko_price, get_gecko_mcap
 from lib.generic import Generic
-from lib.dex_api import OrderbookRpcThread
 from util.logger import logger, timed
 from util.transform import sortdata, clean
 import util.defaults as default
@@ -295,8 +294,6 @@ class Pair:  # pragma: no cover
                     if self.is_reversed and data["last_swap_price"] != 0:
                         data["last_swap_price"] = 1 / data["last_swap_price"]
 
-
-
             msg = f"Got first and last swap for {self.as_str}"
             return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
         except Exception as e:  # pragma: no cover
@@ -362,7 +359,9 @@ class Pair:  # pragma: no cover
                 }
             )
 
-            orderbook_data = generic.orderbook(self.as_str, depth=100, all=all)
+            orderbook_data = generic.orderbook(
+                self.as_str, depth=100, all=all, no_cache=True, no_threading=False
+            )
             data.update(
                 {
                     "highest_bid": helper.find_highest_bid(orderbook_data),

@@ -144,3 +144,7 @@ def update(key, value, expiry):
         msg = f"{key} memcache not updated: {e}"
         logger.warning(f"Failed to cache {key}! {e}")
     return default.result(data=key, msg=msg, loglevel="warning", ignore_until=0)
+
+
+if os.getenv("IS_TESTING"):
+    MEMCACHE.set("testing", True, 900)

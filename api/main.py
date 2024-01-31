@@ -160,7 +160,7 @@ def healthcheck():
     return {
         "timestamp": int(cron.now_utc()),
         "status": "ok",
-        "cache_age_mins": cache.updated_since(),
+        "cache_age_mins": cache.healthcheck(),
     }
 
 

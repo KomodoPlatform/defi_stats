@@ -26,7 +26,7 @@ class Cache:  # pragma: no cover
             msg = f"{type(e)} Error in [Cache.load_cache]: {e}"
             raise CacheItemNotFound(msg)
 
-    def updated_since(self, healthcheck=False):  # pragma: no cover
+    def healthcheck(self, to_console=False):  # pragma: no cover
         try:
             updated = {}
             for i in [
@@ -43,10 +43,9 @@ class Cache:  # pragma: no cover
             ]:
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
-                memcache.update(i, item.data, 900)
-                if not healthcheck:
-                    logger.loop(f"[{i}] last updated: {since_updated} min")
                 updated.update({i: since_updated})
+                if to_console:
+                    logger.loop(f"[{i}] last updated: {since_updated} min")
             return updated
         except Exception as e:
             logger.warning(e)

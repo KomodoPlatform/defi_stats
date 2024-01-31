@@ -1,15 +1,13 @@
 import pytest
+import time
 from decimal import Decimal
+from copy import deepcopy
 from tests.fixtures_transform import (
     setup_ticker_to_statsapi_24h,
     setup_ticker_to_statsapi_7d,
     setup_ticker_to_market_ticker,
-    setup_ticker_to_market_ticker_summary,
     setup_historical_trades_to_market_trades,
 )
-from tests.fixtures_db import setup_swaps_db_data, setup_time
-from tests.fixtures_class import setup_gecko
-
 from tests.fixtures_data import (
     historical_data,
     historical_trades,
@@ -19,12 +17,16 @@ from tests.fixtures_data import (
     orderbook_as_string,
     orderbook_as_coords,
 )
-
-
+from lib.generic import Generic
 from util.logger import logger
-from util.transform import convert, sortdata, clean
+from util.transform import convert, sortdata, clean, merge
 import util.transform as transform
 import util.memcache as memcache
+
+generic = Generic()
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
+last_traded_cache = memcache.get_last_traded()
 
 
 def test_format_10f():
@@ -33,13 +35,13 @@ def test_format_10f():
     assert transform.format_10f(1.23) == "1.2300000000"
 
 
-def test_ticker_to_market_ticker_summary(setup_ticker_to_market_ticker_summary):
-    x = setup_ticker_to_market_ticker_summary
+def test_ticker_to_market_summary_item():
     ticker_item = get_ticker_item()
-    assert x["ticker_id"] == "DGB_LTC"
+    x = convert.ticker_to_market_summary_item(ticker_item)
+    assert x["trading_pair"] == "DGB_LTC"
     assert x["quote_currency"] == "LTC"
     assert ticker_item["quote_volume"] == x["quote_volume"]
-    assert ticker_item["ticker_id"] == x["ticker_id"]
+    assert ticker_item["ticker_id"] == x["trading_pair"]
     assert ticker_item["last_swap_time"] == str(x["last_swap"])
     assert ticker_item["highest_price_24hr"] == x["highest_price_24hr"]
     assert ticker_item["lowest_price_24hr"] == x["lowest_price_24hr"]
@@ -227,3 +229,26 @@ def test_strip_pair_platforms():
 def test_strip_coin_platform():
     r = transform.strip_coin_platform("USDC-PLG20")
     assert r == "USDC"
+
+
+def test_merge_orderbooks():
+    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
+    time.sleep(2)
+    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
+    logger.calc(orderbook_data)
+    book = deepcopy(orderbook_data)
+    book2 = deepcopy(orderbook_data)
+    x = merge.orderbooks(book, book2)
+    logger.info(x)
+    assert x["base"] == orderbook_data["base"]
+    assert x["quote"] == orderbook_data["quote"]
+    assert x["timestamp"] == orderbook_data["timestamp"]
+    assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
+    assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
+    assert x["liquidity_in_usd"] == orderbook_data["liquidity_in_usd"] * 2
+    assert x["total_asks_base_vol"] == orderbook_data["total_asks_base_vol"] * 2
+    assert x["total_bids_base_vol"] == orderbook_data["total_bids_base_vol"] * 2
+    assert x["total_asks_quote_vol"] == orderbook_data["total_asks_quote_vol"] * 2
+    assert x["total_bids_quote_vol"] == orderbook_data["total_bids_quote_vol"] * 2
+    assert x["total_asks_base_usd"] == orderbook_data["total_asks_base_usd"] * 2
+    assert x["total_bids_quote_usd"] == orderbook_data["total_bids_quote_usd"] * 2

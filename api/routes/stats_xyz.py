@@ -75,7 +75,7 @@ def fiat_rates():
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
         generic = Generic()
-        return generic.orderbook(pair_str=market_pair, depth=depth)
+        return generic.orderbook(pair_str=market_pair, depth=depth, no_threading=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -208,11 +208,9 @@ def tickers_summary():
         data = memcache.get_tickers()
         resp = {}
         for i in data["data"]:
-            logger.calc(i)
             base = i["base_currency"]
             rel = i["quote_currency"]
             for ticker in [base, rel]:
-                logger.calc(ticker)
                 if ticker not in resp:
                     resp.update({ticker: {"trades_24h": 0, "volume_24h": 0}})
                 resp[ticker]["trades_24h"] += int(i["trades_24hr"])
@@ -223,7 +221,6 @@ def tickers_summary():
         resp = clean.decimal_dict(resp)
         with_action = {}  # has a recent swap
         tickers = list(resp.keys())
-        logger.calc(tickers)
         tickers.sort()
         for ticker in tickers:
             tickers = list(resp[ticker])
@@ -305,16 +302,9 @@ def volumes_history_ticker(
         volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
         data = query.coin_trade_volumes_usd(volumes)
         volumes_dict[d_str] = template.volumes_ticker()
-        logger.merge(volumes_dict)
         for variant in variants:
-            logger.merge(variant)
-            logger.merge(stripped_coin)
             if stripped_coin in data["volumes"]:
-                logger.loop(variant)
-                logger.loop(stripped_coin)
                 if variant in data["volumes"][stripped_coin]:
-                    logger.calc(volumes_dict[d_str])
-                    logger.calc(data["volumes"][stripped_coin][variant])
                     volumes_dict[d_str] = (
                         volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
                     )

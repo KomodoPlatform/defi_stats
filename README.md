@@ -142,7 +142,18 @@ Alternative APIs are hosted at:
 These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
 
 ## Warning
-Some data is cached with memcache. if the size of this data grows too large, it might fail to enter the cache. It should be split into smaller parts.
+Some data is cached with memcache. if the size of this data grows too large, it might fail to enter the cache. It should be split into smaller parts. See https://github.com/memcached/memcached/wiki/ConfiguringServer for configuration.
+
+
+## Known Issues
+To speed up the orderbook request loop, the requests are sent in separate threads which update the memcache. As a result, the first request for an orderbook may return a template rather than actual result. 
+
+To mitigate this there are a few options:
+- send a second request after a 3 second delay (kind of makes the threading speed up pointless, though waiting for one item could also give others later in the loop time to populate)
+- Increase the orderbook loop frequency (this will reduce returned template chance, but can still happen for first request after cache expiry)
+- Use a `no_cache` param for `run_every` functions so that background processing never uses existing cache. Alongside a loop frequency less than expiry time, this should ensure a persistantly populated cache at the expense of additional processing.
+- Use a `no_thread` param for endpoint functions to avoid consumers receving a template where data should exist. This will be slightly less responsive when cache is empty, but will return valid data. This will update the cache along the way, but cant be relied on to keep the cache updated as consumer initiated requests is unpredictable.
+
 
 ## Endpoints
 

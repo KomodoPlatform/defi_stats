@@ -106,6 +106,9 @@ class Merge:
             data.update(
                 {"trades_24hr": int_add(existing["trades_24hr"], new["trades_24hr"])}
             )
+            data.update(
+                {"variants": list_add(existing["variants"], new["variants"])}
+            )
             return data
 
         except Exception as e:  # pragma: no cover
@@ -119,6 +122,15 @@ class Merge:
 def decimal_add(x, y):
     try:
         return Decimal(x) + Decimal(y)
+    except Exception as e:
+        logger.warning(f"{type(e)}: {e}")
+        logger.warning(f"x: {x} ({type(x)})")
+        logger.warning(f"y: {y} ({type(y)})")
+        raise ValueError
+
+def list_add(x, y):
+    try:
+        return sorted(list(set(x + y)))
     except Exception as e:
         logger.warning(f"{type(e)}: {e}")
         logger.warning(f"x: {x} ({type(x)})")
@@ -315,6 +327,26 @@ class Convert:
             "last_swap_uuid": data["last_swap_uuid"],
         }
 
+    def ticker_to_market_summary_item(self, i):
+        data = {
+            "trading_pair": f"{i['ticker_id']}",
+            "variants": i['variants'],
+            "base_currency": i["base_currency"],
+            "base_volume": i["base_volume"],
+            "quote_currency": i["quote_currency"],
+            "quote_volume": i["quote_volume"],
+            "lowest_ask": i["lowest_ask"],
+            "highest_bid": i["highest_bid"],
+            "price_change_pct_24hr": i["price_change_pct_24hr"],
+            "highest_price_24hr": i["highest_price_24hr"],
+            "lowest_price_24hr": i["lowest_price_24hr"],
+            "trades_24hr": int(i["trades_24hr"]),
+            "last_swap": int(i["last_swap_time"]),
+            "last_swap_uuid": i["last_swap_uuid"],
+            "last_price": i["last_swap_price"],
+        }
+        return data
+
 
 class Deplatform:
     def __init__(self):
@@ -494,24 +526,6 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "volume_usd_24h": data["combined_volume_usd"],
         "last_swap_price": data["last_swap_price"],
         "last_swap_timestamp": data["last_swap_time"],
-    }
-
-
-def ticker_to_market_ticker_summary(i):
-    return {
-        "ticker_id": f"{i['base_currency']}_{i['quote_currency']}",
-        "base_currency": i["base_currency"],
-        "base_volume": i["base_volume"],
-        "quote_currency": i["quote_currency"],
-        "quote_volume": i["quote_volume"],
-        "lowest_ask": i["lowest_ask"],
-        "highest_bid": i["highest_bid"],
-        "price_change_pct_24hr": str(i["price_change_pct_24hr"]),
-        "highest_price_24hr": i["highest_price_24hr"],
-        "lowest_price_24hr": i["lowest_price_24hr"],
-        "trades_24hr": int(i["trades_24hr"]),
-        "last_swap": int(i["last_swap_time"]),
-        "last_swap_price": i["last_swap_price"],
     }
 
 

@@ -120,7 +120,7 @@ def test_find_lowest_ask():
     orderbook = generic.orderbook("KMD_BTC", all=True)
     time.sleep(1)
     orderbook = generic.orderbook("KMD_BTC", all=True)
-    
+
     r = helper.find_lowest_ask(orderbook)
     assert r == transform.format_10f(1 / 24)
 

@@ -53,13 +53,12 @@ services:
   memcached:
     container_name: memcached
     image: memcached:latest
-    environment:
-      - MAXITEMSIZE=5m
     ports:
       - "127.0.0.1:11211:11211"
     restart: always
     depends_on:
       - pgsqldb
+    command: ["memcached", "-I", "10m"]
 
   pgsqldb:
     container_name: pgsqldb

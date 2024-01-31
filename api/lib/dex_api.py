@@ -6,6 +6,7 @@ from typing import Dict
 
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
 from lib.coins import get_gecko_price
+import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
 import util.templates as template
@@ -88,20 +89,23 @@ class OrderbookRpcThread(threading.Thread):
     def run(self):
         try:
             data = DexAPI().orderbook_rpc(self.base, self.quote)
-            # logger.calc(data)
-            data["pair"] = self.pair_str
-            data = transform.label_bids_asks(data, self.pair_str)
-            data = get_liquidity(data, self.gecko_source)
-            # logger.query(data)
-            data["variants"] = []
-            
+            data = orderbook_extras(self.pair_str, data, self.gecko_source)
             # update the variant cache. Double expiry vs combined to
-            # make sure variants are never empty when comnbined asks.
+            # make sure variants are never empty when combined asks.
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
                 data = clean.decimal_dict(data)
-                memcache.update(self.variant_cache_name, data, 240)
+                memcache.update(self.variant_cache_name, data, 300)
         except Exception as e:
             logger.warning(e)
+
+
+def orderbook_extras(pair_str, data, gecko_source):
+    # logger.calc(data)
+    data["pair"] = pair_str
+    data["variants"] = [pair_str]
+    data = transform.label_bids_asks(data, pair_str)
+    data = get_liquidity(data, gecko_source)
+    return data
 
 
 @timed
@@ -112,9 +116,12 @@ def get_orderbook(
     gecko_source: Dict,
     variant_cache_name: str,
     depth: int = 100,
+    no_cache: bool = False,
+    no_threading: bool = False
 ):
     try:
         pair_str = f"{base}_{quote}"
+        data=template.orderbook(pair_str=pair_str)
         if base not in coins_config or quote not in coins_config:
             msg = f"dex_api.get_orderbook {base} not in coins_config!"
         if quote not in coins_config:
@@ -124,36 +131,41 @@ def get_orderbook(
         elif coins_config[quote]["wallet_only"]:
             msg = f"dex_api.get_orderbook {quote} is wallet only!"
         elif memcache.get("testing") is not None:
-            get_orderbook_fixture(pair_str)
+            return get_orderbook_fixture(
+                pair_str,
+                gecko_source=gecko_source
+            )
         else:
             # Use variant cache if available
             cached = memcache.get(variant_cache_name)
-            if cached is not None and (
+            if cached is not None and not no_cache and (
                 len(cached["asks"]) > 0 or len(cached["bids"]) > 0
             ):
-                return default.result(
-                    data=cached, loglevel="loop ", ignore_until=2, msg=msg
+                data=cached
+            elif no_threading:
+                data = DexAPI().orderbook_rpc(base, quote)
+                data = orderbook_extras(pair_str=pair_str, data=data, gecko_source=gecko_source)
+            else:
+                t = OrderbookRpcThread(
+                    base,
+                    quote,
+                    variant_cache_name=variant_cache_name,
+                    depth=depth,
+                    gecko_source=gecko_source,
                 )
-            t = OrderbookRpcThread(
-                base,
-                quote,
-                variant_cache_name=variant_cache_name,
-                depth=depth,
-                gecko_source=gecko_source,
-            )
-            t.start()
+                t.start()
         msg = f"Returning orderbook template for {pair_str} while cache reloads"
     except Exception as e:  # pragma: no cover
         msg = f"dex_api.get_orderbook {pair_str} failed: {e}! Returning template"
     return default.result(
-        data=template.orderbook(pair_str=pair_str),
+        data=data,
         ignore_until=2,
         msg=msg,
         loglevel="loop",
     )
 
 
-def get_orderbook_fixture(pair_str):
+def get_orderbook_fixture(pair_str, gecko_source):
     files = Files()
     path = f"{API_ROOT_PATH}/tests/fixtures/orderbook"
     fn = f"{pair_str}.json"
@@ -163,11 +175,24 @@ def get_orderbook_fixture(pair_str):
         fixture = files.load_jsonfile(f"{path}/{fn}")
     if fixture is not None:
         data = fixture
-    is_reversed = pair_str != sortdata.order_pair_by_market_cap(pair_str)
+    else:
+        logger.warning(f"{fixture} does not exist!")
+        data=template.orderbook(pair_str=pair_str)
     data["pair"] = pair_str
+    data["timestamp"] = int(cron.now_utc())
+    is_reversed = pair_str != sortdata.order_pair_by_market_cap(pair_str)
     if is_reversed:
         data = transform.invert_orderbook(data)
-    return transform.label_bids_asks(data, pair_str)
+    data = transform.label_bids_asks(data, pair_str)
+    logger.query(data)
+    data = get_liquidity(data, gecko_source)
+    logger.loop(data)
+    if 'variants' not in data:
+        data["variants"] = [pair_str]
+    if len(data["bids"]) > 0 or len(data["asks"]) > 0:
+        data = clean.decimal_dict(data)
+    logger.merge(data)
+    return data
 
 
 @timed

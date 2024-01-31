@@ -9,6 +9,8 @@ from lib.stats_api import StatsAPI
 import util.helper as helper
 import lib
 
+def pytest_sessionfinish():
+    print("*** test run reporting finishing *********")
 
 @pytest.fixture
 def setup_statsapi(setup_swaps_db_data):

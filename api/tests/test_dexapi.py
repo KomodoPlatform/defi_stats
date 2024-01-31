@@ -2,6 +2,7 @@
 import time
 import lib.dex_api as dex
 import util.memcache as memcache
+from util.logger import logger
 
 coins_config = memcache.get_coins_config()
 gecko_source = memcache.get_gecko_source()
@@ -33,7 +34,10 @@ def test_get_orderbook():
         coins_config=coins_config,
         variant_cache_name="KMD_LTC",
         gecko_source=gecko_source,
+        no_cache=True,
+        no_threading=True
     )
+    logger.calc(r)
     time.sleep(1)
     r = dex.get_orderbook(
         "KMD",
@@ -41,8 +45,10 @@ def test_get_orderbook():
         coins_config=coins_config,
         variant_cache_name="KMD_LTC",
         gecko_source=gecko_source,
+        no_cache=True,
+        no_threading=True
     )
-    
+    logger.calc(r)
     assert r["pair"] == "KMD_LTC"
     assert "asks" in r
     assert "bids" in r
@@ -57,10 +63,11 @@ def test_get_orderbook():
     r = dex.get_orderbook(
         "LTC",
         "KMD",
-        coins_config,
         variant_cache_name="LTC_KMD",
         gecko_source=gecko_source,
         coins_config=coins_config,
+        no_cache=True,
+        no_threading=True
     )
     assert r["pair"] == "LTC_KMD"
     assert "asks" in r

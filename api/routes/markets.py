@@ -88,7 +88,7 @@ def fiat_rates():
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
         generic = Generic()
-        return generic.orderbook(pair_str=market_pair, depth=depth)
+        return generic.orderbook(pair_str=market_pair, depth=depth, no_threading=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -131,7 +131,7 @@ def summary():
         data = memcache.get_tickers()
         resp = []
         for i in data["data"]:
-            resp.append(transform.ticker_to_market_ticker_summary(i))
+            resp.append(convert.ticker_to_market_summary_item(i))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/tickers]: {e}")

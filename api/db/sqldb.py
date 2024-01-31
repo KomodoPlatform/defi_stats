@@ -616,7 +616,7 @@ class SqlQuery(SqlDB):
                             resp[pair].update({k: v})
 
                 # TODO: use separate chache for the below
-                '''
+                """
                 # 2nd query for swap first swap info for category
                 cols = [
                     self.table.uuid.label("first_swap_uuid"),
@@ -637,9 +637,7 @@ class SqlQuery(SqlDB):
                     for k, v in first_data[pair].items():
                         if k != "category":
                             resp[pair].update({k: v})
-                '''
-
-
+                """
 
                 return default.result(
                     data=resp,
@@ -663,7 +661,6 @@ class SqlQuery(SqlDB):
             )
             data = {}
             for i in maker_data:
-                logger.info(maker_data)
                 k = transform.derive_app(maker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -680,7 +677,6 @@ class SqlQuery(SqlDB):
                 data[k]["total_num_swaps"] += maker_data[i]["num_swaps"]
 
             for i in taker_data:
-                logger.info(taker_data)
                 k = transform.derive_app(taker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -713,23 +709,6 @@ class SqlQuery(SqlDB):
             results = self.last_trade(
                 is_success=is_success, group_by_cols=group_by_cols
             )
-            '''
-            volumes = self.pair_trade_volumes()
-            volumes_usd = self.pair_trade_volumes_usd(volumes=volumes)
-            
-            for i in volumes_usd['volumes']:
-                for j in volumes_usd['volumes'][i]:
-                    if j in results:
-                        results[j].update({
-                            "swap_count": volumes_usd['volumes'][i][j]['swaps'],
-                            "base_volume_24hr": volumes_usd['volumes'][i][j]['base_volume'],
-                            "trade_volume_usd_24hr": volumes_usd['volumes'][i][j]['trade_volume_usd'],
-                            "base_volume_usd_24hr": volumes_usd['volumes'][i][j]['base_volume_usd'],
-                            "quote_volume_24hr": volumes_usd['volumes'][i][j]['quote_volume'],
-                            "quote_volume_usd_24hr": volumes_usd['volumes'][i][j]['quote_volume_usd'],
-                            
-                        })
-            '''
             return default.result(
                 data=results,
                 msg="pair_last_trade complete",

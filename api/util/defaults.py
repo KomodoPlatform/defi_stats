@@ -1,7 +1,7 @@
 from typing import List, Dict
 import util.cron as cron
 from util.exceptions import NoDefaultForKeyError
-from const import DEXAPI_8762_HOST, IS_TESTING
+from const import DEXAPI_8762_HOST
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -55,10 +55,6 @@ def default_val(key: str):
 def params(object, kwargs: Dict, options: List[str] = list()) -> None:
     # Set the defaults from object options if not already set
     try:
-        if IS_TESTING:
-            setattr(object, "testing", True)
-        else:
-            setattr(object, "testing", False)
         [setattr(object, k, v) for k, v in kwargs.items()]
 
         for arg in arg_defaults()["args"]:

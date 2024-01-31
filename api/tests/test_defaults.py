@@ -5,11 +5,6 @@ from const import DEXAPI_8762_HOST
 
 
 def test_arg_defaults():
-    """
-    Test orderbook() method of DexAPI class.
-    TODO: Test for more response keys, see if
-    any other values can be reliably static
-    """
 
     class Test:
         def __init__(self, **kwargs) -> None:

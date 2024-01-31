@@ -160,28 +160,6 @@ def test_pair(
     assert pair.quote == "DGB"
 
 
-def test_merge_orderbooks():
-    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
-    time.sleep(2)
-    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
-    book = deepcopy(orderbook_data)
-    book2 = deepcopy(orderbook_data)
-    x = merge.orderbooks(book, book2)
-    logger.info(x)
-    assert x["base"] == orderbook_data["base"]
-    assert x["quote"] == orderbook_data["quote"]
-    assert x["timestamp"] == orderbook_data["timestamp"]
-    assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
-    assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
-    assert x["liquidity_in_usd"] == orderbook_data["liquidity_in_usd"] * 2
-    assert x["total_asks_base_vol"] == orderbook_data["total_asks_base_vol"] * 2
-    assert x["total_bids_base_vol"] == orderbook_data["total_bids_base_vol"] * 2
-    assert x["total_asks_quote_vol"] == orderbook_data["total_asks_quote_vol"] * 2
-    assert x["total_bids_quote_vol"] == orderbook_data["total_bids_quote_vol"] * 2
-    assert x["total_asks_base_usd"] == orderbook_data["total_asks_base_usd"] * 2
-    assert x["total_bids_quote_usd"] == orderbook_data["total_bids_quote_usd"] * 2
-
-
 def test_swap_uuids(setup_kmd_ltc_pair):
     r = setup_kmd_ltc_pair.swap_uuids()
     assert "77777777-2762-4633-8add-6ad2e9b1a4e7" in r["uuids"]

@@ -70,6 +70,13 @@ class MarketsSummaryItem(BaseModel):
     trading_pair: str = "XXX_YYY"
     base_currency: str = "XXX"
     quote_currency: str = "YYY"
+    trades_24hr: int = 777
+    variants: List[str] = [
+        "XXX_YYY",
+        "XXX-segwit_YYY",
+        "XXX_YYY-PLG20",
+        "XXX-segwit_YYY-PLG20",
+    ]
     base_volume: str = "777.777777"
     quote_volume: str = "777.777777"
     lowest_ask: str = "777.777777"
@@ -78,8 +85,8 @@ class MarketsSummaryItem(BaseModel):
     highest_price_24hr: str = "777.777777"
     price_change_pct_24hr: str = "777.777777"
     last_price: str = "777.777777"
+    last_swap_uuid: str = "777.777777"
     last_swap: int = 1777777777
-    trades_24hr: int = 777
 
 
 # markets/usd_volume
