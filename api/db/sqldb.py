@@ -26,7 +26,7 @@ from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFaile
 from lib.coins import get_gecko_price
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
-from util.transform import merge, sortdata
+from util.transform import merge, sortdata, deplatform
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -107,7 +107,7 @@ class SqlFilter:
 
     def pair(self, q, pair):
         if pair is not None:
-            pair = transform.strip_pair_platforms(pair)
+            pair = deplatform.pair(pair)
             q = q.filter(
                 or_(
                     pair == self.table.pair_std,
@@ -616,7 +616,7 @@ class SqlQuery(SqlDB):
                             resp[pair].update({k: v})
 
                 # TODO: use separate chache for the below
-                """
+
                 # 2nd query for swap first swap info for category
                 cols = [
                     self.table.uuid.label("first_swap_uuid"),
@@ -637,7 +637,6 @@ class SqlQuery(SqlDB):
                     for k, v in first_data[pair].items():
                         if k != "category":
                             resp[pair].update({k: v})
-                """
 
                 return default.result(
                     data=resp,
@@ -881,9 +880,8 @@ class SqlQuery(SqlDB):
                     variants = helper.get_pair_variants(pair)
                     for variant in variants:
                         # exclude duplication for bridge swaps
-                        if (
-                            bridge_swap
-                            and variant != sortdata.order_pair_by_market_cap(variant)
+                        if bridge_swap and variant != sortdata.pair_by_market_cap(
+                            variant
                         ):
                             continue
                         base, quote = helper.base_quote_from_pair(variant)
@@ -897,7 +895,7 @@ class SqlQuery(SqlDB):
                     all = []
                     for i in resp:
                         all += resp[i]
-                    sortdata.sort_dict_list(data=all, key="finished_at", reverse=True)
+                    sortdata.dict_lists(data=all, key="finished_at", reverse=True)
                     resp.update({"ALL": all})
 
                 else:
@@ -1044,7 +1042,7 @@ class SqlQuery(SqlDB):
             sorted_pairs = list(
                 set(
                     [
-                        sortdata.order_pair_by_market_cap(i, gecko_source=gecko_source)
+                        sortdata.pair_by_market_cap(i, gecko_source=gecko_source)
                         for i in pairs
                     ]
                 )
@@ -1432,9 +1430,9 @@ class SqlSource:
         try:
             for i in data:
                 pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
-                pair = sortdata.order_pair_by_market_cap(pair_raw)
+                pair = sortdata.pair_by_market_cap(pair_raw)
                 pair_reverse = transform.invert_pair(pair)
-                pair_std = transform.strip_pair_platforms(pair)
+                pair_std = deplatform.pair(pair)
                 pair_std_reverse = transform.invert_pair(pair_std)
                 if pair_raw == pair:
                     trade_type = "buy"
@@ -1451,15 +1449,11 @@ class SqlSource:
                         "pair_reverse": pair_reverse,
                         "pair_std_reverse": pair_std_reverse,
                         "trade_type": trade_type,
-                        "maker_coin_ticker": transform.strip_coin_platform(
-                            i["maker_coin"]
-                        ),
+                        "maker_coin_ticker": deplatform.coin(i["maker_coin"]),
                         "maker_coin_platform": transform.get_coin_platform(
                             i["maker_coin"]
                         ),
-                        "taker_coin_ticker": transform.strip_coin_platform(
-                            i["taker_coin"]
-                        ),
+                        "taker_coin_ticker": deplatform.coin(i["taker_coin"]),
                         "taker_coin_platform": transform.get_coin_platform(
                             i["taker_coin"]
                         ),
@@ -1539,8 +1533,8 @@ class SqlSource:
                     trade_type=cipi_data["trade_type"],
                     pair=cipi_data["pair"],
                     pair_reverse=transform.invert_pair(cipi_data["pair"]),
-                    pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(
+                    pair_std=deplatform.pair(cipi_data["pair"]),
+                    pair_std_reverse=deplatform.pair(
                         transform.invert_pair(cipi_data["pair"])
                     ),
                     last_updated=int(cron.now_utc()),
@@ -1617,8 +1611,8 @@ class SqlSource:
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
                     pair_reverse=transform.invert_pair(cipi_data["pair"]),
-                    pair_std=transform.strip_pair_platforms(cipi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(
+                    pair_std=deplatform.pair(cipi_data["pair"]),
+                    pair_std_reverse=deplatform.pair(
                         transform.invert_pair(cipi_data["pair"])
                     ),
                     last_updated=int(cron.now_utc()),
@@ -1669,8 +1663,8 @@ class SqlSource:
                     trade_type=mm2_data["trade_type"],
                     pair=mm2_data["pair"],
                     pair_reverse=transform.invert_pair(mm2_data["pair"]),
-                    pair_std=transform.strip_pair_platforms(mm2_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(
+                    pair_std=deplatform.pair(mm2_data["pair"]),
+                    pair_std_reverse=deplatform.pair(
                         transform.invert_pair(mm2_data["pair"])
                     ),
                     last_updated=int(cron.now_utc()),
@@ -1738,8 +1732,8 @@ class SqlSource:
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
                     pair_reverse=transform.invert_pair(defi_data["pair"]),
-                    pair_std=transform.strip_pair_platforms(defi_data["pair"]),
-                    pair_std_reverse=transform.strip_pair_platforms(
+                    pair_std=deplatform.pair(defi_data["pair"]),
+                    pair_std_reverse=deplatform.pair(
                         transform.invert_pair(defi_data["pair"])
                     ),
                     last_updated=int(cron.now_utc()),

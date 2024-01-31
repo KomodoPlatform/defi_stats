@@ -507,7 +507,7 @@ def setup_swaps_db_data(setup_time):
 
     with Session(engine) as session:
         sample_data = db.SqlSource().normalise_swap_data(sample_data, gecko_source)
-        sample_data = clean.decimal_dict_list(sample_data)
+        sample_data = clean.decimal_dict_lists(sample_data)
 
         for i in sample_data:
             data = db.DefiSwapTest(

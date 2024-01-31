@@ -2,7 +2,7 @@
 import db
 from lib.pair import Pair
 from util.logger import logger
-from util.transform import sortdata, clean
+from util.transform import sortdata, clean, deplatform, sumdata
 import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
@@ -33,7 +33,7 @@ class StatsAPI:  # pragma: no cover
                 pairs_days = days
             pairs = sorted(
                 list(
-                    set([transform.strip_pair_platforms(i) for i in last_traded_cache])
+                    set([deplatform.pair(i) for i in last_traded_cache])
                 )
             )
             suffix = transform.get_suffix(days)
@@ -56,7 +56,7 @@ class StatsAPI:  # pragma: no cover
             )
 
             resp = [transform.ticker_to_statsapi_summary(i) for i in ticker_infos]
-            return clean.decimal_dict_list(resp)
+            return clean.decimal_dict_lists(resp)
 
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.pair_summaries]: {e}")
@@ -67,8 +67,8 @@ class StatsAPI:  # pragma: no cover
             end_time = int(cron.now_utc())
             start_time = end_time - 14 * 86400
             summaries = self.pair_summaries(days)
-            liquidity = transform.sum_json_key(data=summaries, key="pair_liquidity_usd")
-            swaps_value = transform.sum_json_key(
+            liquidity = sumdata.json_key(data=summaries, key="pair_liquidity_usd")
+            swaps_value = sumdata.json_key(
                 data=summaries, key="pair_trade_value_usd"
             )
             data = {
@@ -80,7 +80,7 @@ class StatsAPI:  # pragma: no cover
                 "top_pairs": self.top_pairs(summaries),
                 "current_liquidity": round(float(liquidity), 8),
             }
-            data = clean.decimal_dict(data)
+            data = clean.decimal_dicts(data)
             return data
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.adex_fortnite]: {e}")

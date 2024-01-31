@@ -4,7 +4,7 @@ import lib
 from lib.coins import get_gecko_price, get_kmd_pairs
 from util.exceptions import DataStructureError
 from util.logger import timed, logger
-from util.transform import sortdata, clean, merge
+from util.transform import sortdata, clean, merge, deplatform, sumdata
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -39,14 +39,14 @@ class Generic:  # pragma: no cover
                 )
             else:
                 resp = get_pairs_status(pairs)
-                resp = clean.decimal_dict_list(resp)
+                resp = clean.decimal_dict_lists(resp)
                 self.last_traded_cache = memcache.get_last_traded()
                 for i in resp:
                     first_last_swap = template.first_last_swap()
                     if self.last_traded_cache is not None:
                         if i["ticker_id"] in self.last_traded_cache:
                             x = self.last_traded_cache[i["ticker_id"]]
-                            first_last_swap = clean.decimal_dict(x)
+                            first_last_swap = clean.decimal_dicts(x)
                     i.update(first_last_swap)
                 msg = f"{len(pairs)} pairs traded in the last {days} days"
                 return default.result(data=resp, msg=msg, loglevel="loop")
@@ -63,11 +63,11 @@ class Generic:  # pragma: no cover
         depth: int = 100,
         all: bool = False,
         no_cache=False,
-        no_threading=False
+        no_threading=False,
     ):
         try:
             if all:
-                pair_str = transform.strip_pair_platforms(pair_str)
+                pair_str = deplatform.pair(pair_str)
                 pair_tpl = helper.base_quote_from_pair(pair_str)
                 cache_name = f"orderbook_{pair_str}_ALL"
                 variants = helper.get_pair_variants(pair_str)
@@ -115,11 +115,11 @@ class Generic:  # pragma: no cover
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
                         variant_cache_name=variant_cache_name,
-                        depth=depth,    
+                        depth=depth,
                         no_cache=no_cache,
-                        no_threading=no_threading
+                        no_threading=no_threading,
                     )
-                    # Apply depth limit after caching so the cache is complete.
+                    # Apply depth limit after caching so cache is complete
                     data["bids"] = data["bids"][:depth][::-1]
                     data["asks"] = data["asks"][::-1][:depth]
                     # TODO: Recalc liquidity if depth is less than data.
@@ -137,12 +137,11 @@ class Generic:  # pragma: no cover
                 combined_orderbook["base"] = pair_tpl[0]
                 combined_orderbook["quote"] = pair_tpl[1]
                 # logger.info(combined_orderbook['liquidity_in_usd'])
-
                 # update the combined cache
                 memcache.update(cache_name, combined_orderbook, 240)
 
-            msg = f"Generic.orderbook for {pair_str} ({len(variants)} variants) complete with ${combined_orderbook['liquidity_in_usd']} liquidity"
-
+            msg = f"Generic.orderbook for {pair_str} ({len(variants)} variants)"
+            msg += f"complete with ${combined_orderbook['liquidity_in_usd']} liquidity"
             return default.result(
                 data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2
             )
@@ -195,16 +194,16 @@ class Generic:  # pragma: no cover
             ]
 
             data = [i for i in data if i is not None]
-            data = clean.decimal_dict_list(data, to_string=True, rounding=10)
-            data = sortdata.sort_dict_list(data, "ticker_id")
+            data = clean.decimal_dict_lists(data, to_string=True, rounding=10)
+            data = sortdata.dict_lists(data, "ticker_id")
             data = {
                 "last_update": int(cron.now_utc()),
                 "pairs_count": len(data),
-                "swaps_count": int(transform.sum_json_key(data, f"trades_{suffix}")),
-                "combined_volume_usd": transform.sum_json_key_10f(
+                "swaps_count": int(sumdata.json_key(data, f"trades_{suffix}")),
+                "combined_volume_usd": sumdata.json_key_10f(
                     data, "combined_volume_usd"
                 ),
-                "combined_liquidity_usd": transform.sum_json_key_10f(
+                "combined_liquidity_usd": sumdata.json_key_10f(
                     data, "liquidity_in_usd"
                 ),
                 "data": data,
@@ -224,7 +223,7 @@ class Generic:  # pragma: no cover
             data = self.pg_query.pair_last_trade()
             price_status_dict = get_price_status_dict(data.keys(), self.gecko_source)
             for i in data:
-                data[i] = clean.decimal_dict(data[i])
+                data[i] = clean.decimal_dicts(data[i])
                 data[i].update({"priced": get_pair_priced_status(i, price_status_dict)})
 
             return data
@@ -267,4 +266,4 @@ def get_pairs_status(pairs, gecko_source=None):
     pairs_dict = get_price_status_dict(pairs, gecko_source)
     priced_pairs = helper.get_pairs_info(pairs_dict["priced_gecko"], True)
     unpriced_pairs = helper.get_pairs_info(pairs_dict["unpriced"], False)
-    return sortdata.sort_dict_list(priced_pairs + unpriced_pairs, "ticker_id")
+    return sortdata.dict_lists(priced_pairs + unpriced_pairs, "ticker_id")

@@ -152,7 +152,7 @@ def trades(
             end_time=end_time,
         )["ALL"]
         resp = data["buy"] + data["sell"]
-        resp = sortdata.sort_dict_list(resp, "timestamp", True)
+        resp = sortdata.dict_lists(resp, "timestamp", True)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

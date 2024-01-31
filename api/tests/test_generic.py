@@ -34,7 +34,6 @@ def test_orderbook():
     assert len(r3["bids"]) == 2
 
     r5 = generic.orderbook("KMD/DGB", depth=2, no_cache=True, no_threading=True)
-    logger.info(r5)
     assert "error" in r5
 
     r6 = generic.orderbook("KMD_XXX", depth=2, no_cache=True, no_threading=True)
@@ -45,11 +44,9 @@ def test_orderbook():
         assert r6["bids"] == []
 
     r_all = generic.orderbook("KMD_LTC", all=True, no_cache=True, no_threading=True)
-    logger.calc(r_all)
     r_all2 = generic.orderbook(
         "KMD_LTC-segwit", all=True, no_cache=True, no_threading=True
     )
-    logger.loop(r_all2)
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert r_all["asks"][0] == r_all2["asks"][0]
     assert r_all["pair"] == r_all2["pair"]

@@ -48,9 +48,7 @@ def test_gecko_pairs_endpoint():
     r = client.get("/api/v3/gecko/pairs")
     assert r.status_code == 200
     data = r.json()
-    logger.info(data)
     ticker_list = [i["ticker_id"] for i in data]
-    logger.info(ticker_list)
     assert "KMD_LTC" in ticker_list
     assert "LTC_KMD" not in ticker_list
     assert isinstance(data, list)
@@ -69,7 +67,6 @@ def test_gecko_tickers_endpoint():
     r = client.get("/api/v3/gecko/tickers")
     assert r.status_code == 200
     data = r.json()
-    logger.info(data)
     assert isinstance(data, dict)
     assert "last_update" in data
     assert "pairs_count" in data
@@ -125,7 +122,6 @@ def test_historical_trades_endpoint():
     assert isinstance(data, dict)
     assert isinstance(data["buy"], list)
     if len(data["buy"]) > 0:
-        logger.info(data["buy"][0])
         assert isinstance(data["buy"][0]["price"], str)
         assert isinstance(data["buy"][0]["trade_id"], str)
         assert isinstance(data["buy"][0]["timestamp"], str)
@@ -133,7 +129,6 @@ def test_historical_trades_endpoint():
         assert isinstance(data["buy"][0]["target_volume"], str)
     assert isinstance(data["sell"], list)
     if len(data["sell"]) > 0:
-        logger.info(data["sell"][0])
         assert isinstance(data["sell"][0]["price"], str)
         assert isinstance(data["sell"][0]["trade_id"], str)
         assert isinstance(data["sell"][0]["timestamp"], str)

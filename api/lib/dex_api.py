@@ -93,7 +93,7 @@ class OrderbookRpcThread(threading.Thread):
             # update the variant cache. Double expiry vs combined to
             # make sure variants are never empty when combined asks.
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
-                data = clean.decimal_dict(data)
+                data = clean.decimal_dicts(data)
                 memcache.update(self.variant_cache_name, data, 300)
         except Exception as e:
             logger.warning(e)
@@ -117,11 +117,11 @@ def get_orderbook(
     variant_cache_name: str,
     depth: int = 100,
     no_cache: bool = False,
-    no_threading: bool = False
+    no_threading: bool = False,
 ):
     try:
         pair_str = f"{base}_{quote}"
-        data=template.orderbook(pair_str=pair_str)
+        data = template.orderbook(pair_str=pair_str)
         if base not in coins_config or quote not in coins_config:
             msg = f"dex_api.get_orderbook {base} not in coins_config!"
         if quote not in coins_config:
@@ -131,20 +131,21 @@ def get_orderbook(
         elif coins_config[quote]["wallet_only"]:
             msg = f"dex_api.get_orderbook {quote} is wallet only!"
         elif memcache.get("testing") is not None:
-            return get_orderbook_fixture(
-                pair_str,
-                gecko_source=gecko_source
-            )
+            return get_orderbook_fixture(pair_str, gecko_source=gecko_source)
         else:
             # Use variant cache if available
             cached = memcache.get(variant_cache_name)
-            if cached is not None and not no_cache and (
-                len(cached["asks"]) > 0 or len(cached["bids"]) > 0
+            if (
+                cached is not None
+                and not no_cache
+                and (len(cached["asks"]) > 0 or len(cached["bids"]) > 0)
             ):
-                data=cached
+                data = cached
             elif no_threading:
                 data = DexAPI().orderbook_rpc(base, quote)
-                data = orderbook_extras(pair_str=pair_str, data=data, gecko_source=gecko_source)
+                data = orderbook_extras(
+                    pair_str=pair_str, data=data, gecko_source=gecko_source
+                )
             else:
                 t = OrderbookRpcThread(
                     base,
@@ -176,22 +177,19 @@ def get_orderbook_fixture(pair_str, gecko_source):
     if fixture is not None:
         data = fixture
     else:
-        logger.warning(f"{fixture} does not exist!")
-        data=template.orderbook(pair_str=pair_str)
+        logger.warning(f"fixture for {pair_str} does not exist!")
+        data = template.orderbook(pair_str=pair_str)
     data["pair"] = pair_str
     data["timestamp"] = int(cron.now_utc())
-    is_reversed = pair_str != sortdata.order_pair_by_market_cap(pair_str)
+    is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
         data = transform.invert_orderbook(data)
     data = transform.label_bids_asks(data, pair_str)
-    logger.query(data)
     data = get_liquidity(data, gecko_source)
-    logger.loop(data)
-    if 'variants' not in data:
+    if "variants" not in data:
         data["variants"] = [pair_str]
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
-        data = clean.decimal_dict(data)
-    logger.merge(data)
+        data = clean.decimal_dicts(data)
     return data
 
 

@@ -104,7 +104,7 @@ def test_get_volumes_and_prices(
 ):
     pair = setup_kmd_ltc_pair
     r = pair.get_volumes_and_prices()
-    r = clean.decimal_dict(r)
+    r = clean.decimal_dicts(r)
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price"] == 1

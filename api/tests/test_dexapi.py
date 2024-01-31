@@ -37,7 +37,6 @@ def test_get_orderbook():
         no_cache=True,
         no_threading=True
     )
-    logger.calc(r)
     time.sleep(1)
     r = dex.get_orderbook(
         "KMD",
@@ -48,7 +47,6 @@ def test_get_orderbook():
         no_cache=True,
         no_threading=True
     )
-    logger.calc(r)
     assert r["pair"] == "KMD_LTC"
     assert "asks" in r
     assert "bids" in r

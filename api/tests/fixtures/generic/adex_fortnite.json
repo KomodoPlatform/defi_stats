@@ -1,5 +1,5 @@
 {
-    "last_updated": 1706709633,
+    "last_updated": 1706725339,
     "data": {
         "days": 14,
         "swaps_count": 11,
@@ -13,11 +13,11 @@
                 "KMD_DGB": 8.45
             },
             "by_current_liquidity_usd": {
-                "KMD_BTC": 0.0,
-                "LTC_BTC": 0.0,
-                "DGB_LTC": 0.0,
-                "KMD_LTC": 0.0,
-                "KMD_DGB": 0.0
+                "KMD_BTC": 1696800555.0,
+                "KMD_LTC": 969822.0,
+                "DGB_LTC": 484801.11,
+                "KMD_DGB": 318.96,
+                "LTC_BTC": 0.0
             },
             "by_swaps_count": {
                 "KMD_LTC": 3,
@@ -27,6 +27,6 @@
                 "LTC_BTC": 1
             }
         },
-        "current_liquidity": 0.0
+        "current_liquidity": 1698255497.07
     }
 }

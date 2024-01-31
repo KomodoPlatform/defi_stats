@@ -11,7 +11,7 @@ from models.markets import MarketsAtomicdexIo
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata
+from util.transform import sortdata, deplatform
 import db
 import util.cron as cron
 import util.helper as helper
@@ -218,7 +218,7 @@ def tickers_summary():
                     resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
                 elif ticker == rel:
                     resp[ticker]["volume_24h"] += Decimal(i["quote_volume"])
-        resp = clean.decimal_dict(resp)
+        resp = clean.decimal_dicts(resp)
         with_action = {}  # has a recent swap
         tickers = list(resp.keys())
         tickers.sort()
@@ -253,7 +253,7 @@ def trades(
             end_time=end_time,
         )["ALL"]
         resp = data["buy"] + data["sell"]
-        resp = sortdata.sort_dict_list(resp, "timestamp", True)
+        resp = sortdata.dict_lists(resp, "timestamp", True)
         return resp
     except BadPairFormatError as e:
         err = f"{type(e)} Error in [/api/v3/stats_xyz/trades]: {e.msg}"
@@ -291,7 +291,7 @@ def volumes_history_ticker(
     volumes_dict = {}
     query = db.SqlQuery()
     # Individual tickers only, no merge except segwit
-    stripped_coin = transform.strip_coin_platform(coin)
+    stripped_coin = deplatform.coin(coin)
     variants = helper.get_coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)

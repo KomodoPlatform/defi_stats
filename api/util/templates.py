@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import util.cron as cron
 import util.helper as helper
-from util.logger import logger
 
 
 def last_price_for_pair():  # pragma: no cover

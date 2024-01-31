@@ -1,70 +1,103 @@
 {
-    "last_updated": 1706709633,
+    "last_updated": 1706725339,
     "data": {
         "DGB_LTC": {
             "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-            "last_swap_time": 1706705165,
+            "last_swap_time": 1706721636,
             "last_swap_price": 1.0,
+            "first_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
+            "first_swap_time": 1706721636,
+            "first_swap_price": 1.0,
             "priced": true
         },
         "DGB_LTC-segwit": {
             "last_swap_uuid": "CCCCCCCC-40a5-4649-b420-5eb8e2924bf2",
-            "last_swap_time": 1706103950,
+            "last_swap_time": 1706120421,
             "last_swap_price": 100000.0,
+            "first_swap_uuid": "CCCCCCCC-40a5-4649-b420-5eb8e2924bf2",
+            "first_swap_time": 1706120421,
+            "first_swap_price": 100000.0,
             "priced": true
         },
         "DGB-segwit_LTC": {
             "last_swap_uuid": "DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292",
-            "last_swap_time": 1704116773,
+            "last_swap_time": 1704133244,
             "last_swap_price": 200000.0,
+            "first_swap_uuid": "DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292",
+            "first_swap_time": 1704133244,
+            "first_swap_price": 200000.0,
             "priced": true
         },
         "KMD-BEP20_BTC": {
             "last_swap_uuid": "AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b",
-            "last_swap_time": 1706622061,
+            "last_swap_time": 1706638532,
             "last_swap_price": 2000000.0,
+            "first_swap_uuid": "AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b",
+            "first_swap_time": 1706638532,
+            "first_swap_price": 2000000.0,
             "priced": true
         },
         "KMD-BEP20_DGB-segwit": {
             "last_swap_uuid": "33333333-fd33-4dc4-2a7f-f6320b1d3b64",
-            "last_swap_time": 1706705221,
+            "last_swap_time": 1706721692,
             "last_swap_price": 0.0018,
+            "first_swap_uuid": "22222222-fd33-4dc4-2a7f-f6320b1d3b64",
+            "first_swap_time": 1706721634,
+            "first_swap_price": 0.001,
             "priced": true
         },
         "KMD_BTC": {
             "last_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
-            "last_swap_time": 1706697968,
+            "last_swap_time": 1706714439,
             "last_swap_price": 1000000.0,
+            "first_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
+            "first_swap_time": 1706714439,
+            "first_swap_price": 1000000.0,
             "priced": true
         },
         "KMD_LTC": {
             "last_swap_uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
-            "last_swap_time": 1706694369,
+            "last_swap_time": 1706710840,
             "last_swap_price": 100.0,
+            "first_swap_uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
+            "first_swap_time": 1706710840,
+            "first_swap_price": 100.0,
             "priced": true
         },
         "KMD_LTC-segwit": {
             "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-            "last_swap_time": 1706705171,
+            "last_swap_time": 1706721642,
             "last_swap_price": 100.0,
+            "first_swap_uuid": "77777777-2762-4633-8add-6ad2e9b1a4e7",
+            "first_swap_time": 1706718038,
+            "first_swap_price": 100.0,
             "priced": true
         },
         "LTC_BTC": {
             "last_swap_uuid": "BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2",
-            "last_swap_time": 1706103971,
+            "last_swap_time": 1706120442,
             "last_swap_price": 0.2,
+            "first_swap_uuid": "BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2",
+            "first_swap_time": 1706120442,
+            "first_swap_price": 0.2,
             "priced": true
         },
         "LTC_DOGE": {
             "last_swap_uuid": "EEEEEEEE-ee4b-494f-a2fb-48467614b613",
-            "last_swap_time": 1701524774,
+            "last_swap_time": 1701541245,
             "last_swap_price": 10.0,
+            "first_swap_uuid": "FFFFFFFF-ee4b-494f-a2fb-48467614b613",
+            "first_swap_time": 1700677242,
+            "first_swap_price": 10.0,
             "priced": true
         },
         "MORTY_KMD": {
             "last_swap_uuid": "11111111-ffe1-4c7a-ad7f-04b1df6323b6",
-            "last_swap_time": 1706705162,
+            "last_swap_time": 1706721633,
             "last_swap_price": 1.0,
+            "first_swap_uuid": "11111111-ffe1-4c7a-ad7f-04b1df6323b6",
+            "first_swap_time": 1706721633,
+            "first_swap_price": 1.0,
             "priced": false
         }
     }

@@ -58,7 +58,7 @@ class CoinGeckoAPI:
         return gecko_coins
 
     def get_gecko_source(self):  # pragma: no cover
-        if self.testing:
+        if memcache.get('testing') is not None:
             return self.files.load_jsonfile(self.gecko_source)
         param_limit = 200
         coin_ids = self.get_gecko_coin_ids()

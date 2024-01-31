@@ -14,7 +14,7 @@ class Clean:
     def __init__(self):
         pass
 
-    def decimal_dict_list(self, data, to_string=False, rounding=8):
+    def decimal_dict_lists(self, data, to_string=False, rounding=8):
         """
         Works for a list of dicts with no nesting
         (e.g. summary_cache.json)
@@ -31,7 +31,7 @@ class Clean:
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-    def decimal_dict(
+    def decimal_dicts(
         self, data, to_string=False, rounding=8, exclude_keys: List = list()
     ):
         """
@@ -84,15 +84,20 @@ class Merge:
         resp = []
         for i in variants:
             resp = resp + swaps[i]
-        return sortdata.sort_dict_list(resp, "finished_at", reverse=True)
+        return sortdata.dict_lists(resp, "finished_at", reverse=True)
 
     def orderbooks(self, existing, new):
         try:
-            data = {
-                "asks": existing["asks"] + new["asks"],
-                "bids": existing["bids"] + new["bids"],
-            }
-            for i in [
+            existing.update(
+                {
+                    i: sumdata.dict_lists(existing[i], new[i], sort_key="price")
+                    for i in ["asks", "bids"]
+                }
+            )
+            existing.update(
+                {i: sumdata.lists(existing[i], new[i]) for i in ["variants"]}
+            )
+            numerics = [
                 "liquidity_in_usd",
                 "total_asks_base_vol",
                 "total_bids_base_vol",
@@ -101,65 +106,107 @@ class Merge:
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
                 "combined_volume_usd",
-            ]:
-                data.update({i: decimal_add(existing[i], new[i])})
-            data.update(
-                {"trades_24hr": int_add(existing["trades_24hr"], new["trades_24hr"])}
-            )
-            data.update(
-                {"variants": list_add(existing["variants"], new["variants"])}
-            )
-            return data
+            ]
 
+            existing.update(
+                {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
+            )
+            existing.update(
+                {i: sumdata.ints(existing[i], new[i]) for i in ["trades_24hr"]}
+            )
+            return existing
         except Exception as e:  # pragma: no cover
-            logger.calc(new)
-            logger.loop(existing)
+            logger.warning(new)
+            logger.error(existing)
             err = {"error": f"transform.merge.orderbooks: {e}"}
             logger.warning(err)
         return existing
 
 
-def decimal_add(x, y):
-    try:
-        return Decimal(x) + Decimal(y)
-    except Exception as e:
-        logger.warning(f"{type(e)}: {e}")
-        logger.warning(f"x: {x} ({type(x)})")
-        logger.warning(f"y: {y} ({type(y)})")
-        raise ValueError
-
-def list_add(x, y):
-    try:
-        return sorted(list(set(x + y)))
-    except Exception as e:
-        logger.warning(f"{type(e)}: {e}")
-        logger.warning(f"x: {x} ({type(x)})")
-        logger.warning(f"y: {y} ({type(y)})")
-        raise ValueError
+def sum_num_str(val1, val2):
+    x = Decimal(val1) + Decimal(val2)
+    return format_10f(x)
 
 
-def int_add(x, y):
-    try:
-        return int(x) + int(y)
-    except Exception as e:
-        logger.warning(f"{type(e)}: {e}")
-        logger.warning(f"x: {x} ({type(x)})")
-        logger.warning(f"y: {y} ({type(y)})")
-        raise ValueError
+class SumData:
+    def __init__(self):
+        pass
+
+    def decimals(self, x, y):
+        try:
+            return Decimal(x) + Decimal(y)
+        except Exception as e:
+            logger.warning(f"{type(e)}: {e}")
+            logger.warning(f"x: {x} ({type(x)})")
+            logger.warning(f"y: {y} ({type(y)})")
+            raise ValueError
+
+    def numeric_str(self, val1, val2):
+        x = Decimal(val1) + Decimal(val2)
+        return format_10f(x)
+
+    def lists(self, x, y, sorted=True):
+        try:
+            data = x + y
+            if not [isinstance(i, dict) for i in data]:
+                data = list(set(data))
+            if sorted:
+                data.sort()
+            return data
+        except Exception as e:
+            logger.warning(f"{type(e)}: {e}")
+            logger.warning(f"x: {x} ({type(x)})")
+            logger.warning(f"y: {y} ({type(y)})")
+            raise ValueError
+
+    def dict_lists(self, x, y, sort_key=None):
+        try:
+            if sort_key:
+                merged_list = self.lists(x, y, False)
+                if [sort_key in i for i in merged_list]:
+                    return sortdata.dict_lists(merged_list, sort_key)
+                return merged_list
+            return self.lists(x, y)
+        except Exception as e:
+            logger.warning(f"{type(e)}: {e}")
+            logger.warning(f"x: {x} ({type(x)})")
+            logger.warning(f"y: {y} ({type(y)})")
+            raise ValueError
+
+    def ints(self, x, y):
+        try:
+            return int(x) + int(y)
+        except Exception as e:
+            logger.warning(f"{type(e)}: {e}")
+            logger.warning(f"x: {x} ({type(x)})")
+            logger.warning(f"y: {y} ({type(y)})")
+            raise ValueError
+
+    def json_key(self, data: dict, key: str) -> Decimal:
+        """
+        Sum a key from a list of dicts.
+        """
+        return sum(Decimal(d[key]) for d in data)
+
+    def json_key_10f(self, data: dict, key: str) -> str:
+        """
+        Sum a key from a list of dicts and format to 10 decimal places.
+        """
+        return format_10f(self.json_key(data, key))
 
 
 class SortData:
     def __init__(self):
         pass
 
-    def sort_dict_list(self, data: List, key: str, reverse=False) -> dict:
+    def dict_lists(self, data: List, key: str, reverse=False) -> dict:
         """
         Sort a list of dicts by the value of a key.
         """
         resp = sorted(data, key=lambda k: k[key], reverse=reverse)
         return resp
 
-    def sort_dict(self, data: dict, reverse=False) -> dict:
+    def dicts(self, data: dict, reverse=False) -> dict:
         """
         Sort a dict by the value the root key.
         """
@@ -172,7 +219,7 @@ class SortData:
             resp.update({i: data[i]})
         return resp
 
-    def get_top_items(self, data: List[Dict], sort_key: str, length: int = 5):
+    def top_items(self, data: List[Dict], sort_key: str, length: int = 5):
         data.sort(key=lambda x: x[sort_key], reverse=True)
         return data[:length]
 
@@ -180,31 +227,31 @@ class SortData:
     def top_pairs(self, summaries: list):
         try:
             for i in summaries:
-                i["ticker_id"] = strip_pair_platforms(i["ticker_id"])
+                i["ticker_id"] = deplatform.pair(i["ticker_id"])
 
             top_pairs_by_value = {
                 i["ticker_id"]: i["pair_trade_value_usd"]
-                for i in self.get_top_items(summaries, "pair_trade_value_usd", 5)
+                for i in self.top_items(summaries, "pair_trade_value_usd", 5)
             }
             top_pairs_by_liquidity = {
                 i["ticker_id"]: i["pair_liquidity_usd"]
-                for i in self.get_top_items(summaries, "pair_liquidity_usd", 5)
+                for i in self.top_items(summaries, "pair_liquidity_usd", 5)
             }
             top_pairs_by_swaps = {
                 i["ticker_id"]: i["pair_swaps_count"]
-                for i in self.get_top_items(summaries, "pair_swaps_count", 5)
+                for i in self.top_items(summaries, "pair_swaps_count", 5)
             }
             return {
-                "by_value_traded_usd": clean.decimal_dict(top_pairs_by_value),
-                "by_current_liquidity_usd": clean.decimal_dict(top_pairs_by_liquidity),
-                "by_swaps_count": clean.decimal_dict(top_pairs_by_swaps),
+                "by_value_traded_usd": clean.decimal_dicts(top_pairs_by_value),
+                "by_current_liquidity_usd": clean.decimal_dicts(top_pairs_by_liquidity),
+                "by_swaps_count": clean.decimal_dicts(top_pairs_by_swaps),
             }
         except Exception as e:
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
             return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
     @timed
-    def order_pair_by_market_cap(self, pair_str: str, gecko_source=None) -> str:
+    def pair_by_market_cap(self, pair_str: str, gecko_source=None) -> str:
         try:
             if gecko_source is None:
                 gecko_source = memcache.get_gecko_source()
@@ -225,7 +272,7 @@ class SortData:
                 elif quote_mc == base_mc:
                     pair_str = "_".join(sorted([base, quote]))
         except Exception as e:  # pragma: no cover
-            msg = f"order_pair_by_market_cap failed: {e}"
+            msg = f"pair_by_market_cap failed: {e}"
             logger.warning(msg)
 
         return pair_str
@@ -293,7 +340,7 @@ class Convert:
     def traded_cache_to_stats_api(self, traded_cache):
         resp = {}
         for i in traded_cache:
-            cleaned_ticker = strip_pair_platforms(i)
+            cleaned_ticker = deplatform.pair(i)
             if cleaned_ticker not in resp:
                 resp.update({cleaned_ticker: traded_cache[i]})
             else:
@@ -330,7 +377,7 @@ class Convert:
     def ticker_to_market_summary_item(self, i):
         data = {
             "trading_pair": f"{i['ticker_id']}",
-            "variants": i['variants'],
+            "variants": i["variants"],
             "base_currency": i["base_currency"],
             "base_volume": i["base_volume"],
             "quote_currency": i["quote_currency"],
@@ -358,10 +405,10 @@ class Deplatform:
         for i in tickers_data["data"]:
             if priced_only and not i["priced"]:
                 continue
-            root_pair = strip_pair_platforms(i["ticker_id"])
+            root_pair = self.pair(i["ticker_id"])
             i["ticker_id"] = root_pair
-            i["base_currency"] = strip_coin_platform(i["base_currency"])
-            i["quote_currency"] = strip_coin_platform(i["quote_currency"])
+            i["base_currency"] = self.coin(i["base_currency"])
+            i["quote_currency"] = self.coin(i["quote_currency"])
             if root_pair not in data:
                 i["trades_24hr"] = int(i["trades_24hr"])
                 data.update({root_pair: i})
@@ -382,7 +429,7 @@ class Deplatform:
                     "quote_liquidity_usd",
                 ]:
                     # Add to cumulative sum
-                    j[key] = sum_num_str(i[key], j[key])
+                    j[key] = sumdata.numeric_str(i[key], j[key])
                 if Decimal(i["last_swap_time"]) > Decimal(j["last_swap_time"]):
                     j["last_swap_price"] = i["last_swap_price"]
                     j["last_swap_time"] = i["last_swap_time"]
@@ -427,6 +474,59 @@ class Deplatform:
                     j["price_change_pct_24hr"] = format_10f(0)
                 j["variants"].sort()
         return tickers_data
+
+    def pair(self, pair):
+        base, quote = helper.base_quote_from_pair(pair)
+        return f"{self.coin(base)}_{self.coin(quote)}"
+
+    def coin(self, coin):
+        return coin.split("-")[0]
+
+    # Unused?
+    def pair_summary_item(self, i):
+        resp = {}
+        keys = i.keys()
+        for k in keys:
+            if k == "ticker_id":
+                resp.update({k: self.pair(i[k])})
+            elif k in ["base_currency", "quote_currency"]:
+                resp.update({k: self.coin(i[k])})
+            else:
+                resp.update({k: i[k]})
+        return resp
+
+    # Unused?
+    def last_trade(self, last_traded):
+        data = {}
+        for i in last_traded:
+            pair = deplatform.coin(i)
+            if pair not in data:
+                data.update({pair: last_traded[i]})
+            else:
+                if last_traded[i]["last_swap_time"] > data[pair]["last_swap_time"]:
+                    data[pair]["last_swap_time"] = last_traded[i]["last_swap_time"]
+                    data[pair]["last_swap_uuid"] = last_traded[i]["last_swap_uuid"]
+                    data[pair]["last_swap_price"] = last_traded[i]["last_swap_price"]
+        return data
+
+
+def get_coin_platform(coin):
+    r = coin.split("-")
+    if len(r) == 2:
+        return r[1]
+    return ""
+
+
+def last_trade_time_filter(last_traded, start_time, end_time):
+    # TODO: handle first/last within variants
+    last_traded = memcache.get_last_traded()
+    last_traded = [
+        i for i in last_traded if last_traded[i]["last_swap_time"] > start_time
+    ]
+    last_traded = [
+        i for i in last_traded if last_traded[i]["last_swap_time"] < end_time
+    ]
+    return last_traded
 
 
 def label_bids_asks(orderbook_data, pair):
@@ -481,20 +581,6 @@ def list_json_key(data: dict, key: str, filter_value: str) -> Decimal:
     list of key values from dicts.
     """
     return [i for i in data if i[key] == filter_value]
-
-
-def sum_json_key(data: dict, key: str) -> Decimal:
-    """
-    Sum a key from a list of dicts.
-    """
-    return sum(Decimal(d[key]) for d in data)
-
-
-def sum_json_key_10f(data: dict, key: str) -> str:
-    """
-    Sum a key from a list of dicts and format to 10 decimal places.
-    """
-    return format_10f(sum_json_key(data, key))
 
 
 def orderbook_to_gecko(data):
@@ -644,35 +730,6 @@ def historical_trades_to_market_trades(i):
     }
 
 
-def strip_pair_platforms(pair):
-    base, quote = helper.base_quote_from_pair(pair)
-    return f"{strip_coin_platform(base)}_{strip_coin_platform(quote)}"
-
-
-def strip_coin_platform(coin):
-    return coin.split("-")[0]
-
-
-def get_coin_platform(coin):
-    r = coin.split("-")
-    if len(r) == 2:
-        return r[1]
-    return ""
-
-
-def deplatform_pair_summary_item(i):
-    resp = {}
-    keys = i.keys()
-    for k in keys:
-        if k == "ticker_id":
-            resp.update({k: strip_pair_platforms(i[k])})
-        elif k in ["base_currency", "quote_currency"]:
-            resp.update({k: strip_coin_platform(i[k])})
-        else:
-            resp.update({k: i[k]})
-    return resp
-
-
 def invert_orderbook(orderbook):
     if "rel" in orderbook:
         quote = orderbook["rel"]
@@ -748,6 +805,7 @@ def invert_trade_type(trade_type):
     return trade_type
 
 
+# Derive
 def derive_app(appname):
     logger.query(f"appname: {appname}")
     gui, match = derive_gui(appname)
@@ -868,40 +926,9 @@ DeFiDevices = {
 }
 
 
-def sum_num_str(val1, val2):
-    x = Decimal(val1) + Decimal(val2)
-    return format_10f(x)
-
-
-def last_trade_time_filter(last_traded, start_time, end_time):
-    # TODO: handle first/last within variants
-    last_traded = memcache.get_last_traded()
-    last_traded = [
-        i for i in last_traded if last_traded[i]["last_swap_time"] > start_time
-    ]
-    last_traded = [
-        i for i in last_traded if last_traded[i]["last_swap_time"] < end_time
-    ]
-    return last_traded
-
-
-def last_trade_deplatform(last_traded):
-    data = {}
-    for i in last_traded:
-        pair = strip_coin_platform(i)
-        if pair not in data:
-            data.update({pair: last_traded[i]})
-        else:
-            if last_traded[i]["last_swap_time"] > data[pair]["last_swap_time"]:
-                data[pair]["last_swap_time"] = last_traded[i]["last_swap_time"]
-                data[pair]["last_swap_uuid"] = last_traded[i]["last_swap_uuid"]
-                data[pair]["last_swap_price"] = last_traded[i]["last_swap_price"]
-
-    return data
-
-
 clean = Clean()
 convert = Convert()
 deplatform = Deplatform()
 merge = Merge()
 sortdata = SortData()
+sumdata = SumData()

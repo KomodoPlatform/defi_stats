@@ -114,7 +114,7 @@ def get_tickers():
 
 def get(key):
     i = 0
-    if os.getenv("IS_TESTING"):
+    if os.getenv("IS_TESTING") and key != "testing":
         key = f"{key}-testing"
     while i < 7:
         cached = None
@@ -133,7 +133,7 @@ def get(key):
 @timed
 def update(key, value, expiry):
     try:
-        if os.getenv("IS_TESTING"):
+        if os.getenv("IS_TESTING") and key != "testing":
             key = f"{key}-testing"
         if value is not None:
             MEMCACHE.set(key, value, expiry)

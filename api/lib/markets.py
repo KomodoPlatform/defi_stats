@@ -72,7 +72,7 @@ class Markets:
             else:
                 resp += data[pair]["buy"]
                 resp += data[pair]["sell"]
-            return sortdata.sort_dict_list(resp, "timestamp", reverse=True)
+            return sortdata.dict_lists(resp, "timestamp", reverse=True)
 
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"

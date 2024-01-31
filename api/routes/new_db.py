@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import List, Dict
-
 from const import GENERIC_PAIRS_DAYS
 from lib.cache import Cache
 from lib.pair import Pair
@@ -11,11 +9,11 @@ from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
 from util.enums import TradeType, GroupBy
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
+from util.transform import deplatform
 import db
+import util.cron as cron
 import util.helper as helper
-import util.transform as transform
 import util.validate as validate
-
 
 router = APIRouter()
 cache = Cache()
@@ -38,7 +36,7 @@ def get_pairs(remove_platforms: bool = True):
         query = db.SqlQuery()
         data = query.get_pairs(days=GENERIC_PAIRS_DAYS)
         if remove_platforms:
-            data = sorted(list(set([transform.strip_pair_platforms(i) for i in data])))
+            data = sorted(list(set([deplatform.pair(i) for i in data])))
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -255,7 +253,7 @@ def historical_trades(
         if variant.lower() in data:
             return data[variant.lower()]
         return data
-        # resp = sortdata.sort_dict_list(resp, "timestamp", True)
+        # resp = sortdata.dict_lists(resp, "timestamp", True)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

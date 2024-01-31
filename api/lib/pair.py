@@ -7,7 +7,7 @@ import db
 from lib.coins import get_gecko_price, get_gecko_mcap
 from lib.generic import Generic
 from util.logger import logger, timed
-from util.transform import sortdata, clean
+from util.transform import sortdata, clean, deplatform, sumdata
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
@@ -40,8 +40,8 @@ class Pair:  # pragma: no cover
             self.pg_query = db.SqlQuery()
             # Adjust pair order
             self.as_str = pair_str
-            self.as_std_str = transform.strip_pair_platforms(self.as_str)
-            self.is_reversed = self.as_str != sortdata.order_pair_by_market_cap(
+            self.as_std_str = deplatform.pair(self.as_str)
+            self.is_reversed = self.as_str != sortdata.pair_by_market_cap(
                 self.as_str
             )
             base, quote = helper.base_quote_from_pair(self.as_str)
@@ -140,25 +140,25 @@ class Pair:  # pragma: no cover
                 buys = transform.list_json_key(trades_info, "type", "buy")
                 sells = transform.list_json_key(trades_info, "type", "sell")
                 if len(buys) > 0:
-                    buys = sortdata.sort_dict_list(buys, "timestamp", reverse=True)
+                    buys = sortdata.dict_lists(buys, "timestamp", reverse=True)
                 if len(sells) > 0:
-                    sells = sortdata.sort_dict_list(sells, "timestamp", reverse=True)
+                    sells = sortdata.dict_lists(sells, "timestamp", reverse=True)
                 data = {
                     "ticker_id": self.as_str,
                     "start_time": str(start_time),
                     "end_time": str(end_time),
                     "limit": str(limit),
                     "trades_count": str(len(trades_info)),
-                    "sum_base_volume_buys": transform.sum_json_key_10f(
+                    "sum_base_volume_buys": sumdata.json_key_10f(
                         buys, "base_volume"
                     ),
-                    "sum_base_volume_sells": transform.sum_json_key_10f(
+                    "sum_base_volume_sells": sumdata.json_key_10f(
                         sells, "base_volume"
                     ),
-                    "sum_quote_volume_buys": transform.sum_json_key_10f(
+                    "sum_quote_volume_buys": sumdata.json_key_10f(
                         buys, "quote_volume"
                     ),
-                    "sum_quote_volume_sells": transform.sum_json_key_10f(
+                    "sum_quote_volume_sells": sumdata.json_key_10f(
                         sells, "quote_volume"
                     ),
                     "average_price": transform.format_10f(average_price),
@@ -184,7 +184,7 @@ class Pair:  # pragma: no cover
         try:
             data = 0
             if len(trades_info) > 0:
-                data = transform.sum_json_key(trades_info, "price") / len(trades_info)
+                data = sumdata.json_key(trades_info, "price") / len(trades_info)
             return default.result(
                 data=data,
                 msg=f"get_average_price for {self.as_str} complete",
@@ -380,7 +380,7 @@ class Pair:  # pragma: no cover
                 else:
                     data.update({"liquidity_in_usd": 0})
 
-            data = clean.decimal_dict(data)
+            data = clean.decimal_dicts(data)
             memcache.update(cache_name, data, 120)
             if "-segwit" in cache_name:
                 memcache.update(cache_name.replace("-segwit", ""), data, 240)
@@ -442,7 +442,7 @@ def get_all_coin_pairs(coin, priced_coins):
         pairs = [
             (f"{i}_{coin}") for i in priced_coins if coin not in [i, f"{i}-segwit"]
         ]
-        data = list(set([sortdata.order_pair_by_market_cap(i) for i in pairs]))
+        data = list(set([sortdata.pair_by_market_cap(i) for i in pairs]))
 
     except Exception as e:  # pragma: no cover
         data = []

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from util.logger import logger
 from util.exceptions import DataStructureError, BadPairFormatError
-import util.transform as transform
+from util.transform import deplatform
 import util.helper as helper
 
 
@@ -48,7 +48,7 @@ def loop_data(data, cache_item):
 
 
 def is_bridge_swap(pair):
-    root_pairing = transform.strip_pair_platforms(pair)
+    root_pairing = deplatform.pair(pair)
     if len(set(root_pairing.split("_"))) == 1:
         return True
     return False

@@ -25,7 +25,7 @@ from lib.markets import Markets
 
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert
+from util.transform import clean, convert, deplatform, sumdata
 import util.helper as helper
 import util.memcache as memcache
 import util.templates as template
@@ -163,9 +163,9 @@ def summary_for_ticker(coin: str = "KMD"):
         resp.update(
             {
                 "pairs_count": len(new_data),
-                "swaps_count": int(transform.sum_json_key(new_data, "trades_24hr")),
-                "liquidity_usd": transform.sum_json_key_10f(new_data, "liquidity_usd"),
-                "volume_usd_24hr": transform.sum_json_key_10f(
+                "swaps_count": int(sumdata.json_key(new_data, "trades_24hr")),
+                "liquidity_usd": sumdata.json_key_10f(new_data, "liquidity_usd"),
+                "volume_usd_24hr": sumdata.json_key_10f(
                     new_data, "volume_usd_24hr"
                 ),
                 "data": new_data,
@@ -249,7 +249,7 @@ def tickers_summary():
                     resp[ticker]["volume_24hr"] += Decimal(i["base_volume"])
                 elif ticker == rel:
                     resp[ticker]["volume_24hr"] += Decimal(i["quote_volume"])
-        resp = clean.decimal_dict(resp)
+        resp = clean.decimal_dicts(resp)
         with_action = {}
         tickers = list(resp.keys())
         tickers.sort()
@@ -312,7 +312,7 @@ def volumes_history_ticker(
     volumes_dict = {}
     query = db.SqlQuery()
     # Individual tickers only, no merge except segwit
-    stripped_coin = transform.strip_coin_platform(coin)
+    stripped_coin = deplatform.coin(coin)
     variants = helper.get_coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)

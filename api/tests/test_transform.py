@@ -19,7 +19,7 @@ from tests.fixtures_data import (
 )
 from lib.generic import Generic
 from util.logger import logger
-from util.transform import convert, sortdata, clean, merge
+from util.transform import convert, sortdata, clean, merge, deplatform, sumdata
 import util.transform as transform
 import util.memcache as memcache
 
@@ -107,9 +107,9 @@ def test_round_to_str():
     assert transform.round_to_str({"foo": "bar"}, 1) == "0.0"
 
 
-def test_clean_decimal_dict_list():
+def test_clean_s():
     x = [dirty_dict.copy(), dirty_dict.copy()]
-    r = clean.decimal_dict_list(x)
+    r = clean.decimal_dict_lists(x)
     assert isinstance(r[0]["a"], float)
     assert isinstance(r[0]["b"], str)
     assert isinstance(r[0]["c"], int)
@@ -117,19 +117,19 @@ def test_clean_decimal_dict_list():
     assert isinstance(r[0]["e"], list)
     assert isinstance(r[0]["f"], dict)
     x = [dirty_dict.copy(), dirty_dict.copy()]
-    r = clean.decimal_dict_list(x, True)
+    r = clean.decimal_dict_lists(x, True)
     assert isinstance(r[1]["a"], str)
 
 
 def test_clean_decimal_dict():
     x = dirty_dict.copy()
-    r = clean.decimal_dict(x)
+    r = clean.decimal_dicts(x)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)
     assert isinstance(r["d"], bool)
     x = dirty_dict.copy()
-    r = clean.decimal_dict(x, True, 6)
+    r = clean.decimal_dicts(x, True, 6)
     assert isinstance(r["a"], str)
 
 
@@ -145,13 +145,13 @@ def test_list_json_key():
 
 
 def test_sum_json_key():
-    assert transform.sum_json_key(trades_info, "base_volume") == Decimal("60")
-    assert transform.sum_json_key(trades_info, "quote_volume") == Decimal("59.5")
+    assert sumdata.json_key(trades_info, "base_volume") == Decimal("60")
+    assert sumdata.json_key(trades_info, "quote_volume") == Decimal("59.5")
 
 
 def test_sum_json_key_10f():
-    assert transform.sum_json_key_10f(trades_info, "base_volume") == "60.0000000000"
-    assert transform.sum_json_key_10f(trades_info, "quote_volume") == "59.5000000000"
+    assert sumdata.json_key_10f(trades_info, "base_volume") == "60.0000000000"
+    assert sumdata.json_key_10f(trades_info, "quote_volume") == "59.5000000000"
 
 
 def test_get_suffix():
@@ -159,19 +159,19 @@ def test_get_suffix():
     assert transform.get_suffix(8) == "8d"
 
 
-def test_sort_dict():
-    x = sortdata.sort_dict(trades_info.copy()[0])
+def test_sort_dicts():
+    x = sortdata.dicts(trades_info.copy()[0])
     y = list(x.keys())
     assert y[0] == "base_volume"
-    x = sortdata.sort_dict(trades_info.copy()[0], True)
+    x = sortdata.dicts(trades_info.copy()[0], True)
     y = list(x.keys())
     assert y[0] == "type"
 
 
 def test_sort_dict_list():
-    x = sortdata.sort_dict_list(trades_info.copy(), "trade_id")
+    x = sortdata.dict_lists(trades_info.copy(), "trade_id")
     assert x[0]["trade_id"] == "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d"
-    x = sortdata.sort_dict_list(trades_info.copy(), "trade_id", True)
+    x = sortdata.dict_lists(trades_info.copy(), "trade_id", True)
     assert x[0]["trade_id"] == "d2602fa9-6680-42f9-9cb8-20f76275f587"
 
 
@@ -182,19 +182,19 @@ def test_generic_orderbook_to_gecko():
     assert len(r["asks"][0][1]) == len(orderbook_as_coords["asks"][0][1])
 
 
-def test_order_pair_by_market_cap():
-    a = sortdata.order_pair_by_market_cap(("BTC-segwit_KMD"))
-    b = sortdata.order_pair_by_market_cap(("BTC_KMD"))
-    c = sortdata.order_pair_by_market_cap(("KMD_BTC-segwit"))
-    d = sortdata.order_pair_by_market_cap(("KMD_BTC"))
-    e = sortdata.order_pair_by_market_cap(("BTC-segwit_KMD-BEP20"))
+def test_pair_by_market_cap():
+    a = sortdata.pair_by_market_cap(("BTC-segwit_KMD"))
+    b = sortdata.pair_by_market_cap(("BTC_KMD"))
+    c = sortdata.pair_by_market_cap(("KMD_BTC-segwit"))
+    d = sortdata.pair_by_market_cap(("KMD_BTC"))
+    e = sortdata.pair_by_market_cap(("BTC-segwit_KMD-BEP20"))
 
     assert b == d
     assert a == c
     assert e == "KMD-BEP20_BTC-segwit"
 
 
-def test_get_top_items():
+def test_sort_top_items():
     data = [
         {
             "name": "Bob",
@@ -217,38 +217,39 @@ def test_get_top_items():
             "age": 5,
         },
     ]
-    assert sortdata.get_top_items(data, "name", 2)[1]["name"] == "Jess"
-    assert sortdata.get_top_items(data, "age", 2)[1]["age"] == 4
+    assert sortdata.top_items(data, "name", 2)[1]["name"] == "Jess"
+    assert sortdata.top_items(data, "age", 2)[1]["age"] == 4
 
 
-def test_strip_pair_platforms():
-    r = transform.strip_pair_platforms("KMD-BEP20_DGB-segwit")
+def test_deplatform_pair():
+    r = deplatform.pair("KMD-BEP20_DGB-segwit")
     assert r == "KMD_DGB"
 
 
-def test_strip_coin_platform():
-    r = transform.strip_coin_platform("USDC-PLG20")
+def test_deplatform_coin():
+    r = deplatform.coin("USDC-PLG20")
     assert r == "USDC"
 
 
 def test_merge_orderbooks():
-    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
-    time.sleep(2)
-    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
-    logger.calc(orderbook_data)
+    orderbook_data = generic.orderbook(
+        "KMD_DOGE", all=False, no_cache=True, no_threading=True
+    )
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)
-    logger.info(x)
     assert x["base"] == orderbook_data["base"]
     assert x["quote"] == orderbook_data["quote"]
     assert x["timestamp"] == orderbook_data["timestamp"]
     assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
     assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
-    assert x["liquidity_in_usd"] == orderbook_data["liquidity_in_usd"] * 2
-    assert x["total_asks_base_vol"] == orderbook_data["total_asks_base_vol"] * 2
-    assert x["total_bids_base_vol"] == orderbook_data["total_bids_base_vol"] * 2
-    assert x["total_asks_quote_vol"] == orderbook_data["total_asks_quote_vol"] * 2
-    assert x["total_bids_quote_vol"] == orderbook_data["total_bids_quote_vol"] * 2
-    assert x["total_asks_base_usd"] == orderbook_data["total_asks_base_usd"] * 2
-    assert x["total_bids_quote_usd"] == orderbook_data["total_bids_quote_usd"] * 2
+    for i in [
+        "liquidity_in_usd",
+        "total_asks_base_vol",
+        "total_bids_base_vol",
+        "total_asks_quote_vol",
+        "total_bids_quote_vol",
+        "total_asks_base_usd",
+        "total_bids_quote_usd",
+    ]:
+        assert Decimal(x[i]) == Decimal(orderbook_data[i]) * 2
