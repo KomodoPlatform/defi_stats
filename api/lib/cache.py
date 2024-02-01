@@ -52,10 +52,11 @@ class Cache:  # pragma: no cover
 
 
 class CacheItem:
-    def __init__(self, name, **kwargs) -> None:
+    def __init__(self, name, from_memcache: bool = False, **kwargs) -> None:
         try:
             self.name = name
             self.kwargs = kwargs
+            self.from_memcache = from_memcache
             self.options = []
             self._data = {}
             default.params(self, self.kwargs, self.options)
@@ -118,6 +119,8 @@ class CacheItem:
             return expiry_limits[self.name]
         return 5
 
+    # TODO: Cache orderbooks to file? Volumes / prices? Liquidity? Swaps?
+    # The reason to do this is to reduce population times on restarts.
     @timed
     def save(self, data=None):  # pragma: no cover
         try:
@@ -128,7 +131,6 @@ class CacheItem:
                     memcache.set_coins_config(data)
                 if self.name == "coins":
                     memcache.set_coins(data)
-
             else:
                 if self.name == "fixer_rates":
                     data = lib.FixerAPI().latest()

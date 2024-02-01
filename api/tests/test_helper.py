@@ -122,7 +122,7 @@ def test_find_lowest_ask():
     orderbook = generic.orderbook("KMD_BTC", all=True)
 
     r = helper.find_lowest_ask(orderbook)
-    assert r == transform.format_10f(1 / 24)
+    assert transform.format_10f(r) == transform.format_10f(1 / 24)
 
 
 def test_find_highest_bid():
@@ -130,4 +130,4 @@ def test_find_highest_bid():
     time.sleep(1)
     orderbook = generic.orderbook("KMD_BTC", all=True)
     r = helper.find_highest_bid(orderbook)
-    assert r == transform.format_10f(1 / 26)
+    assert transform.format_10f(r) == transform.format_10f(1 / 26)

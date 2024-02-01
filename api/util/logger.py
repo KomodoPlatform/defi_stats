@@ -69,43 +69,81 @@ class CustomFormatter(logging.Formatter):
     def format(self, record):
         if record.levelname == "STOPWATCH":
             log_fmt = (
-                self.yellow
+                self.pink
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "PAIR":
+            # Blue for lib class
+            log_fmt = (
+                self.skyblue
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+            )
+        elif record.levelname == "DEXRPC":
+            # Blue for lib class
+            log_fmt = (
+                self.iceblue
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "QUERY":
+            # Yellow for incoming data
             log_fmt = (
                 self.lightyellow
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
+        elif record.levelname == "REQUEST":
+            # Yellow for incoming data
+            log_fmt = (
+                self.gold
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
         elif record.levelname == "LOOP":
+            # Purple for cache loops
             log_fmt = (
                 self.purple
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
-        elif record.levelname == "MUTED":
-            log_fmt = (
-                self.muted
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
         elif record.levelname == "CALC":
+            # Cyan for data processing
             log_fmt = (
                 self.lightcyan
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
+        elif record.levelname == "MERGE":
+            # Cyan for data processing
+            log_fmt = (
+                self.cyan
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
         elif record.levelname == "CACHED":
+            # Green for data storage
             log_fmt = (
                 self.drabgreen
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "SAVED":
+            # Green for data storage
             log_fmt = (
-                self.purple
+                self.mintgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "UPDATED":
+            # Green for data storage
+            log_fmt = (
+                self.lightgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+            )
+        elif record.levelname == "MUTED":
+            log_fmt = (
+                self.muted
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
@@ -114,34 +152,6 @@ class CustomFormatter(logging.Formatter):
                 self.debug
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
-            )
-        elif record.levelname == "MERGE":
-            log_fmt = (
-                self.mintgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "DEXRPC":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "REQUEST":
-            log_fmt = (
-                self.lightyellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "UPDATED":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-            )
-        elif record.levelname == "PAIR":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
             )
         else:
             log_fmt = self.FORMATS.get(record.levelno)
@@ -280,7 +290,7 @@ class StopWatch:
         func = self.trace["function"]
         if PROJECT_ROOT_PATH in self.msg:
             self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-        self.msg = f"{duration:>3} sec | {func:<20} | {str(self.msg):<70} "
+        self.msg = f"{duration:>2} sec | {func:<24} | {str(self.msg):<75} "
         self.msg += f"| {basename(filename)}:{lineno}"
         send_log(loglevel=self.loglevel, msg=self.msg)
 

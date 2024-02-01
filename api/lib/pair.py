@@ -7,7 +7,7 @@ import db
 from lib.coins import get_gecko_price, get_gecko_mcap
 from lib.generic import Generic
 from util.logger import logger, timed
-from util.transform import sortdata, clean, deplatform, sumdata
+from util.transform import sortdata, clean, deplatform, sumdata, merge
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
@@ -36,14 +36,11 @@ class Pair:  # pragma: no cover
             self.kwargs = kwargs
             self.options = []
             default.params(self, self.kwargs, self.options)
-
             self.pg_query = db.SqlQuery()
             # Adjust pair order
             self.as_str = pair_str
             self.as_std_str = deplatform.pair(self.as_str)
-            self.is_reversed = self.as_str != sortdata.pair_by_market_cap(
-                self.as_str
-            )
+            self.is_reversed = self.as_str != sortdata.pair_by_market_cap(self.as_str)
             base, quote = helper.base_quote_from_pair(self.as_str)
             self.base = base
             self.quote = quote
@@ -149,15 +146,9 @@ class Pair:  # pragma: no cover
                     "end_time": str(end_time),
                     "limit": str(limit),
                     "trades_count": str(len(trades_info)),
-                    "sum_base_volume_buys": sumdata.json_key_10f(
-                        buys, "base_volume"
-                    ),
-                    "sum_base_volume_sells": sumdata.json_key_10f(
-                        sells, "base_volume"
-                    ),
-                    "sum_quote_volume_buys": sumdata.json_key_10f(
-                        buys, "quote_volume"
-                    ),
+                    "sum_base_volume_buys": sumdata.json_key_10f(buys, "base_volume"),
+                    "sum_base_volume_sells": sumdata.json_key_10f(sells, "base_volume"),
+                    "sum_quote_volume_buys": sumdata.json_key_10f(buys, "quote_volume"),
                     "sum_quote_volume_sells": sumdata.json_key_10f(
                         sells, "quote_volume"
                     ),
@@ -200,51 +191,72 @@ class Pair:  # pragma: no cover
         """
         Iterates over list of swaps to get volumes and prices data
         """
-        suffix = transform.get_suffix(days)
-        data = template.volumes_and_prices(suffix, base=self.base, quote=self.quote)
         try:
-            swaps_for_pair = self.pg_query.get_swaps(
+            suffix = transform.get_suffix(days)
+            data = template.volumes_and_prices(suffix, base=self.base, quote=self.quote)
+            swaps_for_pair_combo = self.pg_query.get_swaps(
                 start_time=int(cron.now_utc() - 86400 * days),
                 end_time=int(cron.now_utc()),
                 pair=self.as_str,
             )
-
             # Extract all variant swaps, or for a single variant
             if all:
-                variants = sorted([i for i in swaps_for_pair.keys() if i != "ALL"])
-                data["variants"] = variants
-                swaps_for_pair = swaps_for_pair["ALL"]
-            elif self.as_str in swaps_for_pair:
-                swaps_for_pair = swaps_for_pair[self.as_str]
-                data["variants"] = [self.as_str]
-            elif transform.invert_pair(self.as_str) in swaps_for_pair:
-                swaps_for_pair = swaps_for_pair[transform.invert_pair(self.as_str)]
-                data["variants"] = [transform.invert_pair(self.as_str)]
+                cache_name = f"volumes_and_prices_{self.as_str}_ALL"
+                variants = helper.get_pair_variants(self.as_str)
+            elif self.as_str in swaps_for_pair_combo:
+                cache_name = f"volumes_and_prices_{self.as_str}"
+                variants = helper.get_pair_variants(self.as_str, segwit_only=True)
+            elif transform.invert_pair(self.as_str) in swaps_for_pair_combo:
+                cache_name = f"volumes_and_prices_{transform.invert_pair(self.as_str)}"
+                variants = helper.get_pair_variants(
+                    transform.invert_pair(self.as_str), segwit_only=True
+                )
             else:
-                swaps_for_pair = []
-            data["base_price"] = self.base_usd_price
-            data["quote_price"] = self.quote_usd_price
-            data[f"trades_{suffix}"] = len(swaps_for_pair)
-            # Get Volumes
-            swaps_volumes = helper.get_swaps_volumes(swaps_for_pair, self.is_reversed)
-            data["base_volume"] = swaps_volumes[0]
-            data["quote_volume"] = swaps_volumes[1]
-            data["base_volume_usd"] = Decimal(swaps_volumes[0]) * Decimal(
-                self.base_usd_price
+                logger.warning(
+                    f"{self.str} not in swaps_for_pair_combo, returning template"
+                )
+                return data
+            data.update(
+                {
+                    "base_price": self.base_usd_price,
+                    "quote_price": self.quote_usd_price,
+                    "variants": variants,
+                }
             )
-            data["quote_volume_usd"] = Decimal(swaps_volumes[1]) * Decimal(
-                self.quote_usd_price
-            )
-            # Halving the combined volume to not double count, and
-            # get average between base and quote
-            data["combined_volume_usd"] = (
-                Decimal(data["base_volume_usd"]) + Decimal(data["quote_volume_usd"])
-            ) / 2
+            if all:
+                swaps_for_pair = swaps_for_pair_combo["ALL"]
+                data = merge.volumes_data(
+                    data,
+                    suffix,
+                    swaps_for_pair,
+                    self.base_usd_price,
+                    self.quote_usd_price,
+                    self.is_reversed,
+                )
+                swap_prices = self.get_swap_prices(swaps_for_pair, self.is_reversed)
+            else:
+                swap_prices = {}
+                for variant in variants:
+                    if variant in swaps_for_pair_combo:
+                        swaps_for_pair = swaps_for_pair_combo[variant]
+                    else:
+                        logger.warning(f"Variant {variant} not in swaps for pair!")
+                        continue
+                    data = merge.volumes_data(
+                        data,
+                        suffix,
+                        swaps_for_pair,
+                        self.base_usd_price,
+                        self.quote_usd_price,
+                        self.is_reversed,
+                    )
+                    swap_prices.update(
+                        self.get_swap_prices(swaps_for_pair, self.is_reversed)
+                    )
 
             # Get Prices
             # TODO: using timestamps as an index works for now,
             # but breaks when two swaps have the same timestamp.
-            swap_prices = self.get_swap_prices(swaps_for_pair, self.is_reversed)
             if len(swap_prices) > 0:
                 swap_vals = list(swap_prices.values())
                 swap_keys = list(swap_prices.keys())
@@ -262,16 +274,27 @@ class Pair:  # pragma: no cover
                 data[f"lowest_price_{suffix}"] = lowest_price
                 data[f"price_change_pct_{suffix}"] = pct_change
                 data[f"price_change_{suffix}"] = price_change
-
                 last_swap = self.first_last_swap(data["variants"])
                 data["last_swap_price"] = last_swap["last_swap_price"]
                 data["last_swap_time"] = last_swap["last_swap_time"]
                 data["last_swap_uuid"] = last_swap["last_swap_uuid"]
-            msg = f"get_volumes_and_prices for {self.as_str} complete!"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
+
+            ignore_until = 3
+            if Decimal(data["combined_volume_usd"]) > 0:
+                data = clean.decimal_dicts(data)
+                memcache.update(cache_name, data, 900)
+                ignore_until = 0
+
+            msg = f"{self.as_str}: ${data['combined_volume_usd']} volume | Added to {cache_name}"
+            # msg += f"| Variants: {data['variants']} !"
+            return default.result(
+                data=data, msg=msg, loglevel="query", ignore_until=ignore_until
+            )
         except Exception as e:  # pragma: no cover
             msg = f"get_volumes_and_prices for {self.as_str} failed! {e}, returning template"
-            return default.result(data=data, msg=msg, loglevel="warning")
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
     @timed
     def first_last_swap(self, variants: List):
@@ -315,9 +338,11 @@ class Pair:  # pragma: no cover
                 cache_name = f"ticker_info_{self.as_str}_{suffix}"
 
             data = memcache.get(cache_name)
-            if data is not None:
-                if Decimal(data["liquidity_in_usd"]) != 0:
-                    return data
+            if data is not None and Decimal(data["liquidity_in_usd"]) > 0:
+                msg = f"Using cache: {cache_name}"
+                return default.result(
+                    data=data, msg=msg, loglevel="query", ignore_until=0
+                )
 
             data = template.ticker_info(suffix, self.base, self.quote)
             data.update(
@@ -330,62 +355,53 @@ class Pair:  # pragma: no cover
                     "priced": self.priced,
                 }
             )
-
-            vol_price_data = self.get_volumes_and_prices(days, all=all)
-            data.update(
-                {
-                    "variants": vol_price_data["variants"],
-                    f"trades_{suffix}": f'{vol_price_data[f"trades_{suffix}"]}',
-                    "base_volume": vol_price_data["base_volume"],
-                    "quote_volume": vol_price_data["quote_volume"],
-                    "last_swap_price": vol_price_data["last_swap_price"],
-                    "last_swap_time": vol_price_data["last_swap_time"],
-                    "last_swap_uuid": vol_price_data["last_swap_uuid"],
-                    "oldest_price": vol_price_data["oldest_price"],
-                    "newest_price": vol_price_data["newest_price"],
-                    "oldest_price_time": vol_price_data["oldest_price_time"],
-                    "newest_price_time": vol_price_data["newest_price_time"],
-                    f"highest_price_{suffix}": vol_price_data[
-                        f"highest_price_{suffix}"
-                    ],
-                    f"lowest_price_{suffix}": vol_price_data[f"lowest_price_{suffix}"],
-                    "combined_volume_usd": vol_price_data["combined_volume_usd"],
-                    "base_volume_usd": vol_price_data["base_volume_usd"],
-                    "quote_volume_usd": vol_price_data["quote_volume_usd"],
-                    f"price_change_pct_{suffix}": vol_price_data[
-                        f"price_change_pct_{suffix}"
-                    ],
-                    f"price_change_{suffix}": vol_price_data[f"price_change_{suffix}"],
-                }
-            )
-
+            data.update(self.get_volumes_and_prices(days, all=all))
             orderbook_data = generic.orderbook(
-                self.as_str, depth=100, all=all, no_cache=True, no_threading=False
+                self.as_str, depth=100, all=all, no_thread=False
             )
-            data.update(
-                {
-                    "highest_bid": helper.find_highest_bid(orderbook_data),
-                    "lowest_ask": helper.find_lowest_ask(orderbook_data),
-                }
-            )
-            for i in [
-                "liquidity_in_usd",
-                "base_liquidity_coins",
-                "base_liquidity_usd",
-                "quote_liquidity_coins",
-                "quote_liquidity_usd",
-            ]:
-                if i in orderbook_data:
-                    data.update({i: orderbook_data[i]})
+            for i in orderbook_data.keys():
+                if i in ["bids", "asks"]:
+                    data.update({f"num_{i}": len(orderbook_data[i])})
                 else:
-                    data.update({"liquidity_in_usd": 0})
+                    data.update({i: orderbook_data[i]})
+            ignore_until = 3
 
-            data = clean.decimal_dicts(data)
-            memcache.update(cache_name, data, 120)
-            if "-segwit" in cache_name:
-                memcache.update(cache_name.replace("-segwit", ""), data, 240)
-            msg = f" {cache_name} added to memcache"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
+            # Add to cache if fully populated
+            if (
+                Decimal(data["liquidity_in_usd"]) > 0
+                and Decimal(data["combined_volume_usd"]) > 0
+            ):
+                segwit_variants = helper.get_pair_variants(
+                    self.as_str, segwit_only=True
+                )
+                for sv in segwit_variants:
+                    if all:
+                        cache_name = f"ticker_info_{sv}_{suffix}_ALL"
+                    else:
+                        cache_name = f"ticker_info_{sv}_{suffix}"
+                    base, quote = helper.base_quote_from_pair(sv)
+                    data.update(
+                        {
+                            "ticker_id": sv,
+                            "pair": sv,
+                            "base": base,
+                            "quote": quote,
+                            "ticker_info_cache_name": cache_name,
+                        }
+                    )
+                    data = clean.decimal_dicts(data)
+                    memcache.update(cache_name, data, 900)
+                    msg = f" {cache_name} added to memcache"
+                    loglevel = "cached"
+                    ignore_until = 3
+            else:
+                msg = f" {cache_name} not added to memcache,"
+                msg += " liquidity and volume for pair is zero"
+                loglevel = "warning"
+                ignore_until = 3
+            return default.result(
+                data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+            )
         except Exception as e:  # pragma: no cover
             msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
             return default.result(
@@ -394,8 +410,8 @@ class Pair:  # pragma: no cover
 
     @timed
     def get_swap_prices(self, swaps_for_pair, is_reversed):
-        data = {}
         try:
+            data = {}
             [
                 data.update(helper.get_price_at_finish(i, is_reversed))
                 for i in swaps_for_pair

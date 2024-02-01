@@ -34,8 +34,7 @@ def test_get_orderbook():
         coins_config=coins_config,
         variant_cache_name="KMD_LTC",
         gecko_source=gecko_source,
-        no_cache=True,
-        no_threading=True
+        no_thread=True
     )
     time.sleep(1)
     r = dex.get_orderbook(
@@ -44,8 +43,7 @@ def test_get_orderbook():
         coins_config=coins_config,
         variant_cache_name="KMD_LTC",
         gecko_source=gecko_source,
-        no_cache=True,
-        no_threading=True
+        no_thread=True
     )
     assert r["pair"] == "KMD_LTC"
     assert "asks" in r
@@ -64,8 +62,7 @@ def test_get_orderbook():
         variant_cache_name="LTC_KMD",
         gecko_source=gecko_source,
         coins_config=coins_config,
-        no_cache=True,
-        no_threading=True
+        no_thread=True
     )
     assert r["pair"] == "LTC_KMD"
     assert "asks" in r

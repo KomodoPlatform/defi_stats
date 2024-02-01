@@ -14,6 +14,7 @@ class Clean:
     def __init__(self):
         pass
 
+    @timed
     def decimal_dict_lists(self, data, to_string=False, rounding=8):
         """
         Works for a list of dicts with no nesting
@@ -31,6 +32,7 @@ class Clean:
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
+    @timed
     def decimal_dicts(
         self, data, to_string=False, rounding=8, exclude_keys: List = list()
     ):
@@ -50,6 +52,7 @@ class Clean:
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
+    @timed
     def orderbook_data(self, data):
         """
         Works for a simple dict with no nesting
@@ -68,7 +71,6 @@ class Clean:
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
                 "liquidity_in_usd",
-                "combined_volume_usd",
             ]:
                 data[i] = format_10f(Decimal(data[i]))
             return data
@@ -105,14 +107,10 @@ class Merge:
                 "total_bids_quote_vol",
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
-                "combined_volume_usd",
             ]
 
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
-            )
-            existing.update(
-                {i: sumdata.ints(existing[i], new[i]) for i in ["trades_24hr"]}
             )
             return existing
         except Exception as e:  # pragma: no cover
@@ -121,6 +119,45 @@ class Merge:
             err = {"error": f"transform.merge.orderbooks: {e}"}
             logger.warning(err)
         return existing
+
+    @timed
+    def volumes_data(
+        self, data, suffix, swaps_for_pair, base_usd_price, quote_usd_price, is_reversed
+    ):
+        try:
+            swaps_volumes = helper.get_swaps_volumes(swaps_for_pair, is_reversed)
+            base_volume_usd = swaps_volumes[0] * base_usd_price
+            quote_volume_usd = swaps_volumes[1] * quote_usd_price
+            # Halving the combined volume to not double count, and
+            # get average between base and quote
+            combined_volume_usd = (base_volume_usd + quote_volume_usd) / 2
+            data.update(
+                {
+                    f"trades_{suffix}": sumdata.ints(
+                        data[f"trades_{suffix}"], len(swaps_for_pair)
+                    ),
+                    "base_volume": sumdata.decimals(data["base_volume"], swaps_volumes[0]),
+                    "quote_volume": sumdata.decimals(
+                        data["quote_volume"], swaps_volumes[1]
+                    ),
+                    "base_volume_usd": sumdata.decimals(
+                        data["base_volume_usd"], base_volume_usd
+                    ),
+                    "quote_volume_usd": sumdata.decimals(
+                        data["quote_volume_usd"], quote_volume_usd
+                    ),
+                    "combined_volume_usd": sumdata.decimals(
+                        data["combined_volume_usd"], combined_volume_usd
+                    ),
+                    "variants": data["variants"],
+                }
+            )
+            msg = f'Combined vol: {data["combined_volume_usd"]}'
+            return default.result(
+                data=data, msg=msg, loglevel="dexrpc", ignore_until=0
+            )
+        except Exception as e:
+            logger.warning(e)
 
 
 def sum_num_str(val1, val2):
@@ -608,7 +645,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "lowest_price_24h": data["lowest_price_24hr"],
         "price_change_24h": data["price_change_24hr"],
         "price_change_pct_24h": data["price_change_pct_24hr"],
-        "trades_24h": data["trades_24hr"],
+        "trades_24hr": data["trades_24hr"],
         "volume_usd_24h": data["combined_volume_usd"],
         "last_swap_price": data["last_swap_price"],
         "last_swap_timestamp": data["last_swap_time"],
@@ -626,9 +663,9 @@ def ticker_to_xyz_summary(i):
         "last_swap_timestamp": int(i["last_swap_time"]),
         "highest_bid": i["highest_bid"],
         "price_change_pct_24h": str(i["price_change_pct_24hr"]),
-        "highest_price_24h": i["highest_price_24hr"],
-        "lowest_price_24h": i["lowest_price_24hr"],
-        "trades_24h": int(i["trades_24hr"]),
+        "highest_price_24hr": i["highest_price_24hr"],
+        "lowest_price_24hr": i["lowest_price_24hr"],
+        "trades_24hr": int(i["trades_24hr"]),
         "last_swap": int(i["last_swap_time"]),
         "last_swap_price": i["last_swap_price"],
     }
@@ -743,13 +780,13 @@ def invert_orderbook(orderbook):
         total_bids_quote_vol = orderbook["total_bids_quote_vol"]
         total_asks_base_vol = orderbook["total_asks_base_vol"]
         total_bids_base_vol = orderbook["total_bids_base_vol"]
-
+    logger.info(orderbook)
     inverted = {
-        "pair": orderbook["pair"],
+        "pair": f'{quote}_{orderbook["base"]}',
         "base": quote,
         "quote": orderbook["base"],
-        "num_asks": len(orderbook["asks"]),
-        "num_bids": len(orderbook["bids"]),
+        "num_asks": len(orderbook["bids"]),
+        "num_bids": len(orderbook["asks"]),
         "total_asks_base_vol": {"decimal": total_asks_quote_vol},
         "total_asks_rel_vol": {"decimal": total_asks_base_vol},
         "total_bids_base_vol": {"decimal": total_bids_quote_vol},

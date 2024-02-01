@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from decimal import Decimal
 import db
 import lib
 from lib.coins import get_gecko_price, get_kmd_pairs
@@ -62,20 +63,19 @@ class Generic:  # pragma: no cover
         pair_str: str = "KMD_LTC",
         depth: int = 100,
         all: bool = False,
-        no_cache=False,
-        no_threading=False,
+        no_thread: bool = True,
     ):
         try:
             if all:
                 pair_str = deplatform.pair(pair_str)
                 pair_tpl = helper.base_quote_from_pair(pair_str)
-                cache_name = f"orderbook_{pair_str}_ALL"
+                combo_cache_name = f"orderbook_{pair_str}_ALL"
                 variants = helper.get_pair_variants(pair_str)
                 # logger.loop(f"{pair_str}: {variants}")
             else:
                 # This will be a single ticker_pair unless for segwit
                 pair_tpl = helper.base_quote_from_pair(pair_str)
-                cache_name = f"orderbook_{pair_str}"
+                combo_cache_name = f"orderbook_{pair_str}"
                 variants = helper.get_pair_variants(pair_str, segwit_only=True)
                 # logger.calc(f"{pair_str}: {variants}")
             if len(pair_tpl) != 2 or "error" in pair_tpl:
@@ -84,15 +84,13 @@ class Generic:  # pragma: no cover
             combined_orderbook.update({"variants": variants})
 
             # Use combined cache if valid
-            orderbook_data = memcache.get(cache_name)
-            if (
-                orderbook_data is not None
-                and not no_cache
-                and len(orderbook_data["asks"]) > 0
-                and len(orderbook_data["bids"]) > 0
-            ):
-                logger.calc(f"{cache_name} exists and is populated!")
-                combined_orderbook = orderbook_data
+            combo_orderbook_cache = memcache.get(combo_cache_name)
+            if combo_orderbook_cache is not None and memcache.get('testing') is None:
+                if (
+                    len(combo_orderbook_cache["asks"]) > 0
+                    and len(combo_orderbook_cache["bids"]) > 0
+                ):
+                    combined_orderbook = combo_orderbook_cache
             else:
                 if self.coins_config is None:
                     self.coins_config = memcache.get_coins_config()
@@ -116,14 +114,14 @@ class Generic:  # pragma: no cover
                         gecko_source=self.gecko_source,
                         variant_cache_name=variant_cache_name,
                         depth=depth,
-                        no_cache=no_cache,
-                        no_threading=no_threading,
+                        no_thread=no_thread,
                     )
                     # Apply depth limit after caching so cache is complete
                     data["bids"] = data["bids"][:depth][::-1]
                     data["asks"] = data["asks"][::-1][:depth]
                     # TODO: Recalc liquidity if depth is less than data.
                     # Merge with other variants
+
                     combined_orderbook = merge.orderbooks(combined_orderbook, data)
                 # Sort variant bids / asks
                 combined_orderbook["bids"] = combined_orderbook["bids"][: int(depth)][
@@ -136,14 +134,24 @@ class Generic:  # pragma: no cover
                 combined_orderbook["pair"] = pair_str
                 combined_orderbook["base"] = pair_tpl[0]
                 combined_orderbook["quote"] = pair_tpl[1]
-                # logger.info(combined_orderbook['liquidity_in_usd'])
                 # update the combined cache
-                memcache.update(cache_name, combined_orderbook, 240)
+                if (
+                    len(combined_orderbook["asks"]) > 0
+                    or len(combined_orderbook["bids"]) > 0
+                ):
+                    data = clean.decimal_dicts(data)
+                    dex.add_orderbook_to_cache(pair_str, combo_cache_name, data)
 
-            msg = f"Generic.orderbook for {pair_str} ({len(variants)} variants)"
-            msg += f"complete with ${combined_orderbook['liquidity_in_usd']} liquidity"
+            msg = f"{pair_str}: ${combined_orderbook['liquidity_in_usd']} liquidity."
+            # msg += f" Variants: ({variants})"
+            ignore_until = 3
+            if Decimal(combined_orderbook["liquidity_in_usd"]) > 1000:
+                ignore_until = 0
             return default.result(
-                data=combined_orderbook, msg=msg, loglevel="pair", ignore_until=2
+                data=combined_orderbook,
+                msg=msg,
+                loglevel="query",
+                ignore_until=ignore_until,
             )
         except Exception as e:  # pragma: no cover
             msg = f"Generic.orderbook {pair_str} failed: {e}!"
@@ -152,12 +160,14 @@ class Generic:  # pragma: no cover
                 msg += " Returning template!"
             except Exception as e:
                 data = {"error": f"{msg}: {e}"}
-                return default.result(
-                    data=data, msg=msg, loglevel="warning", ignore_until=0
-                )
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
     @timed
-    def tickers(self, trades_days: int = 1, pairs_days: int = 7):
+    def tickers(
+        self, trades_days: int = 1, pairs_days: int = 7, from_memcache: bool = False
+    ):
         try:
             # Skip if cache not available yet
             if self.last_traded_cache is None:
@@ -184,32 +194,46 @@ class Generic:  # pragma: no cover
             )
             # logger.info(f"{len(pairs)} pairs in last 90 days")
 
-            data = [
-                lib.Pair(
-                    pair_str=i,
-                    last_traded_cache=self.last_traded_cache,
-                    coins_config=self.coins_config,
-                ).ticker_info(trades_days, all=False)
-                for i in pairs
-            ]
+            if from_memcache == 1:
+                # Disabled for now
+                # TODO: test if performance boost with this or not
+                data = []
+                for i in pairs:
+                    if all:
+                        cache_name = f"ticker_info_{self.as_str}_{suffix}_ALL"
+                    else:
+                        cache_name = f"ticker_info_{self.as_str}_{suffix}"
 
-            data = [i for i in data if i is not None]
-            data = clean.decimal_dict_lists(data, to_string=True, rounding=10)
-            data = sortdata.dict_lists(data, "ticker_id")
-            data = {
-                "last_update": int(cron.now_utc()),
-                "pairs_count": len(data),
-                "swaps_count": int(sumdata.json_key(data, f"trades_{suffix}")),
-                "combined_volume_usd": sumdata.json_key_10f(
-                    data, "combined_volume_usd"
-                ),
-                "combined_liquidity_usd": sumdata.json_key_10f(
-                    data, "liquidity_in_usd"
-                ),
-                "data": data,
-            }
-            msg = f"Traded_tickers complete! {len(pairs)} pairs traded"
-            msg += f" in last {pairs_days} days"
+                cache_data = memcache.get(cache_name)
+                if cache_data is not None:
+                    data.append(cache_data)
+            else:
+                data = [
+                    lib.Pair(
+                        pair_str=i,
+                        last_traded_cache=self.last_traded_cache,
+                        coins_config=self.coins_config,
+                    ).ticker_info(trades_days, all=False)
+                    for i in pairs
+                ]
+
+                data = [i for i in data if i is not None]
+                data = clean.decimal_dict_lists(data, to_string=True, rounding=10)
+                data = sortdata.dict_lists(data, "ticker_id")
+                data = {
+                    "last_update": int(cron.now_utc()),
+                    "pairs_count": len(data),
+                    "swaps_count": int(sumdata.json_key(data, f"trades_{suffix}")),
+                    "combined_volume_usd": sumdata.json_key_10f(
+                        data, "combined_volume_usd"
+                    ),
+                    "combined_liquidity_usd": sumdata.json_key_10f(
+                        data, "liquidity_in_usd"
+                    ),
+                    "data": data,
+                }
+                msg = f"Traded_tickers complete! {len(pairs)} pairs traded"
+                msg += f" in last {pairs_days} days"
             return default.result(data, msg, loglevel="calc")
         except Exception as e:  # pragma: no cover
             msg = "tickers failed!"

@@ -233,7 +233,7 @@ def test_deplatform_coin():
 
 def test_merge_orderbooks():
     orderbook_data = generic.orderbook(
-        "KMD_DOGE", all=False, no_cache=True, no_threading=True
+        "KMD_DOGE", all=False
     )
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)

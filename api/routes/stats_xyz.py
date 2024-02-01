@@ -75,7 +75,7 @@ def fiat_rates():
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
         generic = Generic()
-        return generic.orderbook(pair_str=market_pair, depth=depth, no_threading=True)
+        return generic.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

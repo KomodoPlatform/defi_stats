@@ -40,8 +40,8 @@ class GeckoTickers(GenericTickersInfo):
     last_update: str = "1777777777"
     pairs_count: str = "1777777777"
     swaps_count: str = "1777777777"
-    combined_volume_usd: str = "999999999"
-    combined_liquidity_usd: str = "999999999"
+    combined_volume_usd: str = "777.777777"
+    combined_liquidity_usd: str = "777.777777"
     data: List[GeckoTickersItem]
 
 

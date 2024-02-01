@@ -10,6 +10,7 @@ import util.templates as template
 import util.transform as transform
 
 
+@timed
 def get_mm2_rpc_port(netid=MM2_NETID):
     try:
         return MM2_RPC_PORTS[str(netid)]
@@ -26,6 +27,7 @@ def get_netid(filename):
         return "8762"
 
 
+@timed
 def get_netid_filename(filename, netid):
     try:
         parts = filename.split(".")
@@ -34,6 +36,7 @@ def get_netid_filename(filename, netid):
         return default.error(e)
 
 
+@timed
 def get_chunks(data, chunk_length):
     try:
         for i in range(0, len(data), chunk_length):
@@ -50,6 +53,8 @@ def daterange(start_date, end_date):
 def get_last_trade_info(pair_str: str, last_traded_cache: Dict, all=False):
     try:
         # TODO: cover 'all' case
+        # This is imperfect. Should get both and
+        # calc the last for combo.
         pair_str = pair_str.replace("-segwit", "")
         if pair_str in last_traded_cache:
             return last_traded_cache[pair_str]
@@ -57,10 +62,11 @@ def get_last_trade_info(pair_str: str, last_traded_cache: Dict, all=False):
         if reverse_pair in last_traded_cache:
             return last_traded_cache[reverse_pair]
     except Exception as e:  # pragma: no cover
-        logger.warning(default.error(e))
+        logger.warning(e)
     return template.last_trade_info()
 
 
+@timed
 def base_quote_from_pair(variant, reverse=False):
     # TODO: This workaround fixes the issue
     # but need to find root cause to avoid
@@ -112,9 +118,10 @@ def base_quote_from_pair(variant, reverse=False):
     except Exception as e:  # pragma: no cover
         msg = f"failed to parse {variant} into base/quote! {e}"
         data = {"error": msg}
-        return default.result(msg=msg, loglevel='warning', data=data)
+        return default.result(msg=msg, loglevel="warning", data=data)
 
 
+@timed
 def get_price_at_finish(swap, is_reversed=False):
     try:
         end_time = swap["finished_at"]
@@ -133,6 +140,7 @@ def get_price_at_finish(swap, is_reversed=False):
         return default.error(e)
 
 
+@timed
 def get_swaps_volumes(swaps_for_pair, is_reversed=False):
     try:
         base_swaps = []
@@ -142,16 +150,16 @@ def get_swaps_volumes(swaps_for_pair, is_reversed=False):
                 is_reversed and i["trade_type"] == "sell"
             ):
                 # Base is maker on buy (unless inverted)
-                base_swaps.append(i["maker_amount"])
-                quote_swaps.append(i["taker_amount"])
+                base_swaps.append(Decimal(i["maker_amount"]))
+                quote_swaps.append(Decimal(i["taker_amount"]))
             else:
                 # Base is taker on sell (unless inverted)
-                base_swaps.append(i["taker_amount"])
-                quote_swaps.append(i["maker_amount"])
+                base_swaps.append(Decimal(i["taker_amount"]))
+                quote_swaps.append(Decimal(i["maker_amount"]))
 
         return [sum(base_swaps), sum(quote_swaps)]
     except Exception as e:  # pragma: no cover
-        msg = "get_swaps_volumes failed!"
+        msg = f"get_swaps_volumes failed! {e}"
         return default.error(e, msg)
 
 
@@ -188,12 +196,13 @@ def find_lowest_ask(orderbook: dict) -> str:
     """Returns lowest ask from provided orderbook"""
     try:
         if len(orderbook["bids"]) > 0:
-            return transform.format_10f(
-                min([Decimal(bid["price"]) for bid in orderbook["bids"]])
-            )
+            prices = [Decimal(ask["price"]) for ask in orderbook["bids"]]
+            return min(prices)
     except KeyError as e:  # pragma: no cover
+        logger.warning(e)
         return default.error(e, data=transform.format_10f(0))
     except Exception as e:  # pragma: no cover
+        logger.warning(e)
         return default.error(e, data=transform.format_10f(0))
     return transform.format_10f(0)
 
@@ -203,16 +212,18 @@ def find_highest_bid(orderbook: list) -> str:
     """Returns highest bid from provided orderbook"""
     try:
         if len(orderbook["asks"]) > 0:
-            return transform.format_10f(
-                max([Decimal(ask["price"]) for ask in orderbook["asks"]])
-            )
+            prices = [Decimal(ask["price"]) for ask in orderbook["asks"]]
+            return max(prices)
     except KeyError as e:  # pragma: no cover
+        logger.warning(e)
         return default.error(e, data=transform.format_10f(0))
     except Exception as e:  # pragma: no cover
+        logger.warning(e)
         return default.error(e, data=transform.format_10f(0))
     return transform.format_10f(0)
 
 
+@timed
 def get_pairs_info(pair_list: str, priced: bool = False) -> list:
     try:
         return [template.pair_info(i, priced) for i in pair_list]
@@ -220,6 +231,7 @@ def get_pairs_info(pair_list: str, priced: bool = False) -> list:
         return default.error(e)
 
 
+@timed
 def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
     try:
         return sorted(

@@ -65,7 +65,7 @@ def last_traded(pair_str: str = ""):
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100, all: bool = True):
     try:
-        return generic.orderbook(pair_str=pair_str, all=all, depth=depth, no_threading=True)
+        return generic.orderbook(pair_str=pair_str, all=all, depth=depth, no_thread=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}
         return JSONResponse(status_code=400, content=err)

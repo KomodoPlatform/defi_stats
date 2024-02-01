@@ -125,16 +125,29 @@ def generic_last_traded():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=180)
+@repeat_every(seconds=300)
 @timed
-def generic_tickers():
+def refresh_generic_tickers():
     if memcache.get("testing") is None:
         try:
             CacheItem(name="generic_tickers").save()
         except Exception as e:
             return default.error(e)
-        msg = "Generic tickers (ALL) loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        msg = "Generic tickers refresh loop complete!"
+        return default.result(msg=msg, loglevel="query")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_generic_tickers():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="generic_tickers", from_memcache=True).save()
+        except Exception as e:
+            return default.error(e)
+        msg = "Generic tickers loop for memcache complete!"
+        return default.result(msg=msg, loglevel="query")
 
 
 @router.on_event("startup")
@@ -189,4 +202,4 @@ def generic_summary():
         except Exception as e:
             return default.error(e)
         msg = "Summary loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="query")

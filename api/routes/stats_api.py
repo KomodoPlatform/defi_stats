@@ -110,7 +110,7 @@ def orderbook(
 ):
     try:
         generic = Generic(netid="ALL")
-        data = generic.orderbook(pair_str=ticker_id, depth=depth, no_threading=True)
+        data = generic.orderbook(pair_str=ticker_id, depth=depth, no_thread=True)
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover

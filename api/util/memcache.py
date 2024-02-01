@@ -137,8 +137,8 @@ def update(key, value, expiry):
             key = f"{key}-testing"
         if value is not None:
             MEMCACHE.set(key, value, expiry)
-            msg = f"{key} memcache updated"
-            return default.result(data=key, msg=msg, loglevel="loop", ignore_until=2)
+            msg = f"{key} added to memcache"
+            return default.result(data=key, msg=msg, loglevel="cached", ignore_until=0)
         msg = f"{key} memcache not updated, data is empty"
     except Exception as e:
         msg = f"{key} memcache not updated: {e}"

@@ -1,6 +1,6 @@
 {
-        "base": "KMD",
-        "rel": "BTC",
+        "base": "DGB-segwit",
+        "rel": "DOGE",
         "net_id": 7777,
         "num_asks": 3,
         "num_bids": 3,
