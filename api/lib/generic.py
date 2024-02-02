@@ -169,6 +169,8 @@ class Generic:  # pragma: no cover
         self, trades_days: int = 1, pairs_days: int = 7, from_memcache: bool = False
     ):
         try:
+            if trades_days > pairs_days:
+                pairs_days = trades_days
             # Skip if cache not available yet
             if self.last_traded_cache is None:
                 self.last_traded_cache = memcache.get_last_traded()
@@ -192,7 +194,6 @@ class Generic:  # pragma: no cover
                     if self.last_traded_cache[i]["last_swap_time"] > ts
                 ]
             )
-            # logger.info(f"{len(pairs)} pairs in last 90 days")
 
             if from_memcache == 1:
                 # Disabled for now
@@ -270,9 +271,9 @@ def get_price_status_dict(pairs, gecko_source=None):
         pairs_dict = {"priced_gecko": [], "unpriced": []}
         for pair_str in pairs:
             base, quote = helper.base_quote_from_pair(pair_str)
-            base_price = get_gecko_price(base, gecko_source=gecko_source)
-            quote_price = get_gecko_price(quote, gecko_source=gecko_source)
-            if base_price > 0 and quote_price > 0:
+            base_price_usd = get_gecko_price(base, gecko_source=gecko_source)
+            quote_price_usd = get_gecko_price(quote, gecko_source=gecko_source)
+            if base_price_usd > 0 and quote_price_usd > 0:
                 pairs_dict["priced_gecko"].append(pair_str)
             else:  # pragma: no cover
                 pairs_dict["unpriced"].append(pair_str)

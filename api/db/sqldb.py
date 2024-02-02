@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from enum import Enum
-from datetime import datetime, timezone
-from typing import Dict
-from itertools import chain
+from datetime import date, datetime, timezone
+from datetime import time as dt_time
 from dotenv import load_dotenv
+from enum import Enum
+from itertools import chain
+from sqlalchemy import Numeric, func
 from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
-from sqlalchemy import Numeric, func
+from typing import Dict
+import time
 
 from const import (
     MYSQL_USERNAME,
@@ -24,9 +26,10 @@ from const import (
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from lib.coins import get_gecko_price
+from lib.cache import CacheItem
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
-from util.transform import merge, sortdata, deplatform
+from util.transform import merge, sortdata, deplatform, invert, derive
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -85,6 +88,7 @@ class SqlFilter:
     def __init__(self, table=DefiSwap) -> None:
         self.table = table
 
+    @timed
     def coin(self, q, coin):
         if coin is not None:
             q = q.filter(
@@ -95,6 +99,7 @@ class SqlFilter:
             )
         return q
 
+    @timed
     def gui(self, q, gui):
         if gui is not None:
             q = q.filter(
@@ -105,6 +110,7 @@ class SqlFilter:
             )
         return q
 
+    @timed
     def pair(self, q, pair):
         if pair is not None:
             pair = deplatform.pair(pair)
@@ -116,6 +122,7 @@ class SqlFilter:
             )
         return q
 
+    @timed
     def pubkey(self, q, pubkey):
         if pubkey is not None:
             q = q.filter(
@@ -126,6 +133,7 @@ class SqlFilter:
             )
         return q
 
+    @timed
     def success(self, q, success_only=True, failed_only=False):
         if failed_only:
             if self.table == CipiSwap:
@@ -139,6 +147,7 @@ class SqlFilter:
                 return q.filter(self.table.is_success == 1)
         return q
 
+    @timed
     def timestamps(self, q, start_time, end_time):
         if self.table in [CipiSwap, CipiSwapFailed]:
             q = q.filter(
@@ -150,6 +159,7 @@ class SqlFilter:
             )
         return q
 
+    @timed
     def version(self, q, version):
         if version is not None:
             q = q.filter(
@@ -170,11 +180,13 @@ class SqlUpdate(SqlDB):
     ) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
 
+    @timed
     def drop(self, table):
         try:
             with Session(self.engine) as session:
                 session.exec(text(f"DROP TABLE {get_tablename(table)};"))
                 session.commit()
+                logger.info(f"Dropped {get_tablename(table)}")
         except Exception as e:
             logger.warning(e)
 
@@ -205,6 +217,7 @@ class SqlQuery(SqlDB):
                 "uuid",
             ]
 
+    @timed
     @property
     def ValidTickers(self):
         return Enum(
@@ -213,6 +226,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidPlatforms(self):
         return Enum(
@@ -221,6 +235,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def DefiSwapColumns(self):
         return Enum(
@@ -229,6 +244,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def DefiSwapColumnsDistinct(self):
         return Enum(
@@ -241,6 +257,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidGuis(self):
         return Enum(
@@ -249,6 +266,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidPairs(self):
         return Enum(
@@ -257,6 +275,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidPubkeys(self):
         return Enum(
@@ -265,6 +284,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidVersions(self):
         return Enum(
@@ -273,6 +293,7 @@ class SqlQuery(SqlDB):
             type=str,
         )
 
+    @timed
     @property
     def ValidCoins(self):
         coins_config = memcache.get_coins_config()
@@ -660,7 +681,7 @@ class SqlQuery(SqlDB):
             )
             data = {}
             for i in maker_data:
-                k = transform.derive_app(maker_data[i]["category"])
+                k = derive.app(maker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
                 data[k].update(
@@ -676,7 +697,7 @@ class SqlQuery(SqlDB):
                 data[k]["total_num_swaps"] += maker_data[i]["num_swaps"]
 
             for i in taker_data:
-                k = transform.derive_app(taker_data[i]["category"])
+                k = derive.app(taker_data[i]["category"])
                 if k not in data:
                     data.update({k: template.last_traded_item()})
                 data[k].update(
@@ -929,6 +950,7 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
+    @timed
     def get_swaps_for_coin(
         self, coin: str, merge_segwit: bool = False, all=False, **kwargs
     ):
@@ -944,6 +966,7 @@ class SqlQuery(SqlDB):
             return merge.segwit_swaps(variants, swaps)
         return swaps[coin]
 
+    @timed
     def get_swaps_for_pair(
         self,
         base: str,
@@ -1022,7 +1045,6 @@ class SqlQuery(SqlDB):
         else:
             return [i["uuid"] for i in swaps]
 
-    # Subclass under 'utils'
     @timed
     def get_pairs(self, days: int = 7) -> list:
         """
@@ -1038,6 +1060,8 @@ class SqlQuery(SqlDB):
             )
 
             gecko_source = memcache.get_gecko_source()
+            if gecko_source is None:
+                gecko_source = CacheItem(name="gecko_source").data
             # Sort pair by ticker mcap to expose duplicates
             sorted_pairs = list(
                 set(
@@ -1056,6 +1080,7 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
+    @timed
     def get_distinct(
         self,
         start_time: int = 0,
@@ -1108,6 +1133,7 @@ class SqlQuery(SqlDB):
             data = [list(dict(i).values())[0] for i in q.all()]
         return data
 
+    @timed
     def get_count(
         self,
         start_time: int = 0,
@@ -1139,6 +1165,7 @@ class SqlQuery(SqlDB):
             r = q.all()
             return r[0][0]
 
+    @timed
     def get_last(self, table: str, limit: int = 3):
         try:
             with Session(self.engine) as session:
@@ -1153,6 +1180,7 @@ class SqlQuery(SqlDB):
         except Exception as e:
             logger.error(e)
 
+    @timed
     def get_first(self, table: str, limit: int = 3):
         try:
             with Session(self.engine) as session:
@@ -1167,6 +1195,7 @@ class SqlQuery(SqlDB):
         except Exception as e:
             logger.error(e)
 
+    @timed
     def describe(self, table):
         with Session(self.engine) as session:
             stmt = text(f"DESCRIBE {get_tablename(table)};")
@@ -1174,6 +1203,7 @@ class SqlQuery(SqlDB):
             for i in r:
                 logger.merge(i)
 
+    @timed
     def get_enums(self):
         coins_config = memcache.get_coins_config()
         return {
@@ -1225,6 +1255,7 @@ class SqlQuery(SqlDB):
             ),
         }
 
+    @timed
     def swap_counts(self):  # pragma: no cover
         month_ago = int(cron.now_utc()) - 86400 * 30
         fortnight_ago = int(cron.now_utc()) - 86400 * 14
@@ -1241,7 +1272,7 @@ class SqlQuery(SqlDB):
 
 class SqlSource:
     def __init__(self) -> None:
-        pass
+        self.gecko_source = memcache.get_gecko_source()
 
     @timed
     def import_cipi_swaps(
@@ -1419,6 +1450,7 @@ class SqlSource:
         msg = f"Importing swaps from {start_time} - {end_time} complete"
         return default.result(msg=msg, loglevel="updated")
 
+    @timed
     def reset_defi_stats_table(self):
         pgdb = SqlUpdate("pgsql")
         pgdb.drop("defi_swaps")
@@ -1429,19 +1461,35 @@ class SqlSource:
     def normalise_swap_data(self, data, is_success=None):
         try:
             for i in data:
-                pair_raw = f'{i["maker_coin"]}_{i["taker_coin"]}'
-                pair = sortdata.pair_by_market_cap(pair_raw)
-                pair_reverse = transform.invert_pair(pair)
+                # Standardize pair_strings
+                # "pair" should always be sorted by market cap. | KMD_LTC
+                pair_temp = f'{i["maker_coin"]}_{i["taker_coin"]}'
+                pair = sortdata.pair_by_market_cap(
+                    pair_temp, gecko_source=self.gecko_source
+                )
+                if "fa0bdf92-375d-41c8-af45-5aa11380bf25" == i["uuid"]:
+                    logger.calc(i)
+                    logger.calc(f"pair_temp: {pair_temp}")
+                    logger.calc(f"pair: {pair}")
+                pair_reverse = invert.pair(pair)
                 pair_std = deplatform.pair(pair)
-                pair_std_reverse = transform.invert_pair(pair_std)
-                if pair_raw == pair:
+                pair_std_reverse = invert.pair(pair_std)
+
+                # Assign price and trade_type
+                if pair_temp == pair:
                     trade_type = "buy"
-                    price = Decimal(i["maker_amount"] / i["taker_amount"])
-                    reverse_price = Decimal(i["taker_amount"] / i["maker_amount"])
-                else:
+                    price = Decimal(i["taker_amount"]) / Decimal(i["maker_amount"])
+                    reverse_price = Decimal(i["maker_amount"]) / Decimal(
+                        i["taker_amount"]
+                    )
+
+                elif pair_temp == pair_reverse:
                     trade_type = "sell"
-                    price = Decimal(i["taker_amount"] / i["maker_amount"])
-                    reverse_price = Decimal(i["maker_amount"] / i["taker_amount"])
+                    price = Decimal(i["maker_amount"]) / Decimal(i["taker_amount"])
+                    reverse_price = Decimal(i["taker_amount"]) / Decimal(
+                        i["maker_amount"]
+                    )
+
                 i.update(
                     {
                         "pair": pair,
@@ -1489,6 +1537,9 @@ class SqlSource:
                     ]:
                         if v in [None, ""]:
                             i.update({k: 0})
+                if "fa0bdf92-375d-41c8-af45-5aa11380bf25" == i["uuid"]:
+                    logger.loop(i)
+                    logger.calc(f"normal pair: {i['pair']}")
         except Exception as e:
             return default.error(e)
         msg = "Data normalised"
@@ -1532,11 +1583,9 @@ class SqlSource:
                     # Extra columns
                     trade_type=cipi_data["trade_type"],
                     pair=cipi_data["pair"],
-                    pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                    pair_reverse=invert.pair(cipi_data["pair"]),
                     pair_std=deplatform.pair(cipi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(
-                        transform.invert_pair(cipi_data["pair"])
-                    ),
+                    pair_std_reverse=deplatform.pair(invert.pair(cipi_data["pair"])),
                     last_updated=int(cron.now_utc()),
                 )
             else:
@@ -1610,11 +1659,9 @@ class SqlSource:
                     # Extra columns
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
-                    pair_reverse=transform.invert_pair(cipi_data["pair"]),
+                    pair_reverse=invert.pair(cipi_data["pair"]),
                     pair_std=deplatform.pair(cipi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(
-                        transform.invert_pair(cipi_data["pair"])
-                    ),
+                    pair_std_reverse=deplatform.pair(invert.pair(cipi_data["pair"])),
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
@@ -1662,11 +1709,9 @@ class SqlSource:
                     # Extra columns
                     trade_type=mm2_data["trade_type"],
                     pair=mm2_data["pair"],
-                    pair_reverse=transform.invert_pair(mm2_data["pair"]),
+                    pair_reverse=invert.pair(mm2_data["pair"]),
                     pair_std=deplatform.pair(mm2_data["pair"]),
-                    pair_std_reverse=deplatform.pair(
-                        transform.invert_pair(mm2_data["pair"])
-                    ),
+                    pair_std_reverse=deplatform.pair(invert.pair(mm2_data["pair"])),
                     last_updated=int(cron.now_utc()),
                 )
             else:
@@ -1731,11 +1776,9 @@ class SqlSource:
                     # Extra columns
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
-                    pair_reverse=transform.invert_pair(defi_data["pair"]),
+                    pair_reverse=invert.pair(defi_data["pair"]),
                     pair_std=deplatform.pair(defi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(
-                        transform.invert_pair(defi_data["pair"])
-                    ),
+                    pair_std_reverse=deplatform.pair(invert.pair(defi_data["pair"])),
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
@@ -1748,8 +1791,25 @@ class SqlSource:
         msg = "mm2 to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
 
+    @timed
+    def import_swaps_for_day(self, day):
+        msg = f"Importing swaps from {day.strftime('%Y-%m-%d')} {day}"
+        start_ts = datetime.combine(day, dt_time()).timestamp()
+        end_ts = datetime.combine(day, dt_time()).timestamp() + 86400
+        SqlSource().populate_pgsqldb(start_time=start_ts, end_time=end_ts)
+        return default.result(msg=msg, loglevel="merge", ignore_until=0)
+
+    @timed
+    def import_swaps(
+        self, start_dt: date = date(2019, 1, 15), end_dt: date = date(2024, 2, 3)
+    ):
+        for day in cron.daterange(start_dt, end_dt):
+            self.import_swaps_for_day(day)
+            time.sleep(1)
+
 
 # Subclass 'utils' under SqlQuery
+@timed
 def get_tablename(table):
     if isinstance(table, str):
         return table
@@ -1757,6 +1817,7 @@ def get_tablename(table):
         return table.__tablename__
 
 
+@timed
 def get_columns(table: object):
     return sorted(list(table.__annotations__.keys()))
 

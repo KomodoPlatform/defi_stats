@@ -11,9 +11,8 @@ import lib
 
 
 @pytest.fixture
-def setup_statsapi(setup_swaps_db_data):
-    db = setup_swaps_db_data
-    yield StatsAPI(db=db)
+def setup_statsapi():
+    yield StatsAPI()
 
 
 @pytest.fixture

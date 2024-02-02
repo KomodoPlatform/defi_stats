@@ -14,7 +14,7 @@ import util.templates as template
 import util.transform as transform
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean
+from util.transform import sortdata, clean, invert
 
 
 class DexAPI:
@@ -170,7 +170,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
     fn = f"{pair_str}.json"
     fixture = files.load_jsonfile(f"{path}/{fn}")
     if fixture is None:
-        fn = f"{transform.invert_pair(pair_str)}.json"
+        fn = f"{invert.pair(pair_str)}.json"
         fixture = files.load_jsonfile(f"{path}/{fn}")
     if fixture is not None:
         data = fixture
@@ -179,7 +179,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
         data = template.orderbook(pair_str=pair_str)
     is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
-        data = transform.invert_orderbook(data)
+        data = invert.orderbook(data)
     data = orderbook_extras(pair_str, data, gecko_source)
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
         data = clean.decimal_dicts(data)
@@ -267,7 +267,7 @@ def get_liquidity(orderbook, gecko_source):
     except Exception as e:  # pragma: no cover
         msg = f"Returning liquidity template for {orderbook['pair']} ({e})"
         return default.result(
-            data=orderbook, msg=msg, loglevel="warning", ignore_until=0
+            data=orderbook, msg=msg, loglevel="warning", ignore_until=5
         )
 
 
@@ -285,7 +285,7 @@ def add_orderbook_to_cache(pair_str, cache_name, data):
         )
         memcache.update(cache_name, data, 900)
         msg = f"Updated cache: {cache_name}"
-        return default.result(data, msg, loglevel="request", ignore_until=0)
+        return default.result(data, msg, loglevel="request", ignore_until=3)
     except Exception as e:  # pragma: no cover
         msg = f"add_orderbook_to_cache failed! {e}"
         return default.error(e, msg)

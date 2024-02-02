@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def now_utc():
     return datetime.utcnow().timestamp()
+
+
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + timedelta(n)
 
 
 class Time:

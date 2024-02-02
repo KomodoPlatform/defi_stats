@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
-from const import NODE_TYPE, RESET_TABLE
+from const import NODE_TYPE
 import db
 import util.defaults as default
 import util.memcache as memcache
@@ -151,6 +151,32 @@ def get_generic_tickers():
 
 
 @router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def refresh_generic_tickers_14d():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="generic_tickers_14d").save()
+        except Exception as e:
+            return default.error(e)
+        msg = "Generic tickers refresh loop complete!"
+        return default.result(msg=msg, loglevel="query")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_generic_tickers_cache_14d():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="generic_tickers_14d", from_memcache=True).save()
+        except Exception as e:
+            return default.error(e)
+        msg = "Generic tickers loop for memcache complete!"
+        return default.result(msg=msg, loglevel="query")
+
+
+@router.on_event("startup")
 @repeat_every(seconds=150)
 @timed
 def import_dbs():
@@ -173,8 +199,6 @@ def import_dbs():
 @timed
 def populate_pgsqldb_loop():
     if memcache.get("testing") is None:
-        if RESET_TABLE:
-            db.SqlSource().reset_defi_stats_table()
         # updates last 24 hours swaps
         db.SqlSource().populate_pgsqldb()
 

@@ -156,6 +156,10 @@ class CacheItem:
                     data = lib.Generic().tickers()
                     memcache.set_tickers(data)
 
+                if self.name == "generic_tickers_14d":
+                    data = lib.Generic().tickers(trades_days=14)
+                    memcache.set_tickers(data)
+
             if data is not None:
                 if validate.loop_data(data, self):
                     data = {"last_updated": int(cron.now_utc()), "data": data}

@@ -370,10 +370,21 @@ def compare_uuid_fields(swap1, swap2):
                 if v != swap2[k]:
                     # use higher value for below fields
                     try:
-                        fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                        if k in [
+                            "maker_coin_usd_price",
+                            "taker_coin_usd_price",
+                        ]:
+                            if Decimal(v) == Decimal(0):
+                                fixed.update({k: swap2[k]})
+                            else:
+                                fixed.update({k: v})
+                        else:
+                            fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
                     except sqlite3.OperationalError as e:  # pragma: no cover
                         msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
                         return default.error(e, msg)
+                else:
+                    fixed.update({k: v})
         return fixed
     except Exception as e:  # pragma: no cover
         return default.error(e)

@@ -68,17 +68,15 @@ def gecko_info(coin_id):
 
 def volumes_and_prices(suffix, base, quote):
     return {
-        "base": base,
-        "quote": quote,
-        "variants": [],
-        "base_price": 0,
-        "quote_price": 0,
         f"trades_{suffix}": 0,
+        "base": base,
         "base_volume": 0,
-        "quote_volume": 0,
         "base_volume_usd": 0,
+        "base_price_usd": 0,
+        "quote": quote,
+        "quote_volume": 0,
         "quote_volume_usd": 0,
-        "combined_volume_usd": 0,
+        "quote_price_usd": 0,
         "oldest_price_time": 0,
         "newest_price_time": 0,
         "oldest_price": 0,
@@ -90,6 +88,8 @@ def volumes_and_prices(suffix, base, quote):
         "last_swap_price": 0,
         "last_swap_uuid": "",
         "last_swap_time": 0,
+        "combined_volume_usd": 0,
+        "variants": [],
     }
 
 

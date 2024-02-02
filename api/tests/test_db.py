@@ -2,12 +2,13 @@
 import util.cron as cron
 import sqlite3
 from decimal import Decimal
+from db.sqldb import SqlSource
 from db.sqlitedb import get_sqlite_db, get_sqlite_db_paths
 from db.sqlitedb_merge import (
     list_sqlite_dbs,
     compare_uuid_fields,
 )
-from tests.fixtures_data import swap_item, swap_item2
+from tests.fixtures_data import swap_item, swap_item2, cipi_swap, cipi_swap2
 from tests.fixtures_db import (
     setup_actual_db,
     setup_swaps_db_data,
@@ -91,7 +92,8 @@ def test_is_7777():
 
 def test_compare_uuid_fields():
     r = compare_uuid_fields(swap_item, swap_item2)
-    assert r["taker_coin_usd_price"] == "75.1"
+    logger.info(r)
+    assert r["taker_coin_usd_price"] == "50.0"
     assert r["maker_coin_usd_price"] == "0.5"
     assert r["is_success"] == "1"
     assert r["finished_at"] == "1700000777"
@@ -197,3 +199,19 @@ def test_get_uuids(setup_swaps_db_data):
     assert len(r) == 9
     r = DB.swap_uuids()
     assert len(r) == 8
+
+
+def test_normalise_swap_data(setup_swaps_db_data):
+    DB = SqlSource()
+
+    r = DB.normalise_swap_data([cipi_swap])
+    logger.info(r)
+    assert r[0]["pair"] == "KMD_LTC"
+    assert r[0]["trade_type"] == "sell"
+    assert r[0]["price"] == Decimal("0.01")
+
+    r = DB.normalise_swap_data([cipi_swap2])
+    logger.info(r)
+    assert r[0]["pair"] == "KMD_LTC"
+    assert r[0]["trade_type"] == "buy"
+    assert r[0]["price"] == Decimal("0.01")

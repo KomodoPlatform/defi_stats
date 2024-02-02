@@ -1,7 +1,7 @@
 from decimal import Decimal
 from util.logger import logger
 from util.exceptions import DataStructureError, BadPairFormatError
-from util.transform import deplatform
+from util.transform import deplatform, sortdata
 import util.helper as helper
 
 
@@ -104,6 +104,13 @@ def is_segwit(coin, coins_config):
     if coin.endswith("-segwit"):
         return True
     if f"{coin}-segwit" in coins_config:
+        return True
+    return False
+
+
+def is_pair_reversed(pair_str, gecko_source):
+    sorted_pair = sortdata.pair_by_market_cap(pair_str, gecko_source)
+    if pair_str.replace("-segwit", "") != sorted_pair.replace("-segwit", ""):
         return True
     return False
 

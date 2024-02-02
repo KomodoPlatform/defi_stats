@@ -1,5 +1,4 @@
-import pytest
-import time
+#!/usr/bin/env python3
 from decimal import Decimal
 from copy import deepcopy
 from tests.fixtures_transform import (
@@ -8,18 +7,19 @@ from tests.fixtures_transform import (
     setup_ticker_to_market_ticker,
     setup_historical_trades_to_market_trades,
 )
-from tests.fixtures_data import (
-    historical_data,
-    historical_trades,
-    trades_info,
-    get_ticker_item,
-    dirty_dict,
-    orderbook_as_string,
-    orderbook_as_coords,
-)
+from tests.fixtures_data import sampledata
 from lib.generic import Generic
 from util.logger import logger
-from util.transform import convert, sortdata, clean, merge, deplatform, sumdata
+from util.transform import (
+    convert,
+    sortdata,
+    clean,
+    merge,
+    deplatform,
+    sumdata,
+    invert,
+    filterdata,
+)
 import util.transform as transform
 import util.memcache as memcache
 
@@ -27,6 +27,8 @@ generic = Generic()
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
 last_traded_cache = memcache.get_last_traded()
+
+logger.info("Testing transformations...")
 
 
 def test_format_10f():
@@ -36,7 +38,7 @@ def test_format_10f():
 
 
 def test_ticker_to_market_summary_item():
-    ticker_item = get_ticker_item()
+    ticker_item = sampledata.ticker_item()
     x = convert.ticker_to_market_summary_item(ticker_item)
     assert x["trading_pair"] == "DGB_LTC"
     assert x["quote_currency"] == "LTC"
@@ -49,7 +51,7 @@ def test_ticker_to_market_summary_item():
 
 def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
     x = setup_ticker_to_market_ticker
-    ticker_item = get_ticker_item()
+    ticker_item = sampledata.ticker_item()
     ticker = ticker_item["ticker_id"]
     assert ticker in x
     assert x[ticker]["isFrozen"] == "0"
@@ -59,7 +61,7 @@ def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
 
 
 def test_ticker_to_gecko_summary():
-    x = transform.ticker_to_gecko_summary(get_ticker_item())
+    x = transform.ticker_to_gecko_summary(sampledata.ticker_item())
     assert x["ticker_id"] == x["pool_id"]
 
 
@@ -79,24 +81,28 @@ def test_ticker_to_statsapi(setup_ticker_to_statsapi_24h, setup_ticker_to_statsa
 
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
     x = setup_historical_trades_to_market_trades
-    assert trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
-    assert trades_info[0]["trade_id"] == x["trade_id"]
-    assert trades_info[0]["price"] == x["price"]
-    assert trades_info[0]["base_volume"] == x["base_volume"]
-    assert trades_info[0]["quote_volume"] == x["quote_volume"]
-    assert trades_info[0]["timestamp"] == x["timestamp"]
-    assert trades_info[0]["type"] == x["type"]
+    assert (
+        sampledata.trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+    )
+    assert sampledata.trades_info[0]["trade_id"] == x["trade_id"]
+    assert sampledata.trades_info[0]["price"] == x["price"]
+    assert sampledata.trades_info[0]["base_volume"] == x["base_volume"]
+    assert sampledata.trades_info[0]["quote_volume"] == x["quote_volume"]
+    assert sampledata.trades_info[0]["timestamp"] == x["timestamp"]
+    assert sampledata.trades_info[0]["type"] == x["type"]
 
 
 def test_historical_trades_to_gecko():
-    x = convert.historical_trades_to_gecko(trades_info[0])
-    assert trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
-    assert trades_info[0]["trade_id"] == x["trade_id"]
-    assert trades_info[0]["price"] == x["price"]
-    assert trades_info[0]["base_volume"] == x["base_volume"]
-    assert trades_info[0]["quote_volume"] == x["target_volume"]
-    assert trades_info[0]["timestamp"] == x["timestamp"]
-    assert trades_info[0]["type"] == x["type"]
+    x = convert.historical_trades_to_gecko(sampledata.trades_info[0])
+    assert (
+        sampledata.trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+    )
+    assert sampledata.trades_info[0]["trade_id"] == x["trade_id"]
+    assert sampledata.trades_info[0]["price"] == x["price"]
+    assert sampledata.trades_info[0]["base_volume"] == x["base_volume"]
+    assert sampledata.trades_info[0]["quote_volume"] == x["target_volume"]
+    assert sampledata.trades_info[0]["timestamp"] == x["timestamp"]
+    assert sampledata.trades_info[0]["type"] == x["type"]
 
 
 def test_round_to_str():
@@ -108,7 +114,7 @@ def test_round_to_str():
 
 
 def test_clean_s():
-    x = [dirty_dict.copy(), dirty_dict.copy()]
+    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
     r = clean.decimal_dict_lists(x)
     assert isinstance(r[0]["a"], float)
     assert isinstance(r[0]["b"], str)
@@ -116,42 +122,46 @@ def test_clean_s():
     assert isinstance(r[0]["d"], bool)
     assert isinstance(r[0]["e"], list)
     assert isinstance(r[0]["f"], dict)
-    x = [dirty_dict.copy(), dirty_dict.copy()]
+    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
     r = clean.decimal_dict_lists(x, True)
     assert isinstance(r[1]["a"], str)
 
 
 def test_clean_decimal_dict():
-    x = dirty_dict.copy()
+    x = sampledata.dirty_dict.copy()
     r = clean.decimal_dicts(x)
     assert isinstance(r["a"], float)
     assert isinstance(r["b"], str)
     assert isinstance(r["c"], int)
     assert isinstance(r["d"], bool)
-    x = dirty_dict.copy()
+    x = sampledata.dirty_dict.copy()
     r = clean.decimal_dicts(x, True, 6)
     assert isinstance(r["a"], str)
 
 
 def test_list_json_key():
     assert (
-        transform.list_json_key(historical_trades, "type", "buy")
-        == historical_data["buy"]
+        filterdata.dict_lists(sampledata.historical_trades, "type", "buy")
+        == sampledata.historical_data["buy"]
     )
     assert (
-        transform.list_json_key(historical_trades, "type", "sell")
-        == historical_data["sell"]
+        filterdata.dict_lists(sampledata.historical_trades, "type", "sell")
+        == sampledata.historical_data["sell"]
     )
 
 
 def test_sum_json_key():
-    assert sumdata.json_key(trades_info, "base_volume") == Decimal("60")
-    assert sumdata.json_key(trades_info, "quote_volume") == Decimal("59.5")
+    assert sumdata.json_key(sampledata.trades_info, "base_volume") == Decimal("60")
+    assert sumdata.json_key(sampledata.trades_info, "quote_volume") == Decimal("59.5")
 
 
 def test_sum_json_key_10f():
-    assert sumdata.json_key_10f(trades_info, "base_volume") == "60.0000000000"
-    assert sumdata.json_key_10f(trades_info, "quote_volume") == "59.5000000000"
+    assert (
+        sumdata.json_key_10f(sampledata.trades_info, "base_volume") == "60.0000000000"
+    )
+    assert (
+        sumdata.json_key_10f(sampledata.trades_info, "quote_volume") == "59.5000000000"
+    )
 
 
 def test_get_suffix():
@@ -160,26 +170,26 @@ def test_get_suffix():
 
 
 def test_sort_dicts():
-    x = sortdata.dicts(trades_info.copy()[0])
+    x = sortdata.dicts(sampledata.trades_info.copy()[0])
     y = list(x.keys())
     assert y[0] == "base_volume"
-    x = sortdata.dicts(trades_info.copy()[0], True)
+    x = sortdata.dicts(sampledata.trades_info.copy()[0], True)
     y = list(x.keys())
     assert y[0] == "type"
 
 
 def test_sort_dict_list():
-    x = sortdata.dict_lists(trades_info.copy(), "trade_id")
+    x = sortdata.dict_lists(sampledata.trades_info.copy(), "trade_id")
     assert x[0]["trade_id"] == "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d"
-    x = sortdata.dict_lists(trades_info.copy(), "trade_id", True)
+    x = sortdata.dict_lists(sampledata.trades_info.copy(), "trade_id", True)
     assert x[0]["trade_id"] == "d2602fa9-6680-42f9-9cb8-20f76275f587"
 
 
 def test_generic_orderbook_to_gecko():
-    r = transform.orderbook_to_gecko(orderbook_as_string)
-    assert len(r["bids"]) == len(orderbook_as_coords["bids"])
-    assert len(r["bids"][0][1]) == len(orderbook_as_coords["bids"][0][1])
-    assert len(r["asks"][0][1]) == len(orderbook_as_coords["asks"][0][1])
+    r = transform.orderbook_to_gecko(sampledata.orderbook_as_string)
+    assert len(r["bids"]) == len(sampledata.orderbook_as_coords["bids"])
+    assert len(r["bids"][0][1]) == len(sampledata.orderbook_as_coords["bids"][0][1])
+    assert len(r["asks"][0][1]) == len(sampledata.orderbook_as_coords["asks"][0][1])
 
 
 def test_pair_by_market_cap():
@@ -232,9 +242,7 @@ def test_deplatform_coin():
 
 
 def test_merge_orderbooks():
-    orderbook_data = generic.orderbook(
-        "KMD_DOGE", all=False
-    )
+    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)
@@ -253,3 +261,20 @@ def test_merge_orderbooks():
         "total_bids_quote_usd",
     ]:
         assert Decimal(x[i]) == Decimal(orderbook_data[i]) * 2
+
+
+def test_invert_pair():
+    assert invert.pair("KMD_LTC") == "LTC_KMD"
+    assert invert.pair("KMD_LTC-segwit") == "LTC-segwit_KMD"
+    assert invert.pair("LTC_KMD") == "KMD_LTC"
+    assert invert.pair("LTC-segwit_KMD") == "KMD_LTC-segwit"
+
+
+def test_invert_trade_type():
+    assert invert.trade_type("buy") == "sell"
+    assert invert.trade_type("sell") == "buy"
+
+
+def test_invert_orderbook():
+    # TODO: Prep fixture and tests for invert.orderbook
+    pass

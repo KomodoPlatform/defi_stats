@@ -167,3 +167,19 @@ Endpoints previously at https://stats-api.atomicdex.io/ have been migrated to th
 Add `* * * * * /home/USERNAME/defi_stats/update_MM2_db.sh > /home/atomic/logs/db_update.log` to the crontab of the server you are running this api on to collect a variety of MM2.db files on varying netids, and to cover any missing data from swaps completed during server downtime. SSH key access is required.
 
 This will place the external MM2.db copies into the `defi_stats/DB` folder, which is then periodically scanned, with all data merged into `defi_stats/DB/{netid}_MM2.db` for each netid, and `defi_stats/DB/all_MM2.db` for the complete picture.
+
+
+## TODOs:
+
+- Create table for liquidity to track it over time. Should be updated every hour, with any rows older than 1 day reduced into a single row of average values for the day.
+| id | pair | base_amount | quote_amount | base_price_usd | quote_price_usd | base_liquidity_usd | quote_liquidity_usd | combined_liquidity | timestamp | updated_at |
+
+- Equivalent view for volumes can be derived from the `defi_swaps` table
+
+- Migrate gui/version/pubkey related views/queries from kmd.stats.io
+
+- Additional endpoints for use in apps:
+    - Dex Resilience alerts for newsfeed.
+    - "Trending pairs" and similar network context stats
+    - Automated "Latest release" link / hash for all apps.
+

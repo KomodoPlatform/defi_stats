@@ -1,3 +1,4 @@
+import os
 from pymemcache.client.base import PooledClient
 
 
@@ -10,3 +11,4 @@ def pytest_sessionfinish(session, exitstatus):
     print("The test session has finished, and memcache flushed.")
 
     MEMCACHE.flush_all()
+    os.environ["IS_TESTING"] = "False"

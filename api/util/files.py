@@ -35,6 +35,7 @@ class Files:
         self.generic_last_traded = f"{folder}/generic/last_traded.json"
         self.generic_summary = f"{folder}/generic/summary.json"
         self.generic_tickers = f"{folder}/generic/tickers.json"
+        self.generic_tickers_14d = f"{folder}/generic/tickers_14d.json"
 
         # For Prices endpoints
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"

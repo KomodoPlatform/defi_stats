@@ -11,6 +11,7 @@ from util.logger import logger
 
 
 # Initialize cache from files if available
+memcache.set_coins(CacheItem(name="coins").data)
 memcache.set_coins_config(CacheItem(name="coins_config").data)
 memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
 memcache.set_gecko_source(CacheItem(name="gecko_source").data)

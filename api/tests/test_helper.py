@@ -2,7 +2,7 @@ import time
 import pytest
 from decimal import Decimal
 from lib.generic import Generic
-from tests.fixtures_data import swap_item
+from tests.fixtures_data import swap_item, swap_item2
 from util.logger import logger
 import util.helper as helper
 import util.memcache as memcache
@@ -36,7 +36,17 @@ def test_get_chunks():
 def test_get_price_at_finish():
     r = helper.get_price_at_finish(swap_item)
     assert "1700000777" in r
-    assert r["1700000777"] == Decimal(5) / Decimal(4)
+    assert r["1700000777"] == 0.01
+    r = helper.get_price_at_finish(swap_item, is_reverse=True)
+    assert "1700000777" in r
+    assert r["1700000777"] == 100
+
+    r = helper.get_price_at_finish(swap_item2)
+    assert "1700000000" in r
+    assert r["1700000000"] == 0.01
+    r = helper.get_price_at_finish(swap_item2, is_reverse=True)
+    assert "1700000000" in r
+    assert r["1700000000"] == 100
 
 
 def test_get_pairs_info():

@@ -45,11 +45,13 @@ def get_chunks(data, chunk_length):
         return default.error(e)
 
 
+@timed
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
 
+@timed
 def get_last_trade_info(pair_str: str, last_traded_cache: Dict, all=False):
     try:
         # TODO: cover 'all' case
@@ -122,10 +124,17 @@ def base_quote_from_pair(variant, reverse=False):
 
 
 @timed
-def get_price_at_finish(swap, is_reversed=False):
+def get_price_at_finish(swap, is_reverse=False):
     try:
         end_time = swap["finished_at"]
-        if (not is_reversed and swap["trade_type"] == "buy") or (
+        if is_reverse:
+            price = swap["reverse_price"]
+        else:
+            price = swap["price"]
+        '''
+        base, quote = base_quote_from_pair(swap["pair"])
+        is_reversed = swap["pair"] != base == swap["maker"]
+        if (not swap["trade_type"] == "buy") or (
             is_reversed and swap["trade_type"] == "sell"
         ):
             # Base is maker on buy (unless inverted)
@@ -135,17 +144,21 @@ def get_price_at_finish(swap, is_reversed=False):
             # Base is taker on sell (unless inverted)
             base_amount = Decimal(swap["taker_amount"])
             quote_amount = Decimal(swap["maker_amount"])
-        return {end_time: base_amount / quote_amount}
+        '''
+        return {end_time: price}
     except Exception as e:  # pragma: no cover
         return default.error(e)
 
 
 @timed
-def get_swaps_volumes(swaps_for_pair, is_reversed=False):
+def get_swaps_volumes(swaps_for_pair, sorted_pair_str):
     try:
         base_swaps = []
         quote_swaps = []
         for i in swaps_for_pair:
+            is_reversed = i["pair"].replace("-segwit", "") != sorted_pair_str.replace(
+                "-segwit", ""
+            )
             if (not is_reversed and i["trade_type"] == "buy") or (
                 is_reversed and i["trade_type"] == "sell"
             ):
@@ -163,6 +176,7 @@ def get_swaps_volumes(swaps_for_pair, is_reversed=False):
         return default.error(e, msg)
 
 
+@timed
 def get_coin_variants(coin, segwit_only=False):
     coins_config = memcache.get_coins_config()
     coin = coin.split("-")[0]
@@ -175,6 +189,7 @@ def get_coin_variants(coin, segwit_only=False):
     return data
 
 
+@timed
 def get_pair_variants(pair, segwit_only=False):
     variants = []
     base, quote = base_quote_from_pair(pair)
