@@ -6,6 +6,7 @@ from tests.fixtures_data import swap_item, swap_item2
 from util.logger import logger
 import util.helper as helper
 import util.memcache as memcache
+from util.transform import derive
 import util.transform as transform
 
 
@@ -31,18 +32,18 @@ def test_get_chunks():
     assert len(chunks[3]) == 1
 
 
-def test_get_price_at_finish():
-    r = helper.get_price_at_finish(swap_item)
+def test_derive_price_at_finish():
+    r = derive.price_at_finish(swap_item)
     assert "1700000777" in r
     assert r["1700000777"] == 0.01
-    r = helper.get_price_at_finish(swap_item, is_reverse=True)
+    r = derive.price_at_finish(swap_item, is_reverse=True)
     assert "1700000777" in r
     assert r["1700000777"] == 100
 
-    r = helper.get_price_at_finish(swap_item2)
+    r = derive.price_at_finish(swap_item2)
     assert "1700000000" in r
     assert r["1700000000"] == 0.01
-    r = helper.get_price_at_finish(swap_item2, is_reverse=True)
+    r = derive.price_at_finish(swap_item2, is_reverse=True)
     assert "1700000000" in r
     assert r["1700000000"] == 100
 
@@ -63,24 +64,24 @@ def test_get_pair_info_sorted():
 
 
 def test_base_quote_from_pair():
-    base, quote = helper.base_quote_from_pair("XXX-PLG20_OLD_YYY-PLG20_OLD")
+    base, quote = derive.base_quote("XXX-PLG20_OLD_YYY-PLG20_OLD")
     assert base == "XXX-PLG20_OLD"
     assert quote == "YYY-PLG20_OLD"
 
 
-def test_get_coin_variants():
-    r = helper.get_coin_variants("BTC")
+def test_derive_coin_variants():
+    r = derive.coin_variants("BTC")
     assert "BTC-BEP20" in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) > 2
-    r = helper.get_coin_variants("BTC", True)
+    r = derive.coin_variants("BTC", True)
     assert "BTC-BEP20" not in r
     assert "BTC-segwit" in r
     assert "BTC" in r
     assert len(r) == 2
 
-    r = helper.get_coin_variants("USDC")
+    r = derive.coin_variants("USDC")
     assert "USDC-BEP20" in r
     assert "USDC-PLG20" in r
     assert "USDC-PLG20_OLD" in r
@@ -90,63 +91,63 @@ def test_get_coin_variants():
 
 
 def test_get_pair_variants():
-    r = helper.get_pair_variants("KMD_LTC")
+    r = derive.pair_variants("KMD_LTC")
     assert "KMD_LTC" in r
     assert "KMD_LTC-segwit" in r
     assert "KMD-BEP20_LTC" in r
     assert "KMD-BEP20_LTC-segwit" in r
     assert len(r) == 4
 
-    r = helper.get_pair_variants("KMD_LTC-segwit")
+    r = derive.pair_variants("KMD_LTC-segwit")
     assert "KMD_LTC" in r
     assert "KMD_LTC-segwit" in r
     assert "KMD-BEP20_LTC" in r
     assert "KMD-BEP20_LTC-segwit" in r
     assert len(r) == 4
 
-    r = helper.get_pair_variants("LTC_KMD")
+    r = derive.pair_variants("LTC_KMD")
     assert "LTC_KMD" in r
     assert "LTC-segwit_KMD" in r
     assert "LTC_KMD-BEP20" in r
     assert "LTC-segwit_KMD-BEP20" in r
     assert len(r) == 4
 
-    r = helper.get_pair_variants("KMD_USDC")
+    r = derive.pair_variants("KMD_USDC")
     assert "KMD_USDC" not in r
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r
     assert "KMD-BEP20_USDC-PLG20_OLD" in r
 
-    r = helper.get_pair_variants("KMD_USDC-PLG20")
+    r = derive.pair_variants("KMD_USDC-PLG20")
     assert "KMD_USDC" not in r
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r
     assert "KMD-BEP20_USDC-PLG20_OLD" in r
 
 
-def test_find_lowest_ask():
+def test_derive_lowest_ask():
     pair = Pair("KMD_MATIC")
     orderbook = pair.orderbook("KMD_MATIC", all=True)
-    r = helper.find_lowest_ask(orderbook)
+    r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3158)
 
 
-def test_find_highest_bid():
+def test_derive_highest_bid():
     pair = Pair("KMD_MATIC")
     orderbook = pair.orderbook("KMD_MATIC", all=True)
-    r = helper.find_highest_bid(orderbook)
+    r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3037)
 
 
-def test_find_lowest_ask_reversed():
+def test_derive_lowest_ask_reversed():
     pair = Pair("KMD_MATIC")
     orderbook = pair.orderbook("MATIC_KMD", all=True)
-    r = helper.find_lowest_ask(orderbook)
+    r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
 
 
-def test_find_highest_bid_reversed():
+def test_derive_highest_bid_reversed():
     pair = Pair("KMD_MATIC")
     orderbook = pair.orderbook("MATIC_KMD", all=True)
-    r = helper.find_highest_bid(orderbook)
+    r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)

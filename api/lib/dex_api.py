@@ -7,13 +7,12 @@ from typing import Dict
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
 import util.cron as cron
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 import util.transform as transform
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean, invert
+from util.transform import sortdata, clean, invert, derive
 
 
 class DexAPI:
@@ -95,7 +94,7 @@ class OrderbookRpcThread(threading.Thread):
 
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
                 data = clean.decimal_dicts(data)
-                segwit_variants = helper.get_pair_variants(
+                segwit_variants = derive.pair_variants(
                     self.pair_str, segwit_only=True
                 )
                 for sv in segwit_variants:
@@ -202,8 +201,8 @@ def orderbook_extras(pair_str, data, gecko_source):
         data = get_liquidity(data, gecko_source)
         data.update(
             {
-                "highest_bid": helper.find_highest_bid(data),
-                "lowest_ask": helper.find_lowest_ask(data),
+                "highest_bid": derive.highest_bid(data),
+                "lowest_ask": derive.lowest_ask(data),
             }
         )
         msg = f"Got Orderbook.extras for {pair_str}"
@@ -221,10 +220,10 @@ def get_liquidity(orderbook, gecko_source):
         # Prices and volumes
         orderbook.update(
             {
-                "base_price_usd": helper.get_gecko_price(
+                "base_price_usd": derive.gecko_price(
                     orderbook["base"], gecko_source=gecko_source
                 ),
-                "quote_price_usd": helper.get_gecko_price(
+                "quote_price_usd": derive.gecko_price(
                     orderbook["quote"], gecko_source=gecko_source
                 ),
                 "total_asks_base_vol": sum(
@@ -275,7 +274,7 @@ def get_liquidity(orderbook, gecko_source):
 @timed
 def add_orderbook_to_cache(pair_str, cache_name, data):
     try:
-        base, quote = helper.base_quote_from_pair(pair_str)
+        base, quote = derive.base_quote(pair_str)
         data.update(
             {
                 "pair": pair_str,

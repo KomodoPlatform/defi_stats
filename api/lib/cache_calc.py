@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from util.logger import logger, timed
-from util.transform import clean, sortdata, sumdata
+from util.transform import clean, sortdata, sumdata, derive
 import db.sqldb as db
 import util.cron as cron
 import util.defaults as default
@@ -99,7 +99,7 @@ class CacheCalc:
             if self.gecko_source is None:
                 self.gecko_source = memcache.get_gecko_source()
             data = self.pg_query.pair_last_trade()
-            price_status_dict = helper.get_price_status_dict(
+            price_status_dict = derive.price_status_dict(
                 data.keys(), self.gecko_source
             )
             for i in data:

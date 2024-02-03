@@ -12,7 +12,7 @@ from util.logger import logger
 from util.transform import deplatform
 import db.sqldb as db
 import util.cron as cron
-import util.helper as helper
+from util.transform import derive
 import util.validate as validate
 
 router = APIRouter()
@@ -193,7 +193,7 @@ def get_swaps_for_pair(
         if end_time == 0:
             end_time = int(cron.now_utc())
 
-        base, quote = helper.base_quote_from_pair(pair_str)
+        base, quote = derive.base_quote(pair_str)
         query = db.SqlQuery()
         resp = query.get_swaps_for_pair(
             start_time=start_time,

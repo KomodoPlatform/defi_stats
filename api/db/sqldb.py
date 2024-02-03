@@ -30,9 +30,8 @@ from util.logger import logger, timed
 from util.transform import merge, sortdata, deplatform, invert, derive
 import util.cron as cron
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 import util.transform as transform
 import util.validate as validate
 
@@ -433,7 +432,7 @@ class SqlQuery(SqlDB):
             total_maker_vol_usd = 0
             total_taker_vol_usd = 0
             for ticker in volumes["volumes"]:
-                usd_price = helper.get_gecko_price(ticker)
+                usd_price = derive.gecko_price(ticker)
                 for coin in volumes["volumes"][ticker]:
                     taker_vol = volumes["volumes"][ticker][coin]["taker_volume"]
                     maker_vol = volumes["volumes"][ticker][coin]["maker_volume"]
@@ -559,9 +558,9 @@ class SqlQuery(SqlDB):
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
             for pair_std in volumes["volumes"]:
-                base, quote = helper.base_quote_from_pair(pair_std)
-                base_usd_price = helper.get_gecko_price(base)
-                quote_usd_price = helper.get_gecko_price(quote)
+                base, quote = derive.base_quote(pair_std)
+                base_usd_price = derive.gecko_price(base)
+                quote_usd_price = derive.gecko_price(quote)
 
                 for pair in volumes["volumes"][pair_std]:
                     base_vol = volumes["volumes"][pair_std][pair]["base_volume"]
@@ -886,7 +885,7 @@ class SqlQuery(SqlDB):
                 r = session.exec(q)
                 data = [dict(i) for i in r]
                 if coin is not None:
-                    variants = helper.get_coin_variants(coin)
+                    variants = derive.coin_variants(coin)
                     resp = {
                         i: [j for j in data if i in [j["taker_coin"], j["maker_coin"]]]
                         for i in variants
@@ -898,14 +897,14 @@ class SqlQuery(SqlDB):
                 elif pair is not None:
                     resp = {}
                     bridge_swap = validate.is_bridge_swap(pair)
-                    variants = helper.get_pair_variants(pair)
+                    variants = derive.pair_variants(pair)
                     for variant in variants:
                         # exclude duplication for bridge swaps
                         if bridge_swap and variant != sortdata.pair_by_market_cap(
                             variant
                         ):
                             continue
-                        base, quote = helper.base_quote_from_pair(variant)
+                        base, quote = derive.base_quote(variant)
                         variant_trades = [
                             k
                             for k in data
@@ -962,7 +961,7 @@ class SqlQuery(SqlDB):
         if all:
             return swaps["ALL"]
         if merge_segwit:
-            variants = helper.get_coin_variants(coin, segwit_only=True)
+            variants = derive.coin_variants(coin, segwit_only=True)
             return merge.segwit_swaps(variants, swaps)
         return swaps[coin]
 
@@ -1004,7 +1003,7 @@ class SqlQuery(SqlDB):
         if all:
             return swaps["ALL"]
         if merge_segwit:
-            variants = helper.get_pair_variants(pair, segwit_only=True)
+            variants = derive.pair_variants(pair, segwit_only=True)
             return merge.segwit_swaps(variants, swaps)
         return swaps[pair]
 

@@ -2,10 +2,9 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, List, Dict
 
 from util.logger import logger, timed
+import util.cron as cron
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
 
 
 # TODO: Create Subclasses for transform / strip / aggregate / cast
@@ -430,7 +429,7 @@ class Deplatform:
         return tickers_data
 
     def pair(self, pair):
-        base, quote = helper.base_quote_from_pair(pair)
+        base, quote = derive.base_quote(pair)
         return f"{self.coin(base)}_{self.coin(quote)}"
 
     def coin(self, coin):
@@ -467,6 +466,219 @@ class Deplatform:
 class Derive:
     def __init__(self):
         pass
+
+    @timed
+    def base_quote(self, pair_str, reverse=False, deplatform=False):
+        # TODO: This workaround fixes the issue
+        # but need to find root cause to avoid
+        # unexpected related issues
+        try:
+            if deplatform:
+                pair_str = deplatform.pair(pair_str)
+            if pair_str == "OLD_USDC-PLG20_USDC-PLG20":
+                pair_str = "USDC-PLG20_USDC-PLG20_OLD"
+            split_pair_str = pair_str.split("_")
+            if len(split_pair_str) == 2:
+                base = split_pair_str[0]
+                quote = split_pair_str[1]
+            elif pair_str.startswith("IRIS_ATOM-IBC"):
+                base = "IRIS_ATOM-IBC"
+                quote = pair_str.replace(f"{base}_", "")
+            elif pair_str.endswith("IRIS_ATOM-IBC"):
+                quote = "IRIS_ATOM-IBC"
+                base = pair_str.replace(f"_{quote}", "")
+
+            elif pair_str.startswith("IRIS_ATOM"):
+                base = "IRIS_ATOM"
+                quote = pair_str.replace(f"{base}_", "")
+            elif pair_str.endswith("IRIS_ATOM"):
+                quote = "IRIS_ATOM"
+                base = pair_str.replace(f"_{quote}", "")
+
+            elif pair_str.startswith("ATOM-IBC_IRIS"):
+                base = "ATOM-IBC_IRIS"
+                quote = pair_str.replace(f"{base}_", "")
+            elif pair_str.endswith("ATOM-IBC_IRIS"):
+                quote = "ATOM-IBC_IRIS"
+                base = pair_str.replace(f"_{quote}", "")
+
+            elif len(split_pair_str) == 4 and "OLD" in split_pair_str:
+                if split_pair_str[1] == "OLD":
+                    base = f"{split_pair_str[0]}_{split_pair_str[1]}"
+                if split_pair_str[3] == "OLD":
+                    quote = f"{split_pair_str[2]}_{split_pair_str[3]}"
+            elif len(split_pair_str) == 3 and "OLD" in split_pair_str:
+                if split_pair_str[2] == "OLD":
+                    base = split_pair_str[0]
+                    quote = f"{split_pair_str[1]}_{split_pair_str[2]}"
+                elif split_pair_str[1] == "OLD":
+                    base = f"{split_pair_str[0]}_{split_pair_str[1]}"
+                    quote = split_pair_str[2]
+            # failed to parse ATOM-IBC_IRIS_LTC into base/quote!
+            if reverse:
+                return quote, base
+            return base, quote
+        except Exception as e:  # pragma: no cover
+            msg = f"failed to parse {pair_str} into base/quote! {e}"
+            data = {"error": msg}
+            return default.result(msg=msg, loglevel="warning", data=data)
+
+    def price_status_dict(self, pairs, gecko_source=None):
+        try:
+            if gecko_source is None:
+                gecko_source = memcache.get_gecko_source()
+            pairs_dict = {"priced_gecko": [], "unpriced": []}
+            for pair_str in pairs:
+                base, quote = derive.base_quote(pair_str)
+                base_price_usd = self.gecko_price(base, gecko_source=gecko_source)
+                quote_price_usd = self.gecko_price(quote, gecko_source=gecko_source)
+                if base_price_usd > 0 and quote_price_usd > 0:
+                    pairs_dict["priced_gecko"].append(pair_str)
+                else:  # pragma: no cover
+                    pairs_dict["unpriced"].append(pair_str)
+            return pairs_dict
+        except Exception as e:  # pragma: no cover
+            msg = "pairs_last_traded failed!"
+            return default.error(e, msg)
+
+    def gecko_price(self, ticker, gecko_source=None) -> float:
+        try:
+            if gecko_source is None:
+                gecko_source = memcache.get_gecko_source()
+            if ticker in gecko_source:
+                return Decimal(gecko_source[ticker]["usd_price"])
+        except KeyError as e:  # pragma: no cover
+            logger.warning(
+                f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}"
+            )
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+        return Decimal(0)  # pragma: no cover
+
+    def gecko_mcap(self, ticker, gecko_source=None) -> float:
+        try:
+            if gecko_source is None:
+                gecko_source = memcache.get_gecko_source()
+            if ticker in gecko_source:
+                return Decimal(gecko_source[ticker]["usd_market_cap"])
+        except KeyError as e:  # pragma: no cover
+            logger.warning(
+                f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}"
+            )
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+        return Decimal(0)  # pragma: no cover
+
+    @timed
+    def last_trade_info(self, pair_str: str, last_traded_cache: Dict, all=False):
+        try:
+            # TODO: cover 'all' case
+            # This is imperfect. Should get both and
+            # calc the last for combo.
+            pair_str = pair_str.replace("-segwit", "")
+            if pair_str in last_traded_cache:
+                return last_traded_cache[pair_str]
+            reverse_pair = derive.base_quote(pair_str, True)
+            if reverse_pair in last_traded_cache:
+                return last_traded_cache[reverse_pair]
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+        return template.last_trade_info()
+
+    @timed
+    def coin_variants(self, coin, segwit_only=False):
+        coins_config = memcache.get_coins_config()
+        coin = coin.split("-")[0]
+        data = [
+            i
+            for i in coins_config
+            if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
+            and (not segwit_only or i.endswith("segwit") or i.replace(coin, "") == "")
+        ]
+        return data
+
+    @timed
+    def pair_variants(self, pair, segwit_only=False):
+        variants = []
+        base, quote = derive.base_quote(pair)
+        base_variants = self.coin_variants(base, segwit_only=segwit_only)
+        quote_variants = self.coin_variants(quote, segwit_only=segwit_only)
+        for i in base_variants:
+            for j in quote_variants:
+                if i != j:
+                    variants.append(f"{i}_{j}")
+        return variants
+
+    @timed
+    def price_at_finish(self, swap, is_reverse=False):
+        try:
+            end_time = swap["finished_at"]
+            if is_reverse:
+                price = swap["reverse_price"]
+            else:
+                price = swap["price"]
+            return {end_time: price}
+        except Exception as e:  # pragma: no cover
+            return default.error(e)
+
+    @timed
+    def swaps_volumes(self, swaps_for_pair, sorted_pair_str):
+        try:
+            base_swaps = []
+            quote_swaps = []
+            for i in swaps_for_pair:
+                is_reversed = i["pair"].replace(
+                    "-segwit", ""
+                ) != sorted_pair_str.replace("-segwit", "")
+                if (not is_reversed and i["trade_type"] == "buy") or (
+                    is_reversed and i["trade_type"] == "sell"
+                ):
+                    # Base is maker on buy (unless inverted)
+                    base_swaps.append(Decimal(i["maker_amount"]))
+                    quote_swaps.append(Decimal(i["taker_amount"]))
+                else:
+                    # Base is taker on sell (unless inverted)
+                    base_swaps.append(Decimal(i["taker_amount"]))
+                    quote_swaps.append(Decimal(i["maker_amount"]))
+
+            return [sum(base_swaps), sum(quote_swaps)]
+        except Exception as e:  # pragma: no cover
+            msg = f"swaps_volumes failed! {e}"
+            return default.error(e, msg)
+
+    # The lowest ask / highest bid needs to be inverted
+    # to result in conventional vaules like seen at
+    # https://api.binance.com/api/v1/ticker/24hr where
+    # askPrice > bidPrice
+    @timed
+    def lowest_ask(self, orderbook: dict) -> str:
+        """Returns lowest ask from provided orderbook"""
+        try:
+            if len(orderbook["asks"]) > 0:
+                prices = [Decimal(i["price"]) for i in orderbook["asks"]]
+                return min(prices)
+        except KeyError as e:  # pragma: no cover
+            logger.warning(e)
+            return default.error(e, data=format_10f(0))
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+            return default.error(e, data=format_10f(0))
+        return format_10f(0)
+
+    @timed
+    def highest_bid(self, orderbook: list) -> str:
+        """Returns highest bid from provided orderbook"""
+        try:
+            if len(orderbook["bids"]) > 0:
+                prices = [Decimal(i["price"]) for i in orderbook["bids"]]
+                return max(prices)
+        except KeyError as e:  # pragma: no cover
+            logger.warning(e)
+            return default.error(e, data=format_10f(0))
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+            return default.error(e, data=format_10f(0))
+        return format_10f(0)
 
     def app(self, appname):
         logger.query(f"appname: {appname}")
@@ -591,7 +803,7 @@ class Invert:
         pass
 
     def pair(self, pair_str):
-        base, quote = helper.base_quote_from_pair(pair_str, True)
+        base, quote = derive.base_quote(pair_str, True)
         return f"{base}_{quote}"
 
     def trade_type(self, trade_type):
@@ -706,7 +918,7 @@ class Merge:
         except Exception as e:  # pragma: no cover
             logger.warning(new)
             logger.error(existing)
-            err = {"error": f"transform.merge.orderbooks: {e}"}
+            err = {"error": f"merge.orderbooks: {e}"}
             logger.warning(err)
         return existing
 
@@ -721,7 +933,7 @@ class Merge:
         sorted_pair_str,
     ):
         try:
-            swaps_volumes = helper.get_swaps_volumes(swaps_for_pair, sorted_pair_str)
+            swaps_volumes = derive.swaps_volumes(swaps_for_pair, sorted_pair_str)
             base_volume_usd = swaps_volumes[0] * base_usd_price
             quote_volume_usd = swaps_volumes[1] * quote_usd_price
             # Halving the combined volume to not double count, and
@@ -817,7 +1029,7 @@ class SortData:
             if gecko_source is None:
                 gecko_source = memcache.get_gecko_source()
             if gecko_source is not None:
-                base, quote = helper.base_quote_from_pair(pair_str)
+                base, quote = derive.base_quote(pair_str)
                 base_mc = 0
                 quote_mc = 0
                 if base.replace("-segwit", "") in gecko_source:
@@ -995,6 +1207,186 @@ def update_if_lesser(existing, new, key, secondary_key=None):
             existing[secondary_key] = new[secondary_key]
 
 
+class Templates:
+    def __init__(self) -> None:
+        pass
+
+    def last_price_for_pair(self):  # pragma: no cover
+        return {"timestamp": 0, "price": 0}
+
+    def liquidity(self):  # pragma: no cover
+        return {
+            "rel_usd_price": 0,
+            "quote_liquidity_coins": 0,
+            "quote_liquidity_usd": 0,
+            "base_usd_price": 0,
+            "base_liquidity_coins": 0,
+            "base_liquidity_usd": 0,
+            "liquidity_in_usd": 0,
+        }
+
+    def pair_info(self, pair_str: str, priced: bool = False) -> dict:
+        base, quote = derive.base_quote(pair_str)
+        return {
+            "ticker_id": pair_str,
+            "base": base,
+            "target": quote,
+            "last_swap_time": 0,
+            "last_swap_price": 0,
+            "last_swap_uuid": "",
+            "priced": priced,
+        }
+
+    def orderbook(self, pair_str):
+        base, quote = derive.base_quote(pair_str)
+        base = base.replace("-segwit", "")
+        quote = quote.replace("-segwit", "")
+        data = {
+            "pair": f"{base}_{quote}",
+            "base": base,
+            "quote": quote,
+            "variants": [],
+            "asks": [],
+            "bids": [],
+            "highest_bid": 0,
+            "lowest_ask": 0,
+            "liquidity_in_usd": 0,
+            "total_asks_base_vol": 0,
+            "total_bids_base_vol": 0,
+            "total_asks_quote_vol": 0,
+            "total_bids_quote_vol": 0,
+            "total_asks_base_usd": 0,
+            "total_bids_quote_usd": 0,
+            "base_liquidity_coins": 0,
+            "base_liquidity_usd": 0,
+            "quote_liquidity_coins": 0,
+            "quote_liquidity_usd": 0,
+            "liquidity_in_usd": 0,
+            "timestamp": f"{int(cron.now_utc())}",
+        }
+        return data
+
+    def gecko_info(self, coin_id):
+        return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}
+
+    def volumes_and_prices(self, suffix, base, quote):
+        return {
+            f"trades_{suffix}": 0,
+            "base": base,
+            "base_volume": 0,
+            "base_volume_usd": 0,
+            "base_price_usd": 0,
+            "quote": quote,
+            "quote_volume": 0,
+            "quote_volume_usd": 0,
+            "quote_price_usd": 0,
+            "oldest_price_time": 0,
+            "newest_price_time": 0,
+            "oldest_price": 0,
+            "newest_price": 0,
+            f"highest_price_{suffix}": 0,
+            f"lowest_price_{suffix}": 0,
+            f"price_change_pct_{suffix}": 0,
+            f"price_change_{suffix}": 0,
+            "last_swap_price": 0,
+            "last_swap_uuid": "",
+            "last_swap_time": 0,
+            "combined_volume_usd": 0,
+            "variants": [],
+        }
+
+    def volumes_ticker(self):
+        return {
+            "taker_volume": 0,
+            "maker_volume": 0,
+            "trade_volume": 0,
+            "swaps": 0,
+            "taker_volume_usd": 0,
+            "maker_volume_usd": 0,
+            "trade_volume_usd": 0,
+        }
+
+    def ticker_info(self, suffix, base, quote):
+        return {
+            "ticker_id": f"{base}_{quote}",
+            "variants": [],
+            f"trades_{suffix}": 0,
+            "base_currency": base,
+            "base_volume": 0,
+            "base_volume_usd": 0,
+            "base_liquidity_coins": 0,
+            "base_liquidity_usd": 0,
+            "base_usd_price": 0,
+            "quote_currency": quote,
+            "quote_volume": 0,
+            "quote_volume_usd": 0,
+            "quote_liquidity_coins": 0,
+            "quote_liquidity_usd": 0,
+            "quote_usd_price": 0,
+            "combined_volume_usd": 0,
+            "liquidity_in_usd": 0,
+            "last_swap_price": 0,
+            "last_swap_uuid": "",
+            "last_swap_time": 0,
+            "oldest_price": 0,
+            "oldest_price_time": 0,
+            "newest_price": 0,
+            "newest_price_time": 0,
+            f"highest_price_{suffix}": 0,
+            f"lowest_price_{suffix}": 0,
+            f"price_change_pct_{suffix}": 0,
+            f"price_change_{suffix}": 0,
+            "highest_bid": 0,
+            "lowest_ask": 0,
+        }
+
+    def coin_trade_vol_item(self):
+        return {
+            "taker_volume": 0,
+            "maker_volume": 0,
+            "trade_volume": 0,
+            "swaps": 0,
+        }
+
+    def first_last_swap(self):
+        return {
+            "last_swap_time": 0,
+            "last_swap_price": 0,
+            "last_swap_uuid": "",
+        }
+
+    def pair_trade_vol_item(self):
+        return {
+            "base_volume": 0,
+            "quote_volume": 0,
+            "swaps": 0,
+        }
+
+    def last_trade_info(self):
+        return {
+            "swap_count": 0,
+            "sum_taker_traded": 0,
+            "sum_maker_traded": 0,
+            "last_swap": 0,
+            "last_swap_price": 0,
+            "last_swap_uuid": "",
+            "last_taker_amount": 0,
+            "last_maker_amount": 0,
+        }
+
+    def last_traded_item(self):
+        return {
+            "total_num_swaps": 0,
+            "maker_num_swaps": 0,
+            "taker_num_swaps": 0,
+            "maker_last_swap_uuid": 0,
+            "maker_last_swap_time": 0,
+            "taker_last_swap_uuid": 0,
+            "taker_last_swap_time": 0,
+        }
+
+
+template = Templates()
 clean = Clean()
 convert = Convert()
 deplatform = Deplatform()

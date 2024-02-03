@@ -2,9 +2,8 @@
 from dataclasses import dataclass
 from util.logger import logger, timed
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
-from util.transform import sortdata
+from util.transform import sortdata, derive
 
 
 @dataclass
@@ -65,11 +64,11 @@ class Coin:
 
     @property
     def usd_price(self):
-        return helper.get_gecko_price(ticker=self.coin)
+        return derive.gecko_price(ticker=self.coin)
 
     @property
     def mcap(self):
-        return helper.get_gecko_mcap(ticker=self.coin)
+        return derive.gecko_mcap(ticker=self.coin)
 
     @property
     def is_priced(self):

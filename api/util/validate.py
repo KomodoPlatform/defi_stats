@@ -2,7 +2,7 @@ from decimal import Decimal
 from util.logger import logger
 from util.exceptions import DataStructureError, BadPairFormatError
 from util.transform import deplatform
-import util.helper as helper
+from util.transform import derive
 
 
 def is_valid_hex(s):
@@ -101,7 +101,7 @@ def is_7777(db_file) -> bool:
 
 
 def is_pair_priced(pair_str, gecko_source):
-    base, quote = helper.base_quote_from_pair(pair_str)
+    base, quote = derive.base_quote(pair_str)
     if base.replace("-segwit", "") in gecko_source:
         if quote.replace("-segwit", "") in gecko_source:
             x = gecko_source[base.replace("-segwit", "")]["usd_price"]

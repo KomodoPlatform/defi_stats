@@ -13,24 +13,25 @@ from tests.fixtures_coin import (
 )
 import util.helper as helper
 import util.memcache as memcache
+from util.transform import derive
 
 
 def test_get_gecko_price():
-    price = helper.get_gecko_price("LTC")
+    price = derive.gecko_price("LTC")
     assert isinstance(price, Decimal)
     assert price == Decimal(100)
 
-    price = helper.get_gecko_price("DOC")
+    price = derive.gecko_price("DOC")
     assert isinstance(price, Decimal)
     assert price == Decimal(0)
 
 
 def test_get_gecko_mcap():
-    mcap = helper.get_gecko_mcap("LTC")
+    mcap = derive.gecko_mcap("LTC")
     assert isinstance(mcap, Decimal)
     assert mcap == Decimal(7000000000)
 
-    mcap = helper.get_gecko_mcap("DOC")
+    mcap = derive.gecko_mcap("DOC")
     assert isinstance(mcap, Decimal)
     assert mcap == Decimal(0)
 

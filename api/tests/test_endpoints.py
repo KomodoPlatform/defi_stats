@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 import pytest
 from main import app
 from util.logger import logger
-import util.helper as helper
+from util.transform import derive
 
 client = TestClient(app)
 
@@ -55,7 +55,7 @@ def test_gecko_pairs_endpoint():
     for i in data:
         assert isinstance(i, dict)
         assert i["ticker_id"] == i["pool_id"]
-        base, quote = helper.base_quote_from_pair(i["ticker_id"])
+        base, quote = derive.base_quote(i["ticker_id"])
         assert base == i["base"]
         assert quote == i["target"]
     with pytest.raises(Exception):

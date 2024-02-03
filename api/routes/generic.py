@@ -8,7 +8,7 @@ from lib.pair import Pair
 from models.generic import ErrorMessage
 from util.enums import TradeType
 from util.logger import logger
-import util.helper as helper
+from util.transform import derive
 import util.memcache as memcache
 import util.validate as validate
 
@@ -140,7 +140,7 @@ def swaps_for_pair(
         if trade_type not in ["all", "buy", "sell"]:
             raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
         validate.pair(pair_str)
-        base, quote = helper.base_quote_from_pair(pair_str)
+        base, quote = derive.base_quote(pair_str)
         days = (end_time - start_time) / 86400
         msg = f"{base}/{quote} ({trade_type}) | limit {limit} "
         msg += f"| {start_time} -> {end_time} | {days} days"

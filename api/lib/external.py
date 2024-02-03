@@ -6,7 +6,7 @@ from util.files import Files
 from util.helper import get_chunks
 from util.logger import logger
 import util.defaults as default
-import util.templates as template
+from util.transform import template
 import util.memcache as memcache
 
 

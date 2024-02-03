@@ -3,10 +3,9 @@ from const import MARKETS_PAIRS_DAYS
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
-from util.transform import sortdata
+from util.transform import sortdata, derive
 import util.cron as cron
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
 
 
@@ -41,16 +40,16 @@ class Markets:
                 end_time=end_time,
             )
             resp = []
-            base, quote = helper.base_quote_from_pair(pair)
+            base, quote = derive.base_quote(pair)
             if all:
                 resp = data["ALL"]["buy"]
                 resp = data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:
-                bases = helper.get_coin_variants(
+                bases = derive.coin_variants(
                     base,
                     segwit_only=True,
                 )
-                quotes = helper.get_coin_variants(
+                quotes = derive.coin_variants(
                     quote,
                     segwit_only=True,
                 )

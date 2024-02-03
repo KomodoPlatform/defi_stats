@@ -11,7 +11,7 @@ from tests.fixtures_pair import (
     setup_morty_kmd_pair,
 )
 from util.logger import logger
-from util.transform import clean
+from util.transform import clean, derive
 import util.cron as cron
 import util.transform as transform
 
@@ -87,7 +87,9 @@ def test_historical_trades(
     assert len(r_all) == len(r_inverted)
     assert r_all["sell"][0]["base_volume"] == r_inverted["buy"][0]["quote_volume"]
     assert r_all["sell"][0]["quote_volume"] == r_inverted["buy"][0]["base_volume"]
-    assert Decimal(r_all["sell"][0]["price"]) == 1 / Decimal(r_inverted["buy"][0]["price"])
+    assert Decimal(r_all["sell"][0]["price"]) == 1 / Decimal(
+        r_inverted["buy"][0]["price"]
+    )
 
 
 def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
@@ -167,19 +169,19 @@ def test_swap_uuids(setup_kmd_ltc_pair):
 
 def test_first_last_swap(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_ltc_kmd_pair
-    variants = helper.get_pair_variants(pair.as_str, segwit_only=False)
+    variants = derive.pair_variants(pair.as_str, segwit_only=False)
     data = pair.first_last_swap(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 100
 
     pair = setup_kmd_ltc_pair
-    variants = helper.get_pair_variants(pair.as_str)
+    variants = derive.pair_variants(pair.as_str)
     data = pair.first_last_swap(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 0.01
 
     pair = setup_kmd_ltc_pair
-    variants = helper.get_pair_variants(pair.as_str, segwit_only=True)
+    variants = derive.pair_variants(pair.as_str, segwit_only=True)
     data = pair.first_last_swap(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 0.01

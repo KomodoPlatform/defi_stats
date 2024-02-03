@@ -16,10 +16,10 @@ from util.transform import (
 )
 import util.defaults as default
 import lib.dex_api as dex
-import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 import util.transform as transform
+from util.transform import derive
 
 
 class Pair:  # pragma: no cover
@@ -38,7 +38,7 @@ class Pair:  # pragma: no cover
         try:
             self.as_str = pair_str
             self.as_std_str = deplatform.pair(self.as_str)
-            self.base, self.quote = helper.base_quote_from_pair(self.as_str)
+            self.base, self.quote = derive.base_quote(self.as_str)
             self.is_reversed = self.as_str != sortdata.pair_by_market_cap(self.as_str)
 
             # Load standard memcache
@@ -55,10 +55,10 @@ class Pair:  # pragma: no cover
                 self.gecko_source = memcache.get_gecko_source()
 
             # Get price and market cap
-            self.base_usd_price = helper.get_gecko_price(
+            self.base_usd_price = derive.gecko_price(
                 self.base, gecko_source=self.gecko_source
             )
-            self.quote_usd_price = helper.get_gecko_price(
+            self.quote_usd_price = derive.gecko_price(
                 self.quote, gecko_source=self.gecko_source
             )
             if self.quote_usd_price == 0 or self.base_usd_price == 0:
@@ -113,7 +113,7 @@ class Pair:  # pragma: no cover
                         price = Decimal(swap["price"])
                         trade_info["pair"] = pair_str
                         trade_info["type"] = swap["trade_type"]
-                    base, quote = helper.base_quote_from_pair(pair_str)
+                    base, quote = derive.base_quote(pair_str)
                     trade_info["price"] = transform.format_10f(price)
                     trade_info["base_coin"] = base
                     trade_info["quote_coin"] = quote
@@ -214,13 +214,13 @@ class Pair:  # pragma: no cover
             # Extract all variant swaps, or for a single variant
             if all:
                 cache_name = f"volumes_and_prices_{self.as_str}_ALL"
-                variants = helper.get_pair_variants(self.as_str)
+                variants = derive.pair_variants(self.as_str)
             elif self.as_str in swaps_for_pair_combo:
                 cache_name = f"volumes_and_prices_{self.as_str}"
-                variants = helper.get_pair_variants(self.as_str, segwit_only=True)
+                variants = derive.pair_variants(self.as_str, segwit_only=True)
             elif invert.pair(self.as_str) in swaps_for_pair_combo:
                 cache_name = f"volumes_and_prices_{invert.pair(self.as_str)}"
-                variants = helper.get_pair_variants(
+                variants = derive.pair_variants(
                     invert.pair(self.as_str), segwit_only=True
                 )
             else:
@@ -380,15 +380,13 @@ class Pair:  # pragma: no cover
                 Decimal(data["liquidity_in_usd"]) > 0
                 and Decimal(data["combined_volume_usd"]) > 0
             ):
-                segwit_variants = helper.get_pair_variants(
-                    self.as_str, segwit_only=True
-                )
+                segwit_variants = derive.pair_variants(self.as_str, segwit_only=True)
                 for sv in segwit_variants:
                     if all:
                         cache_name = f"ticker_info_{sv}_{suffix}_ALL"
                     else:
                         cache_name = f"ticker_info_{sv}_{suffix}"
-                    base, quote = helper.base_quote_from_pair(sv)
+                    base, quote = derive.base_quote(sv)
                     data.update(
                         {
                             "ticker_id": sv,
@@ -422,7 +420,7 @@ class Pair:  # pragma: no cover
         try:
             data = {}
             [
-                data.update(helper.get_price_at_finish(i, is_reverse=self.is_reversed))
+                data.update(derive.price_at_finish(i, is_reverse=self.is_reversed))
                 for i in swaps_for_pair
             ]
         except Exception as e:  # pragma: no cover
@@ -471,15 +469,15 @@ class Pair:  # pragma: no cover
         try:
             if all:
                 pair_str = deplatform.pair(pair_str)
-                pair_tpl = helper.base_quote_from_pair(pair_str)
+                pair_tpl = derive.base_quote(pair_str)
                 combo_cache_name = f"orderbook_{pair_str}_ALL"
-                variants = helper.get_pair_variants(pair_str)
+                variants = derive.pair_variants(pair_str)
                 # logger.loop(f"{pair_str}: {variants}")
             else:
                 # This will be a single ticker_pair unless for segwit
-                pair_tpl = helper.base_quote_from_pair(pair_str)
+                pair_tpl = derive.base_quote(pair_str)
                 combo_cache_name = f"orderbook_{pair_str}"
-                variants = helper.get_pair_variants(pair_str, segwit_only=True)
+                variants = derive.pair_variants(pair_str, segwit_only=True)
                 # logger.calc(f"{pair_str}: {variants}")
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
@@ -503,7 +501,7 @@ class Pair:  # pragma: no cover
 
                 for variant in variants:
                     variant_cache_name = f"orderbook_{variant}"
-                    base, quote = helper.base_quote_from_pair(variant)
+                    base, quote = derive.base_quote(variant)
                     # Avoid duplication for utxo coins with segwit
                     # TODO: cover where legacy is wallet only
                     if base.endswith("-segwit") and len(variants) > 1:

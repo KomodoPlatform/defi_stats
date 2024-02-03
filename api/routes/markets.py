@@ -25,10 +25,9 @@ from lib.markets import Markets
 
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert, deplatform, sumdata
-import util.helper as helper
+from util.transform import clean, convert, deplatform, sumdata, derive
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 import util.transform as transform
 import util.validate as validate
 import db.sqldb as db
@@ -112,9 +111,7 @@ def pairs_last_traded(
         if data[i]["last_swap_time"] > start_time:
             if data[i]["last_swap_time"] < end_time:
                 data[i].update({"pair": i})
-                filtered_data.append(
-                    data[i]
-                )
+                filtered_data.append(data[i])
     return filtered_data
 
 
@@ -165,9 +162,7 @@ def summary_for_ticker(coin: str = "KMD"):
                 "pairs_count": len(new_data),
                 "swaps_count": int(sumdata.json_key(new_data, "trades_24hr")),
                 "liquidity_usd": sumdata.json_key_10f(new_data, "liquidity_usd"),
-                "volume_usd_24hr": sumdata.json_key_10f(
-                    new_data, "volume_usd_24hr"
-                ),
+                "volume_usd_24hr": sumdata.json_key_10f(new_data, "volume_usd_24hr"),
                 "data": new_data,
             }
         )
@@ -313,7 +308,7 @@ def volumes_history_ticker(
     query = db.SqlQuery()
     # Individual tickers only, no merge except segwit
     stripped_coin = deplatform.coin(coin)
-    variants = helper.get_coin_variants(coin, segwit_only=True)
+    variants = derive.coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")

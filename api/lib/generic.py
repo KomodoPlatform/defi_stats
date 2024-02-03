@@ -4,11 +4,11 @@ import lib.pair as pair
 from lib.coins import get_kmd_pairs
 from util.exceptions import DataStructureError
 from util.logger import timed, logger
-from util.transform import sortdata, clean
+from util.transform import sortdata, clean, derive
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 
 
 class Generic:  # pragma: no cover
@@ -68,7 +68,7 @@ def get_pairs_status(pairs, gecko_source=None):
     if gecko_source is None:
         gecko_source = memcache.get_gecko_source()
     pairs = list(set(pairs + get_kmd_pairs()))
-    pairs_dict = helper.get_price_status_dict(pairs, gecko_source)
+    pairs_dict = derive.price_status_dict(pairs, gecko_source)
     priced_pairs = helper.get_pairs_info(pairs_dict["priced_gecko"], True)
     unpriced_pairs = helper.get_pairs_info(pairs_dict["unpriced"], False)
     return sortdata.dict_lists(priced_pairs + unpriced_pairs, "ticker_id")

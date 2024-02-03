@@ -14,8 +14,7 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
-from util.transform import sortdata, deplatform
-import util.helper as helper
+from util.transform import sortdata, deplatform, derive
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
@@ -170,7 +169,7 @@ def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
         last_traded_cache = memcache.get_last_traded()
-        data = helper.get_last_trade_info(pair_str, last_traded_cache=last_traded_cache)
+        data = derive.last_trade_info(pair_str, last_traded_cache=last_traded_cache)
         return data["last_swap_price"]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair_str}]: {e}")

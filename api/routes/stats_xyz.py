@@ -10,17 +10,15 @@ from models.markets import MarketsAtomicdexIo
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata, deplatform
+from util.transform import sortdata, deplatform, derive, clean
 import db.sqldb as db
 import util.cron as cron
-import util.helper as helper
 import util.memcache as memcache
-import util.templates as template
+from util.transform import template
 import util.transform as transform
 import util.validate as validate
 
 
-clean = transform.Clean()
 router = APIRouter()
 
 
@@ -295,7 +293,7 @@ def volumes_history_ticker(
     query = db.SqlQuery()
     # Individual tickers only, no merge except segwit
     stripped_coin = deplatform.coin(coin)
-    variants = helper.get_coin_variants(coin, segwit_only=True)
+    variants = derive.coin_variants(coin, segwit_only=True)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
