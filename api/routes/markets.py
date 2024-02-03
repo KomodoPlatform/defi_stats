@@ -20,7 +20,7 @@ from models.markets import (
     MarketsSummaryItem,
     MarketsSummaryForTicker,
 )
-from lib.generic import Generic
+from lib.pair import Pair
 from lib.markets import Markets
 
 from util.enums import TradeType
@@ -31,7 +31,7 @@ import util.memcache as memcache
 import util.templates as template
 import util.transform as transform
 import util.validate as validate
-import db
+import db.sqldb as db
 
 
 router = APIRouter()
@@ -87,8 +87,8 @@ def fiat_rates():
 )
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
-        generic = Generic()
-        return generic.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
+        pair = Pair(pair_str=market_pair)
+        return pair.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

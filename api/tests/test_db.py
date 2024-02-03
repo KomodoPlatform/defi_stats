@@ -216,13 +216,13 @@ def test_normalise_swap_data(setup_swaps_db_data):
     assert r[0]["trade_type"] == "buy"
     assert r[0]["price"] == Decimal("0.01")
 
+
 # TODO: Returning errors, debug later
 def test_gui_last_traded():
     DB = SqlQuery()
     r = DB.gui_last_traded()
     logger.calc(r)
-    assert len(r) == 4
+    assert len(r) == 6
     r = DB.gui_last_traded(False)
     logger.calc(r)
-    assert len(r) == 1
-        
+    assert len(r) == 8

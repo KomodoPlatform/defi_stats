@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import lib
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
@@ -8,6 +7,9 @@ import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
+import lib.cache_calc as cache_calc
+import lib.external as external
+import lib.stats_api as stats_api
 
 
 class Cache:  # pragma: no cover
@@ -133,31 +135,31 @@ class CacheItem:
                     memcache.set_coins(data)
             else:
                 if self.name == "fixer_rates":
-                    data = lib.FixerAPI().latest()
+                    data = external.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
 
                 if self.name == "gecko_source":
-                    data = lib.CoinGeckoAPI().get_gecko_source()
+                    data = external.CoinGeckoAPI().get_gecko_source()
                     memcache.set_gecko_source(data)
 
                 if self.name == "generic_last_traded":
-                    data = lib.Generic().last_traded()
+                    data = cache_calc.CacheCalc().last_traded()
                     memcache.set_last_traded(data)
 
                 if self.name == "generic_adex_fortnite":
-                    data = lib.StatsAPI().adex_fortnite()
+                    data = stats_api.StatsAPI().adex_fortnite()
                     memcache.set_adex_fortnite(data)
 
                 if self.name == "generic_summary":
-                    data = lib.StatsAPI().pair_summaries()
+                    data = stats_api.StatsAPI().pair_summaries()
                     memcache.set_summary(data)
 
                 if self.name == "generic_tickers":
-                    data = lib.Generic().tickers()
+                    data = cache_calc.CacheCalc().tickers()
                     memcache.set_tickers(data)
 
                 if self.name == "generic_tickers_14d":
-                    data = lib.Generic().tickers(trades_days=14)
+                    data = cache_calc.CacheCalc().tickers(trades_days=14)
                     memcache.set_tickers(data)
 
             if data is not None:

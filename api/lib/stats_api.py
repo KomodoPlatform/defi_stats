@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import db
+import db.sqldb as db
 from lib.pair import Pair
 from util.logger import logger
 from util.transform import sortdata, clean, deplatform, sumdata

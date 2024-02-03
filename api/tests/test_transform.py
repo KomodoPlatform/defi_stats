@@ -8,7 +8,7 @@ from tests.fixtures_transform import (
     setup_historical_trades_to_market_trades,
 )
 from tests.fixtures_data import sampledata
-from lib.generic import Generic
+from lib.pair import Pair
 from util.logger import logger
 from util.transform import (
     convert,
@@ -23,7 +23,6 @@ from util.transform import (
 import util.transform as transform
 import util.memcache as memcache
 
-generic = Generic()
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
 last_traded_cache = memcache.get_last_traded()
@@ -242,7 +241,8 @@ def test_deplatform_coin():
 
 
 def test_merge_orderbooks():
-    orderbook_data = generic.orderbook("KMD_DOGE", all=False)
+    pair = Pair("KMD_DOGE")
+    orderbook_data = pair.orderbook("KMD_DOGE", all=False)
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)

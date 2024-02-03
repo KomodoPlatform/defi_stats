@@ -4,10 +4,9 @@ from lib.external import CoinGeckoAPI
 from util.files import Files
 from util.urls import Urls
 from lib.markets import Markets
-from lib.cache import Cache
+from lib.cache import Cache, CacheItem
 from lib.stats_api import StatsAPI
 import util.helper as helper
-import lib
 
 
 @pytest.fixture
@@ -22,12 +21,12 @@ def setup_markets():
 
 @pytest.fixture
 def setup_cache_item():
-    yield lib.CacheItem()
+    yield CacheItem()
 
 
 @pytest.fixture
 def setup_last_traded_cache():
-    yield lib.CacheItem("generic_last_traded").data
+    yield CacheItem("generic_last_traded").data
 
 
 @pytest.fixture

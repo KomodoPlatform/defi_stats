@@ -5,7 +5,7 @@ from tests.fixtures_data import sampledata
 from tests.fixtures_validate import setup_invert_pair_kmd_ltc
 import util.validate as validate
 import util.memcache as memcache
-import lib
+from lib.cache import CacheItem
 
 
 gecko_source = memcache.get_gecko_source()
@@ -48,7 +48,7 @@ def test_validate_positive_numeric():
 
 
 def test_validate_loop_data():
-    cache_item = lib.CacheItem("test")
+    cache_item = CacheItem("test")
     data = {"error": "foo"}
     assert not validate.loop_data(data, cache_item)
     data = {}

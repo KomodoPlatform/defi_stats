@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from const import MARKETS_PAIRS_DAYS
-from lib.generic import Generic
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
@@ -12,13 +11,9 @@ import util.memcache as memcache
 
 
 class Markets:
-    def __init__(self, **kwargs) -> None:
+    def __init__(self) -> None:
         try:
             self.netid = 8762
-            self.kwargs = kwargs
-            self.options = []
-            default.params(self, self.kwargs, self.options)
-            self.generic = Generic(**kwargs)
             self.segwit_coins = [i for i in get_segwit_coins()]
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")

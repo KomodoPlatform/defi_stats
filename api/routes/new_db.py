@@ -10,7 +10,7 @@ from util.enums import TradeType, GroupBy
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 from util.transform import deplatform
-import db
+import db.sqldb as db
 import util.cron as cron
 import util.helper as helper
 import util.validate as validate
@@ -412,7 +412,7 @@ def pair_trade_volumes_usd(
     # response_model=PairTradeVolumes,
     status_code=200,
 )
-def last_traded(category: GroupBy, min_swaps: int = 3):
+def last_traded(category: GroupBy, min_swaps: int = 0):
     try:
         query = db.SqlQuery()
         match category:

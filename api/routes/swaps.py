@@ -2,11 +2,10 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import util.cron as cron
-import db
 from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
-
+import db.sqldb as db
 router = APIRouter()
 
 

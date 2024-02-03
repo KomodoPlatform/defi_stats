@@ -1,14 +1,12 @@
 import time
 import pytest
 from decimal import Decimal
-from lib.generic import Generic
+from lib.pair import Pair
 from tests.fixtures_data import swap_item, swap_item2
 from util.logger import logger
 import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
-
-generic = Generic()
 
 
 def test_get_mm2_rpc_port():
@@ -127,24 +125,28 @@ def test_get_pair_variants():
 
 
 def test_find_lowest_ask():
-    orderbook = generic.orderbook("KMD_MATIC", all=True)
+    pair = Pair("KMD_MATIC")
+    orderbook = pair.orderbook("KMD_MATIC", all=True)
     r = helper.find_lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3158)
 
 
 def test_find_highest_bid():
-    orderbook = generic.orderbook("KMD_MATIC", all=True)
+    pair = Pair("KMD_MATIC")
+    orderbook = pair.orderbook("KMD_MATIC", all=True)
     r = helper.find_highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3037)
 
 
 def test_find_lowest_ask_reversed():
-    orderbook = generic.orderbook("MATIC_KMD", all=True)
+    pair = Pair("KMD_MATIC")
+    orderbook = pair.orderbook("MATIC_KMD", all=True)
     r = helper.find_lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
 
 
 def test_find_highest_bid_reversed():
-    orderbook = generic.orderbook("MATIC_KMD", all=True)
+    pair = Pair("KMD_MATIC")
+    orderbook = pair.orderbook("MATIC_KMD", all=True)
     r = helper.find_highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)

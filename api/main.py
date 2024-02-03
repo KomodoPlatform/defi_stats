@@ -14,7 +14,6 @@ from fastapi.openapi.docs import (
 """
 
 from const import API_HOST, API_PORT
-import lib
 from routes import (
     gecko,
     cache_loop,
@@ -30,7 +29,7 @@ from routes import (
     new_db,
     stats_xyz
 )
-from lib.cache import Cache
+from lib.cache import Cache, CacheItem
 from models.generic import ErrorMessage, HealthCheck
 
 
@@ -38,7 +37,7 @@ from models.generic import ErrorMessage, HealthCheck
 async def lifespan(app: FastAPI):
     # start up functions
     for i in ["coins", "coins_config", "gecko_source"]:
-        cache_item = lib.CacheItem(i)
+        cache_item = CacheItem(i)
         cache_item.save()
     yield
     # shut down functions

@@ -2,7 +2,8 @@
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE
-import db
+import db.sqldb as db
+import db.sqlitedb_merge as old_db_merge
 import util.defaults as default
 import util.memcache as memcache
 from lib.cache import Cache, CacheItem
@@ -183,7 +184,7 @@ def import_dbs():
     if memcache.get("testing") is None:
         if NODE_TYPE != "serve":
             try:
-                merge = db.SqliteMerge()
+                merge = old_db_merge.SqliteMerge()
                 merge.import_source_databases()
             except Exception as e:
                 return default.error(e)

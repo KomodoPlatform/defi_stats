@@ -2,17 +2,18 @@
 import os
 import sys
 from datetime import date
+
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(API_ROOT_PATH)
 from const import RESET_TABLE
-from db import SqlSource
+import db.sqldb as db
 
 
 if __name__ == "__main__":
+    DB = db.SqlSource()
     if RESET_TABLE:
-        DB = SqlSource()
         DB.reset_defi_stats_table()
-    DB.import_swaps(start_dt=date(2019, 1, 15), end_dt=date(2024, 2, 3))
+    DB.import_swaps(start_dt=date(2019, 10, 15), end_dt=date(2024, 2, 3))
 
 
 # DB Table validation:

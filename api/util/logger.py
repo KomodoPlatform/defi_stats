@@ -86,6 +86,13 @@ class CustomFormatter(logging.Formatter):
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
+        elif record.levelname == "SOURCED":
+            # Blue for lib class
+            log_fmt = (
+                self.blue
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
         elif record.levelname == "QUERY":
             # Yellow for incoming data
             log_fmt = (
@@ -192,19 +199,23 @@ handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
-# Shows DB imports
+
+addLoggingLevel("SOURCED", logging.DEBUG + 14)
+logger.setLevel("SOURCED")
+
+
 addLoggingLevel("SAVED", logging.DEBUG + 13)
 logger.setLevel("SAVED")
 
-# Shows DB imports
+
 addLoggingLevel("CACHED", logging.DEBUG + 12)
 logger.setLevel("CACHED")
 
-# Shows DB imports
+
 addLoggingLevel("PAIR", logging.DEBUG + 11)
 logger.setLevel("PAIR")
 
-# Shows DB imports
+
 addLoggingLevel("MERGE", logging.DEBUG + 9)
 logger.setLevel("MERGE")
 
@@ -267,10 +278,12 @@ def send_log(loglevel, msg):
             logger.pair(f"   {msg}")
         case "query":
             logger.query(f"  {msg}")
+        case "sourced":
+            logger.sourced(f"{msg}")
         case "request":
             logger.request(f"{msg}")
         case _:
-            logger.debug(f"   {msg}")
+            logger.debug(f"  {msg}")
 
 
 class StopWatch:

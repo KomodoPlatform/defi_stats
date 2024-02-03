@@ -5,7 +5,6 @@ import threading
 from typing import Dict
 
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
-from lib.coins import get_gecko_price
 import util.cron as cron
 import util.defaults as default
 import util.helper as helper
@@ -207,7 +206,6 @@ def orderbook_extras(pair_str, data, gecko_source):
                 "lowest_ask": helper.find_lowest_ask(data),
             }
         )
-        logger.merge(data)
         msg = f"Got Orderbook.extras for {pair_str}"
         loglevel = "dexrpc"
     except Exception as e:
@@ -223,10 +221,10 @@ def get_liquidity(orderbook, gecko_source):
         # Prices and volumes
         orderbook.update(
             {
-                "base_price_usd": get_gecko_price(
+                "base_price_usd": helper.get_gecko_price(
                     orderbook["base"], gecko_source=gecko_source
                 ),
-                "quote_price_usd": get_gecko_price(
+                "quote_price_usd": helper.get_gecko_price(
                     orderbook["quote"], gecko_source=gecko_source
                 ),
                 "total_asks_base_vol": sum(

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from util.logger import logger
-import db
+from db.sqldb import SqlSource, SqlQuery, SqlUpdate
 from util.cron import Time
+from util.logger import logger
+import db.schema as schema
 import util.cron as cron
 import util.memcache as memcache
 import util.transform as transform
@@ -29,7 +30,7 @@ logger.info(TEST_DB_URL)
 
 
 def reset_test_defi_stats_table():
-    pgdb = db.SqlUpdate(db_type="pgsql")
+    pgdb = SqlUpdate(db_type="pgsql")
     try:
         pgdb.drop("defi_swaps_test")
     except Exception as e:
@@ -40,13 +41,13 @@ def reset_test_defi_stats_table():
 
 @pytest.fixture
 def setup_actual_db():
-    pgdb_query = db.SqlQuery(db_type="pgsql")
+    pgdb_query = SqlQuery(db_type="pgsql")
     yield pgdb_query
 
 
 @pytest.fixture()
 def setup_swaps_db_data(setup_time):
-    pg_query = db.SqlQuery(db_type="pgsql")
+    pg_query = SqlQuery(db_type="pgsql")
     time_obj = setup_time
     engine = create_engine(TEST_DB_URL)
 
@@ -506,11 +507,11 @@ def setup_swaps_db_data(setup_time):
     ]
 
     with Session(engine) as session:
-        sample_data = db.SqlSource().normalise_swap_data(sample_data, gecko_source)
+        sample_data = SqlSource().normalise_swap_data(sample_data, gecko_source)
         sample_data = clean.decimal_dict_lists(sample_data)
 
         for i in sample_data:
-            data = db.DefiSwapTest(
+            data = schema.DefiSwapTest(
                 uuid=i["uuid"],
                 taker_coin=i["taker_coin"],
                 taker_gui=i["taker_gui"],

@@ -3,9 +3,8 @@ import util.cron as cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import Optional
-import db
+import db.sqldb as db
 from lib.pair import Pair
-from lib.generic import Generic
 from models.generic import ErrorMessage
 from util.enums import TradeType
 from util.logger import logger
@@ -13,7 +12,6 @@ import util.helper as helper
 import util.memcache as memcache
 import util.validate as validate
 
-generic = Generic()
 router = APIRouter()
 
 # These endpoints not yet active. Their intent is to
@@ -65,7 +63,8 @@ def last_traded(pair_str: str = ""):
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100, all: bool = True):
     try:
-        return generic.orderbook(pair_str=pair_str, all=all, depth=depth, no_thread=True)
+        pair = Pair(pair_str=pair_str)
+        return pair.orderbook(pair_str=pair_str, all=all, depth=depth, no_thread=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}
         return JSONResponse(status_code=400, content=err)

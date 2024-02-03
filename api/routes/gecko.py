@@ -3,7 +3,6 @@ import util.cron as cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-from lib.generic import Generic
 from lib.pair import Pair
 from models.generic import ErrorMessage
 from models.gecko import (
@@ -70,8 +69,8 @@ def gecko_orderbook(
     depth: int = 100,
 ):
     try:
-        generic = Generic()
-        data = generic.orderbook(pair_str=ticker_id, depth=depth, no_thread=True)
+        pair = Pair(pair_str=ticker_id)
+        data = pair.orderbook(pair_str=ticker_id, depth=depth, no_thread=True)
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover

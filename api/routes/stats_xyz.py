@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
 from const import MARKETS_PAIRS_DAYS
-from lib.generic import Generic
 from lib.pair import Pair
 from models.generic import ErrorMessage
 from models.markets import MarketsAtomicdexIo
@@ -12,7 +11,7 @@ from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
 from util.transform import sortdata, deplatform
-import db
+import db.sqldb as db
 import util.cron as cron
 import util.helper as helper
 import util.memcache as memcache
@@ -74,8 +73,8 @@ def fiat_rates():
 )
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
-        generic = Generic()
-        return generic.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
+        pair = Pair(pair_str=market_pair)
+        return pair.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -142,8 +141,12 @@ def summary_for_ticker(coin: str = "KMD"):
                 new_data.append(transform.to_summary_for_ticker_xyz_item(i))
         return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}"}
+        logger.warning(
+            f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}"
+        )
+        return {
+            "error": f"{type(e)} Error in [/api/v3/stats_xyz/summary_for_ticker]: {e}"
+        }
 
 
 @router.get(
@@ -196,7 +199,9 @@ def ticker_for_ticker(ticker):
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}"}
+        return {
+            "error": f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}"
+        }
 
 
 @router.get(
@@ -236,9 +241,7 @@ def tickers_summary():
     "/trades/{pair_str}/{days_in_past}",
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
-def trades(
-    pair_str: str = "KMD_LTC", days_in_past: int | None = None
-):
+def trades(pair_str: str = "KMD_LTC", days_in_past: int | None = None):
     try:
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)

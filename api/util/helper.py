@@ -131,7 +131,7 @@ def get_price_at_finish(swap, is_reverse=False):
             price = swap["reverse_price"]
         else:
             price = swap["price"]
-        '''
+        """
         base, quote = base_quote_from_pair(swap["pair"])
         is_reversed = swap["pair"] != base == swap["maker"]
         if (not swap["trade_type"] == "buy") or (
@@ -144,7 +144,7 @@ def get_price_at_finish(swap, is_reverse=False):
             # Base is taker on sell (unless inverted)
             base_amount = Decimal(swap["taker_amount"])
             quote_amount = Decimal(swap["maker_amount"])
-        '''
+        """
         return {end_time: price}
     except Exception as e:  # pragma: no cover
         return default.error(e)
@@ -212,7 +212,6 @@ def find_lowest_ask(orderbook: dict) -> str:
     try:
         if len(orderbook["asks"]) > 0:
             prices = [Decimal(i["price"]) for i in orderbook["asks"]]
-            logger.query(prices)
             return min(prices)
     except KeyError as e:  # pragma: no cover
         logger.warning(e)
@@ -229,7 +228,6 @@ def find_highest_bid(orderbook: list) -> str:
     try:
         if len(orderbook["bids"]) > 0:
             prices = [Decimal(i["price"]) for i in orderbook["bids"]]
-            logger.query(prices)
             return max(prices)
     except KeyError as e:  # pragma: no cover
         logger.warning(e)
@@ -257,3 +255,55 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
         )
     except Exception as e:  # pragma: no cover
         return default.error(e)
+
+
+def get_price_status_dict(pairs, gecko_source=None):
+    try:
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
+        pairs_dict = {"priced_gecko": [], "unpriced": []}
+        for pair_str in pairs:
+            base, quote = base_quote_from_pair(pair_str)
+            base_price_usd = get_gecko_price(base, gecko_source=gecko_source)
+            quote_price_usd = get_gecko_price(quote, gecko_source=gecko_source)
+            if base_price_usd > 0 and quote_price_usd > 0:
+                pairs_dict["priced_gecko"].append(pair_str)
+            else:  # pragma: no cover
+                pairs_dict["unpriced"].append(pair_str)
+        return pairs_dict
+    except Exception as e:  # pragma: no cover
+        msg = "pairs_last_traded failed!"
+        return default.error(e, msg)
+
+
+def get_gecko_price(ticker, gecko_source=None) -> float:
+    try:
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_price"])
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0)  # pragma: no cover
+
+
+def get_gecko_mcap(ticker, gecko_source=None) -> float:
+    try:
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_market_cap"])
+    except KeyError as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
+    return Decimal(0)  # pragma: no cover
+
+
+def get_pair_priced_status(pair, price_status_dict):
+    if pair in price_status_dict["priced_gecko"]:
+        return True
+    else:
+        return False
