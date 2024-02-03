@@ -127,17 +127,24 @@ def test_get_pair_variants():
 
 
 def test_find_lowest_ask():
-    orderbook = generic.orderbook("KMD_BTC", all=True)
-    time.sleep(1)
-    orderbook = generic.orderbook("KMD_BTC", all=True)
-
+    orderbook = generic.orderbook("KMD_MATIC", all=True)
     r = helper.find_lowest_ask(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(1 / 24)
+    assert transform.format_10f(r) == transform.format_10f(0.3158)
 
 
 def test_find_highest_bid():
-    orderbook = generic.orderbook("KMD_BTC", all=True)
-    time.sleep(1)
-    orderbook = generic.orderbook("KMD_BTC", all=True)
+    orderbook = generic.orderbook("KMD_MATIC", all=True)
     r = helper.find_highest_bid(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(1 / 26)
+    assert transform.format_10f(r) == transform.format_10f(0.3037)
+
+
+def test_find_lowest_ask_reversed():
+    orderbook = generic.orderbook("MATIC_KMD", all=True)
+    r = helper.find_lowest_ask(orderbook)
+    assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
+
+
+def test_find_highest_bid_reversed():
+    orderbook = generic.orderbook("MATIC_KMD", all=True)
+    r = helper.find_highest_bid(orderbook)
+    assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)

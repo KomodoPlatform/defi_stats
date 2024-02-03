@@ -1,102 +1,102 @@
 {
-    "last_updated": 1706912684,
+    "last_updated": 1706920919,
     "data": {
         "DGB_LTC": {
             "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-            "last_swap_time": 1706907599,
+            "last_swap_time": 1706916961,
             "last_swap_price": 1.0,
             "first_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-            "first_swap_time": 1706907599,
+            "first_swap_time": 1706916961,
             "first_swap_price": 1.0,
             "priced": true
         },
         "DGB_LTC-segwit": {
             "last_swap_uuid": "CCCCCCCC-40a5-4649-b420-5eb8e2924bf2",
-            "last_swap_time": 1706306384,
+            "last_swap_time": 1706315746,
             "last_swap_price": 1e-05,
             "first_swap_uuid": "CCCCCCCC-40a5-4649-b420-5eb8e2924bf2",
-            "first_swap_time": 1706306384,
+            "first_swap_time": 1706315746,
             "first_swap_price": 1e-05,
             "priced": true
         },
         "DGB-segwit_LTC": {
             "last_swap_uuid": "DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292",
-            "last_swap_time": 1704319207,
+            "last_swap_time": 1704328569,
             "last_swap_price": 5e-06,
             "first_swap_uuid": "DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292",
-            "first_swap_time": 1704319207,
+            "first_swap_time": 1704328569,
             "first_swap_price": 5e-06,
             "priced": true
         },
         "KMD-BEP20_BTC": {
             "last_swap_uuid": "AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b",
-            "last_swap_time": 1706824495,
+            "last_swap_time": 1706833857,
             "last_swap_price": 5e-07,
             "first_swap_uuid": "AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b",
-            "first_swap_time": 1706824495,
+            "first_swap_time": 1706833857,
             "first_swap_price": 5e-07,
             "priced": true
         },
         "KMD-BEP20_DGB-segwit": {
             "last_swap_uuid": "33333333-fd33-4dc4-2a7f-f6320b1d3b64",
-            "last_swap_time": 1706907655,
+            "last_swap_time": 1706917017,
             "last_swap_price": 555.55555556,
             "first_swap_uuid": "22222222-fd33-4dc4-2a7f-f6320b1d3b64",
-            "first_swap_time": 1706907597,
+            "first_swap_time": 1706916959,
             "first_swap_price": 1000.0,
             "priced": true
         },
         "KMD_BTC": {
             "last_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
-            "last_swap_time": 1706900402,
+            "last_swap_time": 1706909764,
             "last_swap_price": 1e-06,
             "first_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
-            "first_swap_time": 1706900402,
+            "first_swap_time": 1706909764,
             "first_swap_price": 1e-06,
             "priced": true
         },
         "KMD_LTC": {
             "last_swap_uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
-            "last_swap_time": 1706896803,
+            "last_swap_time": 1706906165,
             "last_swap_price": 0.01,
             "first_swap_uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
-            "first_swap_time": 1706896803,
+            "first_swap_time": 1706906165,
             "first_swap_price": 0.01,
             "priced": true
         },
         "KMD_LTC-segwit": {
             "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-            "last_swap_time": 1706907605,
+            "last_swap_time": 1706916967,
             "last_swap_price": 0.01,
             "first_swap_uuid": "77777777-2762-4633-8add-6ad2e9b1a4e7",
-            "first_swap_time": 1706904001,
+            "first_swap_time": 1706913363,
             "first_swap_price": 0.01,
             "priced": true
         },
         "LTC_BTC": {
             "last_swap_uuid": "BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2",
-            "last_swap_time": 1706306405,
+            "last_swap_time": 1706315767,
             "last_swap_price": 5.0,
             "first_swap_uuid": "BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2",
-            "first_swap_time": 1706306405,
+            "first_swap_time": 1706315767,
             "first_swap_price": 5.0,
             "priced": true
         },
         "LTC_DOGE": {
             "last_swap_uuid": "EEEEEEEE-ee4b-494f-a2fb-48467614b613",
-            "last_swap_time": 1701727208,
+            "last_swap_time": 1701736570,
             "last_swap_price": 0.1,
             "first_swap_uuid": "FFFFFFFF-ee4b-494f-a2fb-48467614b613",
-            "first_swap_time": 1700863205,
+            "first_swap_time": 1700872567,
             "first_swap_price": 0.1,
             "priced": true
         },
         "MORTY_KMD": {
             "last_swap_uuid": "11111111-ffe1-4c7a-ad7f-04b1df6323b6",
-            "last_swap_time": 1706907596,
+            "last_swap_time": 1706916958,
             "last_swap_price": 1.0,
             "first_swap_uuid": "11111111-ffe1-4c7a-ad7f-04b1df6323b6",
-            "first_swap_time": 1706907596,
+            "first_swap_time": 1706916958,
             "first_swap_price": 1.0,
             "priced": false
         }

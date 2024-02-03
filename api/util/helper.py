@@ -210,8 +210,9 @@ def get_pair_variants(pair, segwit_only=False):
 def find_lowest_ask(orderbook: dict) -> str:
     """Returns lowest ask from provided orderbook"""
     try:
-        if len(orderbook["bids"]) > 0:
-            prices = [Decimal(ask["price"]) for ask in orderbook["bids"]]
+        if len(orderbook["asks"]) > 0:
+            prices = [Decimal(i["price"]) for i in orderbook["asks"]]
+            logger.query(prices)
             return min(prices)
     except KeyError as e:  # pragma: no cover
         logger.warning(e)
@@ -226,8 +227,9 @@ def find_lowest_ask(orderbook: dict) -> str:
 def find_highest_bid(orderbook: list) -> str:
     """Returns highest bid from provided orderbook"""
     try:
-        if len(orderbook["asks"]) > 0:
-            prices = [Decimal(ask["price"]) for ask in orderbook["asks"]]
+        if len(orderbook["bids"]) > 0:
+            prices = [Decimal(i["price"]) for i in orderbook["bids"]]
+            logger.query(prices)
             return max(prices)
     except KeyError as e:  # pragma: no cover
         logger.warning(e)

@@ -34,6 +34,11 @@
         "usd_price": 100,
         "coingecko_id": "litecoin"
     },
+    "MATIC": {
+        "usd_market_cap": 7000000000,
+        "usd_price": 100,
+        "coingecko_id": "litecoin"
+    },
     "LTC-segwit": {
         "usd_market_cap": 7000000000,
         "usd_price": 100,

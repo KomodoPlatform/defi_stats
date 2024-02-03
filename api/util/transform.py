@@ -604,54 +604,57 @@ class Invert:
         raise ValueError
 
     def orderbook(self, orderbook):
-        if "rel" in orderbook:
-            quote = orderbook["rel"]
-            total_asks_quote_vol = orderbook["total_asks_rel_vol"]["decimal"]
-            total_bids_quote_vol = orderbook["total_bids_rel_vol"]["decimal"]
-            total_asks_base_vol = orderbook["total_asks_base_vol"]["decimal"]
-            total_bids_base_vol = orderbook["total_bids_base_vol"]["decimal"]
-        if "quote" in orderbook:
-            quote = orderbook["quote"]
-            total_asks_quote_vol = orderbook["total_asks_quote_vol"]
-            total_bids_quote_vol = orderbook["total_bids_quote_vol"]
-            total_asks_base_vol = orderbook["total_asks_base_vol"]
-            total_bids_base_vol = orderbook["total_bids_base_vol"]
-        logger.info(orderbook)
-        inverted = {
-            "pair": f'{quote}_{orderbook["base"]}',
-            "base": quote,
-            "quote": orderbook["base"],
-            "num_asks": len(orderbook["bids"]),
-            "num_bids": len(orderbook["asks"]),
-            "total_asks_base_vol": {"decimal": total_asks_quote_vol},
-            "total_asks_rel_vol": {"decimal": total_asks_base_vol},
-            "total_bids_base_vol": {"decimal": total_bids_quote_vol},
-            "total_bids_rel_vol": {"decimal": total_bids_base_vol},
-            "asks": [],
-            "bids": [],
-        }
-        for i in orderbook["asks"]:
-            inverted["bids"].append(
-                {
-                    "coin": orderbook["rel"],
-                    "price": {
-                        "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
-                    },
-                    "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
-                    "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
-                }
-            )
-        for i in orderbook["bids"]:
-            inverted["asks"].append(
-                {
-                    "coin": orderbook["base"],
-                    "price": {
-                        "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
-                    },
-                    "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
-                    "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
-                }
-            )
+        try:
+            if "rel" in orderbook:
+                quote = orderbook["rel"]
+                total_asks_quote_vol = orderbook["total_asks_rel_vol"]["decimal"]
+                total_bids_quote_vol = orderbook["total_bids_rel_vol"]["decimal"]
+                total_asks_base_vol = orderbook["total_asks_base_vol"]["decimal"]
+                total_bids_base_vol = orderbook["total_bids_base_vol"]["decimal"]
+            if "quote" in orderbook:
+                quote = orderbook["quote"]
+                total_asks_quote_vol = orderbook["total_asks_quote_vol"]
+                total_bids_quote_vol = orderbook["total_bids_quote_vol"]
+                total_asks_base_vol = orderbook["total_asks_base_vol"]
+                total_bids_base_vol = orderbook["total_bids_base_vol"]
+            inverted = {
+                "pair": f'{quote}_{orderbook["base"]}',
+                "base": quote,
+                "quote": orderbook["base"],
+                "num_asks": len(orderbook["bids"]),
+                "num_bids": len(orderbook["asks"]),
+                "total_asks_base_vol": {"decimal": total_asks_quote_vol},
+                "total_asks_rel_vol": {"decimal": total_asks_base_vol},
+                "total_bids_base_vol": {"decimal": total_bids_quote_vol},
+                "total_bids_rel_vol": {"decimal": total_bids_base_vol},
+                "asks": [],
+                "bids": [],
+            }
+
+            for i in orderbook["asks"]:
+                inverted["bids"].append(
+                    {
+                        "coin": orderbook["rel"],
+                        "price": {
+                            "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
+                        },
+                        "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
+                        "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
+                    }
+                )
+            for i in orderbook["bids"]:
+                inverted["asks"].append(
+                    {
+                        "coin": orderbook["base"],
+                        "price": {
+                            "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
+                        },
+                        "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
+                        "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
+                    }
+                )
+        except Exception as e:
+            logger.warning(e)
         return inverted
 
 
@@ -933,7 +936,7 @@ def label_bids_asks(orderbook_data, pair):
     for i in ["asks", "bids"]:
         data[i] = [
             {
-                "price": format_10f(1 / Decimal(j["price"]["decimal"])),
+                "price": format_10f(Decimal(j["price"]["decimal"])),
                 "volume": j["base_max_volume"]["decimal"],
                 "quote_volume": j["rel_max_volume"]["decimal"],
             }

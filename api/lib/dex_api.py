@@ -179,6 +179,8 @@ def get_orderbook_fixture(pair_str, gecko_source):
         data = template.orderbook(pair_str=pair_str)
     is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
+        logger.loop(pair_str)
+        logger.loop(sortdata.pair_by_market_cap(pair_str))
         data = invert.orderbook(data)
     data = orderbook_extras(pair_str, data, gecko_source)
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
@@ -205,6 +207,7 @@ def orderbook_extras(pair_str, data, gecko_source):
                 "lowest_ask": helper.find_lowest_ask(data),
             }
         )
+        logger.merge(data)
         msg = f"Got Orderbook.extras for {pair_str}"
         loglevel = "dexrpc"
     except Exception as e:
