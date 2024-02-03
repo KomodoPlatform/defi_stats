@@ -468,7 +468,6 @@ class Derive:
     def __init__(self):
         pass
 
-    # TODO: add to Derive class
     def app(self, appname):
         logger.query(f"appname: {appname}")
         gui, match = self.gui(appname)
@@ -481,7 +480,6 @@ class Derive:
         device, match = self.device(appname)
         appname.replace(match, "")
         derived_app = f"{gui} {app_version} {device} (sdk: {defi_version})"
-        logger.calc(f"appname remaining: {appname}")
         logger.info(f"derived_app: {derived_app}")
         return derived_app
 
@@ -528,7 +526,7 @@ class Derive:
         return "Unknown", ""
 
     @property
-    def DeFiApps():
+    def DeFiApps(self):
         return {
             "Adex-CLI": ["adex-cli"],
             "AirDex": ["air_dex", "airdex"],
@@ -573,11 +571,11 @@ class Derive:
         }
 
     @property
-    def DeFiVersions():
+    def DeFiVersions(self):
         return {}
 
     @property
-    def DeFiDevices():
+    def DeFiDevices(self):
         return {
             "ios": ["iOS"],
             "web": ["Web"],

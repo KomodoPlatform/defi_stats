@@ -2,7 +2,7 @@
 import util.cron as cron
 import sqlite3
 from decimal import Decimal
-from db.sqldb import SqlSource
+from db.sqldb import SqlSource, SqlQuery
 from db.sqlitedb import get_sqlite_db, get_sqlite_db_paths
 from db.sqlitedb_merge import (
     list_sqlite_dbs,
@@ -215,3 +215,14 @@ def test_normalise_swap_data(setup_swaps_db_data):
     assert r[0]["pair"] == "KMD_LTC"
     assert r[0]["trade_type"] == "buy"
     assert r[0]["price"] == Decimal("0.01")
+
+# TODO: Returning errors, debug later
+def test_gui_last_traded():
+    DB = SqlQuery()
+    r = DB.gui_last_traded()
+    logger.calc(r)
+    assert len(r) == 4
+    r = DB.gui_last_traded(False)
+    logger.calc(r)
+    assert len(r) == 1
+        

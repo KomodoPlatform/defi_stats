@@ -1,9 +1,8 @@
 import pytest
 from decimal import Decimal
 from util.exceptions import BadPairFormatError
-from tests.fixtures_validate import (
-    setup_invert_pair_kmd_ltc,
-)
+from tests.fixtures_data import sampledata
+from tests.fixtures_validate import setup_invert_pair_kmd_ltc
 import util.validate as validate
 import util.memcache as memcache
 import lib
@@ -70,3 +69,29 @@ def test_validate_json():
     assert validate.json_obj(data)
     data = [1, 2, 3, 4, 5]
     assert not validate.json_obj(data)
+    data = sampledata.historical_data
+    assert validate.json_obj(data)
+    data = (5, 8)
+    assert not validate.json_obj(data)
+
+
+def test_is_valid_hex():
+    assert not validate.is_valid_hex("ojqwvu02")
+    assert validate.is_valid_hex("23BEEF")
+
+
+def test_is_bridge_swap():
+    assert validate.is_bridge_swap("KMD_KMD-BEP20")
+    assert not validate.is_bridge_swap("KMD_LTC")
+
+
+def test_is_7777():
+    assert validate.is_7777("seed.file")
+    assert not validate.is_7777("notseed.file")
+
+
+def test_is_pair_priced():
+    assert validate.is_pair_priced("KMD_MATIC", gecko_source)
+    assert not validate.is_pair_priced("KMD_MARTY", gecko_source)
+    assert not validate.is_pair_priced("MARTY_PPP", gecko_source)
+    assert not validate.is_pair_priced("PPP_OOO", gecko_source)

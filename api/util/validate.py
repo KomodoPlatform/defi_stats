@@ -1,7 +1,7 @@
 from decimal import Decimal
 from util.logger import logger
 from util.exceptions import DataStructureError, BadPairFormatError
-from util.transform import deplatform, sortdata
+from util.transform import deplatform
 import util.helper as helper
 
 
@@ -100,27 +100,12 @@ def is_7777(db_file) -> bool:
     return False
 
 
-def is_segwit(coin, coins_config):
-    if coin.endswith("-segwit"):
-        return True
-    if f"{coin}-segwit" in coins_config:
-        return True
-    return False
-
-
-def is_pair_reversed(pair_str, gecko_source):
-    sorted_pair = sortdata.pair_by_market_cap(pair_str, gecko_source)
-    if pair_str.replace("-segwit", "") != sorted_pair.replace("-segwit", ""):
-        return True
-    return False
-
-
 def is_pair_priced(pair_str, gecko_source):
     base, quote = helper.base_quote_from_pair(pair_str)
     if base.replace("-segwit", "") in gecko_source:
         if quote.replace("-segwit", "") in gecko_source:
             x = gecko_source[base.replace("-segwit", "")]["usd_price"]
             y = gecko_source[quote.replace("-segwit", "")]["usd_price"]
-            if x > 0 and y > 0:
+            if x > 0 and y > 0:  # pragma: no cover
                 return True
     return False

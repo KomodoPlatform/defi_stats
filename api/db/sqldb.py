@@ -614,7 +614,7 @@ class SqlQuery(SqlDB):
                 resp = {}
                 # 1st query for most recent swap info for category
                 category = list(
-                    chain.from_iterable((obj, "-") for obj in group_by_cols[:-1])
+                    chain.from_iterable((text(obj), "-") for obj in group_by_cols[:-1])
                 ) + [group_by_cols[-1]]
                 cols = [
                     self.table.uuid.label("last_swap_uuid"),
@@ -624,17 +624,18 @@ class SqlQuery(SqlDB):
                 ]
                 q = session.query(*cols)
                 q = self.sqlfilter.success(q, is_success)
-                distinct = q.distinct(*group_by_cols)
-                last = distinct.order_by(*group_by_cols, self.table.finished_at.desc())
-                last_data = [dict(i) for i in last.all()]
+                q = q.distinct(*category)
+                q = q.order_by(*category, self.table.finished_at.desc())
+                logger.loop([dict(i) for i in q.all()])
+                last_data = [dict(i) for i in q.all()]
 
                 last_data = {i["category"]: i for i in last_data}
-                for pair in last_data:
-                    if pair not in resp:
-                        resp.update({pair: {}})
-                    for k, v in last_data[pair].items():
+                for cat in last_data:
+                    if cat not in resp:
+                        resp.update({cat: {}})
+                    for k, v in last_data[cat].items():
                         if k != "category":
-                            resp[pair].update({k: v})
+                            resp[cat].update({k: v})
 
                 # TODO: use separate chache for the below
 
@@ -652,12 +653,12 @@ class SqlQuery(SqlDB):
                 first_data = [dict(i) for i in first.all()]
 
                 first_data = {i["category"]: i for i in first_data}
-                for pair in first_data:
-                    if pair not in resp:
-                        resp.update({pair: {}})
-                    for k, v in first_data[pair].items():
+                for cat in first_data:
+                    if cat not in resp:
+                        resp.update({cat: {}})
+                    for k, v in first_data[cat].items():
                         if k != "category":
-                            resp[pair].update({k: v})
+                            resp[cat].update({k: v})
 
                 return default.result(
                     data=resp,
@@ -668,59 +669,6 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
-    @timed
-    def gui_last_traded(self, is_success: bool = True):
-        try:
-            maker_data = self.last_trade(
-                is_success=is_success,
-                group_by_cols=[self.table.maker_gui, self.table.maker_version],
-            )
-            taker_data = self.last_trade(
-                is_success=is_success,
-                group_by_cols=[self.table.taker_gui, self.table.taker_version],
-            )
-            data = {}
-            for i in maker_data:
-                k = derive.app(maker_data[i]["category"])
-                if k not in data:
-                    data.update({k: template.last_traded_item()})
-                data[k].update(
-                    {
-                        "maker_num_swaps": maker_data[i]["num_swaps"],
-                        "maker_last_swap_uuid": maker_data[i]["last_swap_uuid"],
-                        "maker_last_swap_time": maker_data[i]["last_swap_time"],
-                        "maker_first_swap_uuid": maker_data[i]["first_swap_uuid"],
-                        "maker_first_swap_time": maker_data[i]["first_swap_time"],
-                        "raw_category": maker_data[i]["category"],
-                    }
-                )
-                data[k]["total_num_swaps"] += maker_data[i]["num_swaps"]
-
-            for i in taker_data:
-                k = derive.app(taker_data[i]["category"])
-                if k not in data:
-                    data.update({k: template.last_traded_item()})
-                data[k].update(
-                    {
-                        "taker_num_swaps": taker_data[i]["num_swaps"],
-                        "taker_last_swap_uuid": taker_data[i]["last_swap_uuid"],
-                        "taker_last_swap_time": taker_data[i]["last_swap_time"],
-                        "taker_first_swap_uuid": taker_data[i]["first_swap_uuid"],
-                        "taker_first_swap_time": taker_data[i]["first_swap_time"],
-                        "raw_category": taker_data[i]["category"],
-                    }
-                )
-                data[k]["total_num_swaps"] += taker_data[i]["num_swaps"]
-
-            # Convert the results to a list of dictionaries
-            return default.result(
-                data=data,
-                msg="gui_last_traded complete",
-                loglevel="query",
-                ignore_until=5,
-            )
-        except Exception as e:  # pragma: no cover
-            return default.error(e)
 
     @timed
     def pair_last_trade(self, is_success: bool = True):
@@ -760,45 +708,6 @@ class SqlQuery(SqlDB):
             return default.error(e)
 
     @timed
-    def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
-        try:
-            if trade_side == "maker":
-                group_by_cols = [self.table.maker_ticker]
-            elif trade_side == "taker":
-                group_by_cols = [self.table.taker_ticker]
-            elif trade_side == "all":
-                group_by_cols = [self.table.maker_ticker, self.table.taker_ticker]
-            results = self.last_trade(
-                is_success=is_success, group_by_cols=group_by_cols
-            )
-            return default.result(
-                data=results, msg="ticker_last_traded complete", loglevel="query"
-            )
-        except Exception as e:  # pragma: no cover
-            return default.error(e)
-
-    @timed
-    def platform_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
-        try:
-            if trade_side == "maker":
-                group_by_cols = [self.table.maker_platform]
-            elif trade_side == "taker":
-                group_by_cols = [self.table.taker_platform]
-            elif trade_side == "all":
-                group_by_cols = [
-                    self.table.maker_platform,
-                    self.table.taker_platform,
-                ]
-            results = self.last_trade(
-                is_success=is_success, group_by_cols=group_by_cols
-            )
-            return default.result(
-                data=results, msg="platform_last_traded complete", loglevel="query"
-            )
-        except Exception as e:  # pragma: no cover
-            return default.error(e)
-
-    @timed
     def pubkey_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
         try:
             if trade_side == "maker":
@@ -830,6 +739,64 @@ class SqlQuery(SqlDB):
             )
             return default.result(
                 data=results, msg="version_last_traded complete", loglevel="query"
+            )
+        except Exception as e:  # pragma: no cover
+            return default.error(e)
+
+
+    @timed
+    def gui_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_gui]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_gui]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_gui, self.table.taker_gui]
+                
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="gui_last_traded complete", loglevel="query"
+            )
+        except Exception as e:  # pragma: no cover
+            return default.error(e)
+
+
+    # TODO: Returning errors, debug later
+    @timed
+    def platform_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_coin_platform]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_coin_platform]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_coin_platform, self.table.taker_coin_platform]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="platform_last_traded complete", loglevel="query"
+            )
+        except Exception as e:  # pragma: no cover
+            return default.error(e)
+
+    @timed
+    def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
+        try:
+            if trade_side == "maker":
+                group_by_cols = [self.table.maker_coin_ticker]
+            elif trade_side == "taker":
+                group_by_cols = [self.table.taker_coin_ticker]
+            elif trade_side == "all":
+                group_by_cols = [self.table.maker_coin_ticker, self.table.taker_coin_ticker]
+            results = self.last_trade(
+                is_success=is_success, group_by_cols=group_by_cols
+            )
+            return default.result(
+                data=results, msg="ticker_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
             return default.error(e)
