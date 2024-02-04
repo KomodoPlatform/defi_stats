@@ -225,7 +225,7 @@ class Pair:  # pragma: no cover
                 )
             else:
                 logger.warning(
-                    f"{self.str} not in swaps_for_pair_combo, returning template"
+                    f"{self.as_str} not in swaps_for_pair_combo, returning template"
                 )
                 return data
             data.update(

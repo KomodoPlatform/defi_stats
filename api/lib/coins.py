@@ -17,6 +17,10 @@ class Coins:  # pragma: no cover
         return [i for i in self.coins if i.mcap > 0]
 
     @property
+    def with_price(self):
+        return [i for i in self.coins if i.is_priced]
+
+    @property
     def with_segwit(self):
         data = [i for i in self.coins if i.has_segwit]
         return data

@@ -13,7 +13,6 @@ def arg_defaults():
         "true": ["wal", "order_by_mcap"],
         "none": ["source_url", "db_path", "db"],
         "now": ["end"],
-        "ALL": [],
         "default_host": ["mm2_host"],
         "zero": ["trigger"],
         "kmd": ["coin"],
@@ -35,8 +34,6 @@ def default_val(key: str):
                 return False
             if val.lower() == "none":
                 return None
-            if val.lower() == "all":
-                return "ALL"
             if val.lower() == "empty_string":
                 return ""
             if val.lower() == "zero":

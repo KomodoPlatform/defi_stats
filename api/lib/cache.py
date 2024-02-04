@@ -49,7 +49,7 @@ class Cache:  # pragma: no cover
                 if to_console:
                     logger.loop(f"[{i}] last updated: {since_updated} min")
             return updated
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
 
 

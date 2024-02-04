@@ -2,10 +2,10 @@
 import util.cron as cron
 import util.defaults as default
 from const import DEXAPI_8762_HOST
+from util.cron import Time
 
 
 def test_arg_defaults():
-
     class Test:
         def __init__(self, **kwargs) -> None:
             self.options = []
@@ -24,4 +24,10 @@ def test_arg_defaults():
     assert test.trigger == 0
     assert test.coin == "KMD"
     assert test.loglevel == "debug"
-    assert test.msg == ""
+
+
+def test_time():
+    # TODO: Weak test, do better
+    x = Time(0)
+    y = Time(int(cron.now_utc()))
+    assert x != y

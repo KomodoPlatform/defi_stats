@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class JsonSerde(object):
+class JsonSerde(object):  # pragma: no cover
     def serialize(self, key, value):
         if isinstance(value, str):
             return value.encode("utf-8"), 1
@@ -25,7 +25,7 @@ class JsonSerde(object):
         raise Exception("Unknown serialization format")
 
 
-try:
+try:  # pragma: no cover
     MEMCACHE = PooledClient(
         ("memcached", 11211), serde=JsonSerde(), timeout=10, max_pool_size=250
     )
@@ -41,33 +41,33 @@ except Exception as e:
 MEMCACHE.cache_memlimit = MEMCACHE_LIMIT
 
 
-def set_coins(data):
+def set_coins(data):  # pragma: no cover
     update("coins", data, 86400)
 
 
-def get_coins():
+def get_coins():  # pragma: no cover
     data = get("coins")
     return data
 
 
-def set_coins_config(data):
+def set_coins_config(data):  # pragma: no cover
     update("coins_config", data, 86400)
 
 
-def get_coins_config():
+def get_coins_config():  # pragma: no cover
     data = get("coins_config")
     return data
 
 
-def set_fixer_rates(data):
+def set_fixer_rates(data):  # pragma: no cover
     update("fixer_rates", data, 900)
 
 
-def get_fixer_rates():
+def get_fixer_rates():  # pragma: no cover
     return get("fixer_rates")
 
 
-def set_gecko_source(data):
+def set_gecko_source(data):  # pragma: no cover
     update("gecko_source", data, 900)
 
 

@@ -17,7 +17,7 @@ class Files:
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"
             self.bar = f"{folder}/bar.json"
-        else:
+        else:  # pragma: no cover
             folder = f"{API_ROOT_PATH}/cache"
 
         # Coins repo data

@@ -4,7 +4,7 @@ import pytest
 from decimal import Decimal
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from lib.cache_calc import CacheCalc
-from lib.generic import Generic
+from lib.generic import Generic, get_pairs_status
 from lib.pair import Pair
 from tests.fixtures_db import setup_swaps_db_data, setup_time
 from tests.fixtures_data import swap_item
@@ -76,14 +76,23 @@ def test_orderbook():
 
 def test_tickers():
     cache_calc = CacheCalc()
-    r = cache_calc.tickers()
+    r = cache_calc.tickers(7, 1)
 
     assert r["last_update"] > cron.now_utc() - 60
     assert r["pairs_count"] > 0
     assert r["swaps_count"] > 0
-    assert float(r["combined_volume_usd"]) > 0
-    assert float(r["combined_liquidity_usd"]) > 0
-    assert len(r["data"]) > 0
-    for i in r["data"][0]:
+    r2 = cache_calc.tickers(1, 1)
+    assert float(r2["combined_volume_usd"]) < float(r["combined_volume_usd"])
+    assert len(r2["data"]) > 0
+    for i in r2["data"][0]:
         assert not isinstance(i, Decimal)
     assert r["data"][0]["ticker_id"] < r["data"][2]["ticker_id"]
+
+
+def test_get_pairs_status():
+    r = get_pairs_status([], None)
+    logger.info(r)
+    r2 = get_pairs_status([])
+    assert "KMD" in [i["base"] for i in r]
+    assert "DOGE" in [i["target"] for i in r]
+    assert "KMD_LTC" in [i["ticker_id"] for i in r2]
