@@ -44,17 +44,15 @@ class StatsAPI:  # pragma: no cover
                 for i in pairs:
                     if validate.is_pair_priced(i, gecko_source=self.gecko_source):
                         cache_name = f"ticker_info_{i}_{suffix}_ALL"
-                        # logger.merge(f"Loading {cache_name}")
                         d = memcache.get(cache_name)
                         if d is None:
                             d = Pair(
                                 pair_str=i, last_traded_cache=last_traded_cache
-                            ).ticker_info(days=days, all=True)
+                            ).ticker_info(days=days, all_variants=True)
 
                 logger.merge(
                     f"Pair summary ticker infos ({days} days): {len(ticker_infos)}"
                 )
-
             resp = [transform.ticker_to_statsapi_summary(i) for i in ticker_infos]
             return clean.decimal_dict_lists(resp)
 

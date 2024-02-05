@@ -7,20 +7,22 @@ from models.generic import GenericTickersInfo, GenericTickersItem
 
 # markets/atomicdexio
 class MarketsAtomicdexIo(BaseModel):
-    swaps_all_time: int = 999999999
-    swaps_30d: int = 999999999
     swaps_24hr: int = 999999999
+    swaps_7d: int = 999999999
+    swaps_14d: int = 999999999
+    swaps_30d: int = 999999999
+    swaps_all_time: int = 999999999
 
 
 # markets/current_liquidity
 class MarketsCurrentLiquidity(BaseModel):
-    current_liquidity: float = 1234567.89
+    current_liquidity: float = 7777.7777
 
 
 # markets/fiat_rates
 class MarketsFiatRatesItem(BaseModel):
-    usd_market_cap: float = 1234567.89
-    usd_price: float = 1234567.89
+    usd_market_cap: float = 7777.7777
+    usd_price: float = 7777.7777
     coingecko_id: str = "coin_id"
 
 
@@ -38,18 +40,18 @@ class MarketsOrderbookItem(BaseModel):
     pair: str = "XXX_YYY"
     base: str = "XXX"
     quote: str = "YYY"
-    timestamp: str = 1777777777
+    trades_24hr: int = 777
+    liquidity_usd: str = "777.777777"
+    volume_usd_24hr: str = "777.777777"
     bids: List[MarketsOrderbookBid]
     asks: List[MarketsOrderbookAsk]
     total_asks_base_vol: str = "777.777777"
-    total_bids_base_vol: str = "777.777777"
     total_asks_quote_vol: str = "777.777777"
-    total_bids_quote_vol: str = "777.777777"
     total_asks_base_usd: str = "777.777777"
+    total_bids_base_vol: str = "777.777777"
+    total_bids_quote_vol: str = "777.777777"
     total_bids_quote_usd: str = "777.777777"
-    liquidity_usd: str = "777.777777"
-    trades_24hr: int = 777
-    volume_usd_24hr: str = "777.777777"
+    timestamp: str = 1777777777
 
 
 # markets/pairs_last_trade

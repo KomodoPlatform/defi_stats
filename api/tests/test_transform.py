@@ -19,6 +19,7 @@ from util.transform import (
     sumdata,
     invert,
     filterdata,
+    derive
 )
 import util.transform as transform
 import util.memcache as memcache
@@ -240,9 +241,20 @@ def test_deplatform_coin():
     assert r == "USDC"
 
 
+def test_derive_pair_cachename():
+    r = derive.pair_cachename("ticker_info", "KMD_LTC", "24hr")
+    assert r == "ticker_info_KMD_LTC_24hr"
+    r = derive.pair_cachename("ticker_info", "KMD_LTC-segwit", "24hr")
+    assert r == "ticker_info_KMD_LTC-segwit_24hr"
+    r = derive.pair_cachename("ticker_info", "KMD_LTC", "24hr", "ALL")
+    assert r == "ticker_info_KMD_LTC_24hr_ALL"
+    r = derive.pair_cachename("ticker_info", "USDC_KMD", "14d")
+    assert r == "ticker_info_USDC_KMD_14d"
+
+
 def test_merge_orderbooks():
     pair = Pair("KMD_DOGE")
-    orderbook_data = pair.orderbook("KMD_DOGE", all=False)
+    orderbook_data = pair.orderbook("KMD_DOGE", all_variants=False)
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)

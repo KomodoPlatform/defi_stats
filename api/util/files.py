@@ -30,9 +30,17 @@ class Files:
         # For CoinGecko endpoints
         self.gecko_source = f"{folder}/gecko/source.json"
 
-        # For Generic Cache
-        self.generic_adex_fortnite = f"{folder}/generic/adex_fortnite.json"
-        self.generic_last_traded = f"{folder}/generic/last_traded.json"
+        # FOUNDATIONAL CACHE
+        self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
+        self.last_traded = f"{folder}/generic/last_traded.json"
+        self.coin_volumes_24hr = (
+            f"{folder}/generic/coin_volumes_24hr.json"
+        )
+        self.pair_volumes_24hr = (
+            f"{folder}/generic/pair_volumes_24hr.json"
+        )
+
+        # REVIEW
         self.generic_summary = f"{folder}/generic/summary.json"
         self.generic_tickers = f"{folder}/generic/tickers.json"
         self.generic_tickers_14d = f"{folder}/generic/tickers_14d.json"
@@ -87,7 +95,7 @@ class Files:
                     return json.load(f)
             except Exception as e:  # pragma: no cover
                 error = f"Error loading {path}: {e}"
-                if memcache.get('testing') is None:
+                if memcache.get("testing") is None:
                     logger.warning(error)
             i += 1
             time.sleep(0.1)

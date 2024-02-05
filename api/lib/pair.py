@@ -199,7 +199,7 @@ class Pair:  # pragma: no cover
             return default.error(e, msg)
 
     @timed
-    def get_volumes_and_prices(self, days: int = 1, all: bool = True):
+    def get_volumes_and_prices(self, days: int = 1, all_variants: bool = True):
         """
         Iterates over list of swaps to get volumes and prices data
         """
@@ -212,14 +212,16 @@ class Pair:  # pragma: no cover
                 pair=self.as_str,
             )
             # Extract all variant swaps, or for a single variant
-            if all:
-                cache_name = f"volumes_and_prices_{self.as_str}_ALL"
+            key = "volumes_and_prices"
+            cache_name = derive.pair_cachename(key, self.as_str, suffix, all_variants)
+            if all_variants:
                 variants = derive.pair_variants(self.as_str)
             elif self.as_str in swaps_for_pair_combo:
-                cache_name = f"volumes_and_prices_{self.as_str}"
                 variants = derive.pair_variants(self.as_str, segwit_only=True)
             elif invert.pair(self.as_str) in swaps_for_pair_combo:
-                cache_name = f"volumes_and_prices_{invert.pair(self.as_str)}"
+                cache_name = derive.pair_cachename(
+                    key, invert.pair(self.as_str), suffix
+                )
                 variants = derive.pair_variants(
                     invert.pair(self.as_str), segwit_only=True
                 )
@@ -228,14 +230,16 @@ class Pair:  # pragma: no cover
                     f"{self.as_str} not in swaps_for_pair_combo, returning template"
                 )
                 return data
+
             data.update(
                 {
                     "base_price_usd": self.base_usd_price,
                     "quote_price_usd": self.quote_usd_price,
                     "variants": variants,
+                    "cache_name": cache_name,
                 }
             )
-            if all:
+            if all_variants:
                 swaps_for_pair = swaps_for_pair_combo["ALL"]
                 data = merge.volumes_data(
                     data,
@@ -293,13 +297,13 @@ class Pair:  # pragma: no cover
             if Decimal(data["combined_volume_usd"]) > 0:
                 data = clean.decimal_dicts(data)
                 memcache.update(cache_name, data, 900)
-                if Decimal(data["combined_volume_usd"]) > 100:
+                if Decimal(data["combined_volume_usd"]) > 1000:
                     ignore_until = 0
 
-            msg = f"{self.as_str}: ${data['combined_volume_usd']} volume [{cache_name}]"
+            msg = f"[{cache_name}] ${data['combined_volume_usd']} volume"
             # msg += f"| Variants: {data['variants']} !"
             return default.result(
-                data=data, msg=msg, loglevel="query", ignore_until=ignore_until
+                data=data, msg=msg, loglevel="cached", ignore_until=ignore_until
             )
         except Exception as e:  # pragma: no cover
             msg = f"get_volumes_and_prices for {self.as_str} failed! {e}, returning template"
@@ -336,16 +340,13 @@ class Pair:  # pragma: no cover
             )
 
     @timed
-    def ticker_info(self, days=1, all: bool = False):
+    def ticker_info(self, days=1, all_variants: bool = False):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
         try:
             suffix = transform.get_suffix(days)
-            if all:
-                cache_name = f"ticker_info_{self.as_str}_{suffix}_ALL"
-            else:
-                cache_name = f"ticker_info_{self.as_str}_{suffix}"
-
+            key = "ticker_info"
+            cache_name = derive.pair_cachename(key, self.as_str, suffix, all_variants)
             data = memcache.get(cache_name)
             if data is not None and Decimal(data["liquidity_in_usd"]) > 0:
                 msg = f"Using cache: {cache_name}"
@@ -364,9 +365,9 @@ class Pair:  # pragma: no cover
                     "priced": self.priced,
                 }
             )
-            data.update(self.get_volumes_and_prices(days, all=all))
+            data.update(self.get_volumes_and_prices(days, all_variants=all_variants))
             orderbook_data = self.orderbook(
-                self.as_str, depth=100, all=all, no_thread=False
+                self.as_str, depth=100, all_variants=all_variants, no_thread=False
             )
             for i in orderbook_data.keys():
                 if i in ["bids", "asks"]:
@@ -380,12 +381,9 @@ class Pair:  # pragma: no cover
                 Decimal(data["liquidity_in_usd"]) > 0
                 and Decimal(data["combined_volume_usd"]) > 0
             ):
-                segwit_variants = derive.pair_variants(self.as_str, segwit_only=True)
+                segwit_variants = derive.segwit_pair_variants(self.as_str)
                 for sv in segwit_variants:
-                    if all:
-                        cache_name = f"ticker_info_{sv}_{suffix}_ALL"
-                    else:
-                        cache_name = f"ticker_info_{sv}_{suffix}"
+                    cache_name = derive.pair_cachename(key, sv, suffix, all_variants)
                     base, quote = derive.base_quote(sv)
                     data.update(
                         {
@@ -398,9 +396,14 @@ class Pair:  # pragma: no cover
                     )
                     data = clean.decimal_dicts(data)
                     memcache.update(cache_name, data, 900)
-                    msg = f" {cache_name} added to memcache"
+                    msg = f" Added to memcache [{cache_name}]"
                     loglevel = "cached"
                     ignore_until = 3
+                    if (
+                        Decimal(data["liquidity_in_usd"]) > 1000
+                        and Decimal(data["combined_volume_usd"]) > 1000
+                    ):
+                        ignore_until = 0
             else:
                 msg = f" {cache_name} not added to memcache,"
                 msg += " liquidity and volume for pair is zero"
@@ -434,13 +437,13 @@ class Pair:  # pragma: no cover
         self,
         start_time: Optional[int] = 0,
         end_time: Optional[int] = 0,
-        all=True,
+        all_variants: bool = True,
     ) -> list:
         try:
             data = self.pg_query.swap_uuids(
                 start_time=start_time, end_time=end_time, pair=self.as_str
             )
-            if all:
+            if all_variants:
                 variants = sorted([i for i in data.keys() if i != "ALL"])
                 data = {"uuids": data["ALL"], "variants": variants}
             elif self.as_str in data:
@@ -463,22 +466,20 @@ class Pair:  # pragma: no cover
         self,
         pair_str: str = "KMD_LTC",
         depth: int = 100,
-        all: bool = False,
+        all_variants: bool = False,
         no_thread: bool = True,
     ):
         try:
-            if all:
+            if all_variants:
                 pair_str = deplatform.pair(pair_str)
                 pair_tpl = derive.base_quote(pair_str)
                 combo_cache_name = f"orderbook_{pair_str}_ALL"
                 variants = derive.pair_variants(pair_str)
-                # logger.loop(f"{pair_str}: {variants}")
             else:
                 # This will be a single ticker_pair unless for segwit
                 pair_tpl = derive.base_quote(pair_str)
                 combo_cache_name = f"orderbook_{pair_str}"
-                variants = derive.pair_variants(pair_str, segwit_only=True)
-                # logger.calc(f"{pair_str}: {variants}")
+                variants = [pair_str]
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 return {"error": "Market pair should be in `KMD_BTC` format"}
             combined_orderbook = template.orderbook(pair_str)
@@ -502,12 +503,6 @@ class Pair:  # pragma: no cover
                 for variant in variants:
                     variant_cache_name = f"orderbook_{variant}"
                     base, quote = derive.base_quote(variant)
-                    # Avoid duplication for utxo coins with segwit
-                    # TODO: cover where legacy is wallet only
-                    if base.endswith("-segwit") and len(variants) > 1:
-                        continue
-                    if quote.endswith("-segwit") and len(variants) > 1:
-                        continue
                     data = dex.get_orderbook(
                         base=base,
                         quote=quote,
@@ -523,7 +518,30 @@ class Pair:  # pragma: no cover
                     # TODO: Recalc liquidity if depth is less than data.
                     # Merge with other variants
 
-                    combined_orderbook = merge.orderbooks(combined_orderbook, data)
+                    if all_variants:
+                        # Avoid double counting on segwit variants
+                        if "segwit" in variant:
+                            base_variants = derive.coin_variants(base)
+                            if (
+                                deplatform.coin(base) in base_variants
+                                and "-segwit" in base
+                            ):
+                                continue
+                            quote_variants = derive.coin_variants(quote)
+                            if (
+                                deplatform.coin(quote) in quote_variants
+                                and "-segwit" in quote
+                            ):
+                                continue
+                            combined_orderbook = merge.orderbooks(
+                                combined_orderbook, data
+                            )
+                        else:
+                            combined_orderbook = merge.orderbooks(
+                                combined_orderbook, data
+                            )
+                    else:
+                        combined_orderbook = merge.orderbooks(combined_orderbook, data)
                 # Sort variant bids / asks
                 combined_orderbook["bids"] = combined_orderbook["bids"][: int(depth)][
                     ::-1
@@ -543,15 +561,15 @@ class Pair:  # pragma: no cover
                     data = clean.decimal_dicts(data)
                     dex.add_orderbook_to_cache(pair_str, combo_cache_name, data)
 
-            msg = f"{pair_str}: ${combined_orderbook['liquidity_in_usd']} liquidity."
+            msg = f"[{combo_cache_name}] ${combined_orderbook['liquidity_in_usd']} liquidity"
             # msg += f" Variants: ({variants})"
             ignore_until = 3
-            if Decimal(combined_orderbook["liquidity_in_usd"]) > 1000:
+            if Decimal(combined_orderbook["liquidity_in_usd"]) > 10000:
                 ignore_until = 0
             return default.result(
                 data=combined_orderbook,
                 msg=msg,
-                loglevel="query",
+                loglevel="cached",
                 ignore_until=ignore_until,
             )
         except Exception as e:  # pragma: no cover
@@ -559,7 +577,7 @@ class Pair:  # pragma: no cover
             try:
                 data = template.orderbook(pair_str)
                 msg += " Returning template!"
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 data = {"error": f"{msg}: {e}"}
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0

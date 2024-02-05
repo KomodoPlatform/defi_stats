@@ -88,7 +88,7 @@ class ApiIds(BaseModel):
 
 
 class UsdVolume(BaseModel):
-    usd_volume_24hr: float = 1234567.89
+    usd_volume_24hr: float = 7777.7777
 
 
 class SwapUuids(BaseModel):

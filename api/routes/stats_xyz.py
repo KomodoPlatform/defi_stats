@@ -291,6 +291,7 @@ def volumes_history_ticker(
     # TODO: Use new DB
     volumes_dict = {}
     query = db.SqlQuery()
+    gecko_source = memcache.get_gecko_source()
     # Individual tickers only, no merge except segwit
     stripped_coin = deplatform.coin(coin)
     variants = derive.coin_variants(coin, segwit_only=True)
@@ -301,7 +302,7 @@ def volumes_history_ticker(
         start_time = int(day_ts)
         end_time = int(day_ts) + 86400
         volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
-        data = query.coin_trade_volumes_usd(volumes)
+        data = query.coin_trade_volumes_usd(volumes, gecko_source)
         volumes_dict[d_str] = template.volumes_ticker()
         for variant in variants:
             if stripped_coin in data["volumes"]:

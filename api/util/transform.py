@@ -71,8 +71,19 @@ class Clean:
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
                 "liquidity_in_usd",
+                "liquidity_usd",
+                "volume_usd_24hr",
+                "volume_usd_14d",
+                "combined_volume_usd",
             ]:
-                data[i] = format_10f(Decimal(data[i]))
+                if i in data:
+                    data[i] = format_10f(Decimal(data[i]))
+            for i in [
+                "trades_24hr",
+                "trades_14d",
+            ]:
+                if i in data:
+                    data[i] = int(data[i])
             return data
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -523,6 +534,15 @@ class Derive:
             data = {"error": msg}
             return default.result(msg=msg, loglevel="warning", data=data)
 
+    @timed
+    def pair_cachename(
+        self, key: str, pair_str: str, suffix: str, all_variants: bool = False
+    ):
+        if all_variants:
+            return f"{key}_{pair_str}_{suffix}_ALL"
+        else:
+            return f"{key}_{pair_str}_{suffix}"
+
     def price_status_dict(self, pairs, gecko_source=None):
         try:
             if gecko_source is None:
@@ -570,7 +590,9 @@ class Derive:
         return Decimal(0)  # pragma: no cover
 
     @timed
-    def last_trade_info(self, pair_str: str, last_traded_cache: Dict, all=False):
+    def last_trade_info(
+        self, pair_str: str, last_traded_cache: Dict, all_variants=False
+    ):
         try:
             # TODO: cover 'all' case
             # This is imperfect. Should get both and
@@ -578,7 +600,7 @@ class Derive:
             pair_str = pair_str.replace("-segwit", "")
             if pair_str in last_traded_cache:
                 return last_traded_cache[pair_str]
-            reverse_pair = derive.base_quote(pair_str, True)
+            reverse_pair = invert.pair(pair_str, True)
             if reverse_pair in last_traded_cache:
                 return last_traded_cache[reverse_pair]
         except Exception as e:  # pragma: no cover
@@ -586,9 +608,12 @@ class Derive:
         return template.last_trade_info()
 
     @timed
-    def coin_variants(self, coin, segwit_only=False):
+    def coin_variants(
+        self, coin: str, segwit_only: bool = False, utxo_only: bool = True
+    ):
         coins_config = memcache.get_coins_config()
-        coin = coin.split("-")[0]
+        if utxo_only:
+            coin = coin.split("-")[0]
         data = [
             i
             for i in coins_config
@@ -598,15 +623,25 @@ class Derive:
         return data
 
     @timed
-    def pair_variants(self, pair, segwit_only=False):
+    def pair_variants(self, pair_str, segwit_only=False):
         variants = []
-        base, quote = derive.base_quote(pair)
+        base, quote = derive.base_quote(pair_str)
         base_variants = self.coin_variants(base, segwit_only=segwit_only)
         quote_variants = self.coin_variants(quote, segwit_only=segwit_only)
         for i in base_variants:
             for j in quote_variants:
                 if i != j:
                     variants.append(f"{i}_{j}")
+        return variants
+
+    @timed
+    def segwit_pair_variants(self, pair_str):
+        variants = []
+        base, quote = derive.base_quote(pair_str)
+        for b in derive.coin_variants(base, segwit_only=True, utxo_only=False):
+            for q in derive.coin_variants(quote, segwit_only=True, utxo_only=False):
+                if b != q:
+                    variants.append(f"{b}_{q}")
         return variants
 
     @timed
@@ -720,7 +755,7 @@ class Derive:
                         int(k)
                     except ValueError:
                         break
-                    except Exception as e:
+                    except Exception as e:  # pragma: no cover
                         logger.warning(e)
                         break
                     return j, j
@@ -863,7 +898,7 @@ class Invert:
                         "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
                     }
                 )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
         return inverted
 
@@ -884,7 +919,7 @@ class Merge:
     def __init__(self):
         pass
 
-    def segwit_swaps(self, variants, swaps):
+    def swaps(self, variants, swaps):
         resp = []
         for i in variants:
             resp = resp + swaps[i]
@@ -964,7 +999,7 @@ class Merge:
             )
             msg = f'Combined vol: {data["combined_volume_usd"]}'
             return default.result(data=data, msg=msg, loglevel="dexrpc", ignore_until=0)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
 
 
@@ -1019,7 +1054,7 @@ class SortData:
                 "by_current_liquidity_usd": clean.decimal_dicts(top_pairs_by_liquidity),
                 "by_swaps_count": clean.decimal_dicts(top_pairs_by_swaps),
             }
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
             return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
@@ -1058,7 +1093,7 @@ class SumData:
     def decimals(self, x, y):
         try:
             return Decimal(x) + Decimal(y)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
             logger.warning(f"y: {y} ({type(y)})")
@@ -1076,7 +1111,7 @@ class SumData:
             if sorted:
                 data.sort()
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
             logger.warning(f"y: {y} ({type(y)})")
@@ -1090,7 +1125,7 @@ class SumData:
                     return sortdata.dict_lists(merged_list, sort_key)
                 return merged_list
             return self.lists(x, y)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
             logger.warning(f"y: {y} ({type(y)})")
@@ -1099,7 +1134,7 @@ class SumData:
     def ints(self, x, y):
         try:
             return int(x) + int(y)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
             logger.warning(f"y: {y} ({type(y)})")
@@ -1342,10 +1377,15 @@ class Templates:
 
     def coin_trade_vol_item(self):
         return {
+            "taker_swaps": 0,
+            "maker_swaps": 0,
+            "total_swaps": 0,
             "taker_volume": 0,
             "maker_volume": 0,
-            "trade_volume": 0,
-            "swaps": 0,
+            "total_volume": 0,
+            "taker_volume_usd": 0,
+            "maker_volume_usd": 0,
+            "total_volume_usd": 0
         }
 
     def first_last_swap(self):

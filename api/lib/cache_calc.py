@@ -7,7 +7,7 @@ import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
 import util.transform as transform
-import lib.pair as pair
+from lib.pair import Pair
 
 
 class CacheCalc:
@@ -17,9 +17,72 @@ class CacheCalc:
         self.gecko_source = memcache.get_gecko_source()
         self.pg_query = db.SqlQuery()
 
+    # FOUNDATIONAL CACHE
+    @timed
+    def last_traded(self):
+        try:
+            if self.gecko_source is None:
+                self.gecko_source = memcache.get_gecko_source()
+            data = self.pg_query.pair_last_trade()
+            price_status_dict = derive.price_status_dict(data.keys(), self.gecko_source)
+            for i in data:
+                data[i] = clean.decimal_dicts(data[i])
+                data[i].update(
+                    {"priced": helper.get_pair_priced_status(i, price_status_dict)}
+                )
+
+            msg = "pairs_last_traded complete!"
+            return default.result(data, msg, loglevel="loop")
+        except Exception as e:  # pragma: no cover
+            msg = f"pairs_last_traded failed! {e}"
+            logger.warning(msg)
+
+    @timed
+    def coin_volumes_24hr(self):
+        try:
+            if self.gecko_source is None:
+                self.gecko_source = memcache.get_gecko_source()
+            vols = self.pg_query.coin_trade_volumes()
+            vols_usd = self.pg_query.coin_trade_volumes_usd(vols, self.gecko_source)
+            for coin in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][coin]:
+                    vols_usd["volumes"][coin][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][coin][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "coin_volumes_24hr complete!"
+            return default.result(vols_usd, msg, loglevel="loop")
+        except Exception as e:  # pragma: no cover
+            msg = f"coin_volumes_24hr failed! {e}"
+            logger.warning(msg)
+
+    @timed
+    def pair_volumes_24hr(self):
+        try:
+            if self.gecko_source is None:
+                self.gecko_source = memcache.get_gecko_source()
+            vols = self.pg_query.pair_trade_volumes()
+            vols_usd = self.pg_query.pair_trade_volumes_usd(vols, self.gecko_source)
+            for pair_str in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][pair_str]:
+                    vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][pair_str][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "pair_volumes_24hr complete!"
+            return default.result(vols_usd, msg, loglevel="loop")
+        except Exception as e:  # pragma: no cover
+            msg = f"pair_volumes_24hr failed! {e}"
+            logger.warning(msg)
+
+    # REVIEW
     @timed
     def tickers(
-        self, trades_days: int = 1, pairs_days: int = 7, from_memcache: bool = False
+        self,
+        trades_days: int = 1,
+        pairs_days: int = 30,
+        from_memcache: bool = False,
+        all_variants: bool = False,
     ):
         try:
             if trades_days > pairs_days:
@@ -38,7 +101,6 @@ class CacheCalc:
 
             suffix = transform.get_suffix(trades_days)
             ts = cron.now_utc() - pairs_days * 86400
-
             # Filter out pairs older than requested time
             pairs = sorted(
                 [
@@ -47,27 +109,25 @@ class CacheCalc:
                     if self.last_traded_cache[i]["last_swap_time"] > ts
                 ]
             )
-
             if from_memcache == 1:
                 # Disabled for now
                 # TODO: test if performance boost with this or not
                 data = []
+                key = "ticker_info"
                 for i in pairs:
-                    if all:
-                        cache_name = f"ticker_info_{self.as_str}_{suffix}_ALL"
-                    else:
-                        cache_name = f"ticker_info_{self.as_str}_{suffix}"
-
-                cache_data = memcache.get(cache_name)
-                if cache_data is not None:
-                    data.append(cache_data)
+                    cache_name = derive.pair_cachename(
+                        key, self.as_str, suffix, all_variants
+                    )
+                    cache_data = memcache.get(cache_name)
+                    if cache_data is not None:
+                        data.append(cache_data)
             else:
                 data = [
-                    pair.Pair(
+                    Pair(
                         pair_str=i,
                         last_traded_cache=self.last_traded_cache,
                         coins_config=self.coins_config,
-                    ).ticker_info(trades_days, all=False)
+                    ).ticker_info(trades_days, all_variants=False)
                     for i in pairs
                 ]
 
@@ -92,23 +152,3 @@ class CacheCalc:
         except Exception as e:  # pragma: no cover
             msg = "tickers failed!"
             return default.error(e, msg)
-
-    @timed
-    def last_traded(self):
-        try:
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-            data = self.pg_query.pair_last_trade()
-            price_status_dict = derive.price_status_dict(
-                data.keys(), self.gecko_source
-            )
-            for i in data:
-                data[i] = clean.decimal_dicts(data[i])
-                data[i].update(
-                    {"priced": helper.get_pair_priced_status(i, price_status_dict)}
-                )
-
-            return data
-        except Exception as e:  # pragma: no cover
-            msg = f"pairs_last_traded failed! {e}"
-            logger.warning(msg)

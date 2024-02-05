@@ -6,8 +6,8 @@ def test_cache():
     cache = Cache()
 
     for i in [
-        # "generic_adex_fortnite",
-        "generic_last_traded",
+        # "adex_fortnite",
+        "last_traded",
         # "generic_summary",
         "generic_tickers",
     ]:

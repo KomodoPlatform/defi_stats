@@ -36,8 +36,10 @@ class Cache:  # pragma: no cover
                 "coins_config",
                 "fixer_rates",
                 "gecko_source",
-                "generic_adex_fortnite",
-                "generic_last_traded",
+                "adex_fortnite",
+                "last_traded",
+                "pair_volumes_24hr",
+                "coin_volumes_24hr",
                 "generic_summary",
                 "generic_tickers",
                 "prices_tickers_v1",
@@ -113,7 +115,7 @@ class CacheItem:
         expiry_limits = {
             "coins": 1440,
             "coins_config": 1440,
-            "generic_last_traded": 1,
+            "last_traded": 1,
             "gecko_source": 15,
             "fixer_rates": 15,
         }
@@ -126,7 +128,7 @@ class CacheItem:
     @timed
     def save(self, data=None):  # pragma: no cover
         try:
-            # Handle external mirrored data easily
+            # EXTERNAL SOURCE CACHE
             if self.source_url is not None:
                 data = self.files.download_json(self.source_url)
                 if self.name == "coins_config":
@@ -134,6 +136,7 @@ class CacheItem:
                 if self.name == "coins":
                     memcache.set_coins(data)
             else:
+                # EXTERNAL SOURCE CACHE
                 if self.name == "fixer_rates":
                     data = external.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
@@ -142,17 +145,29 @@ class CacheItem:
                     data = external.CoinGeckoAPI().get_gecko_source()
                     memcache.set_gecko_source(data)
 
-                if self.name == "generic_last_traded":
-                    data = cache_calc.CacheCalc().last_traded()
-                    memcache.set_last_traded(data)
-
-                if self.name == "generic_adex_fortnite":
+                # FOUNDATIONAL CACHE
+                if self.name == "adex_fortnite":
                     data = stats_api.StatsAPI().adex_fortnite()
                     memcache.set_adex_fortnite(data)
 
+                if self.name == "last_traded":
+                    data = cache_calc.CacheCalc().last_traded()
+                    memcache.set_last_traded(data)
+
+                if self.name == "pair_volumes_24hr":
+                    data = cache_calc.CacheCalc().pair_volumes_24hr()
+                    memcache.set_pair_volumes_24hr(data)
+
+                if self.name == "coin_volumes_24hr":
+                    data = cache_calc.CacheCalc().coin_volumes_24hr()
+                    memcache.set_coin_volumes_24hr(data)
+
+                # REVIEW
+
                 if self.name == "generic_summary":
-                    data = stats_api.StatsAPI().pair_summaries()
-                    memcache.set_summary(data)
+                    pass
+                    #data = stats_api.StatsAPI().pair_summaries()
+                    #memcache.set_summary(data)
 
                 if self.name == "generic_tickers":
                     data = cache_calc.CacheCalc().tickers()
@@ -160,7 +175,7 @@ class CacheItem:
 
                 if self.name == "generic_tickers_14d":
                     data = cache_calc.CacheCalc().tickers(trades_days=14)
-                    memcache.set_tickers(data)
+                    memcache.set_tickers_14d(data)
 
             if data is not None:
                 if validate.loop_data(data, self):

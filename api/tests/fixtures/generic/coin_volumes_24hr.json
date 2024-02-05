@@ -1,0 +1,167 @@
+{
+    "last_updated": 1707135916,
+    "data": {
+        "start_time": 1707049516,
+        "end_time": 1707135916,
+        "range_days": 1.0,
+        "total_swaps": 8,
+        "maker_volume_usd": 50250.95,
+        "taker_volume_usd": 500208.005,
+        "total_volume_usd": 550458.955,
+        "volumes": {
+            "BTC": {
+                "ALL": {
+                    "taker_swaps": 0,
+                    "maker_swaps": 1,
+                    "total_swaps": 1,
+                    "taker_volume": 0,
+                    "maker_volume": 1.0,
+                    "total_volume": 1.0,
+                    "taker_volume_usd": 0.0,
+                    "maker_volume_usd": 100000.0,
+                    "total_volume_usd": 100000.0
+                },
+                "BTC": {
+                    "taker_swaps": 0,
+                    "maker_swaps": 1,
+                    "total_swaps": 1,
+                    "taker_volume": 0,
+                    "maker_volume": 1.0,
+                    "total_volume": 1.0,
+                    "taker_volume_usd": 0.0,
+                    "maker_volume_usd": 100000.0,
+                    "total_volume_usd": 100000.0
+                }
+            },
+            "KMD": {
+                "ALL": {
+                    "taker_swaps": 3,
+                    "maker_swaps": 4,
+                    "total_swaps": 7,
+                    "taker_volume": 1000101.0,
+                    "maker_volume": 301.9,
+                    "total_volume": 1000402.9,
+                    "taker_volume_usd": 1000101.0,
+                    "maker_volume_usd": 301.9,
+                    "total_volume_usd": 1000402.9
+                },
+                "KMD": {
+                    "taker_swaps": 3,
+                    "maker_swaps": 2,
+                    "total_swaps": 5,
+                    "taker_volume": 1000101.0,
+                    "maker_volume": 300.0,
+                    "total_volume": 1000401.0,
+                    "taker_volume_usd": 1000101.0,
+                    "maker_volume_usd": 300.0,
+                    "total_volume_usd": 1000401.0
+                },
+                "KMD-BEP20": {
+                    "taker_swaps": 0,
+                    "maker_swaps": 2,
+                    "total_swaps": 2,
+                    "taker_volume": 0,
+                    "maker_volume": 1.9,
+                    "total_volume": 1.9,
+                    "taker_volume_usd": 0.0,
+                    "maker_volume_usd": 1.9,
+                    "total_volume_usd": 1.9
+                }
+            },
+            "LTC": {
+                "ALL": {
+                    "taker_swaps": 2,
+                    "maker_swaps": 2,
+                    "total_swaps": 4,
+                    "taker_volume": 3.0,
+                    "maker_volume": 2.0,
+                    "total_volume": 5.0,
+                    "taker_volume_usd": 300.0,
+                    "maker_volume_usd": 200.0,
+                    "total_volume_usd": 500.0
+                },
+                "LTC": {
+                    "taker_swaps": 1,
+                    "maker_swaps": 1,
+                    "total_swaps": 2,
+                    "taker_volume": 2.0,
+                    "maker_volume": 1.0,
+                    "total_volume": 3.0,
+                    "taker_volume_usd": 200.0,
+                    "maker_volume_usd": 100.0,
+                    "total_volume_usd": 300.0
+                },
+                "LTC-segwit": {
+                    "taker_swaps": 1,
+                    "maker_swaps": 1,
+                    "total_swaps": 2,
+                    "taker_volume": 1.0,
+                    "maker_volume": 1.0,
+                    "total_volume": 2.0,
+                    "taker_volume_usd": 100.0,
+                    "maker_volume_usd": 100.0,
+                    "total_volume_usd": 200.0
+                }
+            },
+            "MORTY": {
+                "ALL": {
+                    "taker_swaps": 0,
+                    "maker_swaps": 1,
+                    "total_swaps": 1,
+                    "taker_volume": 0,
+                    "maker_volume": 1.0,
+                    "total_volume": 1.0,
+                    "taker_volume_usd": 0.0,
+                    "maker_volume_usd": 0.0,
+                    "total_volume_usd": 0.0
+                },
+                "MORTY": {
+                    "taker_swaps": 0,
+                    "maker_swaps": 1,
+                    "total_swaps": 1,
+                    "taker_volume": 0,
+                    "maker_volume": 1.0,
+                    "total_volume": 1.0,
+                    "taker_volume_usd": 0.0,
+                    "maker_volume_usd": 0.0,
+                    "total_volume_usd": 0.0
+                }
+            },
+            "DGB": {
+                "ALL": {
+                    "taker_swaps": 3,
+                    "maker_swaps": 0,
+                    "total_swaps": 3,
+                    "taker_volume": 1501.0,
+                    "maker_volume": 0,
+                    "total_volume": 1501.0,
+                    "taker_volume_usd": 15.01,
+                    "maker_volume_usd": 0.0,
+                    "total_volume_usd": 15.01
+                },
+                "DGB": {
+                    "taker_swaps": 1,
+                    "maker_swaps": 0,
+                    "total_swaps": 1,
+                    "taker_volume": 1.0,
+                    "maker_volume": 0,
+                    "total_volume": 1.0,
+                    "taker_volume_usd": 0.01,
+                    "maker_volume_usd": 0.0,
+                    "total_volume_usd": 0.01
+                },
+                "DGB-segwit": {
+                    "taker_swaps": 2,
+                    "maker_swaps": 0,
+                    "total_swaps": 2,
+                    "taker_volume": 1500.0,
+                    "maker_volume": 0,
+                    "total_volume": 1500.0,
+                    "taker_volume_usd": 15.0,
+                    "maker_volume_usd": 0.0,
+                    "total_volume_usd": 15.0
+                }
+            }
+        }
+    }
+}

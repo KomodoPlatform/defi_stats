@@ -26,7 +26,7 @@ def setup_cache_item():
 
 @pytest.fixture
 def setup_last_traded_cache():
-    yield CacheItem("generic_last_traded").data
+    yield CacheItem("last_traded").data
 
 
 @pytest.fixture

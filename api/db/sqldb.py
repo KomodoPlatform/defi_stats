@@ -184,7 +184,7 @@ class SqlUpdate(SqlDB):
                 session.exec(text(f"DROP TABLE {get_tablename(table)};"))
                 session.commit()
                 logger.info(f"Dropped {get_tablename(table)}")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
 
 
@@ -296,7 +296,7 @@ class SqlQuery(SqlDB):
         coins_config = memcache.get_coins_config()
         data = sorted([j for j in coins_config.keys()])
         return Enum("ValidCoins", {i: i for i in data}, type=str)
-
+    
     # TODO: Subclass 'volumes'
     @timed
     def coin_trade_volumes(
@@ -317,8 +317,18 @@ class SqlQuery(SqlDB):
             if end_time == 0:
                 end_time = int(cron.now_utc())
 
-            resp = {}
-            total_swaps = 0
+            resp = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "range_days": (end_time - start_time) / 86400,
+                "total_swaps": 0,
+                "maker_volume_usd": 0,
+                "taker_volume_usd": 0,
+                "total_volume_usd": 0,
+                "volumes": {},
+            }
+            total_maker_swaps = 0
+            total_taker_swaps = 0
 
             with Session(self.engine) as session:
                 q = session.query(
@@ -342,26 +352,32 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                coin = i["coin"]
                 ticker = i["ticker"]
-                num_swaps = Decimal(i["num_swaps"])
+                variant = i["coin"]
+                num_swaps = int(i["num_swaps"])
                 maker_vol = Decimal(i["maker_volume"])
 
-                if ticker not in resp:
-                    resp.update({ticker: {"ALL": template.coin_trade_vol_item()}})
+                if ticker not in resp["volumes"]:
+                    resp["volumes"].update(
+                        {ticker: {"ALL": template.coin_trade_vol_item()}}
+                    )
 
-                if coin not in resp[ticker]:
-                    resp[ticker].update({coin: template.coin_trade_vol_item()})
+                if variant not in resp["volumes"][ticker]:
+                    resp["volumes"][ticker].update(
+                        {variant: template.coin_trade_vol_item()}
+                    )
 
-                total_swaps += num_swaps
-                resp[ticker]["ALL"]["swaps"] += num_swaps
-                resp[ticker][coin]["swaps"] += num_swaps
+                total_maker_swaps += num_swaps
+                resp["volumes"][ticker][variant]["maker_swaps"] += num_swaps
+                resp["volumes"][ticker][variant]["maker_volume"] += maker_vol
+                resp["volumes"][ticker][variant]["total_swaps"] += num_swaps
+                resp["volumes"][ticker][variant]["total_volume"] += maker_vol
 
-                resp[ticker]["ALL"]["maker_volume"] += maker_vol
-                resp[ticker][coin]["maker_volume"] += maker_vol
-
-                resp[ticker]["ALL"]["trade_volume"] += maker_vol
-                resp[ticker][coin]["trade_volume"] += maker_vol
+                resp["volumes"][ticker]["ALL"]["maker_swaps"] += num_swaps
+                resp["volumes"][ticker]["ALL"]["maker_volume"] += maker_vol
+                resp["volumes"][ticker]["ALL"]["total_volume"] += maker_vol
+                resp["volumes"][ticker]["ALL"]["total_swaps"] += num_swaps
+                resp["total_swaps"] += num_swaps
 
             with Session(self.engine) as session:
                 q = session.query(
@@ -385,42 +401,46 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                coin = i["coin"]
                 ticker = i["ticker"]
-                num_swaps = Decimal(i["num_swaps"])
+                variant = i["coin"]
+                num_swaps = int(i["num_swaps"])
                 taker_vol = Decimal(i["taker_volume"])
 
-                if ticker not in resp:
-                    resp.update({ticker: {"ALL": template.coin_trade_vol_item()}})
+                if ticker not in resp["volumes"]:
+                    resp["volumes"].update(
+                        {ticker: {"ALL": template.coin_trade_vol_item()}}
+                    )
 
-                if coin not in resp[ticker]:
-                    resp[ticker].update({coin: template.coin_trade_vol_item()})
+                if variant not in resp["volumes"][ticker]:
+                    resp["volumes"][ticker].update(
+                        {variant: template.coin_trade_vol_item()}
+                    )
 
-                total_swaps += num_swaps
-                resp[ticker]["ALL"]["swaps"] += num_swaps
-                resp[ticker][coin]["swaps"] += num_swaps
+                total_taker_swaps += num_swaps
+                resp["volumes"][ticker][variant]["taker_volume"] += taker_vol
+                resp["volumes"][ticker][variant]["total_volume"] += taker_vol
+                resp["volumes"][ticker][variant]["taker_swaps"] += num_swaps
+                resp["volumes"][ticker][variant]["total_swaps"] += num_swaps
 
-                resp[ticker]["ALL"]["taker_volume"] += taker_vol
-                resp[ticker][coin]["taker_volume"] += taker_vol
+                resp["volumes"][ticker]["ALL"]["taker_swaps"] += num_swaps
+                resp["volumes"][ticker]["ALL"]["taker_volume"] += taker_vol
+                resp["volumes"][ticker]["ALL"]["total_swaps"] += num_swaps
+                resp["volumes"][ticker]["ALL"]["total_volume"] += taker_vol
 
-                resp[ticker]["ALL"]["trade_volume"] += taker_vol
-                resp[ticker][coin]["trade_volume"] += taker_vol
+                resp["total_swaps"] += num_swaps
 
-            data = {
-                "start_time": start_time,
-                "end_time": end_time,
-                "range_days": (end_time - start_time) / 86400,
-                "swaps": total_swaps,
-                "volumes": resp,
-            }
+            # Swap counts halved, avoid double counts from coins in pair
+            resp.update(
+                {"total_swaps": int((total_maker_swaps + total_taker_swaps) / 2)}
+            )
             return default.result(
-                data=data, msg="coin_trade_volumes complete", loglevel="debug"
+                data=resp, msg="coin_trade_volumes complete", loglevel="debug"
             )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
-    def coin_trade_volumes_usd(self, volumes: Dict) -> list:
+    def coin_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
         """
         Returns volume traded of coin between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -428,39 +448,37 @@ class SqlQuery(SqlDB):
         longer timespans
         """
         try:
-            total_swaps = 0
-            total_maker_vol_usd = 0
-            total_taker_vol_usd = 0
-            for ticker in volumes["volumes"]:
-                usd_price = derive.gecko_price(ticker)
-                for coin in volumes["volumes"][ticker]:
-                    taker_vol = volumes["volumes"][ticker][coin]["taker_volume"]
-                    maker_vol = volumes["volumes"][ticker][coin]["maker_volume"]
-                    taker_vol_usd = taker_vol * usd_price
-                    maker_vol_usd = maker_vol * usd_price
-                    total_trade_vol_usd = taker_vol_usd + maker_vol_usd
-
-                    volumes["volumes"][ticker][coin].update(
+            for coin in volumes["volumes"]:
+                usd_price = derive.gecko_price(coin, gecko_source)
+                for variant in volumes["volumes"][coin]:
+                    maker_vol = volumes["volumes"][coin][variant]["maker_volume"]
+                    taker_vol = volumes["volumes"][coin][variant]["taker_volume"]
+                    variant_vol = volumes["volumes"][coin][variant]["total_volume"]
+                    volumes["volumes"][coin][variant].update(
                         {
-                            "taker_volume_usd": taker_vol_usd,
-                            "maker_volume_usd": maker_vol_usd,
-                            "trade_volume_usd": total_trade_vol_usd,
+                            "taker_volume_usd": taker_vol * usd_price,
+                            "maker_volume_usd": maker_vol * usd_price,
+                            "total_volume_usd": variant_vol * usd_price,
                         }
                     )
-                    total_maker_vol_usd += maker_vol_usd
-                    total_taker_vol_usd += taker_vol_usd
-                total_swaps += volumes["volumes"][ticker]["ALL"]["swaps"]
+                maker_vol = volumes["volumes"][coin]["ALL"]["maker_volume_usd"]
+                taker_vol = volumes["volumes"][coin]["ALL"]["taker_volume_usd"]
+                total_vol = volumes["volumes"][coin]["ALL"]["total_volume_usd"]
+                volumes["maker_volume_usd"] += maker_vol
+                volumes["taker_volume_usd"] += taker_vol
+                volumes["total_volume_usd"] += total_vol
 
-            total_trade_vol_usd = total_maker_vol_usd + total_taker_vol_usd
             # global coin swaps divided by two wrt both coins in pair
-            global_totals = {
-                "swaps": total_swaps / 2,
-                "taker_volume_usd": total_taker_vol_usd,
-                "maker_volume_usd": total_maker_vol_usd,
-                "trade_volume_usd": total_trade_vol_usd,
-            }
-            volumes.update(global_totals)
-            return volumes
+            volumes.update(
+                {
+                    "taker_volume_usd": volumes["taker_volume_usd"] / 2,
+                    "maker_volume_usd": volumes["maker_volume_usd"] / 2,
+                    "total_volume_usd": volumes["total_volume_usd"] / 2,
+                }
+            )
+            return default.result(
+                data=volumes, msg="coin_trade_volumes_usd complete", loglevel="query"
+            )
 
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -485,8 +503,16 @@ class SqlQuery(SqlDB):
             if end_time == 0:
                 end_time = int(cron.now_utc())
 
-            resp = {}
-            num_swaps = 0
+            resp = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "range_days": (end_time - start_time) / 86400,
+                "total_swaps": 0,
+                "base_volume_usd": 0,
+                "quote_volume_usd": 0,
+                "total_volume_usd": 0,
+                "volumes": {},
+            }
 
             with Session(self.engine) as session:
                 q = session.query(
@@ -512,13 +538,17 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                pair_std = i["pair"]
-                if pair_std not in resp:
-                    resp.update({pair_std: {"ALL": template.pair_trade_vol_item()}})
-                if i["pair"] not in resp[pair_std]:
-                    resp[pair_std].update({i["pair"]: template.pair_trade_vol_item()})
+                pair_std = deplatform.pair(i["pair"])
+                if pair_std not in resp["volumes"]:
+                    resp["volumes"].update(
+                        {pair_std: {"ALL": template.pair_trade_vol_item()}}
+                    )
+                if i["pair"] not in resp["volumes"][pair_std]:
+                    resp["volumes"][pair_std].update(
+                        {i["pair"]: template.pair_trade_vol_item()}
+                    )
 
-                num_swaps = Decimal(i["num_swaps"])
+                num_swaps = int(i["num_swaps"])
                 if i["trade_type"] == "buy":
                     base_vol = Decimal(i["maker_volume"])
                     quote_vol = Decimal(i["taker_volume"])
@@ -526,27 +556,25 @@ class SqlQuery(SqlDB):
                 elif i["trade_type"] == "sell":
                     base_vol = Decimal(i["taker_volume"])
                     quote_vol = Decimal(i["maker_volume"])
+                resp["volumes"][pair_std]["ALL"]["swaps"] += num_swaps
+                resp["volumes"][pair_std]["ALL"]["base_volume"] += base_vol
+                resp["volumes"][pair_std]["ALL"]["quote_volume"] += quote_vol
+                resp["volumes"][pair_std][i["pair"]]["swaps"] += num_swaps
+                resp["volumes"][pair_std][i["pair"]]["base_volume"] += base_vol
+                resp["volumes"][pair_std][i["pair"]]["quote_volume"] += quote_vol
+                resp["total_swaps"] += num_swaps
 
-                resp[pair_std]["ALL"]["swaps"] += num_swaps
-                resp[pair_std]["ALL"]["base_volume"] += base_vol
-                resp[pair_std]["ALL"]["quote_volume"] += quote_vol
-                resp[pair_std][i["pair"]]["swaps"] += num_swaps
-                resp[pair_std][i["pair"]]["base_volume"] += base_vol
-                resp[pair_std][i["pair"]]["quote_volume"] += quote_vol
-
-            data = {
-                "start_time": start_time,
-                "end_time": end_time,
-                "range_days": (end_time - start_time) / 86400,
-                "swaps": num_swaps,
-                "volumes": resp,
-            }
-            return default.result(data=data, msg="pair_trade_volumes", loglevel="query")
+            return default.result(
+                data=resp,
+                msg="pair_trade_volumes complete",
+                loglevel="query",
+                ignore_until=5,
+            )
         except Exception as e:  # pragma: no cover
             return default.error(e)
 
     @timed
-    def pair_trade_volumes_usd(self, volumes: Dict) -> list:
+    def pair_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
         """
         Returns volume traded of a pair between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -554,44 +582,45 @@ class SqlQuery(SqlDB):
         longer timespans
         """
         try:
-            total_swaps = 0
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
+            total_trade_vol_usd = 0
             for pair_std in volumes["volumes"]:
                 base, quote = derive.base_quote(pair_std)
-                base_usd_price = derive.gecko_price(base)
-                quote_usd_price = derive.gecko_price(quote)
+                base_usd_price = derive.gecko_price(base, gecko_source)
+                quote_usd_price = derive.gecko_price(quote, gecko_source)
 
-                for pair in volumes["volumes"][pair_std]:
-                    base_vol = volumes["volumes"][pair_std][pair]["base_volume"]
-                    quote_vol = volumes["volumes"][pair_std][pair]["quote_volume"]
-                    base_vol_usd = base_vol * base_usd_price
-                    quote_vol_usd = quote_vol * quote_usd_price
-                    total_trade_vol_usd = base_vol_usd + quote_vol_usd
-                    volumes["volumes"][pair_std][pair].update(
+                for variant in volumes["volumes"][pair_std]:
+                    base_vol = volumes["volumes"][pair_std][variant]["base_volume"]
+                    quote_vol = volumes["volumes"][pair_std][variant]["quote_volume"]
+                    base_vol_usd = Decimal(base_vol * base_usd_price)
+                    quote_vol_usd = Decimal(quote_vol * quote_usd_price)
+                    trade_vol_usd = Decimal(base_vol_usd + quote_vol_usd)
+                    volumes["volumes"][pair_std][variant].update(
                         {
-                            "dex_price": base_vol / quote_vol,
+                            "dex_price": quote_vol / base_vol,
                             "base_volume_usd": base_vol_usd,
                             "quote_volume_usd": quote_vol_usd,
-                            "trade_volume_usd": total_trade_vol_usd,
+                            "trade_volume_usd": trade_vol_usd,
                         }
                     )
 
-                total_swaps += volumes["volumes"][pair_std]["ALL"]["swaps"]
                 total_base_vol_usd += volumes["volumes"][pair_std]["ALL"][
                     "base_volume_usd"
                 ]
                 total_quote_vol_usd += volumes["volumes"][pair_std]["ALL"][
                     "quote_volume_usd"
                 ]
+                total_trade_vol_usd += volumes["volumes"][pair_std]["ALL"][
+                    "quote_volume_usd"
+                ]
 
-            total_trade_vol_usd = total_base_vol_usd + total_quote_vol_usd
+            total_trade_vol_usd = (total_base_vol_usd + total_quote_vol_usd) / 2
             volumes.update(
                 {
-                    "swaps": total_swaps,
                     "base_volume_usd": total_base_vol_usd,
                     "quote_volume_usd": total_quote_vol_usd,
-                    "trade_volume_usd": total_trade_vol_usd,
+                    "total_volume_usd": total_trade_vol_usd,
                 }
             )
             return default.result(
@@ -920,7 +949,7 @@ class SqlQuery(SqlDB):
 
                 else:
                     resp = data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = f"Got {len(data)} swaps from {self.table.__tablename__}"
         msg += f" between {start_time} and {end_time}"
@@ -951,18 +980,22 @@ class SqlQuery(SqlDB):
 
     @timed
     def get_swaps_for_coin(
-        self, coin: str, merge_segwit: bool = False, all=False, **kwargs
+        self,
+        coin: str,
+        merge_segwit: bool = False,
+        all_variants: bool = False,
+        **kwargs,
     ):
         """
         Returns swaps for a variant of a coin only.
         Optionally, segwit coins can be merged
         """
         swaps = self.get_swaps(coin=coin, **kwargs)
-        if all:
+        if all_variants:
             return swaps["ALL"]
         if merge_segwit:
             variants = derive.coin_variants(coin, segwit_only=True)
-            return merge.segwit_swaps(variants, swaps)
+            return merge.swaps(variants, swaps)
         return swaps[coin]
 
     @timed
@@ -975,21 +1008,20 @@ class SqlQuery(SqlDB):
         end_time: int = 0,
         limit: int = 100,
         trade_type: int | None = None,
-        pair: str | None = None,
         pubkey: str | None = None,
         gui: str | None = None,
         version: str | None = None,
         success_only: bool = True,
         failed_only: bool = False,
-        all=False,
+        all_variants: bool = False,
     ):
         """
         Returns swaps for a variant of a pair only.
         Optionally, pairs with segwit coins can be merged
         """
-        pair = f"{base}_{quote}"
+        pair_str = f"{base}_{quote}"
         swaps = self.get_swaps(
-            pair=pair,
+            pair=pair_str,
             start_time=start_time,
             end_time=end_time,
             limit=limit,
@@ -1000,12 +1032,16 @@ class SqlQuery(SqlDB):
             success_only=success_only,
             failed_only=failed_only,
         )
-        if all:
+        if pair_str == "KMD-BEP20_LTC":
+            logger.calc(swaps)
+        logger.info(pair_str)
+        if all_variants:
             return swaps["ALL"]
         if merge_segwit:
-            variants = derive.pair_variants(pair, segwit_only=True)
-            return merge.segwit_swaps(variants, swaps)
-        return swaps[pair]
+            segwit_variants = derive.segwit_pair_variants(pair_str)
+            logger.info(segwit_variants)
+            return merge.swaps(segwit_variants, swaps)
+        return swaps[pair_str]
 
     @timed
     def swap_uuids(
@@ -1102,19 +1138,19 @@ class SqlQuery(SqlDB):
                 try:
                     col = getattr(self.table, column)
                     q = session.query(col)
-                except AttributeError as e:
+                except AttributeError as e:  # pragma: no cover
                     logger.warning(type(e))
                     logger.warning(e)
                     msg = f"'{column}' does not exist in {self.table.__tablename__}!"
                     msg += f" Options are {get_columns(self.table)}"
                     raise InvalidParamCombination(msg=msg)
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     logger.warning(type(e))
                     logger.warning(e)
                     msg = f"'{column}' does not exist in {self.table.__tablename__}!"
                     msg += f" Options are {get_columns(self.table)}"
                     raise InvalidParamCombination(msg=msg)
-            else:
+            else:  # pragma: no cover
                 raise InvalidParamCombination(
                     "Unless 'pair' or 'coin' param is set, you must set the 'column' param."
                 )
@@ -1174,7 +1210,7 @@ class SqlQuery(SqlDB):
                     .all()
                 )
                 return [dict(i) for i in r]
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(e)
 
     @timed
@@ -1189,7 +1225,7 @@ class SqlQuery(SqlDB):
                     .all()
                 )
                 return [dict(i) for i in r]
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(e)
 
     @timed
@@ -1344,7 +1380,7 @@ class SqlSource:
             else:
                 msg = "Zero Cipi swaps returned!"
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         return default.result(msg=msg, loglevel="sourced")
 
@@ -1421,7 +1457,7 @@ class SqlSource:
                     msg += f"{len(updates)} updated from MM2.db"
             else:
                 msg = "Zero MM2 swaps returned!"
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         return default.result(msg=msg, loglevel="sourced")
 
@@ -1442,7 +1478,7 @@ class SqlSource:
             )
             # pgdb_query.describe('defi_swaps')
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = f"Importing swaps from {start_time} - {end_time} complete"
         return default.result(msg=msg, loglevel="updated", ignore_until=10)
@@ -1537,13 +1573,13 @@ class SqlSource:
                 if "fa0bdf92-375d-41c8-af45-5aa11380bf25" == i["uuid"]:
                     logger.loop(i)
                     logger.calc(f"normal pair: {i['pair']}")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = "Data normalised"
         return default.result(msg=msg, data=data, loglevel="calc", ignore_until=10)
 
     @timed
-    def cipi_to_defi_swap(self, cipi_data, defi_data=None):
+    def cipi_to_defi_swap(self, cipi_data, defi_data=None):  # pragma: no cover
         """
         Compares with existing to select best value where there
         is a conflict, or returns normalised data from a source
@@ -1665,13 +1701,13 @@ class SqlSource:
                 data.duration = data.finished_at - data.started_at
             else:
                 data.duration = -1
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = "cipi to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
 
     @timed
-    def mm2_to_defi_swap(self, mm2_data, defi_data=None):
+    def mm2_to_defi_swap(self, mm2_data, defi_data=None):  # pragma: no cover
         """
         Compares to select best value where there is a conflict
         """
@@ -1783,7 +1819,7 @@ class SqlSource:
             else:
                 data.duration = -1
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = "mm2 to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")

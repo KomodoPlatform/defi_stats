@@ -184,7 +184,7 @@ class SqliteMerge:
         except sqlite3.OperationalError as e:
             msg = f"OpErr {src_db.db_path} ==> {dest_db.db_path}"
             return default.error(e, msg=msg)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} {src_db.db_path} ==> {dest_db.db_path} {e}"
             return default.error(e, msg=msg)
         msg = f"Importing {src_db.db_path} ==> {dest_db.db_path} complete"
@@ -223,7 +223,7 @@ class SqliteMerge:
                 src_db_path=LOCAL_MM2_DB_PATH_8762,
                 dest_db_path=LOCAL_MM2_DB_BACKUP_8762,
             )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = "Merge of local source data into backup databases complete!"
         return default.result(msg=msg, loglevel="merge")
@@ -269,7 +269,7 @@ class SqliteMerge:
                                 db1.update.update_stats_swap_row(uuid, fixed)
                                 db2.update.update_stats_swap_row(uuid, fixed)
                                 logger.updated(f"{uuid} repaired")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
         return default.result(msg=msg, loglevel=loglevel)
@@ -306,9 +306,9 @@ class SqliteMerge:
                 db.update.create_swap_stats_table()
                 db.update.clear("stats_swaps")
                 db.close()
-        except sqlite3.OperationalError as e:
+        except sqlite3.OperationalError as e:  # pragma: no cover
             return default.error(e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.error(e)
         msg = "Temp DBs setup complete..."
         return default.result(msg=msg, loglevel="info")

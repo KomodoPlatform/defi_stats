@@ -127,27 +127,27 @@ def test_get_pair_variants():
 
 def test_derive_lowest_ask():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC", all=True)
+    orderbook = pair.orderbook("KMD_MATIC", all_variants=True)
     r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3158)
 
 
 def test_derive_highest_bid():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC", all=True)
+    orderbook = pair.orderbook("KMD_MATIC", all_variants=True)
     r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3037)
 
 
 def test_derive_lowest_ask_reversed():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD", all=True)
+    orderbook = pair.orderbook("MATIC_KMD", all_variants=True)
     r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
 
 
 def test_derive_highest_bid_reversed():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD", all=True)
+    orderbook = pair.orderbook("MATIC_KMD", all_variants=True)
     r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)

@@ -47,7 +47,7 @@ class DexAPI:
     def orderbook_rpc(self, base: str, quote: str) -> dict:
         """Either returns template, or actual result"""
         try:
-            if base != quote:
+            if base.replace("-segwit", "") != quote.replace("-segwit", ""):
                 params = {
                     "mmrpc": "2.0",
                     "method": "orderbook",
@@ -82,7 +82,7 @@ class OrderbookRpcThread(threading.Thread):
             self.pair_str = f"{self.base}_{self.quote}"
             self.variant_cache_name = variant_cache_name
             self.depth = depth
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
 
     def run(self):
@@ -94,14 +94,12 @@ class OrderbookRpcThread(threading.Thread):
 
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
                 data = clean.decimal_dicts(data)
-                segwit_variants = derive.pair_variants(
-                    self.pair_str, segwit_only=True
-                )
+                segwit_variants = derive.pair_variants(self.pair_str, segwit_only=True)
                 for sv in segwit_variants:
                     data["variants"] = [self.pair_str]
                     add_orderbook_to_cache(sv, self.variant_cache_name, data)
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.warning(e)
 
 
@@ -177,8 +175,6 @@ def get_orderbook_fixture(pair_str, gecko_source):
         data = template.orderbook(pair_str=pair_str)
     is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
-        logger.loop(pair_str)
-        logger.loop(sortdata.pair_by_market_cap(pair_str))
         data = invert.orderbook(data)
     data = orderbook_extras(pair_str, data, gecko_source)
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
@@ -207,7 +203,7 @@ def orderbook_extras(pair_str, data, gecko_source):
         )
         msg = f"Got Orderbook.extras for {pair_str}"
         loglevel = "dexrpc"
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         loglevel = "warning"
         msg = f"Orderbook.extras failed for {pair_str}: {e}"
     return default.result(data=data, msg=msg, loglevel=loglevel, ignore_until=0)

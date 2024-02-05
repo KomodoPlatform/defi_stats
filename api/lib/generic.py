@@ -55,11 +55,14 @@ class Generic:  # pragma: no cover
         self,
         pair_str: str = "KMD_LTC",
         depth: int = 100,
-        all: bool = False,
+        all_variants: bool = False,
         no_thread: bool = True,
     ):
         return pair.orderbook(
-            pair_str=pair_str, depth=depth, all=all, no_thread=no_thread
+            pair_str=pair_str,
+            depth=depth,
+            all_variants=all_variants,
+            no_thread=no_thread,
         )
 
 

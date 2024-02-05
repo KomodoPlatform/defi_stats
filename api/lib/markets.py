@@ -28,7 +28,7 @@ class Markets:
             return default.error(e, msg)
 
     # TODO: Cache this
-    def trades(self, pair: str, days_in_past: int = 1, all=False):
+    def trades(self, pair: str, days_in_past: int = 1, all_variants: bool = False):
         try:
             last_traded_cache = memcache.get_last_traded()
             start_time = int(cron.now_utc() - 86400 * days_in_past)
@@ -41,7 +41,7 @@ class Markets:
             )
             resp = []
             base, quote = derive.base_quote(pair)
-            if all:
+            if all_variants:
                 resp = data["ALL"]["buy"]
                 resp = data["ALL"]["sell"]
             elif base in self.segwit_coins or quote in self.segwit_coins:

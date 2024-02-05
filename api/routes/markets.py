@@ -22,10 +22,10 @@ from models.markets import (
 )
 from lib.pair import Pair
 from lib.markets import Markets
-
+from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert, deplatform, sumdata, derive
+from util.transform import clean, convert, deplatform, sumdata, derive, sortdata, invert
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
@@ -38,7 +38,7 @@ router = APIRouter()
 
 @router.get(
     "/atomicdexio",
-    description="Returns atomic swap counts over a variety of periods",
+    description=markets_desc.adexio,
     response_model=MarketsAtomicdexIo,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
@@ -52,7 +52,7 @@ def atomicdex_info_api():
 @router.get(
     "/current_liquidity",
     response_model=MarketsCurrentLiquidity,
-    description="Global liquidity on the orderbook for all pairs.",
+    description=markets_desc.liquidity,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -60,7 +60,6 @@ def current_liquidity():
     try:
         data = memcache.get_tickers()
         return {"current_liquidity": data["combined_liquidity_usd"]}
-
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}"}
@@ -78,16 +77,117 @@ def fiat_rates():
 
 
 @router.get(
-    "/orderbook/{market_pair}",
+    "/orderbook/{pair_str}",
     description="Get Orderbook for a market pair in `KMD_LTC` format.",
     response_model=MarketsOrderbookItem,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
+def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
+    # TODO: "all_variants" option for pairs like `LTC_USDC` are
+    # not perfect. Needs futher debugging, but not required for
+    # `markets` endpoints
+    # , all_variants: bool = False
     try:
-        pair = Pair(pair_str=market_pair)
-        return pair.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
+        all_variants = False
+        # For combined results regardles of platform.
+        if all_variants:
+            pair_str = deplatform.pair(pair_str)
+        pair = Pair(pair_str=pair_str)
+        key = "markets_orderbook"
+        if pair.is_reversed:
+            # For trades / volume, ticker order does not matter
+            # so we use the same cache as standard
+            cache_name = derive.pair_cachename(
+                key,
+                pair_str=invert.pair(pair_str),
+                suffix="24hr",
+                all_variants=all_variants,
+            )
+        else:
+            cache_name = derive.pair_cachename(
+                key, pair_str=pair_str, suffix="24hr", all_variants=all_variants
+            )
+        # Use cache if it is fully populated
+        data = memcache.get(cache_name)
+        if data is not None and int(data["trades_24hr"]) > 0:
+            if (
+                Decimal(data["liquidity_usd"]) > 0
+                and Decimal(data["volume_usd_24hr"]) > 0
+            ):
+                return data
+        data = pair.orderbook(
+            pair_str=pair_str, depth=depth, all_variants=all_variants, no_thread=True
+        )
+        # To avoid `-segwit` variant unless requested
+        base, quote = derive.base_quote(pair_str)
+        if "segwit" in data["base"] and "segwit" not in base:
+            data["base"] = data["base"].replace("-segwit", "")
+        if "segwit" in data["quote"] and "segwit" not in quote:
+            data["quote"] = data["quote"].replace("-segwit", "")
+        data.update({"pair": f"{data['base']}_{data['quote']}"})
+
+        # TODO: Review below for liquidity / swap count calc.
+
+        if all_variants:
+            variants = derive.pair_variants(pair_str)
+        else:
+            variants = [pair_str]
+        data.update(
+            {
+                "trades_24hr": 0,
+                "liquidity_usd": data["liquidity_in_usd"],
+                "volume_usd_24hr": 0,
+                "variants": variants,
+            }
+        )
+        """ 
+        combined_trades = 0
+        combined_volume = 0
+        for variant in variants:
+            key = "ticker_info"
+            if pair.is_reversed:
+                # For trades / volume, ticker order does not matter
+                # so we use the same cache as standard
+                ticker_cache_name = derive.pair_cachename(
+                    key,
+                    pair_str=invert.pair(pair_str),
+                    suffix="24hr",
+                    all_variants=all_variants,
+                )
+            else:
+                ticker_cache_name = derive.pair_cachename(
+                    key, pair_str=pair_str, suffix="24hr", all_variants=all_variants
+                )
+
+            update_cache = False
+            ticker_info = memcache.get(ticker_cache_name)
+            if ticker_info is None:
+                ticker_info = pair.ticker_info(days=1, all_variants=all_variants)
+                update_cache = True
+
+            data["trades_24hr"] = int(ticker_info["trades_24hr"])
+            data["volume_usd_24hr"] = Decimal(ticker_info["combined_volume_usd"])
+
+            if update_cache and not all_variants:
+                data = clean.orderbook_data(data)
+                memcache.update(cache_name, data, 300)
+
+            combined_trades = sumdata.decimals(
+                combined_trades, ticker_info["trades_24hr"]
+            )
+            combined_volume = sumdata.decimals(
+                combined_volume, ticker_info["combined_volume_usd"]
+            )
+
+        data["trades_24hr"] = combined_trades
+        data["volume_usd_24hr"] = combined_volume
+        if update_cache and all_variants:
+            data = clean.orderbook_data(data)
+            memcache.update(cache_name, data, 300)
+        """
+
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -258,22 +358,26 @@ def tickers_summary():
 
 
 @router.get(
-    "/trades/{market_pair}/{days_in_past}",
+    "/trades/{pair_str}/{days_in_past}",
     response_model=List[PairTrades],
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
-    market_pair: str = "KMD_LTC", days_in_past: int | None = None, all: bool = False
+    pair_str: str = "KMD_LTC",
+    days_in_past: int | None = None,
+    all_variants: bool = False,
 ):
     try:
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
-        data = Markets().trades(pair=market_pair, days_in_past=days_in_past, all=all)
+        data = Markets().trades(
+            pair=pair_str, days_in_past=days_in_past, all_variants=all_variants
+        )
         return data
     except BadPairFormatError as e:
         err = {"error": f"{e.msg}"}
         logger.warning(err)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}
         logger.warning(err)
     return JSONResponse(status_code=400, content=err)
@@ -306,6 +410,7 @@ def volumes_history_ticker(
     # TODO: Use new DB
     volumes_dict = {}
     query = db.SqlQuery()
+    gecko_source = memcache.get_gecko_source()
     # Individual tickers only, no merge except segwit
     stripped_coin = deplatform.coin(coin)
     variants = derive.coin_variants(coin, segwit_only=True)
@@ -316,7 +421,7 @@ def volumes_history_ticker(
         start_time = int(day_ts)
         end_time = int(day_ts) + 86400
         volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
-        data = query.coin_trade_volumes_usd(volumes)
+        data = query.coin_trade_volumes_usd(volumes, gecko_source)
         volumes_dict[d_str] = template.volumes_ticker()
         for variant in variants:
             if stripped_coin in data["volumes"]:

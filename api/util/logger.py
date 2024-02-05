@@ -282,6 +282,8 @@ def send_log(loglevel, msg):
             logger.sourced(f"{msg}")
         case "request":
             logger.request(f"{msg}")
+        case "cached":
+            logger.cached(f" {msg}")
         case _:
             logger.debug(f"  {msg}")
 
@@ -303,7 +305,7 @@ class StopWatch:
         func = self.trace["function"]
         if PROJECT_ROOT_PATH in self.msg:
             self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-        self.msg = f"{duration:>2} sec | {func:<24} | {str(self.msg):<75} "
+        self.msg = f"{duration:>3} sec | {func:<24} | {str(self.msg):<75} "
         self.msg += f"| {basename(filename)}:{lineno}"
         send_log(loglevel=self.loglevel, msg=self.msg)
 

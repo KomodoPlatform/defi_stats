@@ -14,6 +14,7 @@ import db.sqldb as db
 import util.cron as cron
 from util.transform import derive
 import util.validate as validate
+import util.memcache as memcache
 
 router = APIRouter()
 cache = Cache()
@@ -186,6 +187,7 @@ def get_swaps_for_pair(
     version: str | None = None,
     success_only: bool = True,
     failed_only: bool = False,
+    all_variants: bool = False,
 ):
     try:
         if start_time == 0:
@@ -205,6 +207,7 @@ def get_swaps_for_pair(
             failed_only=failed_only,
             success_only=success_only,
             pubkey=pubkey,
+            all_variants=all_variants,
         )
         return resp
     except Exception as e:  # pragma: no cover
@@ -350,6 +353,7 @@ def coin_trade_volumes_usd(
     version: str | None = None,
 ):
     try:
+        gecko_source = memcache.get_gecko_source()
         if start_time == 0:
             start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
@@ -359,7 +363,7 @@ def coin_trade_volumes_usd(
             start_time=start_time,
             end_time=end_time,
         )
-        return query.coin_trade_volumes_usd(volumes=volumes)
+        return query.coin_trade_volumes_usd(volumes=volumes, gecko_source=gecko_source)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -395,7 +399,8 @@ def pair_trade_volumes_usd(
             coin=coin,
             gui=gui,
         )
-        return query.pair_trade_volumes_usd(volumes=volumes)
+        gecko_source = memcache.get_gecko_source()
+        return query.pair_trade_volumes_usd(volumes=volumes, gecko_source=gecko_source)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
