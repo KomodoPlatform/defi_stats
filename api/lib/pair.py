@@ -199,20 +199,20 @@ class Pair:  # pragma: no cover
             return default.error(e, msg)
 
     @timed
-    def get_volumes_and_prices(self, days: int = 1, all_variants: bool = True):
+    def get_prices(self, days: int = 1, all_variants: bool = True):
         """
-        Iterates over list of swaps to get volumes and prices data
+        Iterates over list of swaps to get prices data
         """
         try:
             suffix = transform.get_suffix(days)
-            data = template.volumes_and_prices(suffix, base=self.base, quote=self.quote)
+            data = template.prices(suffix, base=self.base, quote=self.quote)
             swaps_for_pair_combo = self.pg_query.get_swaps(
                 start_time=int(cron.now_utc() - 86400 * days),
                 end_time=int(cron.now_utc()),
                 pair=self.as_str,
             )
             # Extract all variant swaps, or for a single variant
-            key = "volumes_and_prices"
+            key = "prices"
             cache_name = derive.pair_cachename(key, self.as_str, suffix, all_variants)
             if all_variants:
                 variants = derive.pair_variants(self.as_str)
@@ -241,14 +241,6 @@ class Pair:  # pragma: no cover
             )
             if all_variants:
                 swaps_for_pair = swaps_for_pair_combo["ALL"]
-                data = merge.volumes_data(
-                    data,
-                    suffix,
-                    swaps_for_pair,
-                    self.base_usd_price,
-                    self.quote_usd_price,
-                    sorted_pair_str=self.as_str,
-                )
                 swap_prices = self.get_swap_prices(swaps_for_pair)
             else:
                 swap_prices = {}
@@ -258,14 +250,6 @@ class Pair:  # pragma: no cover
                     else:
                         logger.warning(f"Variant {variant} not in swaps for pair!")
                         continue
-                    data = merge.volumes_data(
-                        data,
-                        suffix,
-                        swaps_for_pair,
-                        self.base_usd_price,
-                        self.quote_usd_price,
-                        sorted_pair_str=self.as_str,
-                    )
                     swap_prices.update(self.get_swap_prices(swaps_for_pair))
 
             # Get Prices
@@ -293,20 +277,12 @@ class Pair:  # pragma: no cover
                 data["last_swap_time"] = last_swap["last_swap_time"]
                 data["last_swap_uuid"] = last_swap["last_swap_uuid"]
 
-            ignore_until = 3
-            if Decimal(data["combined_volume_usd"]) > 0:
-                data = clean.decimal_dicts(data)
-                memcache.update(cache_name, data, 900)
-                if Decimal(data["combined_volume_usd"]) > 1000:
-                    ignore_until = 0
-
-            msg = f"[{cache_name}] ${data['combined_volume_usd']} volume"
-            # msg += f"| Variants: {data['variants']} !"
+            msg = f"get_prices for {self.as_str} complete!"
             return default.result(
-                data=data, msg=msg, loglevel="cached", ignore_until=ignore_until
+                data=data, msg=msg, loglevel="cached", ignore_until=3
             )
         except Exception as e:  # pragma: no cover
-            msg = f"get_volumes_and_prices for {self.as_str} failed! {e}, returning template"
+            msg = f"get_prices for {self.as_str} failed! {e}, returning template"
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
@@ -353,7 +329,6 @@ class Pair:  # pragma: no cover
                 return default.result(
                     data=data, msg=msg, loglevel="query", ignore_until=3
                 )
-
             data = template.ticker_info(suffix, self.base, self.quote)
             data.update(
                 {
@@ -365,7 +340,7 @@ class Pair:  # pragma: no cover
                     "priced": self.priced,
                 }
             )
-            data.update(self.get_volumes_and_prices(days, all_variants=all_variants))
+            data.update(self.get_prices(days, all_variants=all_variants))
             orderbook_data = self.orderbook(
                 self.as_str, depth=100, all_variants=all_variants, no_thread=False
             )
@@ -377,10 +352,7 @@ class Pair:  # pragma: no cover
             ignore_until = 3
 
             # Add to cache if fully populated
-            if (
-                Decimal(data["liquidity_in_usd"]) > 0
-                and Decimal(data["combined_volume_usd"]) > 0
-            ):
+            if Decimal(data["liquidity_in_usd"]) > 0:
                 segwit_variants = derive.segwit_pair_variants(self.as_str)
                 for sv in segwit_variants:
                     cache_name = derive.pair_cachename(key, sv, suffix, all_variants)
@@ -399,14 +371,12 @@ class Pair:  # pragma: no cover
                     msg = f" Added to memcache [{cache_name}]"
                     loglevel = "cached"
                     ignore_until = 3
-                    if (
-                        Decimal(data["liquidity_in_usd"]) > 1000
-                        and Decimal(data["combined_volume_usd"]) > 1000
-                    ):
+                    if Decimal(data["liquidity_in_usd"]) > 10000:
+                        msg = f'[{cache_name}] liquidity {data["liquidity_in_usd"]}'
                         ignore_until = 0
             else:
                 msg = f" {cache_name} not added to memcache,"
-                msg += " liquidity and volume for pair is zero"
+                msg += " liquidity for pair is zero"
                 loglevel = "warning"
                 ignore_until = 3
             return default.result(

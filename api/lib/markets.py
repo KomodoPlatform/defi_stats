@@ -3,7 +3,7 @@ from const import MARKETS_PAIRS_DAYS
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
-from util.transform import sortdata, derive
+from util.transform import sortdata, derive, deplatform, invert
 import util.cron as cron
 import util.defaults as default
 import util.memcache as memcache
@@ -71,3 +71,30 @@ class Markets:
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
             return default.error(e, msg)
+
+    def get_volumes_from_cache(self, pair_str, merge_segwit=True):
+        trades = 0
+        volume = 0
+        if merge_segwit:
+            variants = derive.segwit_pair_variants(pair_str, utxo_only=True)
+        else:
+            variants = [pair_str]
+        pair_volumes = memcache.get_pair_volumes_24hr()
+        if pair_volumes is not None:
+            depair = deplatform.pair(pair_str)
+            pair_vols = pair_volumes["volumes"]
+            if depair in pair_vols:
+                # We only merge segwit as makets wants to deliniate protocols
+                for variant in variants:
+                    if variant in pair_vols[depair]:
+                        trades = pair_vols[depair][variant]["swaps"]
+                        volume = pair_vols[depair][variant]["trade_volume_usd"]
+            elif invert.pair(depair) in pair_vols:
+                inv_depair = invert.pair(depair)
+                # We only merge segwit as makets wants to deliniate protocols
+                variants = [invert.pair(i) for i in variants]
+                for variant in variants:
+                    if variant in pair_vols[inv_depair]:
+                        trades = pair_vols[inv_depair][variant]["swaps"]
+                        volume = pair_vols[inv_depair][variant]["trade_volume_usd"]
+        return {"trades_24hr": trades, "volume_usd_24hr": volume, "variants": variants}

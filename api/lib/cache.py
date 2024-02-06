@@ -40,6 +40,7 @@ class Cache:  # pragma: no cover
                 "last_traded",
                 "pair_volumes_24hr",
                 "coin_volumes_24hr",
+                "orderbook_extended",
                 "generic_summary",
                 "generic_tickers",
                 "prices_tickers_v1",
@@ -118,6 +119,9 @@ class CacheItem:
             "last_traded": 1,
             "gecko_source": 15,
             "fixer_rates": 15,
+            "pair_volumes_24hr": 15,
+            "coin_volumes_24hr": 15,
+            "orderbook_extended": 15,
         }
         if self.name in expiry_limits:
             return expiry_limits[self.name]
@@ -162,12 +166,16 @@ class CacheItem:
                     data = cache_calc.CacheCalc().coin_volumes_24hr()
                     memcache.set_coin_volumes_24hr(data)
 
+                if self.name == "orderbook_extended":
+                    data = cache_calc.CacheCalc().orderbook_extended()
+                    memcache.set_orderbook_extended(data)
+
                 # REVIEW
 
                 if self.name == "generic_summary":
                     pass
-                    #data = stats_api.StatsAPI().pair_summaries()
-                    #memcache.set_summary(data)
+                    # data = stats_api.StatsAPI().pair_summaries()
+                    # memcache.set_summary(data)
 
                 if self.name == "generic_tickers":
                     data = cache_calc.CacheCalc().tickers()

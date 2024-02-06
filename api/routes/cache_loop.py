@@ -38,6 +38,7 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_last_traded(CacheItem(name="last_traded").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
+    memcache.set_orderbook_extended(CacheItem(name="orderbook_extended").data)
 
     # memcache.set_summary(CacheItem(name="generic_summary").data)
     memcache.set_tickers(CacheItem(name="generic_tickers").data)
@@ -181,6 +182,32 @@ def import_dbs():
         msg = "Import source databases skipped, NodeType is 'serve'!"
         msg += " Masters will be updated from cron."
         return default.result(msg=msg, loglevel="merge")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def refresh_orderbook_extended():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="orderbook_extended").save()
+        except Exception as e:
+            return default.error(e)
+        msg = "orderbook_extended refresh loop complete!"
+        return default.result(msg=msg, loglevel="query")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_orderbook_extended():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="orderbook_extended", from_memcache=True).save()
+        except Exception as e:
+            return default.error(e)
+        msg = "orderbook_extended loop for memcache complete!"
+        return default.result(msg=msg, loglevel="query")
 
 
 # REVIEW

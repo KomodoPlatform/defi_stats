@@ -100,36 +100,24 @@ def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
     assert r == 0
 
 
-def test_get_volumes_and_prices(
-    setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_pair
-):
+def test_get_prices(setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_pair):
     pair = setup_kmd_ltc_pair
-    r = pair.get_volumes_and_prices()
+    r = pair.get_prices()
     r = clean.decimal_dicts(r)
     assert r["base"] == "KMD"
     assert r["quote"] == "LTC"
     assert r["base_price_usd"] == 1
-    assert r["trades_24hr"] == 3
     assert r["quote_price_usd"] == 100
-    assert float(r["base_volume"]) == 400
-    assert float(r["quote_volume"]) == 4
-    assert r["base_volume"] == 400
-    assert r["quote_volume"] == 4
     assert float(r["highest_price_24hr"]) == 0.01
     assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert float(r["lowest_price_24hr"]) == 0.01
     assert float(r["price_change_24hr"]) == 0
     assert float(r["price_change_pct_24hr"]) == 0
-    assert float(r["base_volume_usd"]) == 400
-    assert float(r["quote_volume_usd"]) == 400
-    # average of base and rel volume
-    assert float(r["combined_volume_usd"]) == 800 / 2
     assert float(r["last_swap_time"]) > int(cron.now_utc() - 86400)
 
     pair = setup_not_existing_pair
     r = pair.get_volumes_and_prices()
     assert float(r["last_swap_price"]) == 0
-    assert float(r["trades_24hr"]) == 0
 
     pair = setup_ltc_kmd_pair
     r = pair.get_volumes_and_prices()
@@ -138,8 +126,6 @@ def test_get_volumes_and_prices(
     assert r["base_price_usd"] == 100
     assert r["quote_price_usd"] == 1
     assert r["trades_24hr"] == 3
-    assert r["base_volume"] == 4
-    assert r["quote_volume"] == 400
     assert float(r["highest_price_24hr"]) == 100
     assert float(r["lowest_price_24hr"]) == 100
 

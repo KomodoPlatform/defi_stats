@@ -138,7 +138,6 @@ def get_orderbook(
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
                 )
-                logger.loop(data)
             else:
                 t = OrderbookRpcThread(
                     base,
@@ -192,7 +191,6 @@ def orderbook_extras(pair_str, data, gecko_source):
     try:
         data["pair"] = pair_str
         data["timestamp"] = int(cron.now_utc())
-        data["variants"] = [pair_str]
         data = transform.label_bids_asks(data, pair_str)
         data = get_liquidity(data, gecko_source)
         data.update(

@@ -88,7 +88,6 @@ class SampleData:
         return {
             "ticker_id": "DGB_LTC",
             "pool_id": "DGB_LTC",
-            f"trades_{suffix}": "1",
             "variants": [
                 "DGB_LTC",
                 "DGB-segwit_LTC",
@@ -96,10 +95,8 @@ class SampleData:
                 "DGB-segwit_LTC-segwit",
             ],
             "base_currency": "DGB",
-            "base_volume": "1.0000000000",
             "base_usd_price": "0.0100000000",
             "quote_currency": "LTC",
-            "quote_volume": "1.0000000000",
             "quote_usd_price": "100.0000000000",
             "last_swap_price": "1.0000000000",
             "last_swap_time": "1704858849",
@@ -112,9 +109,6 @@ class SampleData:
             "lowest_ask": "0.0001217309",
             f"highest_price_{suffix}": "1.0000000000",
             f"lowest_price_{suffix}": "1.0000000000",
-            "combined_volume_usd": "50.0050000000",
-            "base_volume_usd": "0.0100000000",
-            "quote_volume_usd": "100.0000000000",
             "liquidity_in_usd": "2290.2992432883",
             "base_liquidity_coins": "145136.4015657607",
             "base_liquidity_usd": "1451.3640156576",

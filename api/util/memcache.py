@@ -119,6 +119,15 @@ def get_gecko_source():  # pragma: no cover
 
 
 # FOUNDATIONAL CACHE
+def set_orderbook_extended(data):  # pragma: no cover
+    update("orderbook_extended", data, 900)
+
+
+def get_orderbook_extended():  # pragma: no cover
+    data = get("orderbook_extended")
+    return data
+
+
 def set_coin_volumes_24hr(data):  # pragma: no cover
     update("coin_volumes_24hr", data, 900)
 
@@ -158,12 +167,12 @@ def get_adex_fortnite():  # pragma: no cover
 
 # REVIEW CACHE (TOO LARGE)
 # def set_summary(data):  # pragma: no cover
-    # update("generic_summary", data, 900)
+# update("generic_summary", data, 900)
 
 
 # def get_summary():  # pragma: no cover
-    # data = get("generic_summary")
-    # return data
+# data = get("generic_summary")
+# return data
 
 
 def set_tickers(data):  # pragma: no cover

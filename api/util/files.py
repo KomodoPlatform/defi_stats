@@ -39,6 +39,7 @@ class Files:
         self.pair_volumes_24hr = (
             f"{folder}/generic/pair_volumes_24hr.json"
         )
+        self.orderbook_extended = f"{folder}/generic/orderbook_extended.json"
 
         # REVIEW
         self.generic_summary = f"{folder}/generic/summary.json"

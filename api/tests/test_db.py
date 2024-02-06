@@ -188,7 +188,7 @@ def test_coin_trade_volumes_usd(setup_swaps_db_data):
     assert vols["KMD"]["taker_volume"] == 1000101
     assert vols["KMD-BEP20"]["maker_volume"] == Decimal(str(1.9))
     assert vols["KMD-BEP20"]["taker_volume"] == 0
-    assert vols["ALL"]["total_volume_usd"] == Decimal(str(1000402.9))
+    assert vols["ALL"]["trade_volume_usd"] == Decimal(str(1000402.9))
 
 
 def test_get_uuids(setup_swaps_db_data):

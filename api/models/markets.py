@@ -38,20 +38,21 @@ class MarketsOrderbookAsk(MarketsOrderbookBid):
 # markets/orderbook
 class MarketsOrderbookItem(BaseModel):
     pair: str = "XXX_YYY"
+    timestamp: str = 1777777777
     base: str = "XXX"
     quote: str = "YYY"
+    variants: List[str] = ["YYY", "YYY-segwit"]
     trades_24hr: int = 777
     liquidity_usd: str = "777.777777"
     volume_usd_24hr: str = "777.777777"
+    # total_asks_base_vol: str = "777.777777"
+    # total_asks_quote_vol: str = "777.777777"
+    # total_asks_base_usd: str = "777.777777"
+    # total_bids_base_vol: str = "777.777777"
+    # total_bids_quote_vol: str = "777.777777"
+    # total_bids_quote_usd: str = "777.777777"
     bids: List[MarketsOrderbookBid]
     asks: List[MarketsOrderbookAsk]
-    total_asks_base_vol: str = "777.777777"
-    total_asks_quote_vol: str = "777.777777"
-    total_asks_base_usd: str = "777.777777"
-    total_bids_base_vol: str = "777.777777"
-    total_bids_quote_vol: str = "777.777777"
-    total_bids_quote_usd: str = "777.777777"
-    timestamp: str = 1777777777
 
 
 # markets/pairs_last_trade

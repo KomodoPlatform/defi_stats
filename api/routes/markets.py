@@ -89,104 +89,25 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     # `markets` endpoints
     # , all_variants: bool = False
     try:
-        all_variants = False
-        # For combined results regardles of platform.
-        if all_variants:
-            pair_str = deplatform.pair(pair_str)
         pair = Pair(pair_str=pair_str)
         key = "markets_orderbook"
-        if pair.is_reversed:
-            # For trades / volume, ticker order does not matter
-            # so we use the same cache as standard
-            cache_name = derive.pair_cachename(
-                key,
-                pair_str=invert.pair(pair_str),
-                suffix="24hr",
-                all_variants=all_variants,
-            )
-        else:
-            cache_name = derive.pair_cachename(
-                key, pair_str=pair_str, suffix="24hr", all_variants=all_variants
-            )
+        cache_name = derive.pair_cachename(key, pair_str=pair.as_str, suffix="24hr")
+            
         # Use cache if it is fully populated
         data = memcache.get(cache_name)
-        if data is not None and int(data["trades_24hr"]) > 0:
-            if (
-                Decimal(data["liquidity_usd"]) > 0
-                and Decimal(data["volume_usd_24hr"]) > 0
-            ):
-                return data
-        data = pair.orderbook(
-            pair_str=pair_str, depth=depth, all_variants=all_variants, no_thread=True
-        )
-        # To avoid `-segwit` variant unless requested
-        base, quote = derive.base_quote(pair_str)
-        if "segwit" in data["base"] and "segwit" not in base:
-            data["base"] = data["base"].replace("-segwit", "")
-        if "segwit" in data["quote"] and "segwit" not in quote:
-            data["quote"] = data["quote"].replace("-segwit", "")
-        data.update({"pair": f"{data['base']}_{data['quote']}"})
-
-        # TODO: Review below for liquidity / swap count calc.
-
-        if all_variants:
-            variants = derive.pair_variants(pair_str)
-        else:
-            variants = [pair_str]
-        data.update(
-            {
-                "trades_24hr": 0,
-                "liquidity_usd": data["liquidity_in_usd"],
-                "volume_usd_24hr": 0,
-                "variants": variants,
-            }
-        )
-        """ 
-        combined_trades = 0
-        combined_volume = 0
-        for variant in variants:
-            key = "ticker_info"
-            if pair.is_reversed:
-                # For trades / volume, ticker order does not matter
-                # so we use the same cache as standard
-                ticker_cache_name = derive.pair_cachename(
-                    key,
-                    pair_str=invert.pair(pair_str),
-                    suffix="24hr",
-                    all_variants=all_variants,
-                )
-            else:
-                ticker_cache_name = derive.pair_cachename(
-                    key, pair_str=pair_str, suffix="24hr", all_variants=all_variants
-                )
-
-            update_cache = False
-            ticker_info = memcache.get(ticker_cache_name)
-            if ticker_info is None:
-                ticker_info = pair.ticker_info(days=1, all_variants=all_variants)
-                update_cache = True
-
-            data["trades_24hr"] = int(ticker_info["trades_24hr"])
-            data["volume_usd_24hr"] = Decimal(ticker_info["combined_volume_usd"])
-
-            if update_cache and not all_variants:
+        if data is None:
+            data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
+            data.update({"liquidity_usd": data["liquidity_in_usd"]})
+            volumes_info = Markets().get_volumes_from_cache(pair.as_str)
+            data.update(volumes_info)
+            if not pair.is_reversed:
                 data = clean.orderbook_data(data)
                 memcache.update(cache_name, data, 300)
-
-            combined_trades = sumdata.decimals(
-                combined_trades, ticker_info["trades_24hr"]
-            )
-            combined_volume = sumdata.decimals(
-                combined_volume, ticker_info["combined_volume_usd"]
-            )
-
-        data["trades_24hr"] = combined_trades
-        data["volume_usd_24hr"] = combined_volume
-        if update_cache and all_variants:
-            data = clean.orderbook_data(data)
-            memcache.update(cache_name, data, 300)
-        """
-
+        else:
+            if Decimal(data["liquidity_usd"]) > 0:
+                if pair.is_reversed:
+                    logger.calc("Returning inverted cache")
+                    data = invert.markets_orderbook(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

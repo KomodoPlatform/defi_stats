@@ -7,7 +7,7 @@
         "total_swaps": 8,
         "base_volume_usd": 1000401.91,
         "quote_volume_usd": 100516.0,
-        "total_volume_usd": 550458.955,
+        "trade_volume_usd": 550458.955,
         "volumes": {
             "DGB_LTC": {
                 "ALL": {

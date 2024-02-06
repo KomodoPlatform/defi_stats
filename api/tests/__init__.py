@@ -18,6 +18,7 @@ memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
 memcache.set_last_traded(CacheItem(name="last_traded").data)
 memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
 memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
+memcache.set_orderbook_extended(CacheItem(name="orderbook_extended").data)
 
 
 # memcache.set_summary(CacheItem(name="generic_summary").data)

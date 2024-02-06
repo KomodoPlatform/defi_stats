@@ -93,6 +93,10 @@ class Convert:
     def __init__(self):
         pass
 
+    def ticker_info_to_orderbook_extended(self, data):
+        resp = {i: data[i] for i in data if i not in ["ticker_id"]}
+        return resp
+
     def ticker_to_gecko_pair(self, pair_data):
         return {
             "ticker_id": pair_data["ticker_id"],
@@ -301,8 +305,8 @@ def ticker_to_statsapi_summary(i):
     if i is None:
         return i
     try:
-        suffix = [k for k in i.keys() if k.startswith("trades_")][0].replace(
-            "trades_", ""
+        suffix = [k for k in i.keys() if k.startswith("highest_price_")][0].replace(
+            "highest_price_", ""
         )
         if suffix == "24hr":
             alt_suffix = "24h"
@@ -635,11 +639,11 @@ class Derive:
         return variants
 
     @timed
-    def segwit_pair_variants(self, pair_str):
+    def segwit_pair_variants(self, pair_str, utxo_only=False):
         variants = []
         base, quote = derive.base_quote(pair_str)
-        for b in derive.coin_variants(base, segwit_only=True, utxo_only=False):
-            for q in derive.coin_variants(quote, segwit_only=True, utxo_only=False):
+        for b in derive.coin_variants(base, segwit_only=True, utxo_only=utxo_only):
+            for q in derive.coin_variants(quote, segwit_only=True, utxo_only=utxo_only):
                 if b != q:
                     variants.append(f"{b}_{q}")
         return variants
@@ -655,31 +659,6 @@ class Derive:
             return {end_time: price}
         except Exception as e:  # pragma: no cover
             return default.error(e)
-
-    @timed
-    def swaps_volumes(self, swaps_for_pair, sorted_pair_str):
-        try:
-            base_swaps = []
-            quote_swaps = []
-            for i in swaps_for_pair:
-                is_reversed = i["pair"].replace(
-                    "-segwit", ""
-                ) != sorted_pair_str.replace("-segwit", "")
-                if (not is_reversed and i["trade_type"] == "buy") or (
-                    is_reversed and i["trade_type"] == "sell"
-                ):
-                    # Base is maker on buy (unless inverted)
-                    base_swaps.append(Decimal(i["maker_amount"]))
-                    quote_swaps.append(Decimal(i["taker_amount"]))
-                else:
-                    # Base is taker on sell (unless inverted)
-                    base_swaps.append(Decimal(i["taker_amount"]))
-                    quote_swaps.append(Decimal(i["maker_amount"]))
-
-            return [sum(base_swaps), sum(quote_swaps)]
-        except Exception as e:  # pragma: no cover
-            msg = f"swaps_volumes failed! {e}"
-            return default.error(e, msg)
 
     # The lowest ask / highest bid needs to be inverted
     # to result in conventional vaules like seen at
@@ -848,6 +827,29 @@ class Invert:
             return "buy"
         raise ValueError
 
+    def ask_bid(self, i):
+        return {"price": Decimal(i["volume"]) / Decimal(i["quote_volume"]), "volume": Decimal(i["quote_volume"])}
+
+    def markets_orderbook(self, orderbook):
+        try:
+            orderbook.update(
+                {
+                    "asks": [invert.ask_bid(i) for i in orderbook["bids"]],
+                    "bids": [invert.ask_bid(i) for i in orderbook["asks"]],
+                    "variants": [invert.pair(i) for i in orderbook["variants"]],
+                    "total_asks_base_vol": orderbook["total_bids_quote_vol"],
+                    "total_asks_quote_vol": orderbook["total_bids_base_vol"],
+                    "total_asks_base_usd": orderbook["total_bids_quote_usd"],
+                    "total_bids_base_vol": orderbook["total_asks_quote_vol"],
+                    "total_bids_quote_vol": orderbook["total_asks_base_vol"],
+                    "total_bids_quote_usd": orderbook["total_asks_base_usd"],
+                }
+            )
+            return orderbook
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+        return orderbook
+
     def orderbook(self, orderbook):
         try:
             if "rel" in orderbook:
@@ -956,51 +958,6 @@ class Merge:
             err = {"error": f"merge.orderbooks: {e}"}
             logger.warning(err)
         return existing
-
-    @timed
-    def volumes_data(
-        self,
-        data,
-        suffix,
-        swaps_for_pair,
-        base_usd_price,
-        quote_usd_price,
-        sorted_pair_str,
-    ):
-        try:
-            swaps_volumes = derive.swaps_volumes(swaps_for_pair, sorted_pair_str)
-            base_volume_usd = swaps_volumes[0] * base_usd_price
-            quote_volume_usd = swaps_volumes[1] * quote_usd_price
-            # Halving the combined volume to not double count, and
-            # get average between base and quote
-            combined_volume_usd = (base_volume_usd + quote_volume_usd) / 2
-            data.update(
-                {
-                    f"trades_{suffix}": sumdata.ints(
-                        data[f"trades_{suffix}"], len(swaps_for_pair)
-                    ),
-                    "base_volume": sumdata.decimals(
-                        data["base_volume"], swaps_volumes[0]
-                    ),
-                    "quote_volume": sumdata.decimals(
-                        data["quote_volume"], swaps_volumes[1]
-                    ),
-                    "base_volume_usd": sumdata.decimals(
-                        data["base_volume_usd"], base_volume_usd
-                    ),
-                    "quote_volume_usd": sumdata.decimals(
-                        data["quote_volume_usd"], quote_volume_usd
-                    ),
-                    "combined_volume_usd": sumdata.decimals(
-                        data["combined_volume_usd"], combined_volume_usd
-                    ),
-                    "variants": data["variants"],
-                }
-            )
-            msg = f'Combined vol: {data["combined_volume_usd"]}'
-            return default.result(data=data, msg=msg, loglevel="dexrpc", ignore_until=0)
-        except Exception as e:  # pragma: no cover
-            logger.warning(e)
 
 
 class SortData:
@@ -1304,16 +1261,11 @@ class Templates:
     def gecko_info(self, coin_id):
         return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}
 
-    def volumes_and_prices(self, suffix, base, quote):
+    def prices(self, suffix, base, quote):
         return {
-            f"trades_{suffix}": 0,
             "base": base,
-            "base_volume": 0,
-            "base_volume_usd": 0,
             "base_price_usd": 0,
             "quote": quote,
-            "quote_volume": 0,
-            "quote_volume_usd": 0,
             "quote_price_usd": 0,
             "oldest_price_time": 0,
             "newest_price_time": 0,
@@ -1326,7 +1278,6 @@ class Templates:
             "last_swap_price": 0,
             "last_swap_uuid": "",
             "last_swap_time": 0,
-            "combined_volume_usd": 0,
             "variants": [],
         }
 
@@ -1344,21 +1295,14 @@ class Templates:
     def ticker_info(self, suffix, base, quote):
         return {
             "ticker_id": f"{base}_{quote}",
-            "variants": [],
-            f"trades_{suffix}": 0,
             "base_currency": base,
-            "base_volume": 0,
-            "base_volume_usd": 0,
             "base_liquidity_coins": 0,
             "base_liquidity_usd": 0,
             "base_usd_price": 0,
             "quote_currency": quote,
-            "quote_volume": 0,
-            "quote_volume_usd": 0,
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
             "quote_usd_price": 0,
-            "combined_volume_usd": 0,
             "liquidity_in_usd": 0,
             "last_swap_price": 0,
             "last_swap_uuid": "",
@@ -1385,7 +1329,7 @@ class Templates:
             "total_volume": 0,
             "taker_volume_usd": 0,
             "maker_volume_usd": 0,
-            "total_volume_usd": 0
+            "trade_volume_usd": 0,
         }
 
     def first_last_swap(self):

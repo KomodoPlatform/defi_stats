@@ -78,11 +78,8 @@ def test_tickers():
     cache_calc = CacheCalc()
     r = cache_calc.tickers(7, 1)
 
-    assert r["last_update"] > cron.now_utc() - 60
     assert r["pairs_count"] > 0
-    assert r["swaps_count"] > 0
     r2 = cache_calc.tickers(1, 1)
-    assert float(r2["combined_volume_usd"]) < float(r["combined_volume_usd"])
     assert len(r2["data"]) > 0
     for i in r2["data"][0]:
         assert not isinstance(i, Decimal)

@@ -296,7 +296,7 @@ class SqlQuery(SqlDB):
         coins_config = memcache.get_coins_config()
         data = sorted([j for j in coins_config.keys()])
         return Enum("ValidCoins", {i: i for i in data}, type=str)
-    
+
     # TODO: Subclass 'volumes'
     @timed
     def coin_trade_volumes(
@@ -324,7 +324,7 @@ class SqlQuery(SqlDB):
                 "total_swaps": 0,
                 "maker_volume_usd": 0,
                 "taker_volume_usd": 0,
-                "total_volume_usd": 0,
+                "trade_volume_usd": 0,
                 "volumes": {},
             }
             total_maker_swaps = 0
@@ -458,22 +458,21 @@ class SqlQuery(SqlDB):
                         {
                             "taker_volume_usd": taker_vol * usd_price,
                             "maker_volume_usd": maker_vol * usd_price,
-                            "total_volume_usd": variant_vol * usd_price,
+                            "trade_volume_usd": variant_vol * usd_price,
                         }
                     )
                 maker_vol = volumes["volumes"][coin]["ALL"]["maker_volume_usd"]
                 taker_vol = volumes["volumes"][coin]["ALL"]["taker_volume_usd"]
-                total_vol = volumes["volumes"][coin]["ALL"]["total_volume_usd"]
+                total_vol = volumes["volumes"][coin]["ALL"]["trade_volume_usd"]
                 volumes["maker_volume_usd"] += maker_vol
                 volumes["taker_volume_usd"] += taker_vol
-                volumes["total_volume_usd"] += total_vol
+                volumes["trade_volume_usd"] += total_vol
 
-            # global coin swaps divided by two wrt both coins in pair
             volumes.update(
                 {
-                    "taker_volume_usd": volumes["taker_volume_usd"] / 2,
-                    "maker_volume_usd": volumes["maker_volume_usd"] / 2,
-                    "total_volume_usd": volumes["total_volume_usd"] / 2,
+                    "taker_volume_usd": volumes["taker_volume_usd"],
+                    "maker_volume_usd": volumes["maker_volume_usd"],
+                    "trade_volume_usd": volumes["trade_volume_usd"],
                 }
             )
             return default.result(
@@ -510,7 +509,7 @@ class SqlQuery(SqlDB):
                 "total_swaps": 0,
                 "base_volume_usd": 0,
                 "quote_volume_usd": 0,
-                "total_volume_usd": 0,
+                "trade_volume_usd": 0,
                 "volumes": {},
             }
 
@@ -612,15 +611,17 @@ class SqlQuery(SqlDB):
                     "quote_volume_usd"
                 ]
                 total_trade_vol_usd += volumes["volumes"][pair_std]["ALL"][
+                    "base_volume_usd"
+                ]
+                total_trade_vol_usd += volumes["volumes"][pair_std]["ALL"][
                     "quote_volume_usd"
                 ]
 
-            total_trade_vol_usd = (total_base_vol_usd + total_quote_vol_usd) / 2
             volumes.update(
                 {
                     "base_volume_usd": total_base_vol_usd,
                     "quote_volume_usd": total_quote_vol_usd,
-                    "total_volume_usd": total_trade_vol_usd,
+                    "trade_volume_usd": total_trade_vol_usd,
                 }
             )
             return default.result(
