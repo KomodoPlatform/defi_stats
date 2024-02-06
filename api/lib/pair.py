@@ -149,6 +149,8 @@ class Pair:  # pragma: no cover
                     sells = sortdata.dict_lists(sells, "timestamp", reverse=True)
                 if variant == "ALL":
                     pair_str = deplatform.pair(pair_str)
+                else:
+                    pair_str = variant
                 data = {
                     "ticker_id": pair_str,
                     "start_time": str(start_time),
@@ -278,9 +280,7 @@ class Pair:  # pragma: no cover
                 data["last_swap_uuid"] = last_swap["last_swap_uuid"]
 
             msg = f"get_prices for {self.as_str} complete!"
-            return default.result(
-                data=data, msg=msg, loglevel="cached", ignore_until=3
-            )
+            return default.result(data=data, msg=msg, loglevel="cached", ignore_until=3)
         except Exception as e:  # pragma: no cover
             msg = f"get_prices for {self.as_str} failed! {e}, returning template"
             return default.result(
@@ -327,7 +327,7 @@ class Pair:  # pragma: no cover
             if data is not None and Decimal(data["liquidity_in_usd"]) > 0:
                 msg = f"Using cache: {cache_name}"
                 return default.result(
-                    data=data, msg=msg, loglevel="query", ignore_until=3
+                    data=data, msg=msg, loglevel="pair", ignore_until=3
                 )
             data = template.ticker_info(suffix, self.base, self.quote)
             data.update(
@@ -349,11 +349,13 @@ class Pair:  # pragma: no cover
                     data.update({f"num_{i}": len(orderbook_data[i])})
                 else:
                     data.update({i: orderbook_data[i]})
-            ignore_until = 3
 
+            ignore_until = 3
+            loglevel = "pair"
+            msg = f"ticker_info for {self.as_str} ({days} days) complete!"
             # Add to cache if fully populated
             if Decimal(data["liquidity_in_usd"]) > 0:
-                segwit_variants = derive.segwit_pair_variants(self.as_str)
+                segwit_variants = derive.pair_variants(self.as_str, segwit_only=True)
                 for sv in segwit_variants:
                     cache_name = derive.pair_cachename(key, sv, suffix, all_variants)
                     base, quote = derive.base_quote(sv)
@@ -369,24 +371,17 @@ class Pair:  # pragma: no cover
                     data = clean.decimal_dicts(data)
                     memcache.update(cache_name, data, 900)
                     msg = f" Added to memcache [{cache_name}]"
-                    loglevel = "cached"
-                    ignore_until = 3
                     if Decimal(data["liquidity_in_usd"]) > 10000:
                         msg = f'[{cache_name}] liquidity {data["liquidity_in_usd"]}'
                         ignore_until = 0
-            else:
-                msg = f" {cache_name} not added to memcache,"
-                msg += " liquidity for pair is zero"
-                loglevel = "warning"
-                ignore_until = 3
-            return default.result(
-                data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
-            )
+
         except Exception as e:  # pragma: no cover
+            ignore_until = 0
+            loglevel = "warning"
             msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
-            return default.result(
-                data=data, msg=msg, loglevel="warning", ignore_until=0
-            )
+        return default.result(
+            data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+        )
 
     @timed
     def get_swap_prices(self, swaps_for_pair):

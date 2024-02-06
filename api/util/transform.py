@@ -137,20 +137,45 @@ class Convert:
             "type": i["type"],
         }
 
-    def last_traded_to_market(self, last_traded_item):
-        return {
+    def last_traded_to_market(self, last_traded_item, pair_volumes_cache):
+        resp = {
             "pair": last_traded_item["pair"],
-            "swap_count": last_traded_item["pair"],
             "last_swap": last_traded_item["last_swap_time"],
             "last_swap_uuid": last_traded_item["last_swap_uuid"],
             "last_price": last_traded_item["last_swap_price"],
-            "base_volume_usd_24hr": last_traded_item["base_volume_usd_24hr"],
-            "quote_volume_24hr": last_traded_item["quote_volume_24hr"],
-            "base_volume_24hr": last_traded_item["base_volume_24hr"],
-            "trade_volume_usd_24hr": last_traded_item["trade_volume_usd_24hr"],
-            "quote_volume_usd_24hr": last_traded_item["quote_volume_usd_24hr"],
+            "first_swap": last_traded_item["first_swap_time"],
+            "first_swap_uuid": last_traded_item["first_swap_uuid"],
+            "first_price": last_traded_item["first_swap_price"],
             "priced": last_traded_item["priced"],
+            "swap_count": 0,
+            "base_volume_usd_24hr": 0,
+            "quote_volume_24hr": 0,
+            "base_volume_24hr": 0,
+            "trade_volume_usd_24hr": 0,
+            "quote_volume_usd_24hr": 0,
         }
+        depair = deplatform.pair(resp["pair"])
+        variants = [resp["pair"]]
+        if depair in pair_volumes_cache:
+            for variant in variants:
+                if variant in pair_volumes_cache[depair]:
+                    resp.update(
+                        {
+                            "swap_count": pair_volumes_cache["swaps"],
+                            "base_volume_24hr": pair_volumes_cache["base_volume"],
+                            "quote_volume_24hr": pair_volumes_cache["quote_volume"],
+                            "base_volume_usd_24hr": pair_volumes_cache[
+                                "base_volume_usd"
+                            ],
+                            "quote_volume_usd_24hr": pair_volumes_cache[
+                                "quote_volume_usd"
+                            ],
+                            "trade_volume_usd_24hr": pair_volumes_cache[
+                                "trade_volume_usd"
+                            ],
+                        }
+                    )
+        return resp
 
     def traded_cache_to_stats_api(self, traded_cache):
         resp = {}
@@ -612,40 +637,69 @@ class Derive:
         return template.last_trade_info()
 
     @timed
-    def coin_variants(
-        self, coin: str, segwit_only: bool = False, utxo_only: bool = True
-    ):
+    def coin_variants(self, coin: str, segwit_only: bool = False):
+        """
+        If `segwit_only` is true, non-segwit coins will be
+        returned on their own, otherwise the utxo legacy
+        and segwit versions will be returned.
+        """
+        coin_parts = coin.split("-")
+        if len(coin_parts) == 2 and not coin.endswith("segwit") and segwit_only:
+            return [coin]
+        else:
+            coin = coin_parts[0]
         coins_config = memcache.get_coins_config()
-        if utxo_only:
-            coin = coin.split("-")[0]
         data = [
             i
             for i in coins_config
             if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
-            and (not segwit_only or i.endswith("segwit") or i.replace(coin, "") == "")
         ]
+        if segwit_only:
+            decoin = deplatform.coin(coin)
+            return [
+                i for i in data if i.endswith("segwit") or i.replace(decoin, "") == ""
+            ]
         return data
 
     @timed
     def pair_variants(self, pair_str, segwit_only=False):
         variants = []
         base, quote = derive.base_quote(pair_str)
-        base_variants = self.coin_variants(base, segwit_only=segwit_only)
-        quote_variants = self.coin_variants(quote, segwit_only=segwit_only)
+        base_variants = self.coin_variants(base)
+        quote_variants = self.coin_variants(quote)
         for i in base_variants:
             for j in quote_variants:
                 if i != j:
                     variants.append(f"{i}_{j}")
-        return variants
+        if segwit_only:
+            base_variants = []
+            quote_variants = []
+            segvars = []
+            coins_config = memcache.get_coins_config()
+            debase = deplatform.coin(base)
+            dequote = deplatform.coin(quote)
+            if base.endswith("segwit") or base == debase:
+                if debase in coins_config:
+                    base_variants.append(debase)
+                if f"{debase}-segwit" in coins_config:
+                    base_variants.append(f"{debase}-segwit")
+            else:
+                base_variants = [base]
 
-    @timed
-    def segwit_pair_variants(self, pair_str, utxo_only=False):
-        variants = []
-        base, quote = derive.base_quote(pair_str)
-        for b in derive.coin_variants(base, segwit_only=True, utxo_only=utxo_only):
-            for q in derive.coin_variants(quote, segwit_only=True, utxo_only=utxo_only):
-                if b != q:
-                    variants.append(f"{b}_{q}")
+            if quote.endswith("segwit") or quote == dequote:
+                if dequote in coins_config:
+                    quote_variants.append(dequote)
+                if f"{dequote}-segwit" in coins_config:
+                    quote_variants.append(f"{dequote}-segwit")
+            else:
+                quote_variants = [quote]
+            for b in base_variants:
+                for q in quote_variants:
+                    variant = f"{b}_{q}"
+                    if b != q:
+                        segvars.append(variant)
+            variants = list(set(segvars))
+        variants.sort()
         return variants
 
     @timed
@@ -828,7 +882,10 @@ class Invert:
         raise ValueError
 
     def ask_bid(self, i):
-        return {"price": Decimal(i["volume"]) / Decimal(i["quote_volume"]), "volume": Decimal(i["quote_volume"])}
+        return {
+            "price": Decimal(i["volume"]) / Decimal(i["quote_volume"]),
+            "volume": Decimal(i["quote_volume"]),
+        }
 
     def markets_orderbook(self, orderbook):
         try:

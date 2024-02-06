@@ -116,16 +116,15 @@ def test_get_prices(setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_p
     assert float(r["last_swap_time"]) > int(cron.now_utc() - 86400)
 
     pair = setup_not_existing_pair
-    r = pair.get_volumes_and_prices()
+    r = pair.get_prices()
     assert float(r["last_swap_price"]) == 0
 
     pair = setup_ltc_kmd_pair
-    r = pair.get_volumes_and_prices()
+    r = pair.get_prices()
     assert r["base"] == "LTC"
     assert r["quote"] == "KMD"
     assert r["base_price_usd"] == 100
     assert r["quote_price_usd"] == 1
-    assert r["trades_24hr"] == 3
     assert float(r["highest_price_24hr"]) == 100
     assert float(r["lowest_price_24hr"]) == 100
 

@@ -25,7 +25,7 @@ from lib.markets import Markets
 from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert, deplatform, sumdata, derive, sortdata, invert
+from util.transform import clean, convert, deplatform, sumdata, derive, invert
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
@@ -92,13 +92,13 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         pair = Pair(pair_str=pair_str)
         key = "markets_orderbook"
         cache_name = derive.pair_cachename(key, pair_str=pair.as_str, suffix="24hr")
-            
+
         # Use cache if it is fully populated
         data = memcache.get(cache_name)
         if data is None:
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
             data.update({"liquidity_usd": data["liquidity_in_usd"]})
-            volumes_info = Markets().get_volumes_from_cache(pair.as_str)
+            volumes_info = Markets().get_pair_volume_from_cache(pair.as_str)
             data.update(volumes_info)
             if not pair.is_reversed:
                 data = clean.orderbook_data(data)
@@ -117,7 +117,7 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
 
 @router.get(
     "/pairs_last_trade",
-    description="Returns last trade info for all pairs matching the filter",
+    description="Returns last trade info and 24hr volume for all pairs matching the filter",
     response_model=List[MarketsPairLastTradeItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
@@ -127,12 +127,15 @@ def pairs_last_traded(
     end_time: int = int(cron.now_utc()),
 ) -> list:
     data = memcache.get_last_traded()
+    pair_volumes = memcache.get_pair_volumes_24hr()
     filtered_data = []
     for i in data:
         if data[i]["last_swap_time"] > start_time:
             if data[i]["last_swap_time"] < end_time:
                 data[i].update({"pair": i})
-                filtered_data.append(data[i])
+                filtered_data.append(
+                    convert.last_traded_to_market(data[i], pair_volumes)
+                )
     return filtered_data
 
 

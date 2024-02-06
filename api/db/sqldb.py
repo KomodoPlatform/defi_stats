@@ -597,10 +597,12 @@ class SqlQuery(SqlDB):
                     trade_vol_usd = Decimal(base_vol_usd + quote_vol_usd)
                     volumes["volumes"][pair_std][variant].update(
                         {
-                            "dex_price": quote_vol / base_vol,
+                            "base_volume": base_vol,
+                            "quote_volume": quote_vol,
                             "base_volume_usd": base_vol_usd,
                             "quote_volume_usd": quote_vol_usd,
                             "trade_volume_usd": trade_vol_usd,
+                            "dex_price": quote_vol / base_vol,
                         }
                     )
 
@@ -1033,16 +1035,16 @@ class SqlQuery(SqlDB):
             success_only=success_only,
             failed_only=failed_only,
         )
-        if pair_str == "KMD-BEP20_LTC":
-            logger.calc(swaps)
-        logger.info(pair_str)
         if all_variants:
             return swaps["ALL"]
         if merge_segwit:
-            segwit_variants = derive.segwit_pair_variants(pair_str)
-            logger.info(segwit_variants)
+            segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
             return merge.swaps(segwit_variants, swaps)
-        return swaps[pair_str]
+        if pair_str in swaps:
+            return swaps[pair_str]
+        elif invert.pair(pair_str) in swaps:
+            return swaps[invert.pair(pair_str)]
+        return []
 
     @timed
     def swap_uuids(

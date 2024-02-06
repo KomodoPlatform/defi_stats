@@ -50,23 +50,25 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
 
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, success_only=False)
     assert len(swaps) == 1
-    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all_variants=True)
-    assert len(swaps1) == 3
-    assert swaps1[1]["trade_type"] == "buy"
-    assert swaps1[2]["trade_type"] == "sell"
-
     # No inversion here, that happens later
     swaps2 = DB.get_swaps_for_pair("KMD", "LTC", start_time=day_ago, all_variants=True)
     assert len(swaps1) == len(swaps2)
     assert len(swaps2) == 3
     assert swaps2[2]["trade_type"] == "sell"
 
-    swaps = DB.get_swaps_for_pair("DGB", "LTC", start_time=two_months_ago, all_variants=True)
+    swaps = DB.get_swaps_for_pair(
+        "DGB", "LTC", start_time=two_months_ago, all_variants=True
+    )
     assert len(swaps) == 3
     assert swaps[0]["trade_type"] == "sell"
 
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, all_variants=True)
     assert len(swaps) == 0
+
+    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all_variants=True)
+    assert len(swaps1) == 3
+    assert swaps1[1]["trade_type"] == "buy"
+    assert swaps1[2]["trade_type"] == "sell"
 
 
 def test_get_swap(setup_swaps_db_data):

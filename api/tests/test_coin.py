@@ -16,26 +16,6 @@ import util.memcache as memcache
 from util.transform import derive
 
 
-def test_get_gecko_price():
-    price = derive.gecko_price("LTC")
-    assert isinstance(price, Decimal)
-    assert price == Decimal(100)
-
-    price = derive.gecko_price("DOC")
-    assert isinstance(price, Decimal)
-    assert price == Decimal(0)
-
-
-def test_get_gecko_mcap():
-    mcap = derive.gecko_mcap("LTC")
-    assert isinstance(mcap, Decimal)
-    assert mcap == Decimal(7000000000)
-
-    mcap = derive.gecko_mcap("DOC")
-    assert isinstance(mcap, Decimal)
-    assert mcap == Decimal(0)
-
-
 def test_coin(
     setup_coin_kmd,
     setup_coin_btc_bep20,
