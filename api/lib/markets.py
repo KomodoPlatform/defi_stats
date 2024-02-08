@@ -4,7 +4,7 @@ from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
 from util.transform import sortdata, derive, deplatform, invert
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 
@@ -30,11 +30,11 @@ class Markets:
     # TODO: Cache this
     def trades(self, pair: str, days_in_past: int = 1, all_variants: bool = False):
         try:
-            last_traded_cache = memcache.get_last_traded()
+            pairs_last_trade_cache = memcache.get_pairs_last_traded()
             start_time = int(cron.now_utc() - 86400 * days_in_past)
             end_time = int(cron.now_utc())
             data = Pair(
-                pair_str=pair, last_traded_cache=last_traded_cache
+                pair_str=pair, pairs_last_trade_cache=pairs_last_trade_cache
             ).historical_trades(
                 start_time=start_time,
                 end_time=end_time,

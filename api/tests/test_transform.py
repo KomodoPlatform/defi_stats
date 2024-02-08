@@ -26,7 +26,7 @@ import util.memcache as memcache
 
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
-last_traded_cache = memcache.get_last_traded()
+pairs_last_trade_cache = memcache.get_pairs_last_traded()
 
 logger.info("Testing transformations...")
 
@@ -443,7 +443,7 @@ def test_get_pair_variants():
     assert "KMD_USDC-PLG20" in r
     assert "KMD_USDC-PLG20_OLD" in r
     assert "KMD-BEP20_USDC-PLG20_OLD" in r
-    
+
     r = derive.pair_variants("KMD_USDC-PLG20", segwit_only=True)
     assert "KMD_USDC" not in r
     assert "KMD_USDC-PLG20" in r

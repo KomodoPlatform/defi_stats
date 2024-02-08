@@ -1,5 +1,5 @@
 from typing import List, Dict
-import util.cron as cron
+from util.cron import cron
 from util.exceptions import NoDefaultForKeyError
 from const import DEXAPI_8762_HOST
 from dotenv import load_dotenv

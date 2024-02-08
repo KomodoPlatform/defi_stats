@@ -1,5 +1,5 @@
 {
-    "last_updated": 1707223837,
+    "last_updated": 1707391583,
     "data": {
         "pairs_count": 9,
         "combined_liquidity_usd": "971539805.7000000000",
@@ -17,11 +17,11 @@
                 "liquidity_in_usd": "484801.1100000000",
                 "last_swap_price": 1.0,
                 "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-                "last_swap_time": 1707217443,
+                "last_swap_time": 1707387620,
                 "oldest_price": 1.0,
-                "oldest_price_time": 1707217443,
+                "oldest_price_time": 1707387620,
                 "newest_price": 1.0,
-                "newest_price_time": 1707217443,
+                "newest_price_time": 1707387620,
                 "highest_price_24hr": 1.0,
                 "lowest_price_24hr": 1.0,
                 "price_change_pct_24hr": 0.0,
@@ -46,7 +46,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "1.1100000000",
                 "total_bids_quote_usd": "484800.0000000000",
-                "timestamp": "1707223835",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_DGB_LTC-segwit_24hr"
             },
             {
@@ -62,11 +62,11 @@
                 "liquidity_in_usd": "484801.1100000000",
                 "last_swap_price": 1.0,
                 "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-                "last_swap_time": 1707217443,
+                "last_swap_time": 1707387620,
                 "oldest_price": 1.0,
-                "oldest_price_time": 1707217443,
+                "oldest_price_time": 1707387620,
                 "newest_price": 1.0,
-                "newest_price_time": 1707217443,
+                "newest_price_time": 1707387620,
                 "highest_price_24hr": 1.0,
                 "lowest_price_24hr": 1.0,
                 "price_change_pct_24hr": 0.0,
@@ -91,7 +91,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "1.1100000000",
                 "total_bids_quote_usd": "484800.0000000000",
-                "timestamp": "1707223835",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_DGB_LTC-segwit_24hr"
             },
             {
@@ -136,7 +136,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "111.0000000000",
                 "total_bids_quote_usd": "484800000.0000000000",
-                "timestamp": "1707223836",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_KMD-BEP20_BTC-segwit_24hr"
             },
             {
@@ -152,11 +152,11 @@
                 "liquidity_in_usd": "159.4800000000",
                 "last_swap_price": 555.55555556,
                 "last_swap_uuid": "33333333-fd33-4dc4-2a7f-f6320b1d3b64",
-                "last_swap_time": 1707217499,
+                "last_swap_time": 1707387676,
                 "oldest_price": 1000.0,
-                "oldest_price_time": 1707217441,
+                "oldest_price_time": 1707387618,
                 "newest_price": 555.55555556,
-                "newest_price_time": 1707217499,
+                "newest_price_time": 1707387676,
                 "highest_price_24hr": 1000.0,
                 "lowest_price_24hr": 555.55555556,
                 "price_change_pct_24hr": -0.44444444444,
@@ -181,7 +181,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "111.0000000000",
                 "total_bids_quote_usd": "48.4800000000",
-                "timestamp": "1707223836",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_KMD-BEP20_DGB-segwit_24hr"
             },
             {
@@ -197,11 +197,11 @@
                 "liquidity_in_usd": "484800111.0000000000",
                 "last_swap_price": 1e-06,
                 "last_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
-                "last_swap_time": 1707210246,
+                "last_swap_time": 1707380423,
                 "oldest_price": 1e-06,
-                "oldest_price_time": 1707210246,
+                "oldest_price_time": 1707380423,
                 "newest_price": 1e-06,
-                "newest_price_time": 1707210246,
+                "newest_price_time": 1707380423,
                 "highest_price_24hr": 1e-06,
                 "lowest_price_24hr": 1e-06,
                 "price_change_pct_24hr": 0.0,
@@ -226,7 +226,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "111.0000000000",
                 "total_bids_quote_usd": "484800000.0000000000",
-                "timestamp": "1707223836",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_KMD_BTC-segwit_24hr"
             },
             {
@@ -242,11 +242,11 @@
                 "liquidity_in_usd": "484911.0000000000",
                 "last_swap_price": 0.01,
                 "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-                "last_swap_time": 1707217449,
+                "last_swap_time": 1707387626,
                 "oldest_price": 0.01,
-                "oldest_price_time": 1707206647,
+                "oldest_price_time": 1707376824,
                 "newest_price": 0.01,
-                "newest_price_time": 1707206647,
+                "newest_price_time": 1707376824,
                 "highest_price_24hr": 0.01,
                 "lowest_price_24hr": 0.01,
                 "price_change_pct_24hr": 0.0,
@@ -271,7 +271,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "111.0000000000",
                 "total_bids_quote_usd": "484800.0000000000",
-                "timestamp": "1707223836",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_KMD_LTC-segwit_24hr"
             },
             {
@@ -287,11 +287,11 @@
                 "liquidity_in_usd": "484911.0000000000",
                 "last_swap_price": 0.01,
                 "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-                "last_swap_time": 1707217449,
+                "last_swap_time": 1707387626,
                 "oldest_price": 0.01,
-                "oldest_price_time": 1707206647,
+                "oldest_price_time": 1707376824,
                 "newest_price": 0.01,
-                "newest_price_time": 1707206647,
+                "newest_price_time": 1707376824,
                 "highest_price_24hr": 0.01,
                 "lowest_price_24hr": 0.01,
                 "price_change_pct_24hr": 0.0,
@@ -316,7 +316,7 @@
                 "total_bids_quote_vol": "4848.0000000000",
                 "total_asks_base_usd": "111.0000000000",
                 "total_bids_quote_usd": "484800.0000000000",
-                "timestamp": "1707223836",
+                "timestamp": "1707391581",
                 "ticker_info_cache_name": "ticker_info_KMD_LTC-segwit_24hr"
             },
             {
@@ -361,7 +361,7 @@
                 "total_bids_quote_vol": "0.0000000000",
                 "total_asks_base_usd": "0.0000000000",
                 "total_bids_quote_usd": "0.0000000000",
-                "timestamp": "1707223836"
+                "timestamp": "1707391582"
             },
             {
                 "ticker_id": "MORTY_KMD",
@@ -404,7 +404,7 @@
                 "total_bids_quote_vol": "0.0000000000",
                 "total_asks_base_usd": "0.0000000000",
                 "total_bids_quote_usd": "0.0000000000",
-                "timestamp": "1707223837"
+                "timestamp": "1707391583"
             }
         ]
     }

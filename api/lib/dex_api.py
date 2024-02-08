@@ -5,7 +5,7 @@ import threading
 from typing import Dict
 
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 from util.transform import template

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from util.cron import cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from util.logger import logger

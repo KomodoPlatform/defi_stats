@@ -28,7 +28,7 @@ from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFaile
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 from util.transform import merge, sortdata, deplatform, invert, derive
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 from util.transform import template
@@ -476,7 +476,10 @@ class SqlQuery(SqlDB):
                 }
             )
             return default.result(
-                data=volumes, msg="coin_trade_volumes_usd complete", loglevel="query"
+                data=volumes,
+                msg="coin_trade_volumes_usd complete",
+                loglevel="query",
+                ignore_until=5,
             )
 
         except Exception as e:  # pragma: no cover
@@ -649,6 +652,9 @@ class SqlQuery(SqlDB):
                     self.table.uuid.label("last_swap_uuid"),
                     self.table.finished_at.label("last_swap_time"),
                     self.table.price.label("last_swap_price"),
+                    self.table.maker_amount.label("last_maker_amount"),
+                    self.table.taker_amount.label("last_taker_amount"),
+                    self.table.trade_type.label("last_trade_type"),
                     func.concat(*category).label("category"),
                 ]
                 q = session.query(*cols)
@@ -665,20 +671,23 @@ class SqlQuery(SqlDB):
                         if k != "category":
                             resp[cat].update({k: v})
 
-                # TODO: use separate chache for the below
+                # TODO: use separate cache for the below
 
                 # 2nd query for swap first swap info for category
                 cols = [
                     self.table.uuid.label("first_swap_uuid"),
                     self.table.finished_at.label("first_swap_time"),
                     self.table.price.label("first_swap_price"),
+                    self.table.maker_amount.label("first_maker_amount"),
+                    self.table.taker_amount.label("first_taker_amount"),
+                    self.table.trade_type.label("first_trade_type"),
                     func.concat(*category).label("category"),
                 ]
                 q = session.query(*cols)
                 q = self.sqlfilter.success(q, is_success)
-                distinct = q.distinct(*group_by_cols)
-                first = distinct.order_by(*group_by_cols, self.table.finished_at.asc())
-                first_data = [dict(i) for i in first.all()]
+                q = q.distinct(*group_by_cols)
+                q = q.order_by(*group_by_cols, self.table.finished_at.asc())
+                first_data = [dict(i) for i in q.all()]
 
                 first_data = {i["category"]: i for i in first_data}
                 for cat in first_data:
@@ -692,7 +701,7 @@ class SqlQuery(SqlDB):
                     data=resp,
                     msg="last_traded complete",
                     loglevel="query",
-                    ignore_until=0,
+                    ignore_until=5,
                 )
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -708,7 +717,7 @@ class SqlQuery(SqlDB):
                 data=results,
                 msg="pair_last_trade complete",
                 loglevel="query",
-                ignore_until=0,
+                ignore_until=5,
             )
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -1036,15 +1045,18 @@ class SqlQuery(SqlDB):
             failed_only=failed_only,
         )
         if all_variants:
-            return swaps["ALL"]
-        if merge_segwit:
+            resp = swaps["ALL"]
+        elif merge_segwit:
             segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
-            return merge.swaps(segwit_variants, swaps)
-        if pair_str in swaps:
-            return swaps[pair_str]
+            resp = merge.swaps(segwit_variants, swaps)
+        elif pair_str in swaps:
+            resp = swaps[pair_str]
         elif invert.pair(pair_str) in swaps:
-            return swaps[invert.pair(pair_str)]
-        return []
+            resp = swaps[invert.pair(pair_str)]
+        else:
+            return []
+        resp = sortdata.dict_lists(data=resp, key="finished_at", reverse=True)
+        return resp
 
     @timed
     def swap_uuids(

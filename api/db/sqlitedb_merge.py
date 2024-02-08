@@ -19,7 +19,7 @@ from db.sqlitedb import (
     get_sqlite_db,
     SqliteDB,
 )
-import util.cron as cron
+from util.cron import cron
 from util.enums import NetId
 from util.logger import logger, timed
 import util.defaults as default

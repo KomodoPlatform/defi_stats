@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from util.cron import cron
 import sqlite3
 from decimal import Decimal
 from db.sqldb import SqlSource, SqlQuery
@@ -12,7 +12,6 @@ from tests.fixtures_data import swap_item, swap_item2, cipi_swap, cipi_swap2
 from tests.fixtures_db import (
     setup_actual_db,
     setup_swaps_db_data,
-    setup_time,
 )
 import util.helper as helper
 from util.logger import logger
@@ -35,7 +34,8 @@ two_months_ago = now - 5184000
 def test_get_pairs(setup_swaps_db_data):
     # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
-    pairs = DB.get_pairs()
+    pairs = DB.get_pairs()  #  defaults to last 7 days
+    logger.info(pairs)
     assert ("KMD_LTC") in pairs
     assert ("LTC_KMD") not in pairs
     assert len(pairs) == 8
@@ -50,11 +50,20 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
 
     swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, success_only=False)
     assert len(swaps) == 1
-    # No inversion here, that happens later
+    # excludes failed by default
+    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, all_variants=True)
+    assert len(swaps) == 0
+
+    # No inversion, that happens later. Should be the same.
+    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all_variants=True)
     swaps2 = DB.get_swaps_for_pair("KMD", "LTC", start_time=day_ago, all_variants=True)
-    assert len(swaps1) == len(swaps2)
-    assert len(swaps2) == 3
-    assert swaps2[2]["trade_type"] == "sell"
+    assert len(swaps1) == len(swaps2) == 3
+    assert swaps1[0]["trade_type"] == "sell"
+    assert swaps2[0]["trade_type"] == "sell"
+    assert swaps1[1]["trade_type"] == "buy"
+    assert swaps2[1]["trade_type"] == "buy"
+    assert swaps1[2]["trade_type"] == "buy"
+    assert swaps2[2]["trade_type"] == "buy"
 
     swaps = DB.get_swaps_for_pair(
         "DGB", "LTC", start_time=two_months_ago, all_variants=True
@@ -62,13 +71,19 @@ def test_get_swaps_for_pair(setup_swaps_db_data):
     assert len(swaps) == 3
     assert swaps[0]["trade_type"] == "sell"
 
-    swaps = DB.get_swaps_for_pair("MCL", "KMD", start_time=day_ago, all_variants=True)
-    assert len(swaps) == 0
+    # Should be same as above, as segwit will merge
+    swaps = DB.get_swaps_for_pair(
+        "DGB", "LTC", start_time=two_months_ago, all_variants=False
+    )
+    assert len(swaps) == 3
+    assert swaps[0]["trade_type"] == "sell"
 
-    swaps1 = DB.get_swaps_for_pair("LTC", "KMD", start_time=day_ago, all_variants=True)
-    assert len(swaps1) == 3
-    assert swaps1[1]["trade_type"] == "buy"
-    assert swaps1[2]["trade_type"] == "sell"
+    # Should be lt above, as segwit will not merge
+    swaps = DB.get_swaps_for_pair(
+        "DGB", "LTC", start_time=two_months_ago, all_variants=False, merge_segwit=False
+    )
+    assert len(swaps) == 1
+    assert swaps[0]["trade_type"] == "sell"
 
 
 def test_get_swap(setup_swaps_db_data):

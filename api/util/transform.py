@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, List, Dict
 
 from util.logger import logger, timed
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 
@@ -50,6 +50,7 @@ class Clean:
                             data[i] = float(data[i])
             return data
         except Exception as e:  # pragma: no cover
+            logger.warning(data)
             return default.error(e)
 
     @timed
@@ -137,44 +138,54 @@ class Convert:
             "type": i["type"],
         }
 
-    def last_traded_to_market(self, last_traded_item, pair_volumes_cache):
+    def last_traded_to_market(
+        self, pair, last_traded_item, pair_volumes_cache, coins_config
+    ):
         resp = {
-            "pair": last_traded_item["pair"],
+            "pair": pair,
+            "swap_count": 0,
             "last_swap": last_traded_item["last_swap_time"],
             "last_swap_uuid": last_traded_item["last_swap_uuid"],
             "last_price": last_traded_item["last_swap_price"],
+            "last_taker_amount": 0,
+            "last_maker_amount": 0,
             "first_swap": last_traded_item["first_swap_time"],
             "first_swap_uuid": last_traded_item["first_swap_uuid"],
             "first_price": last_traded_item["first_swap_price"],
+            "first_taker_amount": 0,
+            "first_maker_amount": 0,
+            "sum_maker_traded": 0,
+            "sum_taker_traded": 0,
+            "volume_24hr": 0,
             "priced": last_traded_item["priced"],
-            "swap_count": 0,
-            "base_volume_usd_24hr": 0,
-            "quote_volume_24hr": 0,
-            "base_volume_24hr": 0,
-            "trade_volume_usd_24hr": 0,
-            "quote_volume_usd_24hr": 0,
         }
-        depair = deplatform.pair(resp["pair"])
-        variants = [resp["pair"]]
+
+        if last_traded_item["last_trade_type"] == "buy":
+            resp["last_maker_amount"] = last_traded_item["last_maker_amount"]
+            resp["last_taker_amount"] = last_traded_item["last_taker_amount"]
+        else:
+            resp["last_maker_amount"] = last_traded_item["last_taker_amount"]
+            resp["last_taker_amount"] = last_traded_item["last_maker_amount"]
+        if last_traded_item["first_trade_type"] == "buy":
+            resp["first_maker_amount"] = last_traded_item["first_maker_amount"]
+            resp["first_taker_amount"] = last_traded_item["first_taker_amount"]
+        else:
+            resp["first_maker_amount"] = last_traded_item["first_taker_amount"]
+            resp["first_taker_amount"] = last_traded_item["first_maker_amount"]
+
+        depair = deplatform.pair(pair)
+        pair_volumes_cache = pair_volumes_cache["volumes"]
         if depair in pair_volumes_cache:
-            for variant in variants:
-                if variant in pair_volumes_cache[depair]:
-                    resp.update(
-                        {
-                            "swap_count": pair_volumes_cache["swaps"],
-                            "base_volume_24hr": pair_volumes_cache["base_volume"],
-                            "quote_volume_24hr": pair_volumes_cache["quote_volume"],
-                            "base_volume_usd_24hr": pair_volumes_cache[
-                                "base_volume_usd"
-                            ],
-                            "quote_volume_usd_24hr": pair_volumes_cache[
-                                "quote_volume_usd"
-                            ],
-                            "trade_volume_usd_24hr": pair_volumes_cache[
-                                "trade_volume_usd"
-                            ],
-                        }
-                    )
+            if pair in pair_volumes_cache[depair]:
+                cache_data = pair_volumes_cache[depair][pair]
+                resp["swap_count"] = cache_data["swaps"]
+                resp["volume_24hr"] = cache_data["trade_volume_usd"]
+                if last_traded_item["last_trade_type"] == "buy":
+                    resp["sum_maker_traded"] = cache_data["base_volume"]
+                    resp["sum_taker_traded"] = cache_data["quote_volume"]
+                else:
+                    resp["sum_maker_traded"] = cache_data["quote_volume"]
+                    resp["sum_taker_traded"] = cache_data["base_volume"]
         return resp
 
     def traded_cache_to_stats_api(self, traded_cache):
@@ -215,6 +226,7 @@ class Convert:
         }
 
     def ticker_to_market_summary_item(self, i):
+        logger.info(i)
         data = {
             "trading_pair": f"{i['ticker_id']}",
             "variants": i["variants"],
@@ -489,18 +501,18 @@ class Deplatform:
         return resp
 
     # Unused?
-    def last_trade(self, last_traded):
-        data = {}
-        for i in last_traded:
-            pair = deplatform.coin(i)
-            if pair not in data:
-                data.update({pair: last_traded[i]})
+    def pair_last_trade(self, data):
+        resp = {}
+        for i in data:
+            pair = deplatform.pair(i)
+            if pair not in resp:
+                resp.update({pair: data[i]})
             else:
-                if last_traded[i]["last_swap_time"] > data[pair]["last_swap_time"]:
-                    data[pair]["last_swap_time"] = last_traded[i]["last_swap_time"]
-                    data[pair]["last_swap_uuid"] = last_traded[i]["last_swap_uuid"]
-                    data[pair]["last_swap_price"] = last_traded[i]["last_swap_price"]
-        return data
+                if data[i]["last_swap_time"] > resp[pair]["last_swap_time"]:
+                    resp[pair]["last_swap_time"] = data[i]["last_swap_time"]
+                    resp[pair]["last_swap_uuid"] = data[i]["last_swap_uuid"]
+                    resp[pair]["last_swap_price"] = data[i]["last_swap_price"]
+        return resp
 
 
 class Derive:
@@ -587,7 +599,7 @@ class Derive:
                     pairs_dict["unpriced"].append(pair_str)
             return pairs_dict
         except Exception as e:  # pragma: no cover
-            msg = "pairs_last_traded failed!"
+            msg = "price_status_dict failed!"
             return default.error(e, msg)
 
     def gecko_price(self, ticker, gecko_source=None) -> float:
@@ -620,18 +632,18 @@ class Derive:
 
     @timed
     def last_trade_info(
-        self, pair_str: str, last_traded_cache: Dict, all_variants=False
+        self, pair_str: str, pairs_last_trade_cache: Dict, all_variants=False
     ):
         try:
             # TODO: cover 'all' case
             # This is imperfect. Should get both and
             # calc the last for combo.
             pair_str = pair_str.replace("-segwit", "")
-            if pair_str in last_traded_cache:
-                return last_traded_cache[pair_str]
+            if pair_str in pairs_last_trade_cache:
+                return pairs_last_trade_cache[pair_str]
             reverse_pair = invert.pair(pair_str, True)
-            if reverse_pair in last_traded_cache:
-                return last_traded_cache[reverse_pair]
+            if reverse_pair in pairs_last_trade_cache:
+                return pairs_last_trade_cache[reverse_pair]
         except Exception as e:  # pragma: no cover
             logger.warning(e)
         return template.last_trade_info()
@@ -662,7 +674,7 @@ class Derive:
         return data
 
     @timed
-    def pair_variants(self, pair_str, segwit_only=False):
+    def pair_variants(self, pair_str, segwit_only=False, coins_config=None):
         variants = []
         base, quote = derive.base_quote(pair_str)
         base_variants = self.coin_variants(base)
@@ -675,7 +687,8 @@ class Derive:
             base_variants = []
             quote_variants = []
             segvars = []
-            coins_config = memcache.get_coins_config()
+            if not coins_config:
+                coins_config = memcache.get_coins_config()
             debase = deplatform.coin(base)
             dequote = deplatform.coin(quote)
             if base.endswith("segwit") or base == debase:
@@ -1016,6 +1029,53 @@ class Merge:
             logger.warning(err)
         return existing
 
+    def segwit_pairs_last_traded_markets(self, variants_data):
+        data = {}
+
+        for k, v in variants_data.items():
+            if len(variants_data) == 1:
+                return variants_data[k]
+            if k not in data:
+                v["pair"] = k
+                data.update({k: v})
+            else:
+                data[k].update(
+                    {
+                        "swap_count": sumdata.ints(
+                            data[k]["swap_count"], v["swap_count"]
+                        ),
+                    }
+                )
+                for i in ["sum_maker_traded", "sum_taker_traded", "volume_24hr"]:
+                    data[k].update(
+                        {
+                            i: sumdata.decimals(data[k][i], v[i]),
+                        }
+                    )
+                if v["last_swap"] > data[k]["last_swap"]:
+                    data[k].update(
+                        {
+                            "last_swap": v["last_swap"],
+                            "last_swap_uuid": v["last_swap_uuid"],
+                            "last_price": v["last_price"],
+                            "last_taker_amount": v["last_taker_amount"],
+                            "last_maker_amount": v["last_maker_amount"],
+                        }
+                    )
+                if v["first_swap"] < data[k]["first_swap"]:
+                    data[k].update(
+                        {
+                            "first_swap": v["first_swap"],
+                            "first_swap_uuid": v["first_swap_uuid"],
+                            "first_price": v["first_price"],
+                            "first_taker_amount": v["first_taker_amount"],
+                            "first_maker_amount": v["first_maker_amount"],
+                        }
+                    )
+        logger.pair(len(data))
+        logger.pair(data.keys())
+        return data[list(data.keys())[0].replace("-segwit", "")]
+
 
 class SortData:
     def __init__(self):
@@ -1177,16 +1237,12 @@ def get_coin_platform(coin):
 
 
 @timed
-def last_trade_time_filter(last_traded, start_time, end_time):
+def last_trade_time_filter(data, start_time, end_time):
     # TODO: handle first/last within variants
-    last_traded = memcache.get_last_traded()
-    last_traded = [
-        i for i in last_traded if last_traded[i]["last_swap_time"] > start_time
-    ]
-    last_traded = [
-        i for i in last_traded if last_traded[i]["last_swap_time"] < end_time
-    ]
-    return last_traded
+    data = memcache.get_data()
+    data = [i for i in data if data[i]["last_swap_time"] > start_time]
+    data = [i for i in data if data[i]["last_swap_time"] < end_time]
+    return data
 
 
 @timed

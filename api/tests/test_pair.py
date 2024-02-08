@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from tests.fixtures_class import helper
+from tests.fixtures import helper
 from tests.fixtures_data import sampledata
 from tests.fixtures_pair import (
     setup_kmd_dgb_pair,
@@ -12,7 +12,7 @@ from tests.fixtures_pair import (
 )
 from util.logger import logger
 from util.transform import clean, derive
-import util.cron as cron
+from util.cron import cron
 import util.transform as transform
 
 
@@ -113,7 +113,7 @@ def test_get_prices(setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_p
     assert float(r["lowest_price_24hr"]) == 0.01
     assert float(r["price_change_24hr"]) == 0
     assert float(r["price_change_pct_24hr"]) == 0
-    assert float(r["last_swap_time"]) > int(cron.now_utc() - 86400)
+    assert int(r["last_swap_time"]) > int(cron.now_utc() - 86400)
 
     pair = setup_not_existing_pair
     r = pair.get_prices()

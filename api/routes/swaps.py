@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import util.cron as cron
+from util.cron import cron
 from models.generic import ErrorMessage
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger

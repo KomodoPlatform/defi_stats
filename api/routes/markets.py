@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
-import util.cron as cron
+from util.cron import cron
 from typing import List, Dict
 from const import MARKETS_PAIRS_DAYS
 from models.generic import ErrorMessage
@@ -31,7 +31,6 @@ from util.transform import template
 import util.transform as transform
 import util.validate as validate
 import db.sqldb as db
-
 
 router = APIRouter()
 
@@ -117,26 +116,13 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
 
 @router.get(
     "/pairs_last_trade",
-    description="Returns last trade info and 24hr volume for all pairs matching the filter",
-    response_model=List[MarketsPairLastTradeItem],
+    description=markets_desc.pairs_last_trade,
+    # response_model=List[MarketsPairLastTradeItem],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def pairs_last_traded(
-    start_time: int = 0,
-    end_time: int = int(cron.now_utc()),
-) -> list:
-    data = memcache.get_last_traded()
-    pair_volumes = memcache.get_pair_volumes_24hr()
-    filtered_data = []
-    for i in data:
-        if data[i]["last_swap_time"] > start_time:
-            if data[i]["last_swap_time"] < end_time:
-                data[i].update({"pair": i})
-                filtered_data.append(
-                    convert.last_traded_to_market(data[i], pair_volumes)
-                )
-    return filtered_data
+def pairs_last_traded_markets():
+    return memcache.get_pairs_last_traded_markets()
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/summary
@@ -173,13 +159,13 @@ def summary_for_ticker(coin: str = "KMD"):
         if "_" in coin:
             return {"error": f"Coin value '{coin}' looks like a pair."}
         resp = memcache.get_tickers()
-        last_traded = memcache.get_last_traded()
+        data = memcache.get_pairs_last_traded()
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap_time"] == 0:
-                    if i["ticker_id"] in last_traded:
-                        i = i | last_traded[i["ticker_id"]]
+                    if i["ticker_id"] in data:
+                        i = i | data[i["ticker_id"]]
                 new_data.append(convert.ticker_to_summary_for_ticker(i))
         resp.update(
             {

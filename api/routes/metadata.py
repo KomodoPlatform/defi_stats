@@ -20,5 +20,10 @@ class MarketsDesc:
         desc += " Use `KMD-BEP20_LTC` format."
         return desc
 
+    @property
+    def pairs_last_trade(self):
+        desc = "Returns last trade info and 24hr volume for all pairs traded in last 30 days"
+        return desc
+
 
 markets_desc = MarketsDesc()

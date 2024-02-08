@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from os.path import basename
-import util.cron as cron
+from util.cron import cron
 import sqlite3
 from typing import List
 from const import MM2_DB_PATHS, MM2_NETID

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from util.cron import cron
 from collections import OrderedDict
 from decimal import Decimal
 from typing import Optional, List, Dict
@@ -31,7 +31,7 @@ class Pair:  # pragma: no cover
     def __init__(
         self,
         pair_str: str = "KMD_LTC",
-        last_traded_cache: Dict | None = None,
+        pairs_last_trade_cache: Dict | None = None,
         coins_config: Dict | None = None,
         gecko_source: Dict | None = None,
     ):
@@ -42,9 +42,9 @@ class Pair:  # pragma: no cover
             self.is_reversed = self.as_str != sortdata.pair_by_market_cap(self.as_str)
 
             # Load standard memcache
-            self.last_traded_cache = last_traded_cache
-            if self.last_traded_cache is None:
-                self.last_traded_cache = memcache.get_last_traded()
+            self.pairs_last_trade_cache = pairs_last_trade_cache
+            if self.pairs_last_trade_cache is None:
+                self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
 
             self.coins_config = coins_config
             if self.coins_config is None:
@@ -294,10 +294,10 @@ class Pair:  # pragma: no cover
             for variant in variants:
                 x = template.first_last_swap()
 
-                if variant in self.last_traded_cache:
-                    x = self.last_traded_cache[variant]
-                elif invert.pair(variant) in self.last_traded_cache:  # pragma: no cover
-                    x = self.last_traded_cache[invert.pair(variant)]
+                if variant in self.pairs_last_trade_cache:
+                    x = self.pairs_last_trade_cache[variant]
+                elif invert.pair(variant) in self.pairs_last_trade_cache:  # pragma: no cover
+                    x = self.pairs_last_trade_cache[invert.pair(variant)]
 
                 if x["last_swap_time"] > data["last_swap_time"]:
                     data["last_swap_time"] = x["last_swap_time"]
@@ -373,7 +373,7 @@ class Pair:  # pragma: no cover
                     msg = f" Added to memcache [{cache_name}]"
                     if Decimal(data["liquidity_in_usd"]) > 10000:
                         msg = f'[{cache_name}] liquidity {data["liquidity_in_usd"]}'
-                        ignore_until = 0
+                        ignore_until = 5
 
         except Exception as e:  # pragma: no cover
             ignore_until = 0

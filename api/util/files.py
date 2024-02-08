@@ -32,7 +32,7 @@ class Files:
 
         # FOUNDATIONAL CACHE
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
-        self.last_traded = f"{folder}/generic/last_traded.json"
+        self.pairs_last_traded = f"{folder}/generic/pairs_last_traded.json"
         self.coin_volumes_24hr = (
             f"{folder}/generic/coin_volumes_24hr.json"
         )
@@ -40,6 +40,9 @@ class Files:
             f"{folder}/generic/pair_volumes_24hr.json"
         )
         self.orderbook_extended = f"{folder}/generic/orderbook_extended.json"
+
+        # MARKETS CACHE
+        self.pairs_last_traded_markets = f"{folder}/markets/pairs_last_traded.json"
 
         # REVIEW
         self.generic_summary = f"{folder}/generic/summary.json"
@@ -64,6 +67,7 @@ class Files:
                             "result": "success",
                             "msg": f"{fn} saved!",
                             "loglevel": "saved",
+                            "ignore_until": 5
                         }
                 else:
                     return {

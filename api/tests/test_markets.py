@@ -1,9 +1,9 @@
-import util.cron as cron
+from util.cron import cron
 import pytest
 from decimal import Decimal
 from util.logger import logger
 from tests.fixtures_data import swap_item
-from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_db import setup_swaps_db_data
 from util.helper import (
     get_mm2_rpc_port,
     get_chunks,

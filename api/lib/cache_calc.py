@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from util.logger import logger, timed
-from util.transform import clean, sortdata, sumdata, derive, convert
+from util.transform import clean, sortdata, sumdata, derive, convert, merge
 import db.sqldb as db
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
@@ -14,13 +14,13 @@ from util.transform import deplatform
 class CacheCalc:
     def __init__(self) -> None:
         self.coins_config = memcache.get_coins_config()
-        self.last_traded_cache = memcache.get_last_traded()
+        self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
         self.gecko_source = memcache.get_gecko_source()
         self.pg_query = db.SqlQuery()
 
     # FOUNDATIONAL CACHE
     @timed
-    def last_traded(self):
+    def pairs_last_traded(self):
         try:
             if self.gecko_source is None:
                 self.gecko_source = memcache.get_gecko_source()
@@ -88,9 +88,9 @@ class CacheCalc:
             if trades_days > pairs_days:
                 pairs_days = trades_days
             # Skip if cache not available yet
-            if self.last_traded_cache is None:
-                self.last_traded_cache = memcache.get_last_traded()
-                msg = "skipping cache_calc.tickers, last_traded_cache is None"
+            if self.pairs_last_trade_cache is None:
+                self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
+                msg = "skipping cache_calc.tickers, pairs_last_trade_cache is None"
                 return default.result(msg=msg, loglevel="warning", data=None)
 
             # Skip if cache not available yet
@@ -105,8 +105,8 @@ class CacheCalc:
             pairs = sorted(
                 [
                     i
-                    for i in self.last_traded_cache
-                    if self.last_traded_cache[i]["last_swap_time"] > ts
+                    for i in self.pairs_last_trade_cache
+                    if self.pairs_last_trade_cache[i]["last_swap_time"] > ts
                 ]
             )
             if from_memcache == 1:
@@ -123,7 +123,7 @@ class CacheCalc:
                 data = [
                     Pair(
                         pair_str=i,
-                        last_traded_cache=self.last_traded_cache,
+                        pairs_last_trade_cache=self.pairs_last_trade_cache,
                         coins_config=self.coins_config,
                     ).ticker_info(trades_days, all_variants=False)
                     for i in pairs
@@ -150,16 +150,53 @@ class CacheCalc:
                     "tickers": tickers,
                 }
 
-                key = "orderbook_etended"
+                key = "orderbook_extended"
                 cache_name = derive.pair_cachename(key, "", suffix)
                 memcache.update(cache_name, resp, 900)
 
-                msg = f"Traded_tickers complete! {len(pairs)} pairs traded"
+                msg = f"orderbook_extended complete! {len(pairs)} pairs traded"
                 msg += f" in last {pairs_days} days"
             return default.result(resp, msg, loglevel="calc")
         except Exception as e:  # pragma: no cover
-            msg = "tickers failed!"
+            msg = "orderbook_extended failed!"
             return default.error(e, msg)
+
+    # MARKETS
+    @timed
+    def pairs_last_traded_markets(self):
+        try:
+            start_time = int(cron.days_ago(30))
+            end_time = int(cron.now_utc())
+            data = memcache.get_pairs_last_traded()
+            pair_volumes = memcache.get_pair_volumes_24hr()
+            coins_config = memcache.get_coins_config()
+            filtered_data = {}
+            for i in data:
+                if data[i]["last_swap_time"] > start_time:
+                    if data[i]["last_swap_time"] < end_time:
+                        pair_std = i.replace("-segwit", "")
+                        if pair_std not in filtered_data:
+                            filtered_data.update({pair_std: {}})
+                        filtered_data[pair_std].update(
+                            {
+                                i: convert.last_traded_to_market(
+                                    i, data[i], pair_volumes, coins_config
+                                )
+                            }
+                        )
+
+            resp = [
+                merge.segwit_pairs_last_traded_markets(filtered_data[i])
+                for i in filtered_data
+            ]
+            logger.info(resp[0])
+            resp = [clean.decimal_dicts(i) for i in resp]
+            logger.calc(resp[0])
+            msg = "pairs_last_traded_markets complete!"
+            return default.result(resp, msg, loglevel="loop")
+        except Exception as e:  # pragma: no cover
+            msg = f"pairs_last_traded_markets failed! {e}"
+            logger.warning(msg)
 
     # REVIEW
     @timed
@@ -174,9 +211,9 @@ class CacheCalc:
             if trades_days > pairs_days:
                 pairs_days = trades_days
             # Skip if cache not available yet
-            if self.last_traded_cache is None:
-                self.last_traded_cache = memcache.get_last_traded()
-                msg = "skipping cache_calc.tickers, last_traded_cache is None"
+            if self.pairs_last_trade_cache is None:
+                self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
+                msg = "skipping cache_calc.tickers, pairs_last_trade_cache is None"
                 return default.result(msg=msg, loglevel="warning", data=None)
 
             # Skip if cache not available yet
@@ -191,8 +228,8 @@ class CacheCalc:
             pairs = sorted(
                 [
                     i
-                    for i in self.last_traded_cache
-                    if self.last_traded_cache[i]["last_swap_time"] > ts
+                    for i in self.pairs_last_trade_cache
+                    if self.pairs_last_trade_cache[i]["last_swap_time"] > ts
                 ]
             )
             if from_memcache == 1:
@@ -209,7 +246,7 @@ class CacheCalc:
                 data = [
                     Pair(
                         pair_str=i,
-                        last_traded_cache=self.last_traded_cache,
+                        pairs_last_trade_cache=self.pairs_last_trade_cache,
                         coins_config=self.coins_config,
                     ).ticker_info(trades_days, all_variants=False)
                     for i in pairs

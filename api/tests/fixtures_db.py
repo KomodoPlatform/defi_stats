@@ -2,10 +2,9 @@
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 from db.sqldb import SqlSource, SqlQuery, SqlUpdate
-from util.cron import Time
 from util.logger import logger
 import db.schema as schema
-import util.cron as cron
+from util.cron import cron
 import util.memcache as memcache
 import util.transform as transform
 
@@ -17,16 +16,10 @@ gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
 
 
-@pytest.fixture
-def setup_time():
-    yield Time(from_ts=int(cron.now_utc()))
-
-
 TEST_DB_NAME = "defi_swaps_test"
 TEST_DB_HOST = f"{POSTGRES_HOST}:{POSTGRES_PORT}"
 TEST_DB_CREDS = f"{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}"
 TEST_DB_URL = f"postgresql://{TEST_DB_CREDS}@{TEST_DB_HOST}"
-logger.info(TEST_DB_URL)
 
 
 def reset_test_defi_stats_table():
@@ -46,9 +39,8 @@ def setup_actual_db():
 
 
 @pytest.fixture()
-def setup_swaps_db_data(setup_time):
+def setup_swaps_db_data():
     pg_query = SqlQuery(db_type="pgsql")
-    time_obj = setup_time
     engine = create_engine(TEST_DB_URL)
 
     reset_test_defi_stats_table()
@@ -58,8 +50,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "MCL",
             "maker_coin": "KMD",
             "uuid": "00000000-FAIL-FAIL-FAIL-00000000",
-            "started_at": time_obj.minutes_ago(1) - 180,
-            "finished_at": time_obj.hours_ago(1) + 3,
+            "started_at": cron.minutes_ago(1) - 180,
+            "finished_at": cron.hours_ago(1) + 3,
             "taker_amount": 1,
             "maker_amount": 1,
             "is_success": 0,
@@ -88,8 +80,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "KMD",
             "maker_coin": "MORTY",
             "uuid": "11111111-ffe1-4c7a-ad7f-04b1df6323b6",
-            "started_at": time_obj.hours_ago(1) - 1,
-            "finished_at": time_obj.hours_ago(1) + 1,
+            "started_at": cron.hours_ago(1) - 1,
+            "finished_at": cron.hours_ago(1) + 1,
             "taker_amount": 1,
             "maker_amount": 1,
             "is_success": 1,
@@ -118,8 +110,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DGB-segwit",
             "maker_coin": "KMD-BEP20",
             "uuid": "22222222-fd33-4dc4-2a7f-f6320b1d3b64",
-            "started_at": time_obj.hours_ago(1) - 2,
-            "finished_at": time_obj.hours_ago(1) + 2,
+            "started_at": cron.hours_ago(1) - 2,
+            "finished_at": cron.hours_ago(1) + 2,
             "taker_amount": 1000,
             "maker_amount": 1,
             "is_success": 1,
@@ -148,8 +140,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DGB-segwit",
             "maker_coin": "KMD-BEP20",
             "uuid": "33333333-fd33-4dc4-2a7f-f6320b1d3b64",
-            "started_at": time_obj.hours_ago(1) + 5,
-            "finished_at": time_obj.hours_ago(1) + 60,
+            "started_at": cron.hours_ago(1) + 5,
+            "finished_at": cron.hours_ago(1) + 60,
             "taker_amount": 500,
             "maker_amount": 0.9,
             "is_success": 1,
@@ -178,8 +170,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DGB",
             "maker_coin": "LTC",
             "uuid": "55555555-ee4b-494f-a2fb-48467614b613",
-            "started_at": time_obj.hours_ago(1),
-            "finished_at": time_obj.hours_ago(1) + 4,
+            "started_at": cron.hours_ago(1),
+            "finished_at": cron.hours_ago(1) + 4,
             "taker_amount": 1,
             "maker_amount": 1,
             "is_success": 1,
@@ -208,8 +200,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "KMD",
             "maker_coin": "LTC-segwit",
             "uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
-            "started_at": time_obj.hours_ago(1),
-            "finished_at": time_obj.hours_ago(1) + 10,
+            "started_at": cron.hours_ago(1),
+            "finished_at": cron.hours_ago(1) + 10,
             "taker_amount": 100,
             "maker_amount": 1,
             "is_success": 1,
@@ -238,8 +230,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "LTC-segwit",
             "maker_coin": "KMD",
             "uuid": "77777777-2762-4633-8add-6ad2e9b1a4e7",
-            "started_at": time_obj.hours_ago(2),
-            "finished_at": time_obj.hours_ago(2) + 6,
+            "started_at": cron.hours_ago(2),
+            "finished_at": cron.hours_ago(2) + 6,
             "taker_amount": 1,
             "maker_amount": 100,
             "is_success": 1,
@@ -268,8 +260,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "KMD",
             "maker_coin": "BTC",
             "uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
-            "started_at": time_obj.hours_ago(3),
-            "finished_at": time_obj.hours_ago(3) + 7,
+            "started_at": cron.hours_ago(3),
+            "finished_at": cron.hours_ago(3) + 7,
             "taker_amount": 1000000,
             "maker_amount": 1,
             "is_success": 1,
@@ -298,8 +290,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "LTC",
             "maker_coin": "KMD",
             "uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
-            "started_at": time_obj.hours_ago(4),
-            "finished_at": time_obj.hours_ago(4) + 8,
+            "started_at": cron.hours_ago(4),
+            "finished_at": cron.hours_ago(4) + 8,
             "taker_amount": 2,
             "maker_amount": 200,
             "is_success": 1,
@@ -328,8 +320,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "KMD-BEP20",
             "maker_coin": "BTC",
             "uuid": "AAAAAAAA-273f-40a5-bcd4-31efdb6bcc8b",
-            "started_at": time_obj.days_ago(1) - 900,
-            "finished_at": time_obj.days_ago(1) - 300,
+            "started_at": cron.days_ago(1) - 900,
+            "finished_at": cron.days_ago(1) - 300,
             "taker_amount": 2000000,
             "maker_amount": 1,
             "is_success": 1,
@@ -358,8 +350,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "BTC",
             "maker_coin": "LTC",
             "uuid": "BBBBBBBB-ac6f-4649-b420-5eb8e2924bf2",
-            "started_at": time_obj.days_ago(7) - 900,
-            "finished_at": time_obj.days_ago(7) + 10,
+            "started_at": cron.days_ago(7) - 900,
+            "finished_at": cron.days_ago(7) + 120,
             "taker_amount": 5,
             "maker_amount": 1,
             "is_success": 1,
@@ -388,8 +380,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DGB",
             "maker_coin": "LTC-segwit",
             "uuid": "CCCCCCCC-40a5-4649-b420-5eb8e2924bf2",
-            "started_at": time_obj.days_ago(7) - 900,
-            "finished_at": time_obj.days_ago(7) - 11,
+            "started_at": cron.days_ago(7) - 900,
+            "finished_at": cron.days_ago(7) - 11,
             "taker_amount": 100000,
             "maker_amount": 1,
             "is_success": 1,
@@ -418,8 +410,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DGB-segwit",
             "maker_coin": "LTC",
             "uuid": "DDDDDDDD-ac6f-a2fb-b360-4bf25fed4292",
-            "started_at": time_obj.days_ago(30) - 900,
-            "finished_at": time_obj.days_ago(30) + 12,
+            "started_at": cron.days_ago(30) - 900,
+            "finished_at": cron.days_ago(30) + 120,
             "taker_amount": 200000,
             "maker_amount": 1,
             "is_success": 1,
@@ -448,8 +440,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "LTC",
             "maker_coin": "DOGE",
             "uuid": "EEEEEEEE-ee4b-494f-a2fb-48467614b613",
-            "started_at": time_obj.days_ago(60) - 900,
-            "finished_at": time_obj.days_ago(60) + 13,
+            "started_at": cron.days_ago(60) - 900,
+            "finished_at": cron.days_ago(60) + 13,
             "taker_amount": 10,
             "maker_amount": 1,
             "is_success": 1,
@@ -478,8 +470,8 @@ def setup_swaps_db_data(setup_time):
             "taker_coin": "DOGE",
             "maker_coin": "LTC",
             "uuid": "FFFFFFFF-ee4b-494f-a2fb-48467614b613",
-            "started_at": time_obj.weeks_ago(10) - 900,
-            "finished_at": time_obj.weeks_ago(10) + 10,
+            "started_at": cron.weeks_ago(10) - 900,
+            "finished_at": cron.weeks_ago(10) + 10,
             "taker_amount": 1,
             "maker_amount": 10,
             "is_success": 1,

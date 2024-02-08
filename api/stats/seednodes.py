@@ -3,7 +3,7 @@ import os
 import csv
 import sys
 import json
-import util.cron as cron
+from util.cron import cron
 import requests
 import sqlite3
 from dotenv import load_dotenv

@@ -1,12 +1,12 @@
 import time
-import util.cron as cron
+from util.cron import cron
 import pytest
 from decimal import Decimal
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL
 from lib.cache_calc import CacheCalc
 from lib.generic import Generic, get_pairs_status
 from lib.pair import Pair
-from tests.fixtures_db import setup_swaps_db_data, setup_time
+from tests.fixtures_db import setup_swaps_db_data
 from tests.fixtures_data import swap_item
 from util.logger import logger
 import util.memcache as memcache

@@ -12,7 +12,7 @@ from util.logger import logger
 from util.exceptions import BadPairFormatError
 from util.transform import sortdata, deplatform, derive, clean
 import db.sqldb as db
-import util.cron as cron
+from util.cron import cron
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
@@ -89,7 +89,7 @@ def pairs_last_traded(
     start_time: int = 0,
     end_time: int = int(cron.now_utc()),
 ) -> list:
-    data = memcache.get_last_traded()
+    data = memcache.get_pairs_last_traded()
     filtered_data = []
     for i in data:
         if data[i]["last_swap_time"] > start_time:
@@ -128,14 +128,14 @@ def summary():
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        last_traded = memcache.get_last_traded()
+        data = memcache.get_pairs_last_traded()
         resp = memcache.get_tickers()
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap_time"] == 0:
-                    if i["ticker_id"] in last_traded:
-                        i = i | last_traded[i["ticker_id"]]
+                    if i["ticker_id"] in data:
+                        i = i | data[i["ticker_id"]]
                 new_data.append(transform.to_summary_for_ticker_xyz_item(i))
         return resp
     except Exception as e:  # pragma: no cover

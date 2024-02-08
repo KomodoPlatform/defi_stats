@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from util.cron import cron
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

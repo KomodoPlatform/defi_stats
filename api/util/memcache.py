@@ -146,12 +146,21 @@ def get_pair_volumes_24hr():  # pragma: no cover
     return data
 
 
-def set_last_traded(data):  # pragma: no cover
-    update("last_traded", data, 900)
+def set_pairs_last_traded(data):  # pragma: no cover
+    update("pairs_last_traded", data, 900)
 
 
-def get_last_traded():  # pragma: no cover
-    data = get("last_traded")
+def get_pairs_last_traded():  # pragma: no cover
+    data = get("pairs_last_traded")
+    return data
+
+
+def set_pairs_last_traded_markets(data):  # pragma: no cover
+    update("pairs_last_traded_markets", data, 900)
+
+
+def get_pairs_last_traded_markets():  # pragma: no cover
+    data = get("pairs_last_traded_markets")
     return data
 
 

@@ -3,7 +3,7 @@ from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
 from util.urls import Urls
-import util.cron as cron
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
@@ -37,7 +37,8 @@ class Cache:  # pragma: no cover
                 "fixer_rates",
                 "gecko_source",
                 "adex_fortnite",
-                "last_traded",
+                "pairs_last_traded",
+                "pairs_last_traded_markets",
                 "pair_volumes_24hr",
                 "coin_volumes_24hr",
                 "orderbook_extended",
@@ -116,7 +117,8 @@ class CacheItem:
         expiry_limits = {
             "coins": 1440,
             "coins_config": 1440,
-            "last_traded": 1,
+            "pairs_last_traded": 5,
+            "pairs_last_traded_markets": 5,
             "gecko_source": 15,
             "fixer_rates": 15,
             "pair_volumes_24hr": 15,
@@ -154,9 +156,13 @@ class CacheItem:
                     data = stats_api.StatsAPI().adex_fortnite()
                     memcache.set_adex_fortnite(data)
 
-                if self.name == "last_traded":
-                    data = cache_calc.CacheCalc().last_traded()
-                    memcache.set_last_traded(data)
+                if self.name == "pairs_last_traded":
+                    data = cache_calc.CacheCalc().pairs_last_traded()
+                    memcache.set_pairs_last_traded(data)
+
+                if self.name == "pairs_last_traded_markets":
+                    data = cache_calc.CacheCalc().pairs_last_traded_markets()
+                    memcache.set_pairs_last_traded_markets(data)
 
                 if self.name == "pair_volumes_24hr":
                     data = cache_calc.CacheCalc().pair_volumes_24hr()

@@ -2,19 +2,10 @@
 from datetime import datetime, timedelta
 
 
-def now_utc():
-    return datetime.utcnow().timestamp()
-
-
-def daterange(start_date, end_date):  # pragma: no cover
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
-
-
-class Time:
+class Cron:
     def __init__(self, from_ts: int = 0):
         if from_ts == 0:
-            self.from_ts = self.now
+            self.from_ts = int(self.now_utc())
         else:
             self.from_ts = from_ts
         self.minute = 60
@@ -22,9 +13,8 @@ class Time:
         self.day = self.hour * 24
         self.week = self.day * 7
 
-    @property
-    def now(self):  # pragma: no cover
-        return int(now_utc())
+    def now_utc(self):
+        return datetime.utcnow().timestamp()
 
     def minutes_ago(self, num):
         return self.from_ts - num * self.minute
@@ -37,3 +27,10 @@ class Time:
 
     def weeks_ago(self, num):
         return self.from_ts - num * self.week
+
+    def daterange(self, start_date, end_date):  # pragma: no cover
+        for n in range(int((end_date - start_date).days)):
+            yield start_date + timedelta(n)
+
+
+cron = Cron()

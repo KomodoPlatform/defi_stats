@@ -3,7 +3,7 @@ import db.sqldb as db
 from lib.pair import Pair
 from util.logger import logger
 from util.transform import sortdata, clean, deplatform, sumdata
-import util.cron as cron
+from util.cron import cron
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
@@ -13,7 +13,7 @@ class StatsAPI:  # pragma: no cover
     def __init__(self):
         try:
             # Load standard memcache
-            self.last_traded_cache = memcache.get_last_traded()
+            self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
             self.coins_config = memcache.get_coins_config()
             self.gecko_source = memcache.get_gecko_source()
             self.pg_query = db.SqlQuery()
@@ -31,11 +31,11 @@ class StatsAPI:  # pragma: no cover
                 # We should reuse generic tickers
                 ticker_infos = memcache.get_tickers()
             else:
-                last_traded_cache = memcache.get_last_traded()
+                pairs_last_trade_cache = memcache.get_pairs_last_traded()
                 if days > pairs_days:
                     pairs_days = days
                 pairs = sorted(
-                    list(set([deplatform.pair(i) for i in last_traded_cache]))
+                    list(set([deplatform.pair(i) for i in pairs_last_trade_cache]))
                 )
                 suffix = transform.get_suffix(days)
                 ticker_infos = []
@@ -47,7 +47,7 @@ class StatsAPI:  # pragma: no cover
                         d = memcache.get(cache_name)
                         if d is None:
                             d = Pair(
-                                pair_str=i, last_traded_cache=last_traded_cache
+                                pair_str=i, pairs_last_trade_cache=pairs_last_trade_cache
                             ).ticker_info(days=days, all_variants=True)
 
                 logger.merge(

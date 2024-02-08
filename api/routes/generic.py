@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import util.cron as cron
+from util.cron import cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import Optional
@@ -37,18 +37,18 @@ def tickers():
 
 
 @router.get(
-    "/last_traded",
+    "/pairs_last_traded",
     description="Time and price of last trade for all pairs. Segwit pairs are merged.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def last_traded(pair_str: str = ""):
+def pairs_last_traded(pair_str: str = ""):
     try:
-        last_traded = memcache.get_last_traded()
+        data = memcache.get_pairs_last_traded()
         if pair_str != "":
-            if pair_str in last_traded:
-                return last_traded[pair_str]
-        return last_traded
+            if pair_str in data:
+                return data[pair_str]
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

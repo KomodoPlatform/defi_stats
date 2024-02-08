@@ -11,7 +11,7 @@ from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 from util.transform import deplatform
 import db.sqldb as db
-import util.cron as cron
+from util.cron import cron
 from util.transform import derive
 import util.validate as validate
 import util.memcache as memcache
@@ -412,7 +412,7 @@ def pair_trade_volumes_usd(
 
 @router.get(
     "/last_traded/{category}",
-    description="Trade volumes for each pair over the selected time period.",
+    description="Trade volumes grouped by category over the selected time period.",
     responses={406: {"model": ErrorMessage}},
     # response_model=PairTradeVolumes,
     status_code=200,

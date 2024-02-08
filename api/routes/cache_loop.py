@@ -35,7 +35,10 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
     memcache.set_gecko_source(CacheItem(name="gecko_source").data)
     memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
-    memcache.set_last_traded(CacheItem(name="last_traded").data)
+    memcache.set_pairs_last_traded(CacheItem(name="pairs_last_traded").data)
+    memcache.set_pairs_last_traded_markets(
+        CacheItem(name="pairs_last_traded_markets").data
+    )
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
     memcache.set_orderbook_extended(CacheItem(name="orderbook_extended").data)
@@ -74,7 +77,7 @@ def get_pair_volumes_24hr():
         except Exception as e:
             return default.error(e)
         msg = "pair_volumes_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -87,7 +90,7 @@ def get_coin_volumes_24hr():
         except Exception as e:
             return default.error(e)
         msg = "coin_volumes_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -106,13 +109,26 @@ def adex_fortnite():
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
-def last_traded():
+def pairs_last_traded():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="last_traded").save()
+            CacheItem(name="pairs_last_traded").save()
         except Exception as e:
             return default.error(e)
-        msg = "last_traded loop complete!"
+        msg = "pairs_last_traded loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def pairs_last_traded_markets():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pairs_last_traded_markets").save()
+        except Exception as e:
+            return default.error(e)
+        msg = "pairs_last_traded_markets loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
@@ -194,7 +210,7 @@ def refresh_orderbook_extended():
         except Exception as e:
             return default.error(e)
         msg = "orderbook_extended refresh loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -207,7 +223,7 @@ def get_orderbook_extended():
         except Exception as e:
             return default.error(e)
         msg = "orderbook_extended loop for memcache complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 # REVIEW
@@ -221,7 +237,7 @@ def refresh_generic_tickers():
         except Exception as e:
             return default.error(e)
         msg = "Generic tickers refresh loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -234,7 +250,7 @@ def get_generic_tickers():
         except Exception as e:
             return default.error(e)
         msg = "Generic tickers loop for memcache complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -247,7 +263,7 @@ def refresh_generic_tickers_14d():
         except Exception as e:
             return default.error(e)
         msg = "Generic tickers 14d refresh loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -260,7 +276,7 @@ def get_generic_tickers_cache_14d():
         except Exception as e:
             return default.error(e)
         msg = "Generic tickers 14d loop for memcache complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")
 
 
 @router.on_event("startup")
@@ -274,4 +290,4 @@ def generic_summary():
         except Exception as e:
             return default.error(e)
         msg = "Summary loop complete!"
-        return default.result(msg=msg, loglevel="query")
+        return default.result(msg=msg, loglevel="loop")

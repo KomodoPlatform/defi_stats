@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import util.cron as cron
+from util.cron import cron
 from typing import List
 import db.sqldb as db
 from lib.cache import Cache
@@ -168,8 +168,8 @@ def trades(
 def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
-        last_traded_cache = memcache.get_last_traded()
-        data = derive.last_trade_info(pair_str, last_traded_cache=last_traded_cache)
+        pairs_last_trade_cache = memcache.get_pairs_last_traded()
+        data = derive.last_trade_info(pair_str, pairs_last_trade_cache=pairs_last_trade_cache)
         return data["last_swap_price"]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair_str}]: {e}")

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import sys
-import util.cron as cron
+from util.cron import cron
 import sqlite3
 import pytest
 
-from tests.fixtures_class import (
+from tests.fixtures_external import (
     setup_gecko,
     setup_gecko_info,
     setup_gecko_coin_ids,
