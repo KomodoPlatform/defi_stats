@@ -13,7 +13,7 @@ class StatsAPI:  # pragma: no cover
     def __init__(self):
         try:
             # Load standard memcache
-            self.pairs_last_trade_cache = memcache.get_pairs_last_traded()
+            self.pairs_last_trade_cache = memcache.get_pair_last_traded()
             self.coins_config = memcache.get_coins_config()
             self.gecko_source = memcache.get_gecko_source()
             self.pg_query = db.SqlQuery()
@@ -26,12 +26,14 @@ class StatsAPI:  # pragma: no cover
 
     def pair_summaries(self, days: int = 1, pairs_days: int = 7):
         try:
+            return
+            # TODO: Apply Merge
             if days == "1a":
                 # TODO: disabled, we should not calc this twice
                 # We should reuse generic tickers
                 ticker_infos = memcache.get_tickers()
             else:
-                pairs_last_trade_cache = memcache.get_pairs_last_traded()
+                pairs_last_trade_cache = memcache.get_pair_last_traded()
                 if days > pairs_days:
                     pairs_days = days
                 pairs = sorted(
@@ -48,7 +50,7 @@ class StatsAPI:  # pragma: no cover
                         if d is None:
                             d = Pair(
                                 pair_str=i, pairs_last_trade_cache=pairs_last_trade_cache
-                            ).ticker_info(days=days, all_variants=True)
+                            ).ticker_info(days=days)
 
                 logger.merge(
                     f"Pair summary ticker infos ({days} days): {len(ticker_infos)}"

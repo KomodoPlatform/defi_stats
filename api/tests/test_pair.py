@@ -152,21 +152,21 @@ def test_swap_uuids(setup_kmd_ltc_pair):
     assert len(r["uuids"]) == 3
 
 
-def test_first_last_swap(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
+def test_first_last_traded(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
     pair = setup_ltc_kmd_pair
     variants = derive.pair_variants(pair.as_str, segwit_only=False)
-    data = pair.first_last_swap(variants)
+    data = pair.first_last_traded(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 100
 
     pair = setup_kmd_ltc_pair
     variants = derive.pair_variants(pair.as_str)
-    data = pair.first_last_swap(variants)
+    data = pair.first_last_traded(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 0.01
 
     pair = setup_kmd_ltc_pair
     variants = derive.pair_variants(pair.as_str, segwit_only=True)
-    data = pair.first_last_swap(variants)
+    data = pair.first_last_traded(variants)
     assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert data["last_swap_price"] == 0.01

@@ -10,7 +10,7 @@ from lib.cache import CacheItem
 
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
-pairs_last_trade_cache = memcache.get_pairs_last_traded()
+pairs_last_trade_cache = memcache.get_pair_last_traded()
 
 
 def test_invert_pair(

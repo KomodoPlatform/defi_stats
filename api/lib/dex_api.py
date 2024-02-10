@@ -94,10 +94,7 @@ class OrderbookRpcThread(threading.Thread):
 
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
                 data = clean.decimal_dicts(data)
-                segwit_variants = derive.pair_variants(self.pair_str, segwit_only=True)
-                for sv in segwit_variants:
-                    data["variants"] = [self.pair_str]
-                    add_orderbook_to_cache(sv, self.variant_cache_name, data)
+                memcache.update(self.variant_cache_name, data, 600)
 
         except Exception as e:  # pragma: no cover
             logger.warning(e)
@@ -134,6 +131,7 @@ def get_orderbook(
             ):
                 data = cached
             elif no_thread:
+                logger.loop(f"Nocache orderbook for {pair_str}")
                 data = DexAPI().orderbook_rpc(base, quote)
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
@@ -268,15 +266,6 @@ def get_liquidity(orderbook, gecko_source):
 @timed
 def add_orderbook_to_cache(pair_str, cache_name, data):
     try:
-        base, quote = derive.base_quote(pair_str)
-        data.update(
-            {
-                "pair": pair_str,
-                "base": base,
-                "quote": quote,
-                "orderbook_cache_name": cache_name,
-            }
-        )
         memcache.update(cache_name, data, 900)
         msg = f"Updated cache: {cache_name}"
         return default.result(data, msg, loglevel="request", ignore_until=3)

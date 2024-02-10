@@ -15,8 +15,8 @@ import util.memcache as memcache
 def test_orderbook():
     pair = Pair("KMD_DOGE")
     time.sleep(1)
-    r1 = pair.orderbook("KMD_DOGE", all_variants=True, no_thread=True)
-    r2 = pair.orderbook("DOGE_KMD", all_variants=True, no_thread=True)
+    r1 = pair.orderbook("KMD_DOGE", no_thread=True)
+    r2 = pair.orderbook("DOGE_KMD", no_thread=True)
     assert len(r1["asks"]) == 6
     assert len(r2["asks"]) == 6
 
@@ -34,8 +34,8 @@ def test_orderbook():
         r6 = pair.orderbook("KMDXX", depth=2, no_thread=True)
         assert r6["bids"] == []
 
-    r_all = pair.orderbook("KMD_LTC", all_variants=True, no_thread=True)
-    r_all2 = pair.orderbook("KMD_LTC-segwit", all_variants=True)
+    r_all = pair.orderbook("KMD_LTC", no_thread=True)
+    r_all2 = pair.orderbook("KMD_LTC-segwit")
     assert r_all["bids"][0] == r_all2["bids"][0]
     assert r_all["asks"][0] == r_all2["asks"][0]
     assert r_all["pair"] == r_all2["pair"]
@@ -43,7 +43,7 @@ def test_orderbook():
     assert r_all["base"] == r_all2["base"]
     assert r_all["liquidity_in_usd"] == r_all2["liquidity_in_usd"]
 
-    r = pair.orderbook("DGB_DOGE", all_variants=True, no_thread=True)
+    r = pair.orderbook("DGB_DOGE", no_thread=True)
     assert r["pair"] == "DGB_DOGE"
     assert int(r["timestamp"]) > int(cron.now_utc()) - 86400
     assert len(r["asks"]) == 6

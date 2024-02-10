@@ -15,11 +15,10 @@ memcache.set_coins_config(CacheItem(name="coins_config").data)
 memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
 memcache.set_gecko_source(CacheItem(name="gecko_source").data)
 memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
-memcache.set_pairs_last_traded(CacheItem(name="pairs_last_traded").data)
-memcache.set_pairs_last_traded_markets(CacheItem(name="pairs_last_traded_markets").data)
+memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
 memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
 memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
-memcache.set_orderbook_extended(CacheItem(name="orderbook_extended").data)
+memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
 
 
 # memcache.set_summary(CacheItem(name="generic_summary").data)

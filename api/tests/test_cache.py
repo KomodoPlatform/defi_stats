@@ -7,8 +7,7 @@ def test_cache():
 
     for i in [
         "adex_fortnite",
-        "pairs_last_traded",
-        "pairs_last_traded_markets",
+        "pair_last_traded",
         # "generic_summary",
         "generic_tickers",
     ]:

@@ -103,7 +103,9 @@ class MarketsUsdVolume(BaseModel):
 # markets/swaps24
 class MarketsSwaps24(BaseModel):
     ticker: str = "XXX"
-    swaps_amount_24hr: int = 777
+    volume: int = 777
+    volume_usd: float = 777.7777
+    swaps_amount_24hr: float = 777.7777
 
 
 # markets/summary_for_ticker

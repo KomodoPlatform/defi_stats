@@ -32,17 +32,12 @@ class Files:
 
         # FOUNDATIONAL CACHE
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
-        self.pairs_last_traded = f"{folder}/generic/pairs_last_traded.json"
-        self.coin_volumes_24hr = (
-            f"{folder}/generic/coin_volumes_24hr.json"
-        )
-        self.pair_volumes_24hr = (
-            f"{folder}/generic/pair_volumes_24hr.json"
-        )
-        self.orderbook_extended = f"{folder}/generic/orderbook_extended.json"
+        self.coin_volumes_24hr = f"{folder}/generic/coin_volumes_24hr.json"
+        self.pair_last_traded = f"{folder}/generic/pair_last_traded.json"
+        self.pair_orderbook_extended = f"{folder}/generic/pair_orderbook_extended.json"
+        self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
 
         # MARKETS CACHE
-        self.pairs_last_traded_markets = f"{folder}/markets/pairs_last_traded.json"
 
         # REVIEW
         self.generic_summary = f"{folder}/generic/summary.json"

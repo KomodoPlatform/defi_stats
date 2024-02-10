@@ -25,7 +25,7 @@ from lib.markets import Markets
 from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert, deplatform, sumdata, derive, invert
+from util.transform import clean, convert, deplatform, sumdata, derive, invert, sortdata
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
@@ -46,7 +46,7 @@ def atomicdex_info_api():
     query = db.SqlQuery()
     return query.swap_counts()
 
-
+'''
 # New endpoint
 @router.get(
     "/current_liquidity",
@@ -62,7 +62,7 @@ def current_liquidity():
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}"}
-
+'''
 
 @router.get(
     "/fiat_rates",
@@ -83,46 +83,45 @@ def fiat_rates():
     status_code=200,
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
-    # TODO: "all_variants" option for pairs like `LTC_USDC` are
-    # not perfect. Needs futher debugging, but not required for
-    # `markets` endpoints
-    # , all_variants: bool = False
     try:
-        pair = Pair(pair_str=pair_str)
-        key = "markets_orderbook"
-        cache_name = derive.pair_cachename(key, pair_str=pair.as_str, suffix="24hr")
-
-        # Use cache if it is fully populated
+        depair = deplatform.pair(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        if is_reversed:
+            cache_name = f"orderbook_{invert.pair(depair)}_ALL"
+        else:
+            cache_name = f"orderbook_{depair}_ALL"
+        
         data = memcache.get(cache_name)
         if data is None:
+            pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
-            data.update({"liquidity_usd": data["liquidity_in_usd"]})
-            volumes_info = Markets().get_pair_volume_from_cache(pair.as_str)
-            data.update(volumes_info)
-            if not pair.is_reversed:
-                data = clean.orderbook_data(data)
-                memcache.update(cache_name, data, 300)
-        else:
-            if Decimal(data["liquidity_usd"]) > 0:
-                if pair.is_reversed:
-                    logger.calc("Returning inverted cache")
-                    data = invert.markets_orderbook(data)
+            logger.calc(data.keys())
+            if pair_str in data:
+                data = data[pair_str]
+            elif invert.pair(pair_str) in data:
+                data = data[invert.pair(pair_str)]
+            else:
+                logger.warning(f"Unable to find orderbook for {pair_str}")
+            # Already present?
+            
+            # volumes_info = Markets().get_pair_volume_from_cache(pair.as_str)
+            # data.update(volumes_info)
+
+        
+        logger.merge(data.keys())
+        if Decimal(data["liquidity_in_usd"]) > 0:
+            if is_reversed:
+                logger.calc("Returning inverted cache")
+                data = invert.markets_orderbook(data)
+            logger.loop(data.keys())
+        data.update({"liquidity_usd": data["liquidity_in_usd"]})
+        logger.pair(data.keys())
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
 
-
-@router.get(
-    "/pairs_last_trade",
-    description=markets_desc.pairs_last_trade,
-    # response_model=List[MarketsPairLastTradeItem],
-    responses={406: {"model": ErrorMessage}},
-    status_code=200,
-)
-def pairs_last_traded_markets():
-    return memcache.get_pairs_last_traded_markets()
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/summary
@@ -136,8 +135,9 @@ def pairs_last_traded_markets():
 def summary():
     try:
         data = memcache.get_tickers()
+        data = memcache.get_pair_volumes_24hr()
         resp = []
-        for i in data["data"]:
+        for i in data["tickers"]:
             resp.append(convert.ticker_to_market_summary_item(i))
         return resp
     except Exception as e:  # pragma: no cover
@@ -159,7 +159,7 @@ def summary_for_ticker(coin: str = "KMD"):
         if "_" in coin:
             return {"error": f"Coin value '{coin}' looks like a pair."}
         resp = memcache.get_tickers()
-        data = memcache.get_pairs_last_traded()
+        data = memcache.get_pair_last_traded()
         new_data = []
         for i in resp["data"]:
             if coin in [i["base_currency"], i["quote_currency"]]:
@@ -183,25 +183,45 @@ def summary_for_ticker(coin: str = "KMD"):
 
 
 @router.get(
-    "/swaps24/{ticker}",
-    description="Total swaps involving a specific ticker (e.g. `KMD`) in the last 24hrs.",
+    "/swaps24/{coin}",
+    description=markets_desc.swaps24,
     response_model=MarketsSwaps24,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def swaps24(ticker: str = "KMD") -> dict:
+def swaps24(coin: str = "KMD") -> dict:
     try:
-        data = memcache.get_tickers()
+        data = memcache.get_coin_volumes_24hr()
         trades = 0
-        for i in data["data"]:
-            if ticker in [i["base_currency"], i["quote_currency"]]:
-                trades += int(i["trades_24hr"])
-        return {"ticker": ticker, "swaps_amount_24hr": trades}
+        volume = 0
+        volume_usd = 0
+        decoin = deplatform.coin(coin)
+        if decoin in data["volumes"]:
+            if coin.replace("-segwit", "") == decoin:
+                if decoin in data["volumes"][decoin]:
+                    trades += int(data["volumes"][decoin][decoin]["total_swaps"])
+                    volume += Decimal(data["volumes"][decoin][decoin]["total_volume"])
+                    volume_usd += Decimal(data["volumes"][decoin][decoin]["trade_volume_usd"])
+                if f"{decoin}-segwit" in data["volumes"][decoin]:
+                    trades += int(data["volumes"][decoin][f"{decoin}-segwit"]["total_swaps"])
+                    volume += Decimal(data["volumes"][decoin][f"{decoin}-segwit"]["total_volume"])
+                    volume_usd += Decimal(data["volumes"][decoin][f"{decoin}-segwit"]["trade_volume_usd"])
+            elif coin in data["volumes"][decoin]:
+                trades += int(data["volumes"][decoin][coin]["total_swaps"])
+                volume += Decimal(data["volumes"][decoin][coin]["total_volume"])
+                volume_usd += Decimal(data["volumes"][decoin][coin]["trade_volume_usd"])
+        return {
+            "ticker": coin,
+            "volume": volume,
+            "volume_usd": volume_usd,
+            "swaps_amount_24hr": trades
+        }
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
 
 
+'''
 @router.get(
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
@@ -233,7 +253,7 @@ def ticker_for_ticker(ticker):
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}
-
+'''
 
 @router.get(
     "/tickers_summary",
@@ -314,7 +334,7 @@ def usd_volume_24h():
     "/volumes_ticker/{coin}/{days_in_past}",
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
-def volumes_history_ticker(
+def volumes_ticker(
     coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
 ):
     # TODO: Use new DB

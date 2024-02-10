@@ -76,15 +76,15 @@ class Clean:
                 "volume_usd_24hr",
                 "volume_usd_14d",
                 "combined_volume_usd",
+                "base_liquidity_coins",
+                "base_liquidity_usd",
+                "quote_liquidity_coins",
+                "quote_liquidity_usd",
             ]:
                 if i in data:
                     data[i] = format_10f(Decimal(data[i]))
-            for i in [
-                "trades_24hr",
-                "trades_14d",
-            ]:
-                if i in data:
-                    data[i] = int(data[i])
+            for k in [i for i in data if i.startswith("trades_")]:
+                data[k] = int(data[k])
             return data
         except Exception as e:  # pragma: no cover
             return default.error(e)
@@ -94,9 +94,6 @@ class Convert:
     def __init__(self):
         pass
 
-    def ticker_info_to_orderbook_extended(self, data):
-        resp = {i: data[i] for i in data if i not in ["ticker_id"]}
-        return resp
 
     def ticker_to_gecko_pair(self, pair_data):
         return {
@@ -208,10 +205,10 @@ class Convert:
             "base": data["base_currency"],
             "liquidity_usd": data["liquidity_in_usd"],
             "base_volume": data["base_volume"],
-            "base_usd_price": data["base_usd_price"],
+            "base_price_usd": data["base_price_usd"],
             "quote": data["quote_currency"],
             "quote_volume": data["quote_volume"],
-            "quote_usd_price": data["quote_usd_price"],
+            "quote_price_usd": data["quote_price_usd"],
             "highest_bid": data["highest_bid"],
             "lowest_ask": data["lowest_ask"],
             "highest_price_24hr": data["highest_price_24hr"],
@@ -264,10 +261,10 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "base_currency": data["base_currency"],
         "liquidity_usd": data["liquidity_in_usd"],
         "base_volume": data["base_volume"],
-        "base_usd_price": data["base_usd_price"],
+        "base_price_usd": data["base_price_usd"],
         "quote_currency": data["quote_currency"],
         "quote_volume": data["quote_volume"],
-        "quote_usd_price": data["quote_usd_price"],
+        "quote_price_usd": data["quote_price_usd"],
         "highest_bid": data["highest_bid"],
         "lowest_ask": data["lowest_ask"],
         "highest_price_24h": data["highest_price_24hr"],
@@ -356,13 +353,13 @@ def ticker_to_statsapi_summary(i):
             "pair_trade_value_usd": Decimal(i["combined_volume_usd"]),
             "base_currency": i["base_currency"],
             "base_volume": Decimal(i["base_volume"]),
-            "base_price_usd": Decimal(i["base_usd_price"]),
+            "base_price_usd": Decimal(i["base_price_usd"]),
             "base_trade_value_usd": Decimal(i["base_volume_usd"]),
             "base_liquidity_coins": Decimal(i["base_liquidity_coins"]),
             "base_liquidity_usd": Decimal(i["base_liquidity_usd"]),
             "quote_currency": i["quote_currency"],
             "quote_volume": Decimal(i["quote_volume"]),
-            "quote_price_usd": Decimal(i["quote_usd_price"]),
+            "quote_price_usd": Decimal(i["quote_price_usd"]),
             "quote_trade_value_usd": Decimal(i["quote_volume_usd"]),
             "quote_liquidity_coins": Decimal(i["quote_liquidity_coins"]),
             "quote_liquidity_usd": Decimal(i["quote_liquidity_usd"]),
@@ -576,13 +573,8 @@ class Derive:
             return default.result(msg=msg, loglevel="warning", data=data)
 
     @timed
-    def pair_cachename(
-        self, key: str, pair_str: str, suffix: str, all_variants: bool = False
-    ):
-        if all_variants:
-            return f"{key}_{pair_str}_{suffix}_ALL"
-        else:
-            return f"{key}_{pair_str}_{suffix}"
+    def pair_cachename(self, key: str, pair_str: str, suffix: str):
+        return f"{key}_{pair_str}_{suffix}"
 
     def price_status_dict(self, pairs, gecko_source=None):
         try:
@@ -632,13 +624,9 @@ class Derive:
 
     @timed
     def last_trade_info(
-        self, pair_str: str, pairs_last_trade_cache: Dict, all_variants=False
+        self, pair_str: str, pairs_last_trade_cache: Dict
     ):
         try:
-            # TODO: cover 'all' case
-            # This is imperfect. Should get both and
-            # calc the last for combo.
-            pair_str = pair_str.replace("-segwit", "")
             if pair_str in pairs_last_trade_cache:
                 return pairs_last_trade_cache[pair_str]
             reverse_pair = invert.pair(pair_str, True)
@@ -650,70 +638,76 @@ class Derive:
 
     @timed
     def coin_variants(self, coin: str, segwit_only: bool = False):
-        """
-        If `segwit_only` is true, non-segwit coins will be
-        returned on their own, otherwise the utxo legacy
-        and segwit versions will be returned.
-        """
-        coin_parts = coin.split("-")
-        if len(coin_parts) == 2 and not coin.endswith("segwit") and segwit_only:
-            return [coin]
-        else:
-            coin = coin_parts[0]
-        coins_config = memcache.get_coins_config()
-        data = [
-            i
-            for i in coins_config
-            if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
-        ]
-        if segwit_only:
-            decoin = deplatform.coin(coin)
-            return [
-                i for i in data if i.endswith("segwit") or i.replace(decoin, "") == ""
+        try:
+            """
+            If `segwit_only` is true, non-segwit coins will be
+            returned on their own, otherwise the utxo legacy
+            and segwit versions will be returned.
+            """
+            coin_parts = coin.split("-")        
+            if len(coin_parts) == 2 and not coin.endswith("segwit") and segwit_only:
+                return [coin]
+            else:
+                coin = coin_parts[0]
+            coins_config = memcache.get_coins_config()
+            data = [
+                i
+                for i in coins_config
+                if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
             ]
-        return data
+            if segwit_only:
+                decoin = deplatform.coin(coin)
+                return [
+                    i for i in data if i.endswith("segwit") or i.replace(decoin, "") == ""
+                ]
+            return data
+        except Exception as e:
+            logger.warning(f"coin variants for {coin} failed")
 
     @timed
     def pair_variants(self, pair_str, segwit_only=False, coins_config=None):
-        variants = []
-        base, quote = derive.base_quote(pair_str)
-        base_variants = self.coin_variants(base)
-        quote_variants = self.coin_variants(quote)
-        for i in base_variants:
-            for j in quote_variants:
-                if i != j:
-                    variants.append(f"{i}_{j}")
-        if segwit_only:
-            base_variants = []
-            quote_variants = []
-            segvars = []
-            if not coins_config:
-                coins_config = memcache.get_coins_config()
-            debase = deplatform.coin(base)
-            dequote = deplatform.coin(quote)
-            if base.endswith("segwit") or base == debase:
-                if debase in coins_config:
-                    base_variants.append(debase)
-                if f"{debase}-segwit" in coins_config:
-                    base_variants.append(f"{debase}-segwit")
-            else:
-                base_variants = [base]
+        try:
+            variants = []
+            base, quote = derive.base_quote(pair_str)
+            base_variants = self.coin_variants(base)
+            quote_variants = self.coin_variants(quote)
+            for i in base_variants:
+                for j in quote_variants:
+                    if i != j:
+                        variants.append(f"{i}_{j}")
+            if segwit_only:
+                base_variants = []
+                quote_variants = []
+                segvars = []
+                if not coins_config:
+                    coins_config = memcache.get_coins_config()
+                debase = deplatform.coin(base)
+                dequote = deplatform.coin(quote)
+                if base.endswith("segwit") or base == debase:
+                    if debase in coins_config:
+                        base_variants.append(debase)
+                    if f"{debase}-segwit" in coins_config:
+                        base_variants.append(f"{debase}-segwit")
+                else:
+                    base_variants = [base]
 
-            if quote.endswith("segwit") or quote == dequote:
-                if dequote in coins_config:
-                    quote_variants.append(dequote)
-                if f"{dequote}-segwit" in coins_config:
-                    quote_variants.append(f"{dequote}-segwit")
-            else:
-                quote_variants = [quote]
-            for b in base_variants:
-                for q in quote_variants:
-                    variant = f"{b}_{q}"
-                    if b != q:
-                        segvars.append(variant)
-            variants = list(set(segvars))
-        variants.sort()
-        return variants
+                if quote.endswith("segwit") or quote == dequote:
+                    if dequote in coins_config:
+                        quote_variants.append(dequote)
+                    if f"{dequote}-segwit" in coins_config:
+                        quote_variants.append(f"{dequote}-segwit")
+                else:
+                    quote_variants = [quote]
+                for b in base_variants:
+                    for q in quote_variants:
+                        variant = f"{b}_{q}"
+                        if b != q:
+                            segvars.append(variant)
+                variants = list(set(segvars))
+            variants.sort()
+            return variants
+        except Exception as e:
+            logger.warning(f"pair variants for {pair_str} failed")
 
     @timed
     def price_at_finish(self, swap, is_reverse=False):
@@ -900,6 +894,34 @@ class Invert:
             "volume": Decimal(i["quote_volume"]),
         }
 
+
+    def swap_uuids(self, uuids):
+        resp = {"ALL": uuids["ALL"]}
+        for v in uuids:
+            if v != "ALL":
+                resp.update({self.pair(v): uuids[v]})
+        return resp
+
+    def orderbook_extended(self, orderbook):
+        try:
+            orderbook.update(
+                {
+                    "asks": [invert.ask_bid(i) for i in orderbook["bids"]],
+                    "bids": [invert.ask_bid(i) for i in orderbook["asks"]],
+                    "variants": [invert.pair(i) for i in orderbook["variants"]],
+                    "total_asks_base_vol": orderbook["total_bids_quote_vol"],
+                    "total_asks_quote_vol": orderbook["total_bids_base_vol"],
+                    "total_asks_base_usd": orderbook["total_bids_quote_usd"],
+                    "total_bids_base_vol": orderbook["total_asks_quote_vol"],
+                    "total_bids_quote_vol": orderbook["total_asks_base_vol"],
+                    "total_bids_quote_usd": orderbook["total_asks_base_usd"],
+                }
+            )
+            return orderbook
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+        return orderbook
+
     def markets_orderbook(self, orderbook):
         try:
             orderbook.update(
@@ -1005,9 +1027,6 @@ class Merge:
                     for i in ["asks", "bids"]
                 }
             )
-            existing.update(
-                {i: sumdata.lists(existing[i], new[i]) for i in ["variants"]}
-            )
             numerics = [
                 "liquidity_in_usd",
                 "total_asks_base_vol",
@@ -1016,11 +1035,20 @@ class Merge:
                 "total_bids_quote_vol",
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
+                "base_liquidity_coins",
+                "base_liquidity_usd",
+                "quote_liquidity_coins",
+                "quote_liquidity_usd",
             ]
-
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
             )
+            if Decimal(existing['lowest_ask']) > Decimal(new['lowest_ask']) or Decimal(existing['lowest_ask']) == 0:
+                existing['lowest_ask'] = new['lowest_ask']
+            
+            if Decimal(existing['highest_bid']) < Decimal(new['highest_bid']):
+                existing['highest_bid'] = new['highest_bid']
+            
             return existing
         except Exception as e:  # pragma: no cover
             logger.warning(new)
@@ -1029,53 +1057,28 @@ class Merge:
             logger.warning(err)
         return existing
 
-    def segwit_pairs_last_traded_markets(self, variants_data):
-        data = {}
+    def first_last_traded(self, all, variant, is_reversed=False):
+        if variant["last_swap_time"] > all["last_swap_time"]:
+            all["last_swap_time"] = variant["last_swap_time"]
+            all["last_swap_price"] = variant["last_swap_price"]
+            all["last_swap_uuid"] = variant["last_swap_uuid"]
+            if is_reversed and all["last_swap_price"] != 0:
+                all["last_swap_price"] = 1 / all["last_swap_price"]
+                
+        if variant["first_swap_time"] < all["first_swap_time"] or all["first_swap_time"] == 0:
+            all["first_swap_time"] = variant["first_swap_time"]
+            all["first_swap_price"] = variant["first_swap_price"]
+            all["first_swap_uuid"] = variant["first_swap_uuid"]
+            if is_reversed and all["first_swap_price"] != 0:
+                all["first_swap_price"] = 1 / all["first_swap_price"]
 
-        for k, v in variants_data.items():
-            if len(variants_data) == 1:
-                return variants_data[k]
-            if k not in data:
-                v["pair"] = k
-                data.update({k: v})
-            else:
-                data[k].update(
-                    {
-                        "swap_count": sumdata.ints(
-                            data[k]["swap_count"], v["swap_count"]
-                        ),
-                    }
-                )
-                for i in ["sum_maker_traded", "sum_taker_traded", "volume_24hr"]:
-                    data[k].update(
-                        {
-                            i: sumdata.decimals(data[k][i], v[i]),
-                        }
-                    )
-                if v["last_swap"] > data[k]["last_swap"]:
-                    data[k].update(
-                        {
-                            "last_swap": v["last_swap"],
-                            "last_swap_uuid": v["last_swap_uuid"],
-                            "last_price": v["last_price"],
-                            "last_taker_amount": v["last_taker_amount"],
-                            "last_maker_amount": v["last_maker_amount"],
-                        }
-                    )
-                if v["first_swap"] < data[k]["first_swap"]:
-                    data[k].update(
-                        {
-                            "first_swap": v["first_swap"],
-                            "first_swap_uuid": v["first_swap_uuid"],
-                            "first_price": v["first_price"],
-                            "first_taker_amount": v["first_taker_amount"],
-                            "first_maker_amount": v["first_maker_amount"],
-                        }
-                    )
-        logger.pair(len(data))
-        logger.pair(data.keys())
-        return data[list(data.keys())[0].replace("-segwit", "")]
+        return all
 
+    def trades(self, all, variant):
+        all += variant["buy"]
+        all += variant["sell"]
+        return all
+        
 
 class SortData:
     def __init__(self):
@@ -1324,7 +1327,7 @@ class Templates:
             "rel_usd_price": 0,
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
-            "base_usd_price": 0,
+            "base_price_usd": 0,
             "base_liquidity_coins": 0,
             "base_liquidity_usd": 0,
             "liquidity_in_usd": 0,
@@ -1344,13 +1347,10 @@ class Templates:
 
     def orderbook(self, pair_str):
         base, quote = derive.base_quote(pair_str)
-        base = base.replace("-segwit", "")
-        quote = quote.replace("-segwit", "")
         data = {
             "pair": f"{base}_{quote}",
             "base": base,
             "quote": quote,
-            "variants": [],
             "asks": [],
             "bids": [],
             "highest_bid": 0,
@@ -1374,12 +1374,8 @@ class Templates:
     def gecko_info(self, coin_id):
         return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}
 
-    def prices(self, suffix, base, quote):
+    def pair_prices_info(self, suffix, base, quote):
         return {
-            "base": base,
-            "base_price_usd": 0,
-            "quote": quote,
-            "quote_price_usd": 0,
             "oldest_price_time": 0,
             "newest_price_time": 0,
             "oldest_price": 0,
@@ -1391,7 +1387,6 @@ class Templates:
             "last_swap_price": 0,
             "last_swap_uuid": "",
             "last_swap_time": 0,
-            "variants": [],
         }
 
     def volumes_ticker(self):
@@ -1411,11 +1406,11 @@ class Templates:
             "base_currency": base,
             "base_liquidity_coins": 0,
             "base_liquidity_usd": 0,
-            "base_usd_price": 0,
+            "base_price_usd": 0,
             "quote_currency": quote,
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
-            "quote_usd_price": 0,
+            "quote_price_usd": 0,
             "liquidity_in_usd": 0,
             "last_swap_price": 0,
             "last_swap_uuid": "",
@@ -1430,6 +1425,7 @@ class Templates:
             f"price_change_{suffix}": 0,
             "highest_bid": 0,
             "lowest_ask": 0,
+            "priced": False,
         }
 
     def coin_trade_vol_item(self):
@@ -1445,11 +1441,21 @@ class Templates:
             "trade_volume_usd": 0,
         }
 
-    def first_last_swap(self):
+    def first_last_traded(self):
         return {
+            "first_swap_time": 0,
+            "first_swap_price": 0,
+            "first_swap_uuid": "",
+            "first_maker_amount": 0,
+            "first_taker_amount": 0,
+            "first_trade_type": "",
             "last_swap_time": 0,
             "last_swap_price": 0,
             "last_swap_uuid": "",
+            "last_maker_amount": 0,
+            "last_taker_amount": 0,
+            "last_trade_type": "",
+            "priced": None
         }
 
     def pair_trade_vol_item(self):

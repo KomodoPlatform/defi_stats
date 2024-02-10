@@ -61,7 +61,7 @@ def get(key):  # pragma: no cover
         if cached is not None:
             return cached
         i += 1
-    if "orderbook" not in key and "ticker_info" not in key and key not in ["testing"]:
+    if "orderbook" not in key and "ticker_info" not in key and "prices" not in key and key not in ["testing"]:
         logger.warning(f"Failed to get '{key}' from memcache")
     return None
 
@@ -79,6 +79,7 @@ def update(key, value, expiry):
     except Exception as e:
         msg = f"{key} memcache not updated: {e}"
         logger.warning(f"Failed to cache {key}! {e}")
+        logger.warning(f"Failed to cache {value}!")
     return default.result(data=key, msg=msg, loglevel="warning", ignore_until=0)
 
 
@@ -119,12 +120,12 @@ def get_gecko_source():  # pragma: no cover
 
 
 # FOUNDATIONAL CACHE
-def set_orderbook_extended(data):  # pragma: no cover
-    update("orderbook_extended", data, 900)
+def set_pair_orderbook_extended(data):  # pragma: no cover
+    update("pair_orderbook_extended", data, 900)
 
 
-def get_orderbook_extended():  # pragma: no cover
-    data = get("orderbook_extended")
+def get_pair_orderbook_extended():  # pragma: no cover
+    data = get("pair_orderbook_extended")
     return data
 
 
@@ -146,21 +147,12 @@ def get_pair_volumes_24hr():  # pragma: no cover
     return data
 
 
-def set_pairs_last_traded(data):  # pragma: no cover
-    update("pairs_last_traded", data, 900)
+def set_pair_last_traded(data):  # pragma: no cover
+    update("pair_last_traded", data, 900)
 
 
-def get_pairs_last_traded():  # pragma: no cover
-    data = get("pairs_last_traded")
-    return data
-
-
-def set_pairs_last_traded_markets(data):  # pragma: no cover
-    update("pairs_last_traded_markets", data, 900)
-
-
-def get_pairs_last_traded_markets():  # pragma: no cover
-    data = get("pairs_last_traded_markets")
+def get_pair_last_traded():  # pragma: no cover
+    data = get("pair_last_traded")
     return data
 
 

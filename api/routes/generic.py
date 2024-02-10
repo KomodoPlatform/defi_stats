@@ -37,14 +37,14 @@ def tickers():
 
 
 @router.get(
-    "/pairs_last_traded",
+    "/pair_last_traded",
     description="Time and price of last trade for all pairs. Segwit pairs are merged.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def pairs_last_traded(pair_str: str = ""):
+def pair_last_traded(pair_str: str = ""):
     try:
-        data = memcache.get_pairs_last_traded()
+        data = memcache.get_pair_last_traded()
         if pair_str != "":
             if pair_str in data:
                 return data[pair_str]
@@ -61,11 +61,11 @@ def pairs_last_traded(pair_str: str = ""):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def orderbook(pair_str: str = "KMD_LTC", depth: int = 100, all_variants: bool = True):
+def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
         pair = Pair(pair_str=pair_str)
         return pair.orderbook(
-            pair_str=pair_str, all_variants=all_variants, depth=depth, no_thread=True
+            pair_str=pair_str, depth=depth, no_thread=True
         )
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}

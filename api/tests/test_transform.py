@@ -26,7 +26,7 @@ import util.memcache as memcache
 
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
-pairs_last_trade_cache = memcache.get_pairs_last_traded()
+pairs_last_trade_cache = memcache.get_pair_last_traded()
 
 logger.info("Testing transformations...")
 
@@ -243,7 +243,7 @@ def test_deplatform_coin():
 
 def test_merge_orderbooks():
     pair = Pair("KMD_DOGE")
-    orderbook_data = pair.orderbook("KMD_DOGE", all_variants=False)
+    orderbook_data = pair.orderbook("KMD_DOGE")
     book = deepcopy(orderbook_data)
     book2 = deepcopy(orderbook_data)
     x = merge.orderbooks(book, book2)
@@ -289,8 +289,6 @@ def test_derive_pair_cachename():
     assert r == "ticker_info_KMD_LTC_24hr"
     r = derive.pair_cachename("ticker_info", "KMD_LTC-segwit", "24hr")
     assert r == "ticker_info_KMD_LTC-segwit_24hr"
-    r = derive.pair_cachename("ticker_info", "KMD_LTC", "24hr", "ALL")
-    assert r == "ticker_info_KMD_LTC_24hr_ALL"
     r = derive.pair_cachename("ticker_info", "USDC_KMD", "14d")
     assert r == "ticker_info_USDC_KMD_14d"
 
@@ -453,28 +451,28 @@ def test_get_pair_variants():
 
 def test_derive_lowest_ask():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC", all_variants=True)
+    orderbook = pair.orderbook("KMD_MATIC")
     r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3158)
 
 
 def test_derive_highest_bid():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC", all_variants=True)
+    orderbook = pair.orderbook("KMD_MATIC")
     r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(0.3037)
 
 
 def test_derive_lowest_ask_reversed():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD", all_variants=True)
+    orderbook = pair.orderbook("MATIC_KMD")
     r = derive.lowest_ask(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
 
 
 def test_derive_highest_bid_reversed():
     pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD", all_variants=True)
+    orderbook = pair.orderbook("MATIC_KMD")
     r = derive.highest_bid(orderbook)
     assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)
 

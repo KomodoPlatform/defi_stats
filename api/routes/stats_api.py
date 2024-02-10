@@ -168,7 +168,7 @@ def trades(
 def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
-        pairs_last_trade_cache = memcache.get_pairs_last_traded()
+        pairs_last_trade_cache = memcache.get_pair_last_traded()
         data = derive.last_trade_info(pair_str, pairs_last_trade_cache=pairs_last_trade_cache)
         return data["last_swap_price"]
     except Exception as e:  # pragma: no cover

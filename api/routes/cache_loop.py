@@ -34,39 +34,48 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
     memcache.set_gecko_source(CacheItem(name="gecko_source").data)
-    memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
-    memcache.set_pairs_last_traded(CacheItem(name="pairs_last_traded").data)
-    memcache.set_pairs_last_traded_markets(
-        CacheItem(name="pairs_last_traded_markets").data
-    )
+    # memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
+    memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
-    memcache.set_orderbook_extended(CacheItem(name="orderbook_extended").data)
+    memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
 
     # memcache.set_summary(CacheItem(name="generic_summary").data)
-    memcache.set_tickers(CacheItem(name="generic_tickers").data)
-    memcache.set_tickers_14d(CacheItem(name="generic_tickers_14d").data)
+    # memcache.set_tickers(CacheItem(name="generic_tickers").data)
+    # memcache.set_tickers_14d(CacheItem(name="generic_tickers_14d").data)
     memcache.update("coins_with_segwit", [i.coin for i in Coins().with_segwit], 86400)
 
     msg = "init missing cache loop complete!"
     return default.result(msg=msg, loglevel="loop", ignore_until=3)
 
+# ORDERBOOKS CACHE
+@router.on_event("startup")
+@repeat_every(seconds=600)
+@timed
+def refresh_pair_orderbook_extended():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_orderbook_extended").save()
+        except Exception as e:
+            return default.error(e)
+        msg = "pair_orderbook_extended refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
-def prices_service():  # pragma: no cover
+def get_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
-            for i in ["prices_tickers_v1", "prices_tickers_v2"]:
-                CacheItem(i).save()
+            CacheItem(name="pair_orderbook_extended", from_memcache=True).save()
         except Exception as e:
             return default.error(e)
-        msg = "Prices update loop complete!"
+        msg = "pair_orderbook_extended loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
-# FOUNDATIONAL CACHE
+# VOLUMES CACHE
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
@@ -93,43 +102,36 @@ def get_coin_volumes_24hr():
         return default.result(msg=msg, loglevel="loop")
 
 
+# LAST TRADE
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=60)
 @timed
-def adex_fortnite():
+def pair_last_traded():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="adex_fortnite").save()
+            CacheItem(name="pair_last_traded").save()
         except Exception as e:
-            logger.warning(default.error(e))
-        msg = "Adex fortnight loop complete!"
+            return default.error(e)
+        msg = "pair_last_traded loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
+
+
+    
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
-def pairs_last_traded():
+def prices_service():  # pragma: no cover
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="pairs_last_traded").save()
+            for i in ["prices_tickers_v1", "prices_tickers_v2"]:
+                CacheItem(i).save()
         except Exception as e:
             return default.error(e)
-        msg = "pairs_last_traded loop complete!"
+        msg = "Prices update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-@timed
-def pairs_last_traded_markets():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="pairs_last_traded_markets").save()
-        except Exception as e:
-            return default.error(e)
-        msg = "pairs_last_traded_markets loop complete!"
-        return default.result(msg=msg, loglevel="loop")
 
 
 # EXTERNAL SOURCES CACHE
@@ -200,32 +202,23 @@ def import_dbs():
         return default.result(msg=msg, loglevel="merge")
 
 
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
-def refresh_orderbook_extended():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="orderbook_extended").save()
-        except Exception as e:
-            return default.error(e)
-        msg = "orderbook_extended refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
-def get_orderbook_extended():
+def adex_fortnite():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="orderbook_extended", from_memcache=True).save()
+            CacheItem(name="adex_fortnite").save()
         except Exception as e:
-            return default.error(e)
-        msg = "orderbook_extended loop for memcache complete!"
+            logger.warning(default.error(e))
+        msg = "Adex fortnight loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
+'''
 # REVIEW
 @router.on_event("startup")
 @repeat_every(seconds=300)
@@ -291,3 +284,4 @@ def generic_summary():
             return default.error(e)
         msg = "Summary loop complete!"
         return default.result(msg=msg, loglevel="loop")
+'''

@@ -85,11 +85,11 @@ def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def pairs_last_traded(
+def pair_last_traded(
     start_time: int = 0,
     end_time: int = int(cron.now_utc()),
 ) -> list:
-    data = memcache.get_pairs_last_traded()
+    data = memcache.get_pair_last_traded()
     filtered_data = []
     for i in data:
         if data[i]["last_swap_time"] > start_time:
@@ -128,7 +128,7 @@ def summary():
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        data = memcache.get_pairs_last_traded()
+        data = memcache.get_pair_last_traded()
         resp = memcache.get_tickers()
         new_data = []
         for i in resp["data"]:

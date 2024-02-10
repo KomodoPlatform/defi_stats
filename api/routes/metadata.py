@@ -25,5 +25,10 @@ class MarketsDesc:
         desc = "Returns last trade info and 24hr volume for all pairs traded in last 30 days"
         return desc
 
+    @property
+    def swaps24(self):
+        desc = "Total swaps involving a specific coin (e.g. `KMD`, `KMD-BEP20`) in the last 24hrs."
+        return desc
+
 
 markets_desc = MarketsDesc()

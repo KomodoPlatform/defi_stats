@@ -37,11 +37,10 @@ class Cache:  # pragma: no cover
                 "fixer_rates",
                 "gecko_source",
                 "adex_fortnite",
-                "pairs_last_traded",
-                "pairs_last_traded_markets",
+                "pair_last_traded",
                 "pair_volumes_24hr",
                 "coin_volumes_24hr",
-                "orderbook_extended",
+                "pair_orderbook_extended",
                 "generic_summary",
                 "generic_tickers",
                 "prices_tickers_v1",
@@ -117,13 +116,12 @@ class CacheItem:
         expiry_limits = {
             "coins": 1440,
             "coins_config": 1440,
-            "pairs_last_traded": 5,
-            "pairs_last_traded_markets": 5,
+            "pair_last_traded": 5,
             "gecko_source": 15,
             "fixer_rates": 15,
             "pair_volumes_24hr": 15,
             "coin_volumes_24hr": 15,
-            "orderbook_extended": 15,
+            "pair_orderbook_extended": 15,
         }
         if self.name in expiry_limits:
             return expiry_limits[self.name]
@@ -156,32 +154,27 @@ class CacheItem:
                     data = stats_api.StatsAPI().adex_fortnite()
                     memcache.set_adex_fortnite(data)
 
-                if self.name == "pairs_last_traded":
-                    data = cache_calc.CacheCalc().pairs_last_traded()
-                    memcache.set_pairs_last_traded(data)
-
-                if self.name == "pairs_last_traded_markets":
-                    data = cache_calc.CacheCalc().pairs_last_traded_markets()
-                    memcache.set_pairs_last_traded_markets(data)
-
-                if self.name == "pair_volumes_24hr":
-                    data = cache_calc.CacheCalc().pair_volumes_24hr()
-                    memcache.set_pair_volumes_24hr(data)
-
                 if self.name == "coin_volumes_24hr":
                     data = cache_calc.CacheCalc().coin_volumes_24hr()
                     memcache.set_coin_volumes_24hr(data)
 
-                if self.name == "orderbook_extended":
-                    data = cache_calc.CacheCalc().orderbook_extended()
-                    memcache.set_orderbook_extended(data)
+                if self.name == "pair_last_traded":
+                    data = cache_calc.CacheCalc().pair_last_traded()
+                    memcache.set_pair_last_traded(data)
 
+                if self.name == "pair_orderbook_extended":
+                    data = cache_calc.CacheCalc().pair_orderbook_extended()
+                    memcache.set_pair_orderbook_extended(data)
+                    
+                if self.name == "pair_volumes_24hr":
+                    data = cache_calc.CacheCalc().pair_volumes_24hr()
+                    memcache.set_pair_volumes_24hr(data)
+                    
                 # REVIEW
 
                 if self.name == "generic_summary":
-                    pass
-                    # data = stats_api.StatsAPI().pair_summaries()
-                    # memcache.set_summary(data)
+                    data = stats_api.StatsAPI().pair_summaries()
+                    memcache.set_summary(data)
 
                 if self.name == "generic_tickers":
                     data = cache_calc.CacheCalc().tickers()

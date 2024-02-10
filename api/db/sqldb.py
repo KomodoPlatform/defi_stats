@@ -589,14 +589,14 @@ class SqlQuery(SqlDB):
             total_trade_vol_usd = 0
             for pair_std in volumes["volumes"]:
                 base, quote = derive.base_quote(pair_std)
-                base_usd_price = derive.gecko_price(base, gecko_source)
-                quote_usd_price = derive.gecko_price(quote, gecko_source)
+                base_price_usd = derive.gecko_price(base, gecko_source)
+                quote_price_usd = derive.gecko_price(quote, gecko_source)
 
                 for variant in volumes["volumes"][pair_std]:
                     base_vol = volumes["volumes"][pair_std][variant]["base_volume"]
                     quote_vol = volumes["volumes"][pair_std][variant]["quote_volume"]
-                    base_vol_usd = Decimal(base_vol * base_usd_price)
-                    quote_vol_usd = Decimal(quote_vol * quote_usd_price)
+                    base_vol_usd = Decimal(base_vol * base_price_usd)
+                    quote_vol_usd = Decimal(quote_vol * quote_price_usd)
                     trade_vol_usd = Decimal(base_vol_usd + quote_vol_usd)
                     volumes["volumes"][pair_std][variant].update(
                         {
@@ -787,9 +787,7 @@ class SqlQuery(SqlDB):
             maker_data = self.last_trade(
                 is_success=is_success, group_by_cols=group_by_cols
             )
-            logger.cached(maker_data)
             for i in maker_data:
-                logger.cached(i)
                 k = derive.app(i)
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -808,9 +806,7 @@ class SqlQuery(SqlDB):
             taker_data = self.last_trade(
                 is_success=is_success, group_by_cols=group_by_cols
             )
-            logger.cached(taker_data)
             for i in taker_data:
-                logger.cached(i)
                 k = derive.app(i)
                 if k not in data:
                     data.update({k: template.last_traded_item()})
@@ -1044,6 +1040,7 @@ class SqlQuery(SqlDB):
             success_only=success_only,
             failed_only=failed_only,
         )
+        # TODO: This should return all variants and be merged as req later
         if all_variants:
             resp = swaps["ALL"]
         elif merge_segwit:
