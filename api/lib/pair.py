@@ -19,7 +19,7 @@ from util.transform import (
     invert,
     filterdata,
     template,
-    derive
+    derive,
 )
 
 
@@ -38,60 +38,92 @@ class Pair:  # pragma: no cover
     ):
         try:
             self.as_str = pair_str
-            self.as_std_str = deplatform.pair(self.as_str)
             self.base, self.quote = derive.base_quote(self.as_str)
-            self.is_reversed = self.as_str != sortdata.pair_by_market_cap(self.as_str)
-
-            # Load standard memcache
-            self.pairs_last_trade_cache = pairs_last_trade_cache
-            if self.pairs_last_trade_cache is None:
-                self.pairs_last_trade_cache = memcache.get_pair_last_traded()
-
-            self.coins_config = coins_config
-            if self.coins_config is None:
-                self.coins_config = memcache.get_coins_config()
-
-            self.gecko_source = gecko_source
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-
-            # Get price and market cap
-            self.base_price_usd = derive.gecko_price(
-                self.base, gecko_source=self.gecko_source
-            )
-            self.quote_price_usd = derive.gecko_price(
-                self.quote, gecko_source=self.gecko_source
-            )
-            if self.quote_price_usd == 0 or self.base_price_usd == 0:
-                self.priced = False
-            else:
-                self.priced = True
-
-            # Lazy loading cached properties
+            # Lazy loading properties
+            self._depair = None
+            self._priced = None
             self._pg_query = None
+            self._base_price_usd = None
+            self._quote_price_usd = None
+            self._coins_config = coins_config
+            self._gecko_source = gecko_source
+            self._pairs_last_trade_cache = pairs_last_trade_cache
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed! {e}"
             return default.result(msg=msg, loglevel="warning")
 
     @property
+    def priced(self):
+        if self._priced is None:
+            self._priced = True
+            if self.quote_price_usd == 0 or self.base_price_usd == 0:
+                self._priced = False
+        return self._priced
+
+    @property
+    def base_price_usd(self):
+        if self._base_price_usd is None:
+            self._base_price_usd = derive.gecko_price(
+                self.base, gecko_source=self.gecko_source
+            )
+        return self._base_price_usd
+    
+    @property
+    def quote_price_usd(self):
+        if self._quote_price_usd is None:
+            self._quote_price_usd = derive.gecko_price(
+                self.quote, gecko_source=self.gecko_source
+            )
+        return self._quote_price_usd
+    
+    @property
+    def depair(self):
+        if self._depair is None:
+            self._depair = deplatform.pair(self.as_str)
+        return self._depair
+    
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
+
+    @property
+    def pairs_last_trade_cache(self):
+        if self._pairs_last_trade_cache is None:
+            self._pairs_last_trade_cache = memcache.get_pair_last_traded()
+        return self._pairs_last_trade_cache
+
+    @property
     def pg_query(self):
         if self._pg_query is None:
             self._pg_query = db.SqlQuery()
         return self._pg_query
-    
+
+    @cached_property
+    def is_reversed(self):
+        return self.as_str != sortdata.pair_by_market_cap(
+            self.as_str, gecko_source=self.gecko_source
+        )
+
     @cached_property
     def variants(self):
         return derive.pair_variants(
             self.as_str, segwit_only=False, coins_config=self.coins_config
         )
-    
+
     @cached_property
     def segwit_variants(self):
         return derive.pair_variants(
             self.as_str, segwit_only=True, coins_config=self.coins_config
         )
-    
 
     @timed
     def historical_trades(
@@ -487,10 +519,10 @@ class Pair:  # pragma: no cover
                         depair, combo_cache_name, combo_orderbook
                     )
                 msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
-                loglevel="pair"
+                loglevel = "pair"
             else:
                 msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
-                loglevel="cached"
+                loglevel = "cached"
             ignore_until = 3
             if Decimal(combo_orderbook["ALL"]["liquidity_in_usd"]) > 10000:
                 ignore_until = 0

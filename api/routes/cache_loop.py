@@ -50,7 +50,7 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=300)
 @timed
 def refresh_pair_orderbook_extended():
     if memcache.get("testing") is None:

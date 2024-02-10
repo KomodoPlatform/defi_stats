@@ -25,7 +25,16 @@ from lib.markets import Markets
 from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import clean, convert, deplatform, sumdata, derive, invert, sortdata
+from util.transform import (
+    clean,
+    convert,
+    deplatform,
+    sumdata,
+    derive,
+    invert,
+    sortdata,
+    merge,
+)
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
@@ -46,7 +55,8 @@ def atomicdex_info_api():
     query = db.SqlQuery()
     return query.swap_counts()
 
-'''
+
+"""
 # New endpoint
 @router.get(
     "/current_liquidity",
@@ -62,7 +72,8 @@ def current_liquidity():
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}"}
-'''
+"""
+
 
 @router.get(
     "/fiat_rates",
@@ -90,33 +101,36 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
             cache_name = f"orderbook_{invert.pair(depair)}_ALL"
         else:
             cache_name = f"orderbook_{depair}_ALL"
-        
+
         data = memcache.get(cache_name)
         if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
 
-        if pair_str in data:
-            data = data[pair_str]
-        elif invert.pair(pair_str) in data:
-            data = data[invert.pair(pair_str)]
-        else:
-            logger.warning(f"Unable to find orderbook for {pair_str}")
-        
+        orderbook_data = template.orderbook(pair_str=pair_str)
+        for variant in derive.pair_variants(pair_str=pair_str, segwit_only=True):
+            if variant in data:
+                variant_data = data[variant]
+            elif invert.pair(variant) in data:
+                variant_data = data[invert.pair(variant)]
+            else:
+                logger.warning(f"Unable to find orderbook for {variant}")
+                variant_data = template.orderbook(variant)
+            orderbook_data = merge.orderbooks(orderbook_data, variant_data)
+
         logger.merge(data.keys())
-        if Decimal(data["liquidity_in_usd"]) > 0:
+        if Decimal(orderbook_data["liquidity_in_usd"]) > 0:
             if is_reversed:
                 logger.calc("Returning inverted cache")
-                data = invert.markets_orderbook(data)
-        logger.loop(data.keys())
-        data.update({"liquidity_usd": data["liquidity_in_usd"]})
-        logger.pair(data.keys())
-        return data
+                orderbook_data = invert.markets_orderbook(orderbook_data)
+        logger.loop(orderbook_data.keys())
+        orderbook_data.update({"liquidity_usd": orderbook_data["liquidity_in_usd"]})
+        logger.pair(orderbook_data.keys())
+        return orderbook_data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
-
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/summary
@@ -196,11 +210,19 @@ def swaps24(coin: str = "KMD") -> dict:
                 if decoin in data["volumes"][decoin]:
                     trades += int(data["volumes"][decoin][decoin]["total_swaps"])
                     volume += Decimal(data["volumes"][decoin][decoin]["total_volume"])
-                    volume_usd += Decimal(data["volumes"][decoin][decoin]["trade_volume_usd"])
+                    volume_usd += Decimal(
+                        data["volumes"][decoin][decoin]["trade_volume_usd"]
+                    )
                 if f"{decoin}-segwit" in data["volumes"][decoin]:
-                    trades += int(data["volumes"][decoin][f"{decoin}-segwit"]["total_swaps"])
-                    volume += Decimal(data["volumes"][decoin][f"{decoin}-segwit"]["total_volume"])
-                    volume_usd += Decimal(data["volumes"][decoin][f"{decoin}-segwit"]["trade_volume_usd"])
+                    trades += int(
+                        data["volumes"][decoin][f"{decoin}-segwit"]["total_swaps"]
+                    )
+                    volume += Decimal(
+                        data["volumes"][decoin][f"{decoin}-segwit"]["total_volume"]
+                    )
+                    volume_usd += Decimal(
+                        data["volumes"][decoin][f"{decoin}-segwit"]["trade_volume_usd"]
+                    )
             elif coin in data["volumes"][decoin]:
                 trades += int(data["volumes"][decoin][coin]["total_swaps"])
                 volume += Decimal(data["volumes"][decoin][coin]["total_volume"])
@@ -209,14 +231,14 @@ def swaps24(coin: str = "KMD") -> dict:
             "ticker": coin,
             "volume": volume,
             "volume_usd": volume_usd,
-            "swaps_amount_24hr": trades
+            "swaps_amount_24hr": trades,
         }
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
 
 
-'''
+"""
 @router.get(
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
@@ -248,7 +270,8 @@ def ticker_for_ticker(ticker):
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}
-'''
+"""
+
 
 @router.get(
     "/tickers_summary",
@@ -329,9 +352,7 @@ def usd_volume_24h():
     "/volumes_ticker/{coin}/{days_in_past}",
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
-def volumes_ticker(
-    coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
-):
+def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL):
     # TODO: Use new DB
     volumes_dict = {}
     query = db.SqlQuery()

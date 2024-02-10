@@ -110,25 +110,31 @@ def get_orderbook(
     no_thread: bool = True,
 ):
     try:
+        ignore_until = 0
         pair_str = f"{base}_{quote}"
         data = template.orderbook(pair_str=pair_str)
+        msg = f"Returning orderbook template for {pair_str} while cache reloads"
         if base not in coins_config or quote not in coins_config:
             msg = f"dex_api.get_orderbook {base} not in coins_config!"
         if quote not in coins_config:
             msg = f"dex_api.get_orderbook {quote} not in coins_config!"
         elif coins_config[base]["wallet_only"]:
+            ignore_until = 3
             msg = f"dex_api.get_orderbook {base} is wallet only!"
         elif coins_config[quote]["wallet_only"]:
+            ignore_until = 3
             msg = f"dex_api.get_orderbook {quote} is wallet only!"
         elif memcache.get("testing") is not None:
             return get_orderbook_fixture(pair_str, gecko_source=gecko_source)
         else:
+            ignore_until = 3
             # Use variant cache if available
             cached = memcache.get(variant_cache_name)
             if cached is not None and (
                 len(cached["asks"]) > 0 or len(cached["bids"]) > 0
             ):
                 data = cached
+                msg = f"Returning orderbook for {pair_str} from cache"
             elif no_thread:
                 data = DexAPI().orderbook_rpc(base, quote)
                 data = orderbook_extras(
@@ -137,6 +143,7 @@ def get_orderbook(
                 if [i.startswith("trades_") for i in data]:
                     data = clean.decimal_dicts(data)
                     memcache.update(variant_cache_name, data, 600)
+                msg = f"Returning live orderbook for {pair_str}"
             else:
                 t = OrderbookRpcThread(
                     base,
@@ -146,12 +153,12 @@ def get_orderbook(
                     gecko_source=gecko_source,
                 )
                 t.start()
-        msg = f"Returning orderbook template for {pair_str} while cache reloads"
     except Exception as e:  # pragma: no cover
+        ignore_until = 0
         msg = f"dex_api.get_orderbook {pair_str} failed: {e}! Returning template"
     return default.result(
         data=data,
-        ignore_until=2,
+        ignore_until=ignore_until,
         msg=msg,
         loglevel="loop",
     )
@@ -274,7 +281,7 @@ def get_liquidity(orderbook, gecko_source):
 @timed
 def add_orderbook_to_cache(pair_str, cache_name, data):
     try:
-        memcache.update(cache_name, data, 900)
+        memcache.update(cache_name, data, 600)
         msg = f"Updated cache: {cache_name}"
         return default.result(data, msg, loglevel="request", ignore_until=3)
     except Exception as e:  # pragma: no cover

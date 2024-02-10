@@ -35,7 +35,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):
         ignore_until = 3
         vol = transform.format_10f(data['volume_usd_24hr'])
         swaps = data["trades_24hr"]
-        if data["trades_24hr"] > 0:
+        if data["trades_24hr"] > 3:
             ignore_until = 0
         return default.result(
             data=data,
