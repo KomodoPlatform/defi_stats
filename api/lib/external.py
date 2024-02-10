@@ -129,7 +129,7 @@ class FixerAPI:  # pragma: no cover
             return received_rates
             '''
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
 
 class BinanceAPI:  # pragma: no cover

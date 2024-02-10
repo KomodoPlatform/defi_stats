@@ -30,7 +30,7 @@ class Clean:
                             i[j] = round(float(i[j]), rounding)
             return data
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def decimal_dicts(
@@ -51,7 +51,7 @@ class Clean:
             return data
         except Exception as e:  # pragma: no cover
             logger.warning(data)
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def orderbook_data(self, data):
@@ -60,6 +60,7 @@ class Clean:
         (e.g. summary_cache.json)
         """
         try:
+            # logger.calc(data.keys())
             for i in ["bids", "asks"]:
                 for j in data[i]:
                     for k in ["price", "volume"]:
@@ -85,9 +86,10 @@ class Clean:
                     data[i] = format_10f(Decimal(data[i]))
             for k in [i for i in data if i.startswith("trades_")]:
                 data[k] = int(data[k])
+            # logger.loop(data.keys())
             return data
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
 
 class Convert:
@@ -382,7 +384,7 @@ def ticker_to_statsapi_summary(i):
         return data
 
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 @timed
@@ -719,7 +721,7 @@ class Derive:
                 price = swap["price"]
             return {end_time: price}
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # The lowest ask / highest bid needs to be inverted
     # to result in conventional vaules like seen at
@@ -1027,6 +1029,14 @@ class Merge:
                     for i in ["asks", "bids"]
                 }
             )
+            
+            for i in existing:
+                if i.startswith("trades_"):
+                    existing[i] = sumdata.ints(existing[i], new[i])
+            for i in existing:
+                if i.startswith("volume_usd_"):
+                    existing[i] = sumdata.decimals(existing[i], new[i])
+            
             numerics = [
                 "liquidity_in_usd",
                 "total_asks_base_vol",
@@ -1038,7 +1048,7 @@ class Merge:
                 "base_liquidity_coins",
                 "base_liquidity_usd",
                 "quote_liquidity_coins",
-                "quote_liquidity_usd",
+                "quote_liquidity_usd"
             ]
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
@@ -1351,8 +1361,9 @@ class Templates:
             "pair": f"{base}_{quote}",
             "base": base,
             "quote": quote,
-            "asks": [],
-            "bids": [],
+            "volume_usd_24hr": 0,
+            "trades_24hr": 0,
+            "liquidity_in_usd": 0,
             "highest_bid": 0,
             "lowest_ask": 0,
             "liquidity_in_usd": 0,
@@ -1366,7 +1377,8 @@ class Templates:
             "base_liquidity_usd": 0,
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
-            "liquidity_in_usd": 0,
+            "asks": [],
+            "bids": [],
             "timestamp": f"{int(cron.now_utc())}",
         }
         return data

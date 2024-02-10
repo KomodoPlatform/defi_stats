@@ -23,7 +23,7 @@ def check_cache():  # pragma: no cover
         cache.healthcheck(to_console=True)
         logger.info(memcache.stats())
     except Exception as e:
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 @router.on_event("startup")
@@ -57,7 +57,7 @@ def refresh_pair_orderbook_extended():
         try:
             CacheItem(name="pair_orderbook_extended").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -70,7 +70,7 @@ def get_pair_orderbook_extended():
         try:
             CacheItem(name="pair_orderbook_extended", from_memcache=True).save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -84,7 +84,7 @@ def get_pair_volumes_24hr():
         try:
             CacheItem(name="pair_volumes_24hr").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "pair_volumes_24hr refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -97,7 +97,7 @@ def get_coin_volumes_24hr():
         try:
             CacheItem(name="coin_volumes_24hr").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "coin_volumes_24hr refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -111,7 +111,7 @@ def pair_last_traded():
         try:
             CacheItem(name="pair_last_traded").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "pair_last_traded loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -128,7 +128,7 @@ def prices_service():  # pragma: no cover
             for i in ["prices_tickers_v1", "prices_tickers_v2"]:
                 CacheItem(i).save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Prices update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -144,7 +144,7 @@ def coins():  # pragma: no cover
             for i in ["coins_config", "coins"]:
                 CacheItem(i).save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         return default.result(msg="Coins update loop complete!", loglevel="loop")
 
 
@@ -156,7 +156,7 @@ def gecko_data():  # pragma: no cover
         try:
             CacheItem("gecko_source").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Gecko data update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -169,7 +169,7 @@ def fixer_rates():  # pragma: no cover
         try:
             CacheItem(name="fixer_rates").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Fixer rates update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -194,7 +194,7 @@ def import_dbs():
                 merge = old_db_merge.SqliteMerge()
                 merge.import_source_databases()
             except Exception as e:
-                return default.error(e)
+                return default.result(msg=e, loglevel="warning")
             msg = "Import source databases loop complete!"
             return default.result(msg=msg, loglevel="merge")
         msg = "Import source databases skipped, NodeType is 'serve'!"
@@ -213,7 +213,7 @@ def adex_fortnite():
         try:
             CacheItem(name="adex_fortnite").save()
         except Exception as e:
-            logger.warning(default.error(e))
+            logger.warning(default.result(msg=e, loglevel="warning"))
         msg = "Adex fortnight loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -228,7 +228,7 @@ def refresh_generic_tickers():
         try:
             CacheItem(name="generic_tickers").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Generic tickers refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -241,7 +241,7 @@ def get_generic_tickers():
         try:
             CacheItem(name="generic_tickers", from_memcache=True).save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Generic tickers loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -254,7 +254,7 @@ def refresh_generic_tickers_14d():
         try:
             CacheItem(name="generic_tickers_14d").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Generic tickers 14d refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -267,7 +267,7 @@ def get_generic_tickers_cache_14d():
         try:
             CacheItem(name="generic_tickers_14d", from_memcache=True).save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Generic tickers 14d loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
@@ -281,7 +281,7 @@ def generic_summary():
             pass
             # CacheItem(name="generic_summary").save()
         except Exception as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Summary loop complete!"
         return default.result(msg=msg, loglevel="loop")
 '''

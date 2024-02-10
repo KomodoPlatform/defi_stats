@@ -95,25 +95,20 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
-            logger.calc(data.keys())
-            if pair_str in data:
-                data = data[pair_str]
-            elif invert.pair(pair_str) in data:
-                data = data[invert.pair(pair_str)]
-            else:
-                logger.warning(f"Unable to find orderbook for {pair_str}")
-            # Already present?
-            
-            # volumes_info = Markets().get_pair_volume_from_cache(pair.as_str)
-            # data.update(volumes_info)
 
+        if pair_str in data:
+            data = data[pair_str]
+        elif invert.pair(pair_str) in data:
+            data = data[invert.pair(pair_str)]
+        else:
+            logger.warning(f"Unable to find orderbook for {pair_str}")
         
         logger.merge(data.keys())
         if Decimal(data["liquidity_in_usd"]) > 0:
             if is_reversed:
                 logger.calc("Returning inverted cache")
                 data = invert.markets_orderbook(data)
-            logger.loop(data.keys())
+        logger.loop(data.keys())
         data.update({"liquidity_usd": data["liquidity_in_usd"]})
         logger.pair(data.keys())
         return data

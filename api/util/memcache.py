@@ -192,3 +192,4 @@ def set_tickers_14d(data):  # pragma: no cover
 def get_tickers_14d():  # pragma: no cover
     data = get("generic_tickers_14d")
     return data
+

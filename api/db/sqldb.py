@@ -437,7 +437,7 @@ class SqlQuery(SqlDB):
                 data=resp, msg="coin_trade_volumes complete", loglevel="debug"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def coin_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
@@ -483,7 +483,7 @@ class SqlQuery(SqlDB):
             )
 
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def pair_trade_volumes(
@@ -573,7 +573,7 @@ class SqlQuery(SqlDB):
                 ignore_until=5,
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def pair_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
@@ -634,7 +634,7 @@ class SqlQuery(SqlDB):
             )
 
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # TODO: Pair swap duration stats.
     # Fastest, slowest, average, [x,y] for graph
@@ -704,7 +704,7 @@ class SqlQuery(SqlDB):
                     ignore_until=5,
                 )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def pair_last_trade(self, is_success: bool = True):
@@ -720,7 +720,7 @@ class SqlQuery(SqlDB):
                 ignore_until=5,
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def coin_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
@@ -741,7 +741,7 @@ class SqlQuery(SqlDB):
                 ignore_until=5,
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def pubkey_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
@@ -759,7 +759,7 @@ class SqlQuery(SqlDB):
                 data=results, msg="pubkey_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def version_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
@@ -777,7 +777,7 @@ class SqlQuery(SqlDB):
                 data=results, msg="version_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def gui_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
@@ -825,7 +825,7 @@ class SqlQuery(SqlDB):
                 data=data, msg="gui_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # TODO: Returning errors, debug later
     @timed
@@ -847,7 +847,7 @@ class SqlQuery(SqlDB):
                 data=results, msg="platform_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def ticker_last_traded(self, is_success: bool = True, trade_side: str = "maker"):
@@ -868,7 +868,7 @@ class SqlQuery(SqlDB):
                 data=results, msg="ticker_last_traded complete", loglevel="query"
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # TODO: Subclass 'swaps'
     @timed
@@ -958,7 +958,7 @@ class SqlQuery(SqlDB):
                 else:
                     resp = data
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Got {len(data)} swaps from {self.table.__tablename__}"
         msg += f" between {start_time} and {end_time}"
         return default.result(data=resp, msg=msg, loglevel="muted")
@@ -974,7 +974,7 @@ class SqlQuery(SqlDB):
                 else:
                     return data[0]
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def get_timespan_swaps(self, start_time: int = 0, end_time: int = 0) -> list:
@@ -984,7 +984,7 @@ class SqlQuery(SqlDB):
         try:
             return self.get_swaps(start_time=start_time, end_time=end_time)
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def get_swaps_for_coin(
@@ -1123,7 +1123,7 @@ class SqlQuery(SqlDB):
                 ignore_until=2,
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def get_distinct(
@@ -1393,7 +1393,7 @@ class SqlSource:
                 msg = "Zero Cipi swaps returned!"
 
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         return default.result(msg=msg, loglevel="sourced")
 
     @timed
@@ -1470,7 +1470,7 @@ class SqlSource:
             else:
                 msg = "Zero MM2 swaps returned!"
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         return default.result(msg=msg, loglevel="sourced")
 
     @timed
@@ -1491,7 +1491,7 @@ class SqlSource:
             # pgdb_query.describe('defi_swaps')
 
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Importing swaps from {start_time} - {end_time} complete"
         return default.result(msg=msg, loglevel="updated", ignore_until=10)
 
@@ -1586,7 +1586,7 @@ class SqlSource:
                     logger.loop(i)
                     logger.calc(f"normal pair: {i['pair']}")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Data normalised"
         return default.result(msg=msg, data=data, loglevel="calc", ignore_until=10)
 
@@ -1714,7 +1714,7 @@ class SqlSource:
             else:
                 data.duration = -1
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "cipi to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
 
@@ -1832,7 +1832,7 @@ class SqlSource:
                 data.duration = -1
 
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "mm2 to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
 

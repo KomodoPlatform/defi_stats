@@ -91,7 +91,7 @@ class SqliteQuery:  # pragma: no cover
                 data = data[0]
             return data
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def get_row_count(self, table):
@@ -100,7 +100,7 @@ class SqliteQuery:  # pragma: no cover
             r = self.db.sql_cursor.fetchone()
             return r[0]
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     def get_uuids(self, success_only=True, fail_only=False) -> List:
         try:
@@ -173,7 +173,7 @@ class SqliteQuery:  # pragma: no cover
                 sql += kwargs["filter_sql"].replace("WHERE", "AND")
             return sql
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # Post NetId Migration below
 
@@ -217,9 +217,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.conn.commit()
             return default.result(msg=f"{uuid} updated in {self.db.db_file}")
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def clear(self, table):
@@ -228,9 +228,9 @@ class SqliteUpdate:  # pragma: no cover
             self.db.conn.commit()
             return
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def create_swap_stats_table(self):
@@ -262,9 +262,9 @@ class SqliteUpdate:  # pragma: no cover
             msg = f"'stats_swaps' table created for {self.db.db_path}"
             return default.result(msg=msg, loglevel="muted")
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def remove_uuids(self, remove_list, table: str = "stats_swaps") -> None:

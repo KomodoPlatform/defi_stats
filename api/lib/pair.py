@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-from util.cron import cron
 from collections import OrderedDict
 from decimal import Decimal
+from functools import cached_property
 from typing import Optional, List, Dict
 import db.sqldb as db
+import lib.dex_api as dex
+import util.defaults as default
+import util.memcache as memcache
+import util.transform as transform
+from util.cron import cron
 from util.logger import logger, timed
 from util.transform import (
     sortdata,
@@ -13,13 +18,9 @@ from util.transform import (
     merge,
     invert,
     filterdata,
+    template,
+    derive
 )
-import util.defaults as default
-import lib.dex_api as dex
-import util.memcache as memcache
-from util.transform import template
-import util.transform as transform
-from util.transform import derive
 
 
 class Pair:  # pragma: no cover
@@ -66,17 +67,31 @@ class Pair:  # pragma: no cover
             else:
                 self.priced = True
 
-            # Variants
-            self.segwit_variants = derive.pair_variants(self.as_str, segwit_only=True, coins_config=self.coins_config)
-            self.variants = derive.pair_variants(self.as_str, coins_config=self.coins_config)
-
-            # Load Database
-            self.pg_query = db.SqlQuery()
+            # Lazy loading cached properties
+            self._pg_query = None
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed! {e}"
             return default.result(msg=msg, loglevel="warning")
 
+    @property
+    def pg_query(self):
+        if self._pg_query is None:
+            self._pg_query = db.SqlQuery()
+        return self._pg_query
+    
+    @cached_property
+    def variants(self):
+        return derive.pair_variants(
+            self.as_str, segwit_only=False, coins_config=self.coins_config
+        )
+    
+    @cached_property
+    def segwit_variants(self):
+        return derive.pair_variants(
+            self.as_str, segwit_only=True, coins_config=self.coins_config
+        )
+    
 
     @timed
     def historical_trades(
@@ -217,18 +232,15 @@ class Pair:  # pragma: no cover
             data = memcache.get(cache_name)
             if data is not None:
                 msg = f"get_pair_prices_info for {self.as_str} using cache!"
-                return default.result(data=data, msg=msg, loglevel="cached", ignore_until=3)
-            variants = derive.pair_variants(
-                self.as_str,
-                segwit_only=False,
-                coins_config=self.coins_config
-            )
-            data = ({
+                return default.result(
+                    data=data, msg=msg, loglevel="cached", ignore_until=3
+                )
+            data = {
                 "base_price_usd": self.base_price_usd,
                 "quote_price_usd": self.quote_price_usd,
-                "variants": variants,
-                "prices": {}
-            })
+                "variants": self.variants,
+                "prices": {},
+            }
             data = clean.decimal_dicts(data)
             swaps_for_pair_combo = self.pg_query.get_swaps(
                 start_time=int(cron.now_utc() - 86400 * days),
@@ -238,11 +250,13 @@ class Pair:  # pragma: no cover
             for variant in swaps_for_pair_combo:
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
 
-                data["prices"].update({
-                    variant: template.pair_prices_info(
-                        suffix, base=self.base, quote=self.quote
-                    )
-                })
+                data["prices"].update(
+                    {
+                        variant: template.pair_prices_info(
+                            suffix, base=self.base, quote=self.quote
+                        )
+                    }
+                )
                 # TODO: using timestamps as an index works for now,
                 # but breaks when two swaps have the same timestamp.
                 if len(swap_prices) > 0:
@@ -254,20 +268,26 @@ class Pair:  # pragma: no cover
                     oldest_price = swap_prices[min(swap_prices.keys())]
                     price_change = newest_price - oldest_price
                     pct_change = newest_price / oldest_price - 1
-                    
-                    data["prices"][variant].update({
-                        "oldest_price_time": swap_keys[swap_vals.index(oldest_price)],
-                        "newest_price_time": swap_keys[swap_vals.index(newest_price)],
-                        "oldest_price": oldest_price,
-                        "newest_price": newest_price,
-                        f"highest_price_{suffix}": highest_price,
-                        f"lowest_price_{suffix}": lowest_price,
-                        f"price_change_pct_{suffix}": pct_change,
-                        f"price_change_{suffix}": price_change,
-                    })
+
+                    data["prices"][variant].update(
+                        {
+                            "oldest_price_time": swap_keys[
+                                swap_vals.index(oldest_price)
+                            ],
+                            "newest_price_time": swap_keys[
+                                swap_vals.index(newest_price)
+                            ],
+                            "oldest_price": oldest_price,
+                            "newest_price": newest_price,
+                            f"highest_price_{suffix}": highest_price,
+                            f"lowest_price_{suffix}": lowest_price,
+                            f"price_change_pct_{suffix}": pct_change,
+                            f"price_change_{suffix}": price_change,
+                        }
+                    )
                 data["prices"][variant].update(self.first_last_traded(variant))
                 data["prices"][variant] = clean.decimal_dicts(data["prices"][variant])
-        
+
             memcache.update(cache_name, data, 300)
             msg = f"get_pair_prices_info for {self.as_str} complete!"
             return default.result(data=data, msg=msg, loglevel="cached", ignore_until=3)
@@ -281,10 +301,7 @@ class Pair:  # pragma: no cover
     def first_last_traded(self, pair_str: str):
         try:
             if pair_str == "ALL":
-                variants = derive.pair_variants(
-                    pair_str=self.as_str,
-                    coins_config=self.coins_config
-                )
+                variants = self.variants
             else:
                 variants = [pair_str]
             data = template.first_last_traded()
@@ -293,7 +310,9 @@ class Pair:  # pragma: no cover
 
                 if variant in self.pairs_last_trade_cache:
                     x = self.pairs_last_trade_cache[variant]
-                elif invert.pair(variant) in self.pairs_last_trade_cache:  # pragma: no cover
+                elif (
+                    invert.pair(variant) in self.pairs_last_trade_cache
+                ):  # pragma: no cover
                     x = self.pairs_last_trade_cache[invert.pair(variant)]
 
                 data = merge.first_last_traded(data, x, self.is_reversed)
@@ -331,27 +350,31 @@ class Pair:  # pragma: no cover
                     "base_price_usd": self.base_price_usd,
                     "quote_price_usd": self.quote_price_usd,
                     "priced": self.priced,
-                    "orderbooks": self.orderbook(self.as_str, depth=100, no_thread=False)
+                    "orderbooks": self.orderbook(
+                        self.as_str, depth=100, no_thread=False
+                    ),
                 }
             )
-            #logger.calc(data.keys())
-            #logger.calc(data['orderbooks'].keys())
-            
-            for variant in data['orderbooks']:
+            # logger.calc(data.keys())
+            # logger.calc(data['orderbooks'].keys())
+
+            for variant in data["orderbooks"]:
                 # logger.calc(data['orderbooks'][variant])
                 # logger.calc(data['orderbooks'][variant].keys())
                 # data['orderbooks'][variant] = clean.decimal_dicts(data['orderbooks'][variant])
-                data['orderbooks'][variant].update({
-                    f"num_asks": len(data['orderbooks'][variant]["asks"]),
-                    f"num_bids": len(data['orderbooks'][variant]["bids"]),    
-                })
+                data["orderbooks"][variant].update(
+                    {
+                        f"num_asks": len(data["orderbooks"][variant]["asks"]),
+                        f"num_bids": len(data["orderbooks"][variant]["bids"]),
+                    }
+                )
 
             # data = clean.decimal_dicts(data)
             ignore_until = 3
             loglevel = "pair"
             msg = f"ticker_info for {self.as_str} ({days} days) complete!"
             # Add to cache if fully populated
-            if Decimal(data['orderbooks']["ALL"]["liquidity_in_usd"]) > 0:
+            if Decimal(data["orderbooks"]["ALL"]["liquidity_in_usd"]) > 0:
                 data = clean.decimal_dicts(data)
                 memcache.update(cache_name, data, 900)
                 msg = f" Added to memcache [{cache_name}]"
@@ -386,7 +409,6 @@ class Pair:  # pragma: no cover
         self,
         start_time: Optional[int] = 0,
         end_time: Optional[int] = 0,
-        all_variants: bool = True,
     ) -> list:
         try:
             data = self.pg_query.swap_uuids(
@@ -413,18 +435,11 @@ class Pair:  # pragma: no cover
             pair_tpl = derive.base_quote(pair_str)
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 msg = {"error": "Market pair should be in `KMD_BTC` format"}
-                return default.result(data=data, msg=msg, loglevel="error", ignore_until=0)
-            
+                return default.result(
+                    data=data, msg=msg, loglevel="error", ignore_until=0
+                )
             # Use combined cache if valid
             combo_orderbook = memcache.get(combo_cache_name)
-            if combo_orderbook is not None and memcache.get("testing") is None:
-                if (
-                    len(combo_orderbook["ALL"]["asks"]) > 0
-                    and len(combo_orderbook["ALL"]["bids"]) > 0
-                ):
-                    combo_orderbook = combo_orderbook
-                    msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
-                    
             if combo_orderbook is None:
                 combo_orderbook = {"ALL": template.orderbook(depair)}
                 variants = derive.pair_variants(pair_str)
@@ -441,31 +456,48 @@ class Pair:  # pragma: no cover
                         depth=depth,
                         no_thread=no_thread,
                     )
-                    combo_orderbook[variant]["bids"] = combo_orderbook[variant]["bids"][:int(depth)][::-1]
-                    combo_orderbook[variant]["asks"] = combo_orderbook[variant]["asks"][::-1][:int(depth)]
-                    combo_orderbook[variant] = clean.orderbook_data(combo_orderbook[variant])
-                    combo_orderbook["ALL"] = merge.orderbooks(combo_orderbook["ALL"], combo_orderbook[variant])
+                    combo_orderbook[variant]["bids"] = combo_orderbook[variant]["bids"][
+                        : int(depth)
+                    ][::-1]
+                    combo_orderbook[variant]["asks"] = combo_orderbook[variant]["asks"][
+                        ::-1
+                    ][: int(depth)]
+                    combo_orderbook[variant] = clean.orderbook_data(
+                        combo_orderbook[variant]
+                    )
+                    combo_orderbook["ALL"] = merge.orderbooks(
+                        combo_orderbook["ALL"], combo_orderbook[variant]
+                    )
                 # Apply depth limit after caching so cache is complete
                 # TODO: Recalc liquidity if depth is less than data.
 
-                combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][:int(depth)][::-1]
-                combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][:int(depth)]
+                combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][
+                    : int(depth)
+                ][::-1]
+                combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][
+                    : int(depth)
+                ]
                 combo_orderbook["ALL"] = clean.orderbook_data(combo_orderbook["ALL"])
                 if (
                     len(combo_orderbook["ALL"]["asks"]) > 0
                     or len(combo_orderbook["ALL"]["bids"]) > 0
                 ):
                     # combo_orderbook = clean.decimal_dicts(combo_orderbook)
-                    dex.add_orderbook_to_cache(depair, combo_cache_name, combo_orderbook)
-
-            msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
+                    dex.add_orderbook_to_cache(
+                        depair, combo_cache_name, combo_orderbook
+                    )
+                msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
+                loglevel="pair"
+            else:
+                msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
+                loglevel="cached"
             ignore_until = 3
             if Decimal(combo_orderbook["ALL"]["liquidity_in_usd"]) > 10000:
                 ignore_until = 0
             return default.result(
                 data=combo_orderbook,
                 msg=msg,
-                loglevel="cached",
+                loglevel=loglevel,
                 ignore_until=ignore_until,
             )
         except Exception as e:  # pragma: no cover

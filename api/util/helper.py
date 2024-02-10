@@ -10,7 +10,7 @@ def get_mm2_rpc_port(netid=MM2_NETID):
     try:
         return MM2_RPC_PORTS[str(netid)]
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 def get_netid(filename):
@@ -28,7 +28,7 @@ def get_netid_filename(filename, netid):
         parts = filename.split(".")
         return f"{'.'.join(parts[:-1])}_{netid}.{parts[-1]}"
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 @timed
@@ -37,7 +37,7 @@ def get_chunks(data, chunk_length):
         for i in range(0, len(data), chunk_length):
             yield data[i: i + chunk_length]
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 @timed
@@ -45,7 +45,7 @@ def get_pairs_info(pair_list: str, priced: bool = False) -> list:
     try:
         return [template.pair_info(i, priced) for i in pair_list]
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 @timed
@@ -56,7 +56,7 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
             key=lambda d: d["ticker_id"],
         )
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 def get_pair_priced_status(pair, price_status_dict):

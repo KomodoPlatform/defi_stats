@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 from decimal import Decimal
+from typing import Dict
 import requests
 import threading
-from typing import Dict
-
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
 from util.cron import cron
-import util.defaults as default
-import util.memcache as memcache
-from util.transform import template
-import util.transform as transform
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean, invert, derive
+from util.transform import sortdata, clean, invert, derive, deplatform, template
+import lib.volumes as volumes
+import util.defaults as default
+import util.memcache as memcache
+import util.transform as transform
 
 
 class DexAPI:
@@ -39,7 +38,7 @@ class DexAPI:
             return err
         except Exception as e:  # pragma: no cover
             logger.warning(params)
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
 
     # tuple, string, string -> list
     # returning orderbook for given trading pair
@@ -91,10 +90,10 @@ class OrderbookRpcThread(threading.Thread):
             data = orderbook_extras(self.pair_str, data, self.gecko_source)
             # update the variant cache. Double expiry vs combined to
             # make sure variants are never empty when combined asks.
-
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
-                data = clean.decimal_dicts(data)
-                memcache.update(self.variant_cache_name, data, 600)
+                if [i.startswith("trades_") for i in data]:
+                    data = clean.decimal_dicts(data)
+                    memcache.update(self.variant_cache_name, data, 600)
 
         except Exception as e:  # pragma: no cover
             logger.warning(e)
@@ -131,11 +130,13 @@ def get_orderbook(
             ):
                 data = cached
             elif no_thread:
-                logger.loop(f"Nocache orderbook for {pair_str}")
                 data = DexAPI().orderbook_rpc(base, quote)
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
                 )
+                if [i.startswith("trades_") for i in data]:
+                    data = clean.decimal_dicts(data)
+                    memcache.update(variant_cache_name, data, 600)
             else:
                 t = OrderbookRpcThread(
                     base,
@@ -197,12 +198,19 @@ def orderbook_extras(pair_str, data, gecko_source):
                 "lowest_ask": derive.lowest_ask(data),
             }
         )
-        msg = f"Got Orderbook.extras for {pair_str}"
+        vols = volumes.pair_volume_24hr_cache(pair_str)
+        if vols["trades_24hr"] > 0:
+            msg = f"{pair_str}: {vols}"
+            ignore_until = 0
+        else:
+            msg = f"Got Orderbook.extras for {pair_str}"
+            ignore_until = 3
+        data.update(vols)
         loglevel = "dexrpc"
     except Exception as e:  # pragma: no cover
         loglevel = "warning"
         msg = f"Orderbook.extras failed for {pair_str}: {e}"
-    return default.result(data=data, msg=msg, loglevel=loglevel, ignore_until=0)
+    return default.result(data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until)
 
 
 @timed

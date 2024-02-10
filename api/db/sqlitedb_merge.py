@@ -67,7 +67,7 @@ class SqliteMerge:
                     for i in [src_db, dest_db]:
                         i.close()
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"{len(source_dbs)} source databases cleaned."
         return default.result(msg=msg, loglevel="merge")
 
@@ -113,7 +113,7 @@ class SqliteMerge:
                 for i in [src_db, dest_db]:
                     i.close()
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of source data into master databases complete!"
         return default.result(msg=msg, loglevel="merge")
 
@@ -157,7 +157,7 @@ class SqliteMerge:
                     src_db.close()
                     dest_db.close()
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of source data into temp master databases complete!"
         return default.result(msg=msg, loglevel="merge")
 
@@ -207,7 +207,7 @@ class SqliteMerge:
                         db1.close()
                         db2.close()
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Comparison of {len(clean_dbs)} databases in {comparisons} combinations complete!"
         return default.result(msg=msg, loglevel="merge", ignore_until=10)
 
@@ -224,7 +224,7 @@ class SqliteMerge:
                 dest_db_path=LOCAL_MM2_DB_BACKUP_8762,
             )
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of local source data into backup databases complete!"
         return default.result(msg=msg, loglevel="merge")
 
@@ -270,7 +270,7 @@ class SqliteMerge:
                                 db2.update.update_stats_swap_row(uuid, fixed)
                                 logger.updated(f"{uuid} repaired")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
         return default.result(msg=msg, loglevel=loglevel)
 
@@ -290,9 +290,9 @@ class SqliteMerge:
                 db = get_sqlite_db(db_path=i)
                 self.init_stats_swaps_db(db)
         except sqlite3.OperationalError as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         return default.result(
             msg="Database Initialisation complete!", loglevel="merge", ignore_until=10
         )
@@ -307,9 +307,9 @@ class SqliteMerge:
                 db.update.clear("stats_swaps")
                 db.close()
         except sqlite3.OperationalError as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Temp DBs setup complete..."
         return default.result(msg=msg, loglevel="info")
 
@@ -324,7 +324,7 @@ class SqliteMerge:
             src.close()
             dest.close()
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Backup of {src.db_path} complete..."
         return default.result(msg=msg, loglevel="muted")
 
@@ -337,9 +337,9 @@ class SqliteMerge:
         try:
             db.update.create_swap_stats_table()
         except sqlite3.OperationalError as e:
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Table 'stats_swaps' init for {db.db_file} complete..."
         return default.result(msg=msg, loglevel="merge", ignore_until=10)
 
@@ -387,7 +387,7 @@ def compare_uuid_fields(swap1, swap2):
                     fixed.update({k: v})
         return fixed
     except Exception as e:  # pragma: no cover
-        return default.error(e)
+        return default.result(msg=e, loglevel="warning")
 
 
 def list_sqlite_dbs(folder):

@@ -50,7 +50,6 @@ class MarketsOrderbookItem(BaseModel):
     # total_bids_base_vol: str = "777.777777"
     # total_bids_quote_vol: str = "777.777777"
     # total_bids_quote_usd: str = "777.777777"
-    variants: List[str] = ["YYY", "YYY-segwit"]
     bids: List[MarketsOrderbookBid]
     asks: List[MarketsOrderbookAsk]
 

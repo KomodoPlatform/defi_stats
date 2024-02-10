@@ -106,4 +106,4 @@ class Files:
             data = requests.get(url).json()
             return data
         except Exception as e:  # pragma: no cover
-            return default.error(e)
+            return default.result(msg=e, loglevel="warning")

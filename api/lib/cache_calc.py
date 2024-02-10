@@ -125,6 +125,8 @@ class CacheCalc:
                     for pair_str in pairs
                 ]
 
+                swaps = 0
+                volume_in_usd = 0
                 orderbook_data = {}
                 liquidity_in_usd = 0
                 for depair_data in data:
@@ -135,11 +137,15 @@ class CacheCalc:
                         orderbook_data[depair].update({
                             variant: depair_data[variant]
                         })
-                        if variant == "ALL":
-                            liquidity_in_usd += Decimal(depair_data["ALL"]["liquidity_in_usd"])
+                    swaps += int(depair_data["ALL"]["trades_24hr"])
+                    volume_in_usd += Decimal(depair_data["ALL"]["volume_usd_24hr"])
+                    liquidity_in_usd += Decimal(depair_data["ALL"]["liquidity_in_usd"])
+                            
 
                 resp = clean.decimal_dicts({
                     "pairs_count": len(data),
+                    "swaps_24hr": swaps,
+                    "volume_usd_24hr": volume_in_usd,
                     "combined_liquidity_usd": liquidity_in_usd,
                     "orderbooks": orderbook_data,
                 })
