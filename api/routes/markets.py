@@ -341,8 +341,8 @@ def trades(
 )
 def usd_volume_24h():
     try:
-        data = memcache.get_tickers()
-        return {"usd_volume_24hr": data["combined_volume_usd"]}
+        data = memcache.get_pair_volumes_24hr()
+        return {"usd_volume_24hr": data["trade_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
