@@ -319,7 +319,7 @@ def trades(
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
         data = Markets().trades(
-            pair=pair_str, days_in_past=days_in_past, all_variants=all_variants
+            pair_str=pair_str, days_in_past=days_in_past, all_variants=all_variants
         )
         return data
     except BadPairFormatError as e:

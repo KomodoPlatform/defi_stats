@@ -46,9 +46,7 @@ class Markets:
                 resp = merge.trades(resp, data["ALL"])
             else:
                 variants = derive.pair_variants(
-                    pair_str=pair_str,
-                    segwit_only=True,
-                    coins_config=self.coins_config
+                    pair_str=pair_str, segwit_only=True, coins_config=self.coins_config
                 )
                 for v in variants:
                     resp = merge.trades(resp, data[v])
