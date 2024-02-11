@@ -118,6 +118,7 @@ class CacheItem:
             "coins_config": 1440,
             "pair_last_traded": 5,
             "gecko_source": 15,
+            "markets_summary": 5,
             "fixer_rates": 15,
             "pair_volumes_24hr": 15,
             "coin_volumes_24hr": 15,
@@ -170,6 +171,15 @@ class CacheItem:
                     data = cache_calc.CacheCalc().pair_volumes_24hr()
                     memcache.set_pair_volumes_24hr(data)
                     
+                if self.name == "pair_prices_24hr":
+                    data = cache_calc.CacheCalc().pair_prices_24hr()
+                    memcache.set_pair_prices_24hr(data)
+                    
+                # MARKETS
+                if self.name == "markets_summary":
+                    data = cache_calc.CacheCalc().markets_summary()
+                    memcache.set_markets_summary(data)
+                                
                 # REVIEW
 
                 if self.name == "generic_summary":

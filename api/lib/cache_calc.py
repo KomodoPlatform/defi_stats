@@ -106,11 +106,7 @@ class CacheCalc:
 
             # Filter out pairs older than requested time
             ts = cron.now_utc() - pairs_days * 86400
-            pairs = [
-                i for i in self.pairs_last_trade_cache
-                if self.pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts
-            ]
-            pairs = sorted(list(set([deplatform.pair(i) for i in pairs])))
+            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
             cache_data = memcache.get(cache_name)
             if from_memcache and cache_data is not None:
                 msg = f"Using cache for {cache_name}"
@@ -140,7 +136,6 @@ class CacheCalc:
                     swaps += int(depair_data["ALL"]["trades_24hr"])
                     volume_in_usd += Decimal(depair_data["ALL"]["volume_usd_24hr"])
                     liquidity_in_usd += Decimal(depair_data["ALL"]["liquidity_in_usd"])
-                            
 
                 resp = clean.decimal_dicts({
                     "pairs_count": len(data),
@@ -150,7 +145,7 @@ class CacheCalc:
                     "orderbooks": orderbook_data,
                 })
                 if liquidity_in_usd > 0:
-                    memcache.update(cache_name, resp, 60)
+                    memcache.update(cache_name, resp, 300)
 
                 msg = f"pair_orderbook_extended complete! {len(pairs)} pairs traded"
                 msg += f" in last {pairs_days} days"
@@ -185,18 +180,7 @@ class CacheCalc:
             suffix = transform.get_suffix(trades_days)
             ts = cron.now_utc() - pairs_days * 86400
             # Filter out pairs older than requested time
-            pairs = sorted(
-                list(
-                    set(
-                        [
-                            i
-                            for i in self.pairs_last_trade_cache
-                            if self.pairs_last_trade_cache[i]["ALL"]["last_swap_time"]
-                            > ts
-                        ]
-                    )
-                )
-            )
+            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
             if from_memcache == 1:
                 # Disabled for now
                 # TODO: test if performance boost with this or not
@@ -267,6 +251,44 @@ class CacheCalc:
             return default.error(e, msg)
 
     @timed
+    def pair_prices_24hr(self, days=1, from_memcache: bool = False):
+        try:
+            cache_name = "pair_prices_24hr"
+            cache_data = memcache.get(cache_name)
+            if from_memcache and cache_data is not None:
+                msg = f"Using cache for {cache_name}"
+                return default.result(cache_data, msg, loglevel="cached")
+            else:
+                if self.pairs_last_trade_cache is None:
+                    self.pairs_last_trade_cache = memcache.get_pair_last_traded()
+                    msg = "skipping cache_calc.tickers, pairs_last_trade_cache is None"
+                    return default.result(msg=msg, loglevel="warning", data=None)
+                
+                # Skip if cache not available yet
+                if self.coins_config is None:
+                    self.coins_config = memcache.get_coins_config()
+                    msg = "skipping cache_calc.tickers, coins_config is None"
+                    return default.result(msg=msg, loglevel="warning", data=None)
+                
+                ts = cron.now_utc() - days * 86400
+                # Filter out pairs older than requested time
+                pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
+                prices_data = {
+                    i: Pair(
+                        pair_str=i,
+                        pairs_last_trade_cache=self.pairs_last_trade_cache,
+                        coins_config=self.coins_config,
+                    ).get_pair_prices_info(days) for i in pairs
+                }
+                memcache.update(cache_name, prices_data, 600)
+                msg = f"[{cache_name}] updated"
+            return default.result(prices_data, msg, loglevel="calc")
+        except Exception as e:  # pragma: no cover
+            msg = f"prices failed! {e}"
+            return default.error(e, msg)
+           
+
+    @timed
     def pairs_info_extended(
         self,
         trades_days: int = 1,
@@ -292,13 +314,7 @@ class CacheCalc:
             suffix = transform.get_suffix(trades_days)
             ts = cron.now_utc() - pairs_days * 86400
             # Filter out pairs older than requested time
-            pairs = sorted(
-                [
-                    i
-                    for i in self.pairs_last_trade_cache
-                    if self.pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts
-                ]
-            )
+            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
             if from_memcache == 1:
                 # Disabled for now
                 # TODO: test if performance boost with this or not
@@ -336,3 +352,78 @@ class CacheCalc:
         except Exception as e:  # pragma: no cover
             msg = "tickers failed!"
             return default.error(e, msg)
+
+
+    @timed
+    def markets_summary(self):
+        try:
+            resp = []
+            data = {}
+            coins_config = memcache.get_coins_config()
+            book = memcache.get_pair_orderbook_extended()
+            vols = memcache.get_pair_volumes_24hr()
+            last = memcache.get_pair_last_traded()
+            for depair in book["orderbooks"]:
+                for variant in book["orderbooks"][depair]:
+                    segwit_variants = derive.pair_variants(variant, segwit_only=True, coins_config=coins_config)
+                    if variant == "ALL":
+                        continue
+                    else:
+                        variant = variant.replace("-segwit", "")
+                        existing = template.markets_summary(pair_str=variant)
+                    if depair == "KMD_LTC":
+                        logger.query("--------------")
+                        logger.loop(segwit_variants)
+                    if variant not in data:
+                        for i in segwit_variants:
+                            if depair == "KMD_LTC":
+                                logger.calc(i)
+                        
+                            o = book["orderbooks"][depair][i]
+                            if depair == "KMD_LTC":
+                                logger.info(o)
+                            v = template.pair_trade_vol_item()
+                            if depair in vols["volumes"]:
+                                if i in vols["volumes"][depair]:
+                                    v = vols["volumes"][depair][i]
+                                    if depair == "KMD_LTC":
+                                        logger.info(v)
+                            l = template.first_last_traded()
+                            if depair in last:
+                                if i in last[depair]:
+                                    l = last[depair][i]
+                                    if depair == "KMD_LTC":
+                                        logger.info(l)
+                            new = {
+                                "base_volume": v['base_volume'],
+                                "quote_volume": v['quote_volume'],
+                                "lowest_ask": o["lowest_ask"],
+                                "highest_bid": o["highest_bid"],
+                                "lowest_price_24hr": o['lowest_price_24hr'],
+                                "highest_price_24hr": o['highest_price_24hr'],
+                                "price_change_percent_24hr": o['price_change_percent_24hr'],
+                                "last_price": l['last_swap_price'],
+                                "newest_price": o['newest_price'],
+                                "newest_price_time": o['newest_price_time'],
+                                "oldest_price": o['oldest_price'],
+                                "oldest_price_time": o['oldest_price_time'],
+                                "last_swap": l['last_swap_time'],
+                                "last_swap_uuid": l['last_swap_uuid'],
+                                "trades_24hr": o["trades_24hr"],
+                                "variants": segwit_variants
+                            }
+                            merged = merge.market_summary(existing, new)
+                            existing = clean.decimal_dicts(merged)
+                            if depair == "KMD_LTC":
+                                logger.pair(f"existing: {existing}")
+                                logger.calc(f"new: {new}")
+                                logger.merge(f"merged: {merged}")
+                                logger.query(f"existing: {existing}")
+                            data.update({variant: existing})
+                resp = [i for i in data.values()]
+            return resp
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [/api/v3/market/summary]: {e}")
+            return {"error": f"{type(e)} Error in [/api/v3/market/summary]: {e}"}
+           
+

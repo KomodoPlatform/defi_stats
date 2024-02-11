@@ -35,6 +35,7 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
     memcache.set_gecko_source(CacheItem(name="gecko_source").data)
     # memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
+    memcache.set_markets_summary(CacheItem(name="markets_summary").data)
     memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
@@ -72,6 +73,32 @@ def get_pair_orderbook_extended():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended loop for memcache complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+# PRICES CACHE
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def refresh_prices_24hr():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_prices_24hr").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_prices_24hr refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_prices_24hr():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_prices_24hr", from_memcache=True).save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_prices_24hr loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
@@ -115,6 +142,19 @@ def pair_last_traded():
         msg = "pair_last_traded loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
+
+# MARKETS CACHE
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_markets_summary():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="markets_summary").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "markets_summary loop for memcache complete!"
+        return default.result(msg=msg, loglevel="loop")
 
 
     

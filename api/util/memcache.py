@@ -156,6 +156,24 @@ def get_pair_last_traded():  # pragma: no cover
     return data
 
 
+def set_pair_prices_24hr(data):  # pragma: no cover
+    update("pair_prices_24hr", data, 900)
+
+
+def get_pair_prices_24hr():  # pragma: no cover
+    data = get("pair_prices_24hr")
+    return data
+
+# MARKETS
+def set_markets_summary(data):  # pragma: no cover
+    update("markets_summary", data, 900)
+
+
+def get_markets_summary():  # pragma: no cover
+    data = get("markets_summary")
+    return data
+
+
 # SINGLE PURPOSE CACHE
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 900)

@@ -42,7 +42,7 @@ class GenericOrderbookItem(BaseModel):
     liquidity_usd: str = "777.777777"
     trades_24hr: str = "777"
     volume_usd_24hr: str = "777.777777"
-    price_change_pct_24hr: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
 
 
 class GenericPairsData(BaseModel):

@@ -8,6 +8,7 @@ from util.cron import cron
 from util.files import Files
 from util.logger import logger, timed
 from util.transform import sortdata, clean, invert, derive, deplatform, template
+import lib.prices as prices
 import lib.volumes as volumes
 import util.defaults as default
 import util.memcache as memcache
@@ -87,6 +88,7 @@ class OrderbookRpcThread(threading.Thread):
     def run(self):
         try:
             data = DexAPI().orderbook_rpc(self.base, self.quote)
+            
             data = orderbook_extras(self.pair_str, data, self.gecko_source)
             # update the variant cache. Double expiry vs combined to
             # make sure variants are never empty when combined asks.
@@ -137,6 +139,7 @@ def get_orderbook(
                 msg = f"Returning orderbook for {pair_str} from cache"
             elif no_thread:
                 data = DexAPI().orderbook_rpc(base, quote)
+                logger.loop(data)
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
                 )
@@ -195,6 +198,9 @@ def get_orderbook_fixture(pair_str, gecko_source):
 @timed
 def orderbook_extras(pair_str, data, gecko_source):
     try:
+        ignore_until = 3
+        loglevel = "dexrpc"
+        msg = f"Got Orderbook.extras for {pair_str}"
         data["pair"] = pair_str
         data["timestamp"] = int(cron.now_utc())
         data = transform.label_bids_asks(data, pair_str)
@@ -205,17 +211,15 @@ def orderbook_extras(pair_str, data, gecko_source):
                 "lowest_ask": derive.lowest_ask(data),
             }
         )
-        vols = volumes.pair_volume_24hr_cache(pair_str)
-        if vols["trades_24hr"] > 0:
-            msg = f"{pair_str}: {vols}"
+        data.update(volumes.pair_volume_24hr_cache(pair_str))
+        data.update(prices.pair_price_24hr_cache(pair_str))
+        if data["trades_24hr"] > 0:
+            msg = f"{pair_str}: {data['trades_24hr']} trades"
             ignore_until = 0
-        else:
-            msg = f"Got Orderbook.extras for {pair_str}"
-            ignore_until = 3
-        data.update(vols)
-        loglevel = "dexrpc"
+        
     except Exception as e:  # pragma: no cover
         loglevel = "warning"
+        ignore_until = 0
         msg = f"Orderbook.extras failed for {pair_str}: {e}"
     return default.result(data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until)
 

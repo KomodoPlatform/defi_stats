@@ -112,7 +112,7 @@ def test_get_prices(setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_p
     assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
     assert float(r["lowest_price_24hr"]) == 0.01
     assert float(r["price_change_24hr"]) == 0
-    assert float(r["price_change_pct_24hr"]) == 0
+    assert float(r["price_change_percent_24hr"]) == 0
     assert int(r["last_swap_time"]) > int(cron.now_utc() - 86400)
 
     pair = setup_not_existing_pair

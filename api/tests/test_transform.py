@@ -37,9 +37,9 @@ def test_format_10f():
     assert transform.format_10f(1.23) == "1.2300000000"
 
 
-def test_ticker_to_market_summary_item():
+def test_orderbook_extended_to_market_summary_item():
     ticker_item = sampledata.ticker_item()
-    x = convert.ticker_to_market_summary_item(ticker_item)
+    x = convert.orderbook_extended_to_market_summary_item(ticker_item)
     assert x["trading_pair"] == "DGB_LTC"
     assert x["quote_currency"] == "LTC"
     assert ticker_item["quote_volume"] == x["quote_volume"]

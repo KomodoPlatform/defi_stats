@@ -36,9 +36,8 @@ class StatsAPI:  # pragma: no cover
                 pairs_last_trade_cache = memcache.get_pair_last_traded()
                 if days > pairs_days:
                     pairs_days = days
-                pairs = sorted(
-                    list(set([deplatform.pair(i) for i in pairs_last_trade_cache]))
-                )
+                ts = cron.now_utc() - days * 86400
+                pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
                 suffix = transform.get_suffix(days)
                 ticker_infos = []
                 if self.gecko_source is None:

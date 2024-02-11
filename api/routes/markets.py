@@ -143,15 +143,10 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
 )
 def summary():
     try:
-        data = memcache.get_tickers()
-        data = memcache.get_pair_volumes_24hr()
-        resp = []
-        for i in data["tickers"]:
-            resp.append(convert.ticker_to_market_summary_item(i))
-        return resp
+        return memcache.get_markets_summary()
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/market/tickers]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/market/tickers]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/market/summary]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/market/summary]: {e}"}
 
 
 # Migrated from https://stats.testchain.xyz/api/v1/summary_for_ticker/KMD

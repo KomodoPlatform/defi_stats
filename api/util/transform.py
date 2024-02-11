@@ -96,7 +96,6 @@ class Convert:
     def __init__(self):
         pass
 
-
     def ticker_to_gecko_pair(self, pair_data):
         return {
             "ticker_id": pair_data["ticker_id"],
@@ -216,7 +215,7 @@ class Convert:
             "highest_price_24hr": data["highest_price_24hr"],
             "lowest_price_24hr": data["lowest_price_24hr"],
             "price_change_24hr": data["price_change_24hr"],
-            "price_change_percent_24hr": data["price_change_pct_24hr"],
+            "price_change_percent_24hr": data["price_change_percent_24hr"],
             "trades_24hr": data["trades_24hr"],
             "volume_usd_24hr": data["combined_volume_usd"],
             "last_price": data["last_swap_price"],
@@ -224,27 +223,14 @@ class Convert:
             "last_swap_uuid": data["last_swap_uuid"],
         }
 
-    def ticker_to_market_summary_item(self, i):
-        logger.info(i)
-        data = {
-            "trading_pair": f"{i['ticker_id']}",
-            "variants": i["variants"],
-            "base_currency": i["base_currency"],
-            "base_volume": i["base_volume"],
-            "quote_currency": i["quote_currency"],
-            "quote_volume": i["quote_volume"],
-            "lowest_ask": i["lowest_ask"],
-            "highest_bid": i["highest_bid"],
-            "price_change_pct_24hr": i["price_change_pct_24hr"],
-            "highest_price_24hr": i["highest_price_24hr"],
-            "lowest_price_24hr": i["lowest_price_24hr"],
-            "trades_24hr": int(i["trades_24hr"]),
-            "last_swap": int(i["last_swap_time"]),
-            "last_swap_uuid": i["last_swap_uuid"],
-            "last_price": i["last_swap_price"],
-        }
+    def orderbook_extended_to_market_summary_item(self, data):
+        logger.info(data)
         return data
 
+    def rekey(self, data, old_key, new_key):
+        data.update({new_key: data[old_key]})
+        del data[old_key]
+        return data
 
 @timed
 def orderbook_to_gecko(data):
@@ -272,7 +258,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "highest_price_24h": data["highest_price_24hr"],
         "lowest_price_24h": data["lowest_price_24hr"],
         "price_change_24h": data["price_change_24hr"],
-        "price_change_pct_24h": data["price_change_pct_24hr"],
+        "price_change_pct_24h": data["price_change_percent_24hr"],
         "trades_24hr": data["trades_24hr"],
         "volume_usd_24h": data["combined_volume_usd"],
         "last_swap_price": data["last_swap_price"],
@@ -291,7 +277,7 @@ def ticker_to_xyz_summary(i):
         "lowest_ask": i["lowest_ask"],
         "last_swap_timestamp": int(i["last_swap_time"]),
         "highest_bid": i["highest_bid"],
-        "price_change_pct_24h": str(i["price_change_pct_24hr"]),
+        "price_change_pct_24h": str(i["price_change_percent_24hr"]),
         "highest_price_24hr": i["highest_price_24hr"],
         "lowest_price_24hr": i["lowest_price_24hr"],
         "trades_24hr": int(i["trades_24hr"]),
@@ -471,11 +457,11 @@ class Deplatform:
                     Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
                 )
                 if Decimal(j["oldest_price"]) > 0:
-                    j["price_change_pct_24hr"] = format_10f(
+                    j["price_change_percent_24hr"] = format_10f(
                         Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
                     )
                 else:
-                    j["price_change_pct_24hr"] = format_10f(0)
+                    j["price_change_percent_24hr"] = format_10f(0)
                 j["variants"].sort()
         return tickers_data
 
@@ -625,9 +611,7 @@ class Derive:
         return Decimal(0)  # pragma: no cover
 
     @timed
-    def last_trade_info(
-        self, pair_str: str, pairs_last_trade_cache: Dict
-    ):
+    def last_trade_info(self, pair_str: str, pairs_last_trade_cache: Dict):
         try:
             if pair_str in pairs_last_trade_cache:
                 return pairs_last_trade_cache[pair_str]
@@ -646,7 +630,7 @@ class Derive:
             returned on their own, otherwise the utxo legacy
             and segwit versions will be returned.
             """
-            coin_parts = coin.split("-")        
+            coin_parts = coin.split("-")
             if len(coin_parts) == 2 and not coin.endswith("segwit") and segwit_only:
                 return [coin]
             else:
@@ -660,7 +644,9 @@ class Derive:
             if segwit_only:
                 decoin = deplatform.coin(coin)
                 return [
-                    i for i in data if i.endswith("segwit") or i.replace(decoin, "") == ""
+                    i
+                    for i in data
+                    if i.endswith("segwit") or i.replace(decoin, "") == ""
                 ]
             return data
         except Exception as e:
@@ -669,6 +655,8 @@ class Derive:
     @timed
     def pair_variants(self, pair_str, segwit_only=False, coins_config=None):
         try:
+            if pair_str == "ALL":
+                return ["ALL"]
             variants = []
             base, quote = derive.base_quote(pair_str)
             base_variants = self.coin_variants(base)
@@ -710,6 +698,21 @@ class Derive:
             return variants
         except Exception as e:
             logger.warning(f"pair variants for {pair_str} failed")
+
+            
+    @timed
+    def pairs_traded_since(self, ts, pairs_last_trade_cache):
+        return sorted(
+            list(
+                set(
+                    [
+                        i
+                        for i in pairs_last_trade_cache
+                        if pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts
+                    ]
+                )
+            )
+        )
 
     @timed
     def price_at_finish(self, swap, is_reverse=False):
@@ -896,7 +899,6 @@ class Invert:
             "volume": Decimal(i["quote_volume"]),
         }
 
-
     def swap_uuids(self, uuids):
         resp = {"ALL": uuids["ALL"]}
         for v in uuids:
@@ -1029,14 +1031,14 @@ class Merge:
                     for i in ["asks", "bids"]
                 }
             )
-            
+
             for i in existing:
                 if i.startswith("trades_"):
                     existing[i] = sumdata.ints(existing[i], new[i])
             for i in existing:
                 if i.startswith("volume_usd_"):
                     existing[i] = sumdata.decimals(existing[i], new[i])
-            
+
             numerics = [
                 "liquidity_in_usd",
                 "total_asks_base_vol",
@@ -1048,17 +1050,20 @@ class Merge:
                 "base_liquidity_coins",
                 "base_liquidity_usd",
                 "quote_liquidity_coins",
-                "quote_liquidity_usd"
+                "quote_liquidity_usd",
             ]
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
             )
-            if Decimal(existing['lowest_ask']) > Decimal(new['lowest_ask']) or Decimal(existing['lowest_ask']) == 0:
-                existing['lowest_ask'] = new['lowest_ask']
-            
-            if Decimal(existing['highest_bid']) < Decimal(new['highest_bid']):
-                existing['highest_bid'] = new['highest_bid']
-            
+            if (
+                Decimal(existing["lowest_ask"]) > Decimal(new["lowest_ask"])
+                or Decimal(existing["lowest_ask"]) == 0
+            ):
+                existing["lowest_ask"] = new["lowest_ask"]
+
+            if Decimal(existing["highest_bid"]) < Decimal(new["highest_bid"]):
+                existing["highest_bid"] = new["highest_bid"]
+
             return existing
         except Exception as e:  # pragma: no cover
             logger.warning(new)
@@ -1074,8 +1079,11 @@ class Merge:
             all["last_swap_uuid"] = variant["last_swap_uuid"]
             if is_reversed and all["last_swap_price"] != 0:
                 all["last_swap_price"] = 1 / all["last_swap_price"]
-                
-        if variant["first_swap_time"] < all["first_swap_time"] or all["first_swap_time"] == 0:
+
+        if (
+            variant["first_swap_time"] < all["first_swap_time"]
+            or all["first_swap_time"] == 0
+        ):
             all["first_swap_time"] = variant["first_swap_time"]
             all["first_swap_price"] = variant["first_swap_price"]
             all["first_swap_uuid"] = variant["first_swap_uuid"]
@@ -1088,7 +1096,65 @@ class Merge:
         all += variant["buy"]
         all += variant["sell"]
         return all
-        
+
+    def market_summary(self, existing, new):
+        try:
+            existing.update({
+                "base_volume": sumdata.decimals(existing['base_volume'], new['base_volume']),
+                "quote_volume": sumdata.decimals(existing['quote_volume'], new['quote_volume']),
+                "trades_24hr": sumdata.ints(existing['trades_24hr'], new['trades_24hr']),
+                "variants": sumdata.lists(existing['variants'], new['variants'], True)
+            })
+            if int(existing["last_swap"]) < int(new["last_swap"]):
+                existing.update({
+                    "last_price": new['last_price'],
+                    "last_swap": new['last_swap'],
+                    "last_swap_uuid": new['last_swap_uuid'],
+                })
+            if (
+                Decimal(existing["lowest_ask"]) > Decimal(new["lowest_ask"])
+                or Decimal(existing["lowest_ask"]) == 0
+            ):
+                existing["lowest_ask"] = new["lowest_ask"]
+
+            if Decimal(existing["highest_bid"]) < Decimal(new["highest_bid"]):
+                existing["highest_bid"] = new["highest_bid"]
+
+            if (
+                Decimal(existing["lowest_price_24hr"]) > Decimal(new["lowest_price_24hr"])
+                or Decimal(existing["lowest_price_24hr"]) == 0
+            ):
+                existing["lowest_price_24hr"] = new["lowest_price_24hr"]
+
+            if Decimal(existing["highest_price_24hr"]) < Decimal(new["highest_price_24hr"]):
+                existing["highest_price_24hr"] = new["highest_price_24hr"]
+
+            if (
+                int(existing["oldest_price_time"]) > int(new["oldest_price_time"])
+                or Decimal(existing["oldest_price_time"]) == 0
+            ):
+                existing["oldest_price_time"] = int(new["oldest_price_time"])
+                existing["oldest_price"] = Decimal(new["oldest_price"])
+                
+            if (
+                int(existing["newest_price_time"]) < int(new["newest_price_time"])
+                or int(existing["newest_price_time"]) == 0
+            ):
+                existing["newest_price_time"] = int(new["newest_price_time"])
+                existing["newest_price"] = Decimal(new["newest_price"])
+                
+            if Decimal(existing["oldest_price"]) != 0:
+                existing["price_change_percent_24hr"] = format_10f(
+                    Decimal(existing["newest_price"]) / Decimal(existing["oldest_price"]) - 1
+                )
+            else:
+                existing["price_change_percent_24hr"] = format_10f(0)
+            return existing
+        except Exception as e:
+            logger.merge(existing)
+            logger.loop(new)
+            logger.warning(e)
+
 
 class SortData:
     def __init__(self):
@@ -1193,8 +1259,9 @@ class SumData:
     def lists(self, x, y, sorted=True):
         try:
             data = x + y
-            if not [isinstance(i, dict) for i in data]:
-                data = list(set(data))
+            if [isinstance(i, dict) for i in data]:
+                return data
+            data = list(set(data))
             if sorted:
                 data.sort()
             return data
@@ -1360,7 +1427,9 @@ class Templates:
         data = {
             "pair": f"{base}_{quote}",
             "base": base,
+            "base_price_usd": 0,
             "quote": quote,
+            "quote_price_usd": 0,
             "volume_usd_24hr": 0,
             "trades_24hr": 0,
             "liquidity_in_usd": 0,
@@ -1377,6 +1446,14 @@ class Templates:
             "base_liquidity_usd": 0,
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
+            "oldest_price": 0,
+            "oldest_price_time": 0,
+            "newest_price": 0,
+            "newest_price_time": 0,
+            "price_change_percent_24hr": 0,
+            "price_change_24hr": 0,
+            "highest_price_24hr": 0,
+            "lowest_price_24hr": 0,
             "asks": [],
             "bids": [],
             "timestamp": f"{int(cron.now_utc())}",
@@ -1388,17 +1465,14 @@ class Templates:
 
     def pair_prices_info(self, suffix, base, quote):
         return {
-            "oldest_price_time": 0,
-            "newest_price_time": 0,
             "oldest_price": 0,
+            "oldest_price_time": 0,
             "newest_price": 0,
-            f"highest_price_{suffix}": 0,
-            f"lowest_price_{suffix}": 0,
+            "newest_price_time": 0,
             f"price_change_pct_{suffix}": 0,
             f"price_change_{suffix}": 0,
-            "last_swap_price": 0,
-            "last_swap_uuid": "",
-            "last_swap_time": 0,
+            f"highest_price_{suffix}": 0,
+            f"lowest_price_{suffix}": 0,
         }
 
     def volumes_ticker(self):
@@ -1467,7 +1541,7 @@ class Templates:
             "last_maker_amount": 0,
             "last_taker_amount": 0,
             "last_trade_type": "",
-            "priced": None
+            "priced": None,
         }
 
     def pair_trade_vol_item(self):
@@ -1498,6 +1572,30 @@ class Templates:
             "maker_last_swap_time": 0,
             "taker_last_swap_uuid": 0,
             "taker_last_swap_time": 0,
+        }
+
+    def markets_summary(self, pair_str):
+        base, quote = derive.base_quote(pair_str=pair_str)
+        return {
+            "trading_pair": pair_str,
+            "base_currency": base,
+            "quote_currency": quote,
+            "base_volume": 0,
+            "quote_volume": 0,
+            "lowest_ask": 0,
+            "highest_bid": 0,
+            "lowest_price_24hr": 0,
+            "highest_price_24hr": 0,
+            "price_change_percent_24hr": 0,
+            "oldest_price": 0,
+            "oldest_price_time": 0,
+            "newest_price": 0,
+            "newest_price_time": 0,
+            "last_price": 0,
+            "last_swap": 0,
+            "last_swap_uuid": "",
+            "variants": [],
+            "trades_24hr": 0
         }
 
 

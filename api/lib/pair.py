@@ -267,12 +267,7 @@ class Pair:  # pragma: no cover
                 return default.result(
                     data=data, msg=msg, loglevel="cached", ignore_until=3
                 )
-            data = {
-                "base_price_usd": self.base_price_usd,
-                "quote_price_usd": self.quote_price_usd,
-                "variants": self.variants,
-                "prices": {},
-            }
+            data = {}
             data = clean.decimal_dicts(data)
             swaps_for_pair_combo = self.pg_query.get_swaps(
                 start_time=int(cron.now_utc() - 86400 * days),
@@ -282,7 +277,7 @@ class Pair:  # pragma: no cover
             for variant in swaps_for_pair_combo:
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
 
-                data["prices"].update(
+                data.update(
                     {
                         variant: template.pair_prices_info(
                             suffix, base=self.base, quote=self.quote
@@ -301,7 +296,7 @@ class Pair:  # pragma: no cover
                     price_change = newest_price - oldest_price
                     pct_change = newest_price / oldest_price - 1
 
-                    data["prices"][variant].update(
+                    data[variant].update(
                         {
                             "oldest_price_time": swap_keys[
                                 swap_vals.index(oldest_price)
@@ -317,10 +312,9 @@ class Pair:  # pragma: no cover
                             f"price_change_{suffix}": price_change,
                         }
                     )
-                data["prices"][variant].update(self.first_last_traded(variant))
-                data["prices"][variant] = clean.decimal_dicts(data["prices"][variant])
+                data[variant] = clean.decimal_dicts(data[variant])
 
-            memcache.update(cache_name, data, 300)
+            memcache.update(cache_name, data, 600)
             msg = f"get_pair_prices_info for {self.as_str} complete!"
             return default.result(data=data, msg=msg, loglevel="cached", ignore_until=3)
         except Exception as e:  # pragma: no cover
