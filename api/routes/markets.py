@@ -281,27 +281,25 @@ def ticker_for_ticker(ticker):
 )
 def tickers_summary():
     try:
-        data = memcache.get_tickers()
+        data = memcache.get_coin_volumes_24hr()
         resp = {}
-        for i in data["data"]:
-            base = i["base_currency"]
-            rel = i["quote_currency"]
-            for ticker in [base, rel]:
-                if ticker not in resp:
-                    resp.update({ticker: {"trades_24hr": 0, "volume_24hr": 0}})
-                resp[ticker]["trades_24hr"] += int(i["trades_24hr"])
-                if ticker == base:
-                    resp[ticker]["volume_24hr"] += Decimal(i["base_volume"])
-                elif ticker == rel:
-                    resp[ticker]["volume_24hr"] += Decimal(i["quote_volume"])
-        resp = clean.decimal_dicts(resp)
-        with_action = {}
-        tickers = list(resp.keys())
-        tickers.sort()
-        for ticker in tickers:
-            if resp[ticker]["trades_24hr"] > 0:
-                with_action.update({ticker: resp[ticker]})
-        return with_action
+        for depair in data["volumes"]:
+            for variant in data["volumes"][depair]:
+                if variant != "ALL":
+                    v = variant.replace("-segwit", "")
+                    if v not in resp:
+                        resp.update({
+                            v: {
+                                "trades_24hr": data["volumes"][depair][variant]['total_swaps'],
+                                "volume_24hr": data["volumes"][depair][variant]['total_volume'],
+                                "volume_usd_24hr": data["volumes"][depair][variant]['trade_volume_usd']
+                            }
+                        })
+                    else:
+                        resp[v]["trades_24hr"] += data["volumes"][depair][variant]['total_swaps']
+                        resp[v]["volume_24hr"] += data["volumes"][depair][variant]['total_volume']
+                        resp[v]["volume_usd_24hr"] += data["volumes"][depair][variant]['trade_volume_usd']
+        return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
