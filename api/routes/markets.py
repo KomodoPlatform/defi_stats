@@ -177,8 +177,8 @@ def summary_for_ticker(coin: str = "KMD"):
                     logger.calc(i)
                     data.append(i)
                     swaps_count += int(i["trades_24hr"])
-                    liquidity += Decimal(i['liquidity_usd'])
-                    volume += Decimal(i['volume_usd_24hr'])
+                    liquidity += Decimal(i["liquidity_usd"])
+                    volume += Decimal(i["volume_usd_24hr"])
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": len(data),
@@ -288,17 +288,31 @@ def tickers_summary():
                 if variant != "ALL":
                     v = variant.replace("-segwit", "")
                     if v not in resp:
-                        resp.update({
-                            v: {
-                                "trades_24hr": data["volumes"][depair][variant]['total_swaps'],
-                                "volume_24hr": data["volumes"][depair][variant]['total_volume'],
-                                "volume_usd_24hr": data["volumes"][depair][variant]['trade_volume_usd']
+                        resp.update(
+                            {
+                                v: {
+                                    "trades_24hr": data["volumes"][depair][variant][
+                                        "total_swaps"
+                                    ],
+                                    "volume_24hr": data["volumes"][depair][variant][
+                                        "total_volume"
+                                    ],
+                                    "volume_usd_24hr": data["volumes"][depair][variant][
+                                        "trade_volume_usd"
+                                    ],
+                                }
                             }
-                        })
+                        )
                     else:
-                        resp[v]["trades_24hr"] += data["volumes"][depair][variant]['total_swaps']
-                        resp[v]["volume_24hr"] += data["volumes"][depair][variant]['total_volume']
-                        resp[v]["volume_usd_24hr"] += data["volumes"][depair][variant]['trade_volume_usd']
+                        resp[v]["trades_24hr"] += data["volumes"][depair][variant][
+                            "total_swaps"
+                        ]
+                        resp[v]["volume_24hr"] += data["volumes"][depair][variant][
+                            "total_volume"
+                        ]
+                        resp[v]["volume_usd_24hr"] += data["volumes"][depair][variant][
+                            "trade_volume_usd"
+                        ]
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
@@ -353,27 +367,31 @@ def usd_volume_24h():
     description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
 )
 def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL):
-    # TODO: Use new DB
-    volumes_dict = {}
-    query = db.SqlQuery()
-    gecko_source = memcache.get_gecko_source()
-    # Individual tickers only, no merge except segwit
-    stripped_coin = deplatform.coin(coin)
-    variants = derive.coin_variants(coin, segwit_only=True)
-    for i in range(0, int(days_in_past)):
-        d = datetime.today() - timedelta(days=i)
-        d_str = d.strftime("%Y-%m-%d")
-        day_ts = int(int(d.strftime("%s")) / 86400) * 86400
-        start_time = int(day_ts)
-        end_time = int(day_ts) + 86400
-        volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
-        data = query.coin_trade_volumes_usd(volumes, gecko_source)
-        volumes_dict[d_str] = template.volumes_ticker()
-        for variant in variants:
-            if stripped_coin in data["volumes"]:
-                if variant in data["volumes"][stripped_coin]:
-                    volumes_dict[d_str] = (
-                        volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
-                    )
-        data = {d_str: volumes_dict[d_str]["trade_volume"] for d_str in volumes_dict}
-    return data
+    try:
+        volumes_dict = {}
+        query = db.SqlQuery()
+        gecko_source = memcache.get_gecko_source()
+        # Individual tickers only, no merge except segwit
+        decoin = deplatform.coin(coin)
+        variants = derive.coin_variants(coin, segwit_only=True)
+        for i in range(0, int(days_in_past)):
+            d = datetime.today() - timedelta(days=i)
+            d_str = d.strftime("%Y-%m-%d")
+            day_ts = int(int(d.strftime("%s")) / 86400) * 86400
+            start_time = int(day_ts)
+            end_time = int(day_ts) + 86400
+            volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
+            data = query.coin_trade_volumes_usd(volumes, gecko_source)
+            volumes_dict[d_str] = template.volumes_ticker()
+            for variant in variants:
+                if decoin in data["volumes"]:
+                    if variant in data["volumes"][decoin]:
+                        volumes_dict[d_str] = (
+                            volumes_dict[d_str] | data["volumes"][decoin][variant]
+                        )
+            data = {
+                d_str: volumes_dict[d_str]["total_volume"] for d_str in volumes_dict
+            }
+        return data
+    except Exception as e:
+        logger.warning(e)
