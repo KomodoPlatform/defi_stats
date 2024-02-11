@@ -95,7 +95,7 @@ class OrderbookRpcThread(threading.Thread):
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
                 if [i.startswith("trades_") for i in data]:
                     data = clean.decimal_dicts(data)
-                    memcache.update(self.variant_cache_name, data, 600)
+                    memcache.update(self.variant_cache_name, data, 900)
 
         except Exception as e:  # pragma: no cover
             logger.warning(e)
@@ -112,7 +112,7 @@ def get_orderbook(
     no_thread: bool = True,
 ):
     try:
-        ignore_until = 0
+        ignore_until = 3
         pair_str = f"{base}_{quote}"
         data = template.orderbook(pair_str=pair_str)
         msg = f"Returning orderbook template for {pair_str} while cache reloads"
@@ -139,13 +139,12 @@ def get_orderbook(
                 msg = f"Returning orderbook for {pair_str} from cache"
             elif no_thread:
                 data = DexAPI().orderbook_rpc(base, quote)
-                logger.loop(data)
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
                 )
                 if [i.startswith("trades_") for i in data]:
                     data = clean.decimal_dicts(data)
-                    memcache.update(variant_cache_name, data, 600)
+                    memcache.update(variant_cache_name, data, 900)
                 msg = f"Returning live orderbook for {pair_str}"
             else:
                 t = OrderbookRpcThread(
@@ -198,7 +197,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
 @timed
 def orderbook_extras(pair_str, data, gecko_source):
     try:
-        ignore_until = 3
+        ignore_until = 0
         loglevel = "dexrpc"
         msg = f"Got Orderbook.extras for {pair_str}"
         data["pair"] = pair_str
@@ -211,9 +210,12 @@ def orderbook_extras(pair_str, data, gecko_source):
                 "lowest_ask": derive.lowest_ask(data),
             }
         )
-        data.update(volumes.pair_volume_24hr_cache(pair_str))
-        data.update(prices.pair_price_24hr_cache(pair_str))
-        if data["trades_24hr"] > 0:
+        vols = volumes.pair_volume_24hr_cache(pair_str)
+        data.update(vols)
+        
+        pair_prices = prices.pair_price_24hr_cache(pair_str)
+        data.update({k:v for k, v in pair_prices.items() if k not in ['swaps', 'trade_volume_usd']})
+        if data["trades_24hr"] > 3:
             msg = f"{pair_str}: {data['trades_24hr']} trades"
             ignore_until = 0
         

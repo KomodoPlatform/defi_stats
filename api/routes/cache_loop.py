@@ -7,6 +7,7 @@ import db.sqlitedb_merge as old_db_merge
 import util.defaults as default
 import util.memcache as memcache
 from lib.cache import Cache, CacheItem
+from lib.cache_calc import CacheCalc
 from lib.coins import Coins
 from util.logger import logger, timed
 
@@ -51,12 +52,24 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=60)
 @timed
 def refresh_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
             CacheItem(name="pair_orderbook_extended").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_orderbook_extended refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def refresh_pair_orderbook_extended():
+    if memcache.get("testing") is None:
+        try:
+            CacheCalc().pair_orderbook_extended(no_thread=False)
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"

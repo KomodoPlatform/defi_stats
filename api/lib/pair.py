@@ -308,7 +308,7 @@ class Pair:  # pragma: no cover
                             "newest_price": newest_price,
                             f"highest_price_{suffix}": highest_price,
                             f"lowest_price_{suffix}": lowest_price,
-                            f"price_change_pct{suffix}": pct_change,
+                            f"price_change_pct_{suffix}": pct_change,
                             f"price_change_{suffix}": price_change,
                             "base_price_usd": self.base_price_usd,
                             "quote_price_usd": self.quote_price_usd,
@@ -459,66 +459,52 @@ class Pair:  # pragma: no cover
     ):
         try:
             depair = deplatform.pair(pair_str)
-            combo_cache_name = f"orderbook_{depair}_ALL"
             pair_tpl = derive.base_quote(pair_str)
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 msg = {"error": "Market pair should be in `KMD_BTC` format"}
                 return default.result(
                     data=data, msg=msg, loglevel="error", ignore_until=0
                 )
-            # Use combined cache if valid
-            combo_orderbook = memcache.get(combo_cache_name)
-            if combo_orderbook is None:
-                combo_orderbook = {"ALL": template.orderbook(depair)}
-                variants = derive.pair_variants(pair_str)
-                for variant in variants:
-                    combo_orderbook.update({variant: template.orderbook(variant)})
-                    variant_cache_name = f"orderbook_{variant}"
-                    base, quote = derive.base_quote(variant)
-                    combo_orderbook[variant] = dex.get_orderbook(
-                        base=base,
-                        quote=quote,
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        variant_cache_name=variant_cache_name,
-                        depth=depth,
-                        no_thread=no_thread,
-                    )
-                    combo_orderbook[variant]["bids"] = combo_orderbook[variant]["bids"][
-                        : int(depth)
-                    ][::-1]
-                    combo_orderbook[variant]["asks"] = combo_orderbook[variant]["asks"][
-                        ::-1
-                    ][: int(depth)]
-                    combo_orderbook[variant] = clean.orderbook_data(
-                        combo_orderbook[variant]
-                    )
-                    combo_orderbook["ALL"] = merge.orderbooks(
-                        combo_orderbook["ALL"], combo_orderbook[variant]
-                    )
-                # Apply depth limit after caching so cache is complete
-                # TODO: Recalc liquidity if depth is less than data.
 
-                combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][
+            combo_orderbook = {"ALL": template.orderbook(depair)}
+            variants = derive.pair_variants(pair_str)
+            for variant in variants:
+                combo_orderbook.update({variant: template.orderbook(variant)})
+                variant_cache_name = f"orderbook_{variant}"
+                base, quote = derive.base_quote(variant)
+                combo_orderbook[variant] = dex.get_orderbook(
+                    base=base,
+                    quote=quote,
+                    coins_config=self.coins_config,
+                    gecko_source=self.gecko_source,
+                    variant_cache_name=variant_cache_name,
+                    depth=depth,
+                    no_thread=no_thread,
+                )
+                combo_orderbook[variant]["bids"] = combo_orderbook[variant]["bids"][
                     : int(depth)
                 ][::-1]
-                combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][
-                    : int(depth)
-                ]
-                combo_orderbook["ALL"] = clean.orderbook_data(combo_orderbook["ALL"])
-                if (
-                    len(combo_orderbook["ALL"]["asks"]) > 0
-                    or len(combo_orderbook["ALL"]["bids"]) > 0
-                ):
-                    # combo_orderbook = clean.decimal_dicts(combo_orderbook)
-                    dex.add_orderbook_to_cache(
-                        depair, combo_cache_name, combo_orderbook
-                    )
-                msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
-                loglevel = "pair"
-            else:
-                msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
-                loglevel = "cached"
+                combo_orderbook[variant]["asks"] = combo_orderbook[variant]["asks"][
+                    ::-1
+                ][: int(depth)]
+                combo_orderbook[variant] = clean.orderbook_data(
+                    combo_orderbook[variant]
+                )
+                combo_orderbook["ALL"] = merge.orderbooks(
+                    combo_orderbook["ALL"], combo_orderbook[variant]
+                )
+            # Apply depth limit after caching so cache is complete
+            # TODO: Recalc liquidity if depth is less than data.
+
+            combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][
+                : int(depth)
+            ][::-1]
+            combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][
+                : int(depth)
+            ]
+            combo_orderbook["ALL"] = clean.orderbook_data(combo_orderbook["ALL"])
+            msg = f"[{depair}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
+            loglevel = "pair"
             ignore_until = 3
             if Decimal(combo_orderbook["ALL"]["liquidity_usd"]) > 10000:
                 ignore_until = 0
