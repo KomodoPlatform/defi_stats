@@ -1477,7 +1477,7 @@ class SqlSource:
     def populate_pgsqldb(
         self,
         start_time=int(cron.now_utc() - 86400),
-        end_time=int(cron.now_utc()),
+        end_time=int(cron.now_utc() + 86400),
     ):
         try:
             pgdb = SqlUpdate(db_type="pgsql")

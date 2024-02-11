@@ -114,7 +114,7 @@ class SampleData:
             "base_liquidity_usd": "1451.3640156576",
             "quote_liquidity_coins": "8.3893522763",
             "quote_liquidity_usd": "838.9352276307",
-            f"price_change_pct_{suffix}": "0.0000000000",
+            f"price_change_percent_{suffix}": "0.0000000000",
             f"price_change_{suffix}": "0.0000000000",
         }
 

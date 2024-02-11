@@ -371,29 +371,18 @@ class CacheCalc:
                     else:
                         variant = variant.replace("-segwit", "")
                         existing = template.markets_summary(pair_str=variant)
-                    if depair == "KMD_LTC":
-                        logger.query("--------------")
-                        logger.loop(segwit_variants)
                     if variant not in data:
                         for i in segwit_variants:
-                            if depair == "KMD_LTC":
-                                logger.calc(i)
                         
                             o = book["orderbooks"][depair][i]
-                            if depair == "KMD_LTC":
-                                logger.info(o)
                             v = template.pair_trade_vol_item()
                             if depair in vols["volumes"]:
                                 if i in vols["volumes"][depair]:
                                     v = vols["volumes"][depair][i]
-                                    if depair == "KMD_LTC":
-                                        logger.info(v)
                             l = template.first_last_traded()
                             if depair in last:
                                 if i in last[depair]:
                                     l = last[depair][i]
-                                    if depair == "KMD_LTC":
-                                        logger.info(l)
                             new = {
                                 "base_volume": v['base_volume'],
                                 "quote_volume": v['quote_volume'],

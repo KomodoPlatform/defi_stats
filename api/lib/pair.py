@@ -308,7 +308,7 @@ class Pair:  # pragma: no cover
                             "newest_price": newest_price,
                             f"highest_price_{suffix}": highest_price,
                             f"lowest_price_{suffix}": lowest_price,
-                            f"price_change_pct_{suffix}": pct_change,
+                            f"price_change_percent_{suffix}": pct_change,
                             f"price_change_{suffix}": price_change,
                         }
                     )

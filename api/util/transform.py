@@ -258,7 +258,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "highest_price_24h": data["highest_price_24hr"],
         "lowest_price_24h": data["lowest_price_24hr"],
         "price_change_24h": data["price_change_24hr"],
-        "price_change_pct_24h": data["price_change_percent_24hr"],
+        "price_change_percent_24h": data["price_change_percent_24hr"],
         "trades_24hr": data["trades_24hr"],
         "volume_usd_24h": data["combined_volume_usd"],
         "last_swap_price": data["last_swap_price"],
@@ -277,7 +277,7 @@ def ticker_to_xyz_summary(i):
         "lowest_ask": i["lowest_ask"],
         "last_swap_timestamp": int(i["last_swap_time"]),
         "highest_bid": i["highest_bid"],
-        "price_change_pct_24h": str(i["price_change_percent_24hr"]),
+        "price_change_percent_24h": str(i["price_change_percent_24hr"]),
         "highest_price_24hr": i["highest_price_24hr"],
         "lowest_price_24hr": i["lowest_price_24hr"],
         "trades_24hr": int(i["trades_24hr"]),
@@ -361,7 +361,7 @@ def ticker_to_statsapi_summary(i):
             f"highest_price_{alt_suffix}": Decimal(i[f"highest_price_{suffix}"]),
             f"lowest_price_{alt_suffix}": Decimal(i[f"lowest_price_{suffix}"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
-            f"price_change_pct_{alt_suffix}": Decimal(i[f"price_change_pct_{suffix}"]),
+            f"price_change_percent_{alt_suffix}": Decimal(i[f"price_change_percent_{suffix}"]),
             "last_swap_price": i["last_swap_price"],
             "last_swap_time": int(Decimal(i["last_swap_time"])),
             "last_swap_uuid": i["last_swap_uuid"],
@@ -1147,8 +1147,6 @@ class Merge:
                 existing["price_change_percent_24hr"] = format_10f(
                     Decimal(existing["newest_price"]) / Decimal(existing["oldest_price"]) - 1
                 )
-            else:
-                existing["price_change_percent_24hr"] = format_10f(0)
             return existing
         except Exception as e:
             logger.merge(existing)
@@ -1469,7 +1467,7 @@ class Templates:
             "oldest_price_time": 0,
             "newest_price": 0,
             "newest_price_time": 0,
-            f"price_change_pct_{suffix}": 0,
+            f"price_change_percent_{suffix}": 0,
             f"price_change_{suffix}": 0,
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
@@ -1507,7 +1505,7 @@ class Templates:
             "newest_price_time": 0,
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
-            f"price_change_pct_{suffix}": 0,
+            f"price_change_percent_{suffix}": 0,
             f"price_change_{suffix}": 0,
             "highest_bid": 0,
             "lowest_ask": 0,
