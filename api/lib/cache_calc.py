@@ -338,9 +338,7 @@ class CacheCalc:
                             new = {
                                 "liquidity_usd": v["base_volume"],
                                 "base_volume": v["base_volume"],
-                                "base_price_usd": p["base_price_usd"],
                                 "quote_volume": v["quote_volume"],
-                                "quote_price_usd": p["quote_price_usd"],
                                 "lowest_ask": o["lowest_ask"],
                                 "highest_bid": o["highest_bid"],
                                 "lowest_price_24hr": o["lowest_price_24hr"],
@@ -357,6 +355,8 @@ class CacheCalc:
                                 "trades_24hr": o["trades_24hr"],
                                 "liquidity_usd": o["liquidity_usd"],
                                 "volume_usd_24hr": o["volume_usd_24hr"],
+                                "base_price_usd": p["base_price_usd"],
+                                "quote_price_usd": p["quote_price_usd"],
                                 "variants": segwit_variants,
                             }
                             merged = merge.market_summary(existing, new)

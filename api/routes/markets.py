@@ -166,13 +166,11 @@ def summary_for_ticker(coin: str = "KMD"):
         summary = memcache.get_markets_summary()
         vols = memcache.get_pair_volumes_24hr()
         book = memcache.get_pair_orderbook_extended()
+        prices = memcache.get_pair_prices_24hr()
         data = []
         for i in summary:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap"] > 0:
-                    i["last_trade"] = i["last_swap"]
-                    i["base"] = i["base_currency"]
-                    i["quote"] = i["quote_currency"]
                     data.append(i)
         resp = {
             "last_update": int(cron.now_utc()),

@@ -1088,8 +1088,14 @@ class Merge:
                 "base_volume": sumdata.decimals(existing['base_volume'], new['base_volume']),
                 "quote_volume": sumdata.decimals(existing['quote_volume'], new['quote_volume']),
                 "trades_24hr": sumdata.ints(existing['trades_24hr'], new['trades_24hr']),
-                "variants": sumdata.lists(existing['variants'], new['variants'], True)
+                "variants": sumdata.lists(existing['variants'], new['variants'], True),
+                "volume_usd_24hr": sumdata.decimals(existing["volume_usd_24hr"], new["volume_usd_24hr"]),
+                "base_price_usd": new["base_price_usd"],
+                "quote_price_usd": new["quote_price_usd"],
+                "liquidity_usd": new["liquidity_usd"],
+                "liquidity_usd": new["liquidity_usd"],
             })
+            existing['variants'] = sorted(list(set(existing['variants'])))
             if int(existing["last_swap"]) < int(new["last_swap"]):
                 existing.update({
                     "last_price": new['last_price'],
@@ -1127,7 +1133,7 @@ class Merge:
             ):
                 existing["newest_price_time"] = int(new["newest_price_time"])
                 existing["newest_price"] = Decimal(new["newest_price"])
-                
+            existing["price_change_24hr"] = Decimal(new["newest_price"]) - Decimal(new["oldest_price"])
             if Decimal(existing["oldest_price"]) != 0:
                 existing["price_change_pct_24hr"] = format_10f(
                     Decimal(existing["newest_price"]) / Decimal(existing["oldest_price"]) - 1

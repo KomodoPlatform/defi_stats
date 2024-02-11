@@ -50,6 +50,7 @@ def init_missing_cache():  # pragma: no cover
     msg = "init missing cache loop complete!"
     return default.result(msg=msg, loglevel="loop", ignore_until=3)
 
+
 # ORDERBOOKS CACHE
 @router.on_event("startup")
 @repeat_every(seconds=60)
@@ -62,6 +63,7 @@ def refresh_pair_orderbook_extended():
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
+
 
 @router.on_event("startup")
 @repeat_every(seconds=60)
@@ -145,8 +147,6 @@ def get_markets_summary():
         return default.result(msg=msg, loglevel="loop")
 
 
-    
-
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
@@ -159,7 +159,6 @@ def prices_service():  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
         msg = "Prices update loop complete!"
         return default.result(msg=msg, loglevel="loop")
-
 
 
 # EXTERNAL SOURCES CACHE
@@ -230,9 +229,6 @@ def import_dbs():
         return default.result(msg=msg, loglevel="merge")
 
 
-
-
-
 @router.on_event("startup")
 @repeat_every(seconds=120)
 @timed
@@ -246,7 +242,7 @@ def adex_fortnite():
         return default.result(msg=msg, loglevel="loop")
 
 
-'''
+"""
 # REVIEW
 @router.on_event("startup")
 @repeat_every(seconds=300)
@@ -312,4 +308,4 @@ def generic_summary():
             return default.result(msg=e, loglevel="warning")
         msg = "Summary loop complete!"
         return default.result(msg=msg, loglevel="loop")
-'''
+"""
