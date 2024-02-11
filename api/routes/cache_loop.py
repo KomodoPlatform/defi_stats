@@ -51,7 +51,7 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 @timed
 def refresh_pair_orderbook_extended():
     if memcache.get("testing") is None:
@@ -63,21 +63,9 @@ def refresh_pair_orderbook_extended():
         return default.result(msg=msg, loglevel="loop")
 
 
-@router.on_event("startup")
-@repeat_every(seconds=60)
-@timed
-def get_pair_orderbook_extended():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="pair_orderbook_extended", from_memcache=True).save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "pair_orderbook_extended loop for memcache complete!"
-        return default.result(msg=msg, loglevel="loop")
-
 # PRICES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=60)
 @timed
 def refresh_prices_24hr():
     if memcache.get("testing") is None:
@@ -86,19 +74,6 @@ def refresh_prices_24hr():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_prices_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=60)
-@timed
-def get_prices_24hr():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="pair_prices_24hr", from_memcache=True).save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "pair_prices_24hr loop for memcache complete!"
         return default.result(msg=msg, loglevel="loop")
 
 

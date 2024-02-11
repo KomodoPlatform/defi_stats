@@ -21,7 +21,7 @@
             "lowest_ask": "0.00071428",
             "highest_price_24hr": "0.0005540979",
             "lowest_price_24hr": "0.0005540979",
-            "liquidity_in_usd": "278.6609332559",
+            "liquidity_usd": "278.6609332559",
             "combined_volume_usd": "0.0524804955"
         },
         {
@@ -40,7 +40,7 @@
             "lowest_ask": "37.18597874",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "802.4087078018",
+            "liquidity_usd": "802.4087078018",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -59,7 +59,7 @@
             "lowest_ask": "0.02185000",
             "highest_price_24hr": "0.0197858142",
             "lowest_price_24hr": "0.0191699203",
-            "liquidity_in_usd": "88.2333532256",
+            "liquidity_usd": "88.2333532256",
             "combined_volume_usd": "80.8805687310"
         },
         {
@@ -78,7 +78,7 @@
             "lowest_ask": "0.87714559",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "49.8741464967",
+            "liquidity_usd": "49.8741464967",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -97,7 +97,7 @@
             "lowest_ask": "0.21286869",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "10084.6283872569",
+            "liquidity_usd": "10084.6283872569",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -116,7 +116,7 @@
             "lowest_ask": "0.00585452",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "40.2395236753",
+            "liquidity_usd": "40.2395236753",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -135,7 +135,7 @@
             "lowest_ask": "0.01818182",
             "highest_price_24hr": "0.0169034201",
             "lowest_price_24hr": "0.0168972466",
-            "liquidity_in_usd": "5280.9066099408",
+            "liquidity_usd": "5280.9066099408",
             "combined_volume_usd": "0.0200712804"
         },
         {
@@ -154,7 +154,7 @@
             "lowest_ask": "0.01788463",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "177.1298522034",
+            "liquidity_usd": "177.1298522034",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -173,7 +173,7 @@
             "lowest_ask": "0.00024975",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1978.9712463642",
+            "liquidity_usd": "1978.9712463642",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -192,7 +192,7 @@
             "lowest_ask": "0.00002785",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "54.7712146147",
+            "liquidity_usd": "54.7712146147",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -211,7 +211,7 @@
             "lowest_ask": "0.00000822",
             "highest_price_24hr": "0.0000061899",
             "lowest_price_24hr": "0.0000060000",
-            "liquidity_in_usd": "6.7991645073",
+            "liquidity_usd": "6.7991645073",
             "combined_volume_usd": "0.0605195350"
         },
         {
@@ -230,7 +230,7 @@
             "lowest_ask": "2.73813191",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "22.1723632404",
+            "liquidity_usd": "22.1723632404",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -249,7 +249,7 @@
             "lowest_ask": "0.00848082",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3536.0679206453",
+            "liquidity_usd": "3536.0679206453",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -268,7 +268,7 @@
             "lowest_ask": "0.00475646",
             "highest_price_24hr": "0.0046517391",
             "lowest_price_24hr": "0.0042366178",
-            "liquidity_in_usd": "445.5277432260",
+            "liquidity_usd": "445.5277432260",
             "combined_volume_usd": "56.3251014390"
         },
         {
@@ -287,7 +287,7 @@
             "lowest_ask": "9.06211765",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "99.9928265591",
+            "liquidity_usd": "99.9928265591",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -306,7 +306,7 @@
             "lowest_ask": "0.00324685",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "175.0533934862",
+            "liquidity_usd": "175.0533934862",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -325,7 +325,7 @@
             "lowest_ask": "0.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4396.3432813212",
+            "liquidity_usd": "4396.3432813212",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -344,7 +344,7 @@
             "lowest_ask": "1050.91692502",
             "highest_price_24hr": "1044.5937052783",
             "lowest_price_24hr": "1044.5937052783",
-            "liquidity_in_usd": "383.9803293617",
+            "liquidity_usd": "383.9803293617",
             "combined_volume_usd": "0.3142992903"
         },
         {
@@ -363,7 +363,7 @@
             "lowest_ask": "0.57770000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "344.3982521100",
+            "liquidity_usd": "344.3982521100",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -382,7 +382,7 @@
             "lowest_ask": "0.05000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "39.1374691950",
+            "liquidity_usd": "39.1374691950",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -401,7 +401,7 @@
             "lowest_ask": "0.47770000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4098.7419400420",
+            "liquidity_usd": "4098.7419400420",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -420,7 +420,7 @@
             "lowest_ask": "0.00037483",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "10.7540529687",
+            "liquidity_usd": "10.7540529687",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -439,7 +439,7 @@
             "lowest_ask": "2.58773222",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2204.1579389995",
+            "liquidity_usd": "2204.1579389995",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -458,7 +458,7 @@
             "lowest_ask": "0.04812724",
             "highest_price_24hr": "0.0479232935",
             "lowest_price_24hr": "0.0477037648",
-            "liquidity_in_usd": "1244.4785653644",
+            "liquidity_usd": "1244.4785653644",
             "combined_volume_usd": "221.5619674408"
         },
         {
@@ -477,7 +477,7 @@
             "lowest_ask": "0.01933449",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "37.0137607779",
+            "liquidity_usd": "37.0137607779",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -496,7 +496,7 @@
             "lowest_ask": "13.20722396",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "54.9734549028",
+            "liquidity_usd": "54.9734549028",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -515,7 +515,7 @@
             "lowest_ask": "0.98722279",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1135.6586232126",
+            "liquidity_usd": "1135.6586232126",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -534,7 +534,7 @@
             "lowest_ask": "0.00336071",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "13.6487769649",
+            "liquidity_usd": "13.6487769649",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -553,7 +553,7 @@
             "lowest_ask": "0.00773287",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "89.5484917318",
+            "liquidity_usd": "89.5484917318",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -572,7 +572,7 @@
             "lowest_ask": "0.00105557",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "141.9087275433",
+            "liquidity_usd": "141.9087275433",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -591,7 +591,7 @@
             "lowest_ask": "0.24109151",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "301.4093403297",
+            "liquidity_usd": "301.4093403297",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -610,7 +610,7 @@
             "lowest_ask": "0.02308534",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "77.6714251441",
+            "liquidity_usd": "77.6714251441",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -629,7 +629,7 @@
             "lowest_ask": "0.00087059",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "9.7898419693",
+            "liquidity_usd": "9.7898419693",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -648,7 +648,7 @@
             "lowest_ask": "0.00000139",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "18.0746570979",
+            "liquidity_usd": "18.0746570979",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -667,7 +667,7 @@
             "lowest_ask": "0.02718361",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "73.9258595270",
+            "liquidity_usd": "73.9258595270",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -686,7 +686,7 @@
             "lowest_ask": "435.68032977",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "755.8213368201",
+            "liquidity_usd": "755.8213368201",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -705,7 +705,7 @@
             "lowest_ask": "0.00000777",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "0.4212700000",
+            "liquidity_usd": "0.4212700000",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -724,7 +724,7 @@
             "lowest_ask": "0.00783358",
             "highest_price_24hr": "0.0074589068",
             "lowest_price_24hr": "0.0050849141",
-            "liquidity_in_usd": "270.6441448520",
+            "liquidity_usd": "270.6441448520",
             "combined_volume_usd": "162.8841340937"
         },
         {
@@ -743,7 +743,7 @@
             "lowest_ask": "0.00755306",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "165.8217324999",
+            "liquidity_usd": "165.8217324999",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -762,7 +762,7 @@
             "lowest_ask": "0.00000225",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3.9968690702",
+            "liquidity_usd": "3.9968690702",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -781,7 +781,7 @@
             "lowest_ask": "0.20423020",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "336.4329931900",
+            "liquidity_usd": "336.4329931900",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -800,7 +800,7 @@
             "lowest_ask": "0.01416153",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3.9991201939",
+            "liquidity_usd": "3.9991201939",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -819,7 +819,7 @@
             "lowest_ask": "0.00976120",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "29.3206848354",
+            "liquidity_usd": "29.3206848354",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -838,7 +838,7 @@
             "lowest_ask": "0.00150000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "10.6252472887",
+            "liquidity_usd": "10.6252472887",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -857,7 +857,7 @@
             "lowest_ask": "0.10803632",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1352.4710126492",
+            "liquidity_usd": "1352.4710126492",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -876,7 +876,7 @@
             "lowest_ask": "0.01839134",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "13.6896983357",
+            "liquidity_usd": "13.6896983357",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -895,7 +895,7 @@
             "lowest_ask": "8932.17358412",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2336.1851508000",
+            "liquidity_usd": "2336.1851508000",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -914,7 +914,7 @@
             "lowest_ask": "0.37266799",
             "highest_price_24hr": "0.3308446179",
             "lowest_price_24hr": "0.3290347179",
-            "liquidity_in_usd": "23.0597147871",
+            "liquidity_usd": "23.0597147871",
             "combined_volume_usd": "65.9734882975"
         },
         {
@@ -933,7 +933,7 @@
             "lowest_ask": "0.00730206",
             "highest_price_24hr": "0.0049627360",
             "lowest_price_24hr": "0.0049361213",
-            "liquidity_in_usd": "16.9960958628",
+            "liquidity_usd": "16.9960958628",
             "combined_volume_usd": "0.3128564838"
         },
         {
@@ -952,7 +952,7 @@
             "lowest_ask": "62.52427935",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2732.1422116048",
+            "liquidity_usd": "2732.1422116048",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -971,7 +971,7 @@
             "lowest_ask": "0.01000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3.9968690702",
+            "liquidity_usd": "3.9968690702",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -990,7 +990,7 @@
             "lowest_ask": "0.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "59.9289523810",
+            "liquidity_usd": "59.9289523810",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1009,7 +1009,7 @@
             "lowest_ask": "121.71774008",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1317.5866297058",
+            "liquidity_usd": "1317.5866297058",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1028,7 +1028,7 @@
             "lowest_ask": "0.00023130",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "578.3576830642",
+            "liquidity_usd": "578.3576830642",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1047,7 +1047,7 @@
             "lowest_ask": "0.00000275",
             "highest_price_24hr": "0.0000027500",
             "lowest_price_24hr": "0.0000027500",
-            "liquidity_in_usd": "6.6400509930",
+            "liquidity_usd": "6.6400509930",
             "combined_volume_usd": "0.0321295984"
         },
         {
@@ -1066,7 +1066,7 @@
             "lowest_ask": "0.00012704",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "20.0000000000",
+            "liquidity_usd": "20.0000000000",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1085,7 +1085,7 @@
             "lowest_ask": "0.05178410",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "72.9829176415",
+            "liquidity_usd": "72.9829176415",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1104,7 +1104,7 @@
             "lowest_ask": "0.00056531",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "426.2008439893",
+            "liquidity_usd": "426.2008439893",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1123,7 +1123,7 @@
             "lowest_ask": "0.00828874",
             "highest_price_24hr": "0.0082335813",
             "lowest_price_24hr": "0.0082335813",
-            "liquidity_in_usd": "3463.6979877959",
+            "liquidity_usd": "3463.6979877959",
             "combined_volume_usd": "18.9707983485"
         },
         {
@@ -1142,7 +1142,7 @@
             "lowest_ask": "0.00800000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "233.0362286412",
+            "liquidity_usd": "233.0362286412",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1161,7 +1161,7 @@
             "lowest_ask": "0.00005666",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1001.5210679510",
+            "liquidity_usd": "1001.5210679510",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1180,7 +1180,7 @@
             "lowest_ask": "5.04679170",
             "highest_price_24hr": "4.9212622087",
             "lowest_price_24hr": "4.8986174371",
-            "liquidity_in_usd": "2928.5869405442",
+            "liquidity_usd": "2928.5869405442",
             "combined_volume_usd": "383.6218950529"
         },
         {
@@ -1199,7 +1199,7 @@
             "lowest_ask": "8.63500900",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "382.0122437067",
+            "liquidity_usd": "382.0122437067",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1218,7 +1218,7 @@
             "lowest_ask": "269.87147150",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "895.6020397165",
+            "liquidity_usd": "895.6020397165",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1237,7 +1237,7 @@
             "lowest_ask": "0.00005762",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "49.8507952283",
+            "liquidity_usd": "49.8507952283",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1256,7 +1256,7 @@
             "lowest_ask": "0.52576738",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "83.0141663278",
+            "liquidity_usd": "83.0141663278",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1275,7 +1275,7 @@
             "lowest_ask": "33.66920260",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4663.7485709155",
+            "liquidity_usd": "4663.7485709155",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1294,7 +1294,7 @@
             "lowest_ask": "0.00099404",
             "highest_price_24hr": "0.0009771183",
             "lowest_price_24hr": "0.0009771183",
-            "liquidity_in_usd": "3664.7657145351",
+            "liquidity_usd": "3664.7657145351",
             "combined_volume_usd": "108.5980991436"
         },
         {
@@ -1313,7 +1313,7 @@
             "lowest_ask": "0.10297955",
             "highest_price_24hr": "0.0961282659",
             "lowest_price_24hr": "0.0961282659",
-            "liquidity_in_usd": "133.8780942666",
+            "liquidity_usd": "133.8780942666",
             "combined_volume_usd": "10.1163325179"
         },
         {
@@ -1332,7 +1332,7 @@
             "lowest_ask": "0.00861684",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "259.4441401197",
+            "liquidity_usd": "259.4441401197",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1351,7 +1351,7 @@
             "lowest_ask": "0.04020518",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2276.3696044351",
+            "liquidity_usd": "2276.3696044351",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1370,7 +1370,7 @@
             "lowest_ask": "0.04225960",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "170.4224603736",
+            "liquidity_usd": "170.4224603736",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1389,7 +1389,7 @@
             "lowest_ask": "0.06401500",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "364.6606844005",
+            "liquidity_usd": "364.6606844005",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1408,7 +1408,7 @@
             "lowest_ask": "0.00022598",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "224.7811106509",
+            "liquidity_usd": "224.7811106509",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1427,7 +1427,7 @@
             "lowest_ask": "0.02191690",
             "highest_price_24hr": "0.0202265290",
             "lowest_price_24hr": "0.0202017280",
-            "liquidity_in_usd": "12.9690030863",
+            "liquidity_usd": "12.9690030863",
             "combined_volume_usd": "20.3811390720"
         },
         {
@@ -1446,7 +1446,7 @@
             "lowest_ask": "0.00000791",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "16507.9067886654",
+            "liquidity_usd": "16507.9067886654",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1465,7 +1465,7 @@
             "lowest_ask": "0.00621741",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "598.7238214427",
+            "liquidity_usd": "598.7238214427",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1484,7 +1484,7 @@
             "lowest_ask": "0.00221208",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "29.3282821599",
+            "liquidity_usd": "29.3282821599",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1503,7 +1503,7 @@
             "lowest_ask": "0.01500000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "308.9240290860",
+            "liquidity_usd": "308.9240290860",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1522,7 +1522,7 @@
             "lowest_ask": "1.42795295",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3522.7568906698",
+            "liquidity_usd": "3522.7568906698",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1541,7 +1541,7 @@
             "lowest_ask": "8.16163951",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "96.0550716076",
+            "liquidity_usd": "96.0550716076",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1560,7 +1560,7 @@
             "lowest_ask": "0.28407371",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "38.1375831270",
+            "liquidity_usd": "38.1375831270",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1579,7 +1579,7 @@
             "lowest_ask": "0.15250669",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "15.4296539657",
+            "liquidity_usd": "15.4296539657",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1598,7 +1598,7 @@
             "lowest_ask": "16.37064287",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "5.9174801099",
+            "liquidity_usd": "5.9174801099",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1617,7 +1617,7 @@
             "lowest_ask": "0.00077770",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "9154.3451541988",
+            "liquidity_usd": "9154.3451541988",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1636,7 +1636,7 @@
             "lowest_ask": "0.21326003",
             "highest_price_24hr": "0.1442195771",
             "lowest_price_24hr": "0.1424940737",
-            "liquidity_in_usd": "69.8428112895",
+            "liquidity_usd": "69.8428112895",
             "combined_volume_usd": "2.2094702335"
         },
         {
@@ -1655,7 +1655,7 @@
             "lowest_ask": "3648.61271769",
             "highest_price_24hr": "3574.4423008300",
             "lowest_price_24hr": "3571.0160969600",
-            "liquidity_in_usd": "743.6260495380",
+            "liquidity_usd": "743.6260495380",
             "combined_volume_usd": "0.2429416077"
         },
         {
@@ -1674,7 +1674,7 @@
             "lowest_ask": "6.33387917",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3837.6176331202",
+            "liquidity_usd": "3837.6176331202",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1693,7 +1693,7 @@
             "lowest_ask": "0.00000368",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "39.8731787590",
+            "liquidity_usd": "39.8731787590",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1712,7 +1712,7 @@
             "lowest_ask": "0.00436872",
             "highest_price_24hr": "0.0021070014",
             "lowest_price_24hr": "0.0021070014",
-            "liquidity_in_usd": "4.9987365229",
+            "liquidity_usd": "4.9987365229",
             "combined_volume_usd": "0.0209911472"
         },
         {
@@ -1731,7 +1731,7 @@
             "lowest_ask": "33.68019038",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "77.9625653430",
+            "liquidity_usd": "77.9625653430",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1750,7 +1750,7 @@
             "lowest_ask": "0.10000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1072.6275191435",
+            "liquidity_usd": "1072.6275191435",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1769,7 +1769,7 @@
             "lowest_ask": "0.10856327",
             "highest_price_24hr": "0.1168915718",
             "lowest_price_24hr": "0.1100972813",
-            "liquidity_in_usd": "39.4467671682",
+            "liquidity_usd": "39.4467671682",
             "combined_volume_usd": "61.0432104461"
         },
         {
@@ -1788,7 +1788,7 @@
             "lowest_ask": "0.54801167",
             "highest_price_24hr": "0.4478238266",
             "lowest_price_24hr": "0.4478238266",
-            "liquidity_in_usd": "918.5039201855",
+            "liquidity_usd": "918.5039201855",
             "combined_volume_usd": "213.4378405756"
         },
         {
@@ -1807,7 +1807,7 @@
             "lowest_ask": "0.04135324",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1088.3819118370",
+            "liquidity_usd": "1088.3819118370",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1826,7 +1826,7 @@
             "lowest_ask": "0.06037921",
             "highest_price_24hr": "0.0583451755",
             "lowest_price_24hr": "0.0583451755",
-            "liquidity_in_usd": "662.8447662480",
+            "liquidity_usd": "662.8447662480",
             "combined_volume_usd": "55.9028333461"
         },
         {
@@ -1845,7 +1845,7 @@
             "lowest_ask": "0.00730025",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "89.1290880311",
+            "liquidity_usd": "89.1290880311",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1864,7 +1864,7 @@
             "lowest_ask": "0.12411895",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1492.1386880639",
+            "liquidity_usd": "1492.1386880639",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1883,7 +1883,7 @@
             "lowest_ask": "0.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "20.1812892249",
+            "liquidity_usd": "20.1812892249",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1902,7 +1902,7 @@
             "lowest_ask": "0.08512268",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1065.7260939937",
+            "liquidity_usd": "1065.7260939937",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1921,7 +1921,7 @@
             "lowest_ask": "0.00002746",
             "highest_price_24hr": "0.0000275205",
             "lowest_price_24hr": "0.0000275160",
-            "liquidity_in_usd": "5.3264730749",
+            "liquidity_usd": "5.3264730749",
             "combined_volume_usd": "9.4959961503"
         },
         {
@@ -1940,7 +1940,7 @@
             "lowest_ask": "0.00344664",
             "highest_price_24hr": "0.0034736790",
             "lowest_price_24hr": "0.0034100132",
-            "liquidity_in_usd": "46896.3284633813",
+            "liquidity_usd": "46896.3284633813",
             "combined_volume_usd": "445.5203114338"
         },
         {
@@ -1959,7 +1959,7 @@
             "lowest_ask": "0.12131634",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1483.1227310132",
+            "liquidity_usd": "1483.1227310132",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1978,7 +1978,7 @@
             "lowest_ask": "1.15440204",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4619.8212279593",
+            "liquidity_usd": "4619.8212279593",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -1997,7 +1997,7 @@
             "lowest_ask": "2.87160376",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1443.6280275901",
+            "liquidity_usd": "1443.6280275901",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2016,7 +2016,7 @@
             "lowest_ask": "0.54792926",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "111.2827360947",
+            "liquidity_usd": "111.2827360947",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2035,7 +2035,7 @@
             "lowest_ask": "0.33105864",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3051.8336721904",
+            "liquidity_usd": "3051.8336721904",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2054,7 +2054,7 @@
             "lowest_ask": "0.00015388",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "21.9927420078",
+            "liquidity_usd": "21.9927420078",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2073,7 +2073,7 @@
             "lowest_ask": "0.01985350",
             "highest_price_24hr": "0.0154448664",
             "lowest_price_24hr": "0.0148617778",
-            "liquidity_in_usd": "213.0508413290",
+            "liquidity_usd": "213.0508413290",
             "combined_volume_usd": "3.6813916024"
         },
         {
@@ -2092,7 +2092,7 @@
             "lowest_ask": "0.41370581",
             "highest_price_24hr": "0.4036421292",
             "lowest_price_24hr": "0.4036421292",
-            "liquidity_in_usd": "6380.3624391825",
+            "liquidity_usd": "6380.3624391825",
             "combined_volume_usd": "1.9833541504"
         },
         {
@@ -2111,7 +2111,7 @@
             "lowest_ask": "15.16158772",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2793.6327970728",
+            "liquidity_usd": "2793.6327970728",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2130,7 +2130,7 @@
             "lowest_ask": "0.67274193",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "245.6695943764",
+            "liquidity_usd": "245.6695943764",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2149,7 +2149,7 @@
             "lowest_ask": "0.00200000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "233.0362286412",
+            "liquidity_usd": "233.0362286412",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2168,7 +2168,7 @@
             "lowest_ask": "97.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4098.7419400420",
+            "liquidity_usd": "4098.7419400420",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2187,7 +2187,7 @@
             "lowest_ask": "2.85550000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "49.8041486010",
+            "liquidity_usd": "49.8041486010",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2206,7 +2206,7 @@
             "lowest_ask": "0.41985915",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1544.7569867553",
+            "liquidity_usd": "1544.7569867553",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2225,7 +2225,7 @@
             "lowest_ask": "1.42137591",
             "highest_price_24hr": "1.3329275314",
             "lowest_price_24hr": "1.3329275314",
-            "liquidity_in_usd": "62.9966269123",
+            "liquidity_usd": "62.9966269123",
             "combined_volume_usd": "37.4586235690"
         },
         {
@@ -2244,7 +2244,7 @@
             "lowest_ask": "0.01722804",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "771.6041952404",
+            "liquidity_usd": "771.6041952404",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2263,7 +2263,7 @@
             "lowest_ask": "0.00275693",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "42.9262833050",
+            "liquidity_usd": "42.9262833050",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2282,7 +2282,7 @@
             "lowest_ask": "62.52427935",
             "highest_price_24hr": "60.9583540815",
             "lowest_price_24hr": "60.9583540815",
-            "liquidity_in_usd": "1614.4712774695",
+            "liquidity_usd": "1614.4712774695",
             "combined_volume_usd": "76.0047795305"
         },
         {
@@ -2301,7 +2301,7 @@
             "lowest_ask": "83.51426087",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "339.2461902812",
+            "liquidity_usd": "339.2461902812",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2320,7 +2320,7 @@
             "lowest_ask": "0.00118989",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4.9960863378",
+            "liquidity_usd": "4.9960863378",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2339,7 +2339,7 @@
             "lowest_ask": "0.01822504",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "22.1070925170",
+            "liquidity_usd": "22.1070925170",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2358,7 +2358,7 @@
             "lowest_ask": "0.00942666",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "12.8480772737",
+            "liquidity_usd": "12.8480772737",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2377,7 +2377,7 @@
             "lowest_ask": "0.00388805",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "3.9970000458",
+            "liquidity_usd": "3.9970000458",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2396,7 +2396,7 @@
             "lowest_ask": "0.00010439",
             "highest_price_24hr": "0.0000996242",
             "lowest_price_24hr": "0.0000996242",
-            "liquidity_in_usd": "2112.6804730248",
+            "liquidity_usd": "2112.6804730248",
             "combined_volume_usd": "0.1290814130"
         },
         {
@@ -2415,7 +2415,7 @@
             "lowest_ask": "0.41151194",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "842.0752164563",
+            "liquidity_usd": "842.0752164563",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2434,7 +2434,7 @@
             "lowest_ask": "0.00019625",
             "highest_price_24hr": "0.0001503892",
             "lowest_price_24hr": "0.0001459206",
-            "liquidity_in_usd": "99.7741805076",
+            "liquidity_usd": "99.7741805076",
             "combined_volume_usd": "66.1796730627"
         },
         {
@@ -2453,7 +2453,7 @@
             "lowest_ask": "0.00036286",
             "highest_price_24hr": "0.0003214044",
             "lowest_price_24hr": "0.0003207959",
-            "liquidity_in_usd": "14.9363268037",
+            "liquidity_usd": "14.9363268037",
             "combined_volume_usd": "82.4744012654"
         },
         {
@@ -2472,7 +2472,7 @@
             "lowest_ask": "0.00201421",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "17.7115224129",
+            "liquidity_usd": "17.7115224129",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2491,7 +2491,7 @@
             "lowest_ask": "0.00237659",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "14.9633316198",
+            "liquidity_usd": "14.9633316198",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2510,7 +2510,7 @@
             "lowest_ask": "0.00005777",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "12.0469803329",
+            "liquidity_usd": "12.0469803329",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2529,7 +2529,7 @@
             "lowest_ask": "0.00010000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "6.9850000000",
+            "liquidity_usd": "6.9850000000",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2548,7 +2548,7 @@
             "lowest_ask": "0.00008599",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "74.0946578583",
+            "liquidity_usd": "74.0946578583",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2567,7 +2567,7 @@
             "lowest_ask": "0.00167098",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "15.2671231560",
+            "liquidity_usd": "15.2671231560",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2586,7 +2586,7 @@
             "lowest_ask": "0.00000100",
             "highest_price_24hr": "0.0000007800",
             "lowest_price_24hr": "0.0000007800",
-            "liquidity_in_usd": "3.9968690702",
+            "liquidity_usd": "3.9968690702",
             "combined_volume_usd": "0.0063190500"
         },
         {
@@ -2605,7 +2605,7 @@
             "lowest_ask": "3.58425142",
             "highest_price_24hr": "3.4950229241",
             "lowest_price_24hr": "3.4950229241",
-            "liquidity_in_usd": "2456.7578576941",
+            "liquidity_usd": "2456.7578576941",
             "combined_volume_usd": "45.1490906268"
         },
         {
@@ -2624,7 +2624,7 @@
             "lowest_ask": "0.00004267",
             "highest_price_24hr": "0.0000423999",
             "lowest_price_24hr": "0.0000423999",
-            "liquidity_in_usd": "3.9989892183",
+            "liquidity_usd": "3.9989892183",
             "combined_volume_usd": "0.0088689107"
         },
         {
@@ -2643,7 +2643,7 @@
             "lowest_ask": "5.86003283",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "247.3038127764",
+            "liquidity_usd": "247.3038127764",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2662,7 +2662,7 @@
             "lowest_ask": "0.02025824",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "29.3925914660",
+            "liquidity_usd": "29.3925914660",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2681,7 +2681,7 @@
             "lowest_ask": "0.00057622",
             "highest_price_24hr": "0.0004174201",
             "lowest_price_24hr": "0.0004174201",
-            "liquidity_in_usd": "11.1978712269",
+            "liquidity_usd": "11.1978712269",
             "combined_volume_usd": "0.0640267679"
         },
         {
@@ -2700,7 +2700,7 @@
             "lowest_ask": "37.56900000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "82.9887325916",
+            "liquidity_usd": "82.9887325916",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2719,7 +2719,7 @@
             "lowest_ask": "0.00075872",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "107.4394741810",
+            "liquidity_usd": "107.4394741810",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2738,7 +2738,7 @@
             "lowest_ask": "0.01227685",
             "highest_price_24hr": "0.0126531874",
             "lowest_price_24hr": "0.0112536340",
-            "liquidity_in_usd": "77.6002164734",
+            "liquidity_usd": "77.6002164734",
             "combined_volume_usd": "79.3887988668"
         },
         {
@@ -2757,7 +2757,7 @@
             "lowest_ask": "0.02000000",
             "highest_price_24hr": "0.0200000000",
             "lowest_price_24hr": "0.0200000000",
-            "liquidity_in_usd": "233.0362286412",
+            "liquidity_usd": "233.0362286412",
             "combined_volume_usd": "13.4117541037"
         },
         {
@@ -2776,7 +2776,7 @@
             "lowest_ask": "22.46034187",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "432.5535562140",
+            "liquidity_usd": "432.5535562140",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2795,7 +2795,7 @@
             "lowest_ask": "0.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "0.2757887261",
+            "liquidity_usd": "0.2757887261",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2814,7 +2814,7 @@
             "lowest_ask": "5.03646747",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2418.4278342235",
+            "liquidity_usd": "2418.4278342235",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2833,7 +2833,7 @@
             "lowest_ask": "0.00670360",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "60.7629912208",
+            "liquidity_usd": "60.7629912208",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2852,7 +2852,7 @@
             "lowest_ask": "11.10315628",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "13.6980372420",
+            "liquidity_usd": "13.6980372420",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2871,7 +2871,7 @@
             "lowest_ask": "1.67245877",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "92.7839481333",
+            "liquidity_usd": "92.7839481333",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2890,7 +2890,7 @@
             "lowest_ask": "0.21286869",
             "highest_price_24hr": "0.2157956500",
             "lowest_price_24hr": "0.2157956500",
-            "liquidity_in_usd": "9909.3076530508",
+            "liquidity_usd": "9909.3076530508",
             "combined_volume_usd": "1.0550378719"
         },
         {
@@ -2909,7 +2909,7 @@
             "lowest_ask": "0.00005468",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "80.9843585776",
+            "liquidity_usd": "80.9843585776",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2928,7 +2928,7 @@
             "lowest_ask": "0.09699439",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "13.9807313654",
+            "liquidity_usd": "13.9807313654",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2947,7 +2947,7 @@
             "lowest_ask": "0.60000002",
             "highest_price_24hr": "0.5276014682",
             "lowest_price_24hr": "0.4911123810",
-            "liquidity_in_usd": "649.2838477320",
+            "liquidity_usd": "649.2838477320",
             "combined_volume_usd": "303.3943772409"
         },
         {
@@ -2966,7 +2966,7 @@
             "lowest_ask": "15.15623055",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "370.8510635021",
+            "liquidity_usd": "370.8510635021",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -2985,7 +2985,7 @@
             "lowest_ask": "0.00010255",
             "highest_price_24hr": "0.0000939622",
             "lowest_price_24hr": "0.0000938079",
-            "liquidity_in_usd": "12.9902456767",
+            "liquidity_usd": "12.9902456767",
             "combined_volume_usd": "50.9918561288"
         },
         {
@@ -3004,7 +3004,7 @@
             "lowest_ask": "0.04480148",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "10.8005533055",
+            "liquidity_usd": "10.8005533055",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3023,7 +3023,7 @@
             "lowest_ask": "0.29974215",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "914.5279363005",
+            "liquidity_usd": "914.5279363005",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3042,7 +3042,7 @@
             "lowest_ask": "0.00245684",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "82.9537302902",
+            "liquidity_usd": "82.9537302902",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3061,7 +3061,7 @@
             "lowest_ask": "0.24805025",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "40.4847063485",
+            "liquidity_usd": "40.4847063485",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3080,7 +3080,7 @@
             "lowest_ask": "0.00055794",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "45.0051164647",
+            "liquidity_usd": "45.0051164647",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3099,7 +3099,7 @@
             "lowest_ask": "0.00001157",
             "highest_price_24hr": "0.0000057269",
             "lowest_price_24hr": "0.0000057269",
-            "liquidity_in_usd": "3.9968690702",
+            "liquidity_usd": "3.9968690702",
             "combined_volume_usd": "0.0042462790"
         },
         {
@@ -3118,7 +3118,7 @@
             "lowest_ask": "3.50655449",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "1220.4134744244",
+            "liquidity_usd": "1220.4134744244",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3137,7 +3137,7 @@
             "lowest_ask": "0.00055425",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "879.7011037811",
+            "liquidity_usd": "879.7011037811",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3156,7 +3156,7 @@
             "lowest_ask": "0.00000248",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "12.6916259318",
+            "liquidity_usd": "12.6916259318",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3175,7 +3175,7 @@
             "lowest_ask": "0.05596152",
             "highest_price_24hr": "0.0465075095",
             "lowest_price_24hr": "0.0463306152",
-            "liquidity_in_usd": "366.3399405309",
+            "liquidity_usd": "366.3399405309",
             "combined_volume_usd": "26.1583527073"
         },
         {
@@ -3194,7 +3194,7 @@
             "lowest_ask": "0.00000000",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "73.6657098916",
+            "liquidity_usd": "73.6657098916",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3213,7 +3213,7 @@
             "lowest_ask": "0.00786112",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "5.3258024806",
+            "liquidity_usd": "5.3258024806",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3232,7 +3232,7 @@
             "lowest_ask": "0.00000421",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "4.9983779400",
+            "liquidity_usd": "4.9983779400",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3251,7 +3251,7 @@
             "lowest_ask": "1.00000000",
             "highest_price_24hr": "1.0000000000",
             "lowest_price_24hr": "1.0000000000",
-            "liquidity_in_usd": "233.0362286412",
+            "liquidity_usd": "233.0362286412",
             "combined_volume_usd": "2.3665066276"
         },
         {
@@ -3270,7 +3270,7 @@
             "lowest_ask": "0.08629785",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "70.1106545761",
+            "liquidity_usd": "70.1106545761",
             "combined_volume_usd": "0.0000000000"
         },
         {
@@ -3289,7 +3289,7 @@
             "lowest_ask": "0.00853266",
             "highest_price_24hr": "0.0045648781",
             "lowest_price_24hr": "0.0045534197",
-            "liquidity_in_usd": "3.9968690702",
+            "liquidity_usd": "3.9968690702",
             "combined_volume_usd": "7.9373026227"
         },
         {
@@ -3308,7 +3308,7 @@
             "lowest_ask": "217.19168608",
             "highest_price_24hr": "0.0000000000",
             "lowest_price_24hr": "0.0000000000",
-            "liquidity_in_usd": "2849.5600240927",
+            "liquidity_usd": "2849.5600240927",
             "combined_volume_usd": "0.0000000000"
         }
     ]

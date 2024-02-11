@@ -308,8 +308,10 @@ class Pair:  # pragma: no cover
                             "newest_price": newest_price,
                             f"highest_price_{suffix}": highest_price,
                             f"lowest_price_{suffix}": lowest_price,
-                            f"price_change_percent_{suffix}": pct_change,
+                            f"price_change_pct{suffix}": pct_change,
                             f"price_change_{suffix}": price_change,
+                            "base_price_usd": self.base_price_usd,
+                            "quote_price_usd": self.quote_price_usd,
                         }
                     )
                 data[variant] = clean.decimal_dicts(data[variant])
@@ -362,7 +364,7 @@ class Pair:  # pragma: no cover
             key = "ticker_info"
             cache_name = derive.pair_cachename(key, self.as_str, suffix)
             data = memcache.get(cache_name)
-            if data is not None and Decimal(data["liquidity_in_usd"]) > 0:
+            if data is not None and Decimal(data["liquidity_usd"]) > 0:
                 msg = f"Using cache: {cache_name}"
                 return default.result(
                     data=data, msg=msg, loglevel="pair", ignore_until=3
@@ -400,12 +402,12 @@ class Pair:  # pragma: no cover
             loglevel = "pair"
             msg = f"ticker_info for {self.as_str} ({days} days) complete!"
             # Add to cache if fully populated
-            if Decimal(data["orderbooks"]["ALL"]["liquidity_in_usd"]) > 0:
+            if Decimal(data["orderbooks"]["ALL"]["liquidity_usd"]) > 0:
                 data = clean.decimal_dicts(data)
                 memcache.update(cache_name, data, 900)
                 msg = f" Added to memcache [{cache_name}]"
-                if Decimal(data["liquidity_in_usd"]) > 10000:
-                    msg = f'[{cache_name}] liquidity {data["liquidity_in_usd"]}'
+                if Decimal(data["liquidity_usd"]) > 10000:
+                    msg = f'[{cache_name}] liquidity {data["liquidity_usd"]}'
                     ignore_until = 0
 
         except Exception as e:  # pragma: no cover
@@ -512,13 +514,13 @@ class Pair:  # pragma: no cover
                     dex.add_orderbook_to_cache(
                         depair, combo_cache_name, combo_orderbook
                     )
-                msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
+                msg = f"[{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
                 loglevel = "pair"
             else:
-                msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_in_usd']} liquidity"
+                msg = f"Using cache [{combo_cache_name}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
                 loglevel = "cached"
             ignore_until = 3
-            if Decimal(combo_orderbook["ALL"]["liquidity_in_usd"]) > 10000:
+            if Decimal(combo_orderbook["ALL"]["liquidity_usd"]) > 10000:
                 ignore_until = 0
             return default.result(
                 data=combo_orderbook,

@@ -26,7 +26,7 @@ class StatsApiAtomicdexFortnight(BaseModel):
 
 
 class StatsApiSummary(BaseModel):
-    trading_pair: str = "XXX_YYY"
+    pair: str = "XXX_YYY"
     pair_swaps_count: int = 7777
     base_currency: str = "XXX"
     base_volume: float = 777.777777
@@ -47,7 +47,7 @@ class StatsApiSummary(BaseModel):
     highest_price_24h: float = 777.777777
     lowest_price_24h: float = 777.777777
     price_change_24h: float = 777.777777
-    price_change_percent_24h: float = 777.777777
+    price_change_pct24h: float = 777.777777
     last_price: float = 777.777777
     last_trade: int = 1777777777
     variants: List = ["XXX_YYY", "XXX-BEP20_YYY", "XXX_YYY-segwit"]

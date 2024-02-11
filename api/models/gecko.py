@@ -31,7 +31,7 @@ class GeckoTickersItem(BaseModel):
     last_trade: str = "777.777777"
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
     volume_usd_24hr: str = "777.777777"
-    liquidity_in_usd: str = "777.777777"
+    liquidity_usd: str = "777.777777"
     variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 

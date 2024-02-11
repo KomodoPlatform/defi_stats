@@ -40,10 +40,10 @@ def test_format_10f():
 def test_orderbook_extended_to_market_summary_item():
     ticker_item = sampledata.ticker_item()
     x = convert.orderbook_extended_to_market_summary_item(ticker_item)
-    assert x["trading_pair"] == "DGB_LTC"
+    assert x["pair"] == "DGB_LTC"
     assert x["quote_currency"] == "LTC"
     assert ticker_item["quote_volume"] == x["quote_volume"]
-    assert ticker_item["ticker_id"] == x["trading_pair"]
+    assert ticker_item["ticker_id"] == x["pair"]
     assert ticker_item["last_swap_time"] == str(x["last_swap"])
     assert ticker_item["highest_price_24hr"] == x["highest_price_24hr"]
     assert ticker_item["lowest_price_24hr"] == x["lowest_price_24hr"]
@@ -253,7 +253,7 @@ def test_merge_orderbooks():
     assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
     assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
     for i in [
-        "liquidity_in_usd",
+        "liquidity_usd",
         "total_asks_base_vol",
         "total_bids_base_vol",
         "total_asks_quote_vol",

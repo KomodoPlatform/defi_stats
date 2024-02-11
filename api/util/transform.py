@@ -72,7 +72,7 @@ class Clean:
                 "total_bids_quote_vol",
                 "total_asks_base_usd",
                 "total_bids_quote_usd",
-                "liquidity_in_usd",
+                "liquidity_usd",
                 "liquidity_usd",
                 "volume_usd_24hr",
                 "volume_usd_14d",
@@ -122,7 +122,7 @@ class Convert:
             "last_trade": ticker_data["last_swap_time"],
             "last_swap_uuid": ticker_data["last_swap_uuid"],
             "volume_usd_24hr": ticker_data["combined_volume_usd"],
-            "liquidity_in_usd": ticker_data["liquidity_in_usd"],
+            "liquidity_usd": ticker_data["liquidity_usd"],
             "variants": ticker_data["variants"],
         }
 
@@ -200,28 +200,6 @@ class Convert:
                     resp.update({cleaned_ticker: traded_cache[i]})
         return resp
 
-    def ticker_to_summary_for_ticker(self, data):  # pragma: no cover
-        return {
-            "pair": data["ticker_id"],
-            "base": data["base_currency"],
-            "liquidity_usd": data["liquidity_in_usd"],
-            "base_volume": data["base_volume"],
-            "base_price_usd": data["base_price_usd"],
-            "quote": data["quote_currency"],
-            "quote_volume": data["quote_volume"],
-            "quote_price_usd": data["quote_price_usd"],
-            "highest_bid": data["highest_bid"],
-            "lowest_ask": data["lowest_ask"],
-            "highest_price_24hr": data["highest_price_24hr"],
-            "lowest_price_24hr": data["lowest_price_24hr"],
-            "price_change_24hr": data["price_change_24hr"],
-            "price_change_percent_24hr": data["price_change_percent_24hr"],
-            "trades_24hr": data["trades_24hr"],
-            "volume_usd_24hr": data["combined_volume_usd"],
-            "last_price": data["last_swap_price"],
-            "last_trade": data["last_swap_time"],
-            "last_swap_uuid": data["last_swap_uuid"],
-        }
 
     def orderbook_extended_to_market_summary_item(self, data):
         logger.info(data)
@@ -247,7 +225,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
     return {
         "ticker_id": data["ticker_id"],
         "base_currency": data["base_currency"],
-        "liquidity_usd": data["liquidity_in_usd"],
+        "liquidity_usd": data["liquidity_usd"],
         "base_volume": data["base_volume"],
         "base_price_usd": data["base_price_usd"],
         "quote_currency": data["quote_currency"],
@@ -258,7 +236,7 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
         "highest_price_24h": data["highest_price_24hr"],
         "lowest_price_24h": data["lowest_price_24hr"],
         "price_change_24h": data["price_change_24hr"],
-        "price_change_percent_24h": data["price_change_percent_24hr"],
+        "price_change_pct24h": data["price_change_pct_24hr"],
         "trades_24hr": data["trades_24hr"],
         "volume_usd_24h": data["combined_volume_usd"],
         "last_swap_price": data["last_swap_price"],
@@ -277,7 +255,7 @@ def ticker_to_xyz_summary(i):
         "lowest_ask": i["lowest_ask"],
         "last_swap_timestamp": int(i["last_swap_time"]),
         "highest_bid": i["highest_bid"],
-        "price_change_percent_24h": str(i["price_change_percent_24hr"]),
+        "price_change_pct24h": str(i["price_change_pct_24hr"]),
         "highest_price_24hr": i["highest_price_24hr"],
         "lowest_price_24hr": i["lowest_price_24hr"],
         "trades_24hr": int(i["trades_24hr"]),
@@ -317,7 +295,7 @@ def ticker_to_gecko_summary(i):
         "last_swap_uuid": i["last_swap_uuid"],
         "trades_24hr": int(Decimal(i["trades_24hr"])),
         "combined_volume_usd": format_10f(i["combined_volume_usd"]),
-        "liquidity_in_usd": format_10f(i["liquidity_in_usd"]),
+        "liquidity_usd": format_10f(i["liquidity_usd"]),
     }
     return data
 
@@ -337,7 +315,7 @@ def ticker_to_statsapi_summary(i):
         data = {
             "ticker_id": i["ticker_id"],
             "pair_swaps_count": int(Decimal(i[f"trades_{suffix}"])),
-            "pair_liquidity_usd": Decimal(i["liquidity_in_usd"]),
+            "pair_liquidity_usd": Decimal(i["liquidity_usd"]),
             "pair_trade_value_usd": Decimal(i["combined_volume_usd"]),
             "base_currency": i["base_currency"],
             "base_volume": Decimal(i["base_volume"]),
@@ -361,7 +339,7 @@ def ticker_to_statsapi_summary(i):
             f"highest_price_{alt_suffix}": Decimal(i[f"highest_price_{suffix}"]),
             f"lowest_price_{alt_suffix}": Decimal(i[f"lowest_price_{suffix}"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
-            f"price_change_percent_{alt_suffix}": Decimal(i[f"price_change_percent_{suffix}"]),
+            f"price_change_pct{alt_suffix}": Decimal(i[f"price_change_pct{suffix}"]),
             "last_swap_price": i["last_swap_price"],
             "last_swap_time": int(Decimal(i["last_swap_time"])),
             "last_swap_uuid": i["last_swap_uuid"],
@@ -408,7 +386,7 @@ class Deplatform:
                 j["trades_24hr"] += int(i["trades_24hr"])
                 for key in [
                     "combined_volume_usd",
-                    "liquidity_in_usd",
+                    "liquidity_usd",
                     "base_volume",
                     "base_volume_usd",
                     "base_liquidity_coins",
@@ -457,11 +435,11 @@ class Deplatform:
                     Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
                 )
                 if Decimal(j["oldest_price"]) > 0:
-                    j["price_change_percent_24hr"] = format_10f(
+                    j["price_change_pct_24hr"] = format_10f(
                         Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
                     )
                 else:
-                    j["price_change_percent_24hr"] = format_10f(0)
+                    j["price_change_pct_24hr"] = format_10f(0)
                 j["variants"].sort()
         return tickers_data
 
@@ -1040,7 +1018,7 @@ class Merge:
                     existing[i] = sumdata.decimals(existing[i], new[i])
 
             numerics = [
-                "liquidity_in_usd",
+                "liquidity_usd",
                 "total_asks_base_vol",
                 "total_bids_base_vol",
                 "total_asks_quote_vol",
@@ -1077,6 +1055,10 @@ class Merge:
             all["last_swap_time"] = variant["last_swap_time"]
             all["last_swap_price"] = variant["last_swap_price"]
             all["last_swap_uuid"] = variant["last_swap_uuid"]
+            all["last_maker_amount"] = variant["last_maker_amount"]
+            all["last_taker_amount"] = variant["last_taker_amount"]
+            all["last_trade_type"] = variant["last_trade_type"]
+            all["priced"] = variant["priced"]
             if is_reversed and all["last_swap_price"] != 0:
                 all["last_swap_price"] = 1 / all["last_swap_price"]
 
@@ -1087,6 +1069,9 @@ class Merge:
             all["first_swap_time"] = variant["first_swap_time"]
             all["first_swap_price"] = variant["first_swap_price"]
             all["first_swap_uuid"] = variant["first_swap_uuid"]
+            all["first_maker_amount"] = variant["first_maker_amount"]
+            all["first_taker_amount"] = variant["first_taker_amount"]
+            all["first_trade_type"] = variant["first_trade_type"]
             if is_reversed and all["first_swap_price"] != 0:
                 all["first_swap_price"] = 1 / all["first_swap_price"]
 
@@ -1144,7 +1129,7 @@ class Merge:
                 existing["newest_price"] = Decimal(new["newest_price"])
                 
             if Decimal(existing["oldest_price"]) != 0:
-                existing["price_change_percent_24hr"] = format_10f(
+                existing["price_change_pct_24hr"] = format_10f(
                     Decimal(existing["newest_price"]) / Decimal(existing["oldest_price"]) - 1
                 )
             return existing
@@ -1405,7 +1390,7 @@ class Templates:
             "base_price_usd": 0,
             "base_liquidity_coins": 0,
             "base_liquidity_usd": 0,
-            "liquidity_in_usd": 0,
+            "liquidity_usd": 0,
         }
 
     def pair_info(self, pair_str: str, priced: bool = False) -> dict:
@@ -1430,10 +1415,10 @@ class Templates:
             "quote_price_usd": 0,
             "volume_usd_24hr": 0,
             "trades_24hr": 0,
-            "liquidity_in_usd": 0,
+            "liquidity_usd": 0,
             "highest_bid": 0,
             "lowest_ask": 0,
-            "liquidity_in_usd": 0,
+            "liquidity_usd": 0,
             "total_asks_base_vol": 0,
             "total_bids_base_vol": 0,
             "total_asks_quote_vol": 0,
@@ -1448,7 +1433,7 @@ class Templates:
             "oldest_price_time": 0,
             "newest_price": 0,
             "newest_price_time": 0,
-            "price_change_percent_24hr": 0,
+            "price_change_pct_24hr": 0,
             "price_change_24hr": 0,
             "highest_price_24hr": 0,
             "lowest_price_24hr": 0,
@@ -1467,10 +1452,12 @@ class Templates:
             "oldest_price_time": 0,
             "newest_price": 0,
             "newest_price_time": 0,
-            f"price_change_percent_{suffix}": 0,
+            f"price_change_pct{suffix}": 0,
             f"price_change_{suffix}": 0,
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
+            "base_price_usd": 0,
+            "quote_price_usd": 0
         }
 
     def volumes_ticker(self):
@@ -1495,7 +1482,7 @@ class Templates:
             "quote_liquidity_coins": 0,
             "quote_liquidity_usd": 0,
             "quote_price_usd": 0,
-            "liquidity_in_usd": 0,
+            "liquidity_usd": 0,
             "last_swap_price": 0,
             "last_swap_uuid": "",
             "last_swap_time": 0,
@@ -1505,7 +1492,7 @@ class Templates:
             "newest_price_time": 0,
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
-            f"price_change_percent_{suffix}": 0,
+            f"price_change_pct{suffix}": 0,
             f"price_change_{suffix}": 0,
             "highest_bid": 0,
             "lowest_ask": 0,
@@ -1575,7 +1562,7 @@ class Templates:
     def markets_summary(self, pair_str):
         base, quote = derive.base_quote(pair_str=pair_str)
         return {
-            "trading_pair": pair_str,
+            "pair": pair_str,
             "base_currency": base,
             "quote_currency": quote,
             "base_volume": 0,
@@ -1584,7 +1571,7 @@ class Templates:
             "highest_bid": 0,
             "lowest_price_24hr": 0,
             "highest_price_24hr": 0,
-            "price_change_percent_24hr": 0,
+            "price_change_pct_24hr": 0,
             "oldest_price": 0,
             "oldest_price_time": 0,
             "newest_price": 0,
@@ -1593,7 +1580,13 @@ class Templates:
             "last_swap": 0,
             "last_swap_uuid": "",
             "variants": [],
-            "trades_24hr": 0
+            "trades_24hr": 0,
+            "base_price_usd": 0,
+            "quote_price_usd": 0,
+            "liquidity_usd": 0,
+            "volume_usd_24hr": 0,
+            "price_change_24hr": 0
+
         }
 
 

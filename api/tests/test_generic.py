@@ -41,7 +41,7 @@ def test_orderbook():
     assert r_all["pair"] == r_all2["pair"]
     assert r_all["quote"] == r_all2["quote"]
     assert r_all["base"] == r_all2["base"]
-    assert r_all["liquidity_in_usd"] == r_all2["liquidity_in_usd"]
+    assert r_all["liquidity_usd"] == r_all2["liquidity_usd"]
 
     r = pair.orderbook("DGB_DOGE", no_thread=True)
     assert r["pair"] == "DGB_DOGE"

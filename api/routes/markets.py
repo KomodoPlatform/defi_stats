@@ -119,12 +119,12 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
             orderbook_data = merge.orderbooks(orderbook_data, variant_data)
 
         logger.merge(data.keys())
-        if Decimal(orderbook_data["liquidity_in_usd"]) > 0:
+        if Decimal(orderbook_data["liquidity_usd"]) > 0:
             if is_reversed:
                 logger.calc("Returning inverted cache")
                 orderbook_data = invert.markets_orderbook(orderbook_data)
         logger.loop(orderbook_data.keys())
-        orderbook_data.update({"liquidity_usd": orderbook_data["liquidity_in_usd"]})
+        orderbook_data.update({"liquidity_usd": orderbook_data["liquidity_usd"]})
         logger.pair(orderbook_data.keys())
         return orderbook_data
     except Exception as e:  # pragma: no cover
@@ -160,26 +160,28 @@ def summary():
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
+        logger.calc(coin)
         if "_" in coin:
             return {"error": f"Coin value '{coin}' looks like a pair."}
-        resp = memcache.get_tickers()
-        data = memcache.get_pair_last_traded()
-        new_data = []
-        for i in resp["data"]:
+        summary = memcache.get_markets_summary()
+        vols = memcache.get_pair_volumes_24hr()
+        book = memcache.get_pair_orderbook_extended()
+        data = []
+        for i in summary:
             if coin in [i["base_currency"], i["quote_currency"]]:
-                if i["last_swap_time"] == 0:
-                    if i["ticker_id"] in data:
-                        i = i | data[i["ticker_id"]]
-                new_data.append(convert.ticker_to_summary_for_ticker(i))
-        resp.update(
-            {
-                "pairs_count": len(new_data),
-                "swaps_count": int(sumdata.json_key(new_data, "trades_24hr")),
-                "liquidity_usd": sumdata.json_key_10f(new_data, "liquidity_usd"),
-                "volume_usd_24hr": sumdata.json_key_10f(new_data, "volume_usd_24hr"),
-                "data": new_data,
-            }
-        )
+                if i["last_swap"] > 0:
+                    i["last_trade"] = i["last_swap"]
+                    i["base"] = i["base_currency"]
+                    i["quote"] = i["quote_currency"]
+                    data.append(i)
+        resp = {
+            "last_update": int(cron.now_utc()),
+            "pairs_count": len(data),
+            "swaps_count": int(vols['total_swaps']),
+            "liquidity_usd": Decimal(book['combined_liquidity_usd']),
+            "volume_usd_24hr": Decimal(vols['trade_volume_usd']),
+            "data": data,
+        }
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/summary_for_ticker]: {e}")

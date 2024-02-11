@@ -540,14 +540,15 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
-                pair_std = deplatform.pair(i["pair"])
-                if pair_std not in resp["volumes"]:
+                variant = i["pair"]
+                depair = deplatform.pair(variant)
+                if depair not in resp["volumes"]:
                     resp["volumes"].update(
-                        {pair_std: {"ALL": template.pair_trade_vol_item()}}
+                        {depair: {"ALL": template.pair_trade_vol_item()}}
                     )
-                if i["pair"] not in resp["volumes"][pair_std]:
-                    resp["volumes"][pair_std].update(
-                        {i["pair"]: template.pair_trade_vol_item()}
+                if variant not in resp["volumes"][depair]:
+                    resp["volumes"][depair].update(
+                        {variant: template.pair_trade_vol_item()}
                     )
 
                 num_swaps = int(i["num_swaps"])
@@ -558,12 +559,12 @@ class SqlQuery(SqlDB):
                 elif i["trade_type"] == "sell":
                     base_vol = Decimal(i["taker_volume"])
                     quote_vol = Decimal(i["maker_volume"])
-                resp["volumes"][pair_std]["ALL"]["swaps"] += num_swaps
-                resp["volumes"][pair_std]["ALL"]["base_volume"] += base_vol
-                resp["volumes"][pair_std]["ALL"]["quote_volume"] += quote_vol
-                resp["volumes"][pair_std][i["pair"]]["swaps"] += num_swaps
-                resp["volumes"][pair_std][i["pair"]]["base_volume"] += base_vol
-                resp["volumes"][pair_std][i["pair"]]["quote_volume"] += quote_vol
+                resp["volumes"][depair]["ALL"]["swaps"] += num_swaps
+                resp["volumes"][depair]["ALL"]["base_volume"] += base_vol
+                resp["volumes"][depair]["ALL"]["quote_volume"] += quote_vol
+                resp["volumes"][depair][variant]["swaps"] += num_swaps
+                resp["volumes"][depair][variant]["base_volume"] += base_vol
+                resp["volumes"][depair][variant]["quote_volume"] += quote_vol
                 resp["total_swaps"] += num_swaps
 
             return default.result(
@@ -587,18 +588,18 @@ class SqlQuery(SqlDB):
             total_base_vol_usd = 0
             total_quote_vol_usd = 0
             total_trade_vol_usd = 0
-            for pair_std in volumes["volumes"]:
-                base, quote = derive.base_quote(pair_std)
+            for depair in volumes["volumes"]:
+                base, quote = derive.base_quote(depair)
                 base_price_usd = derive.gecko_price(base, gecko_source)
                 quote_price_usd = derive.gecko_price(quote, gecko_source)
 
-                for variant in volumes["volumes"][pair_std]:
-                    base_vol = volumes["volumes"][pair_std][variant]["base_volume"]
-                    quote_vol = volumes["volumes"][pair_std][variant]["quote_volume"]
+                for variant in volumes["volumes"][depair]:
+                    base_vol = volumes["volumes"][depair][variant]["base_volume"]
+                    quote_vol = volumes["volumes"][depair][variant]["quote_volume"]
                     base_vol_usd = Decimal(base_vol * base_price_usd)
                     quote_vol_usd = Decimal(quote_vol * quote_price_usd)
                     trade_vol_usd = Decimal(base_vol_usd + quote_vol_usd)
-                    volumes["volumes"][pair_std][variant].update(
+                    volumes["volumes"][depair][variant].update(
                         {
                             "base_volume": base_vol,
                             "quote_volume": quote_vol,
@@ -608,19 +609,10 @@ class SqlQuery(SqlDB):
                             "dex_price": quote_vol / base_vol,
                         }
                     )
-
-                total_base_vol_usd += volumes["volumes"][pair_std]["ALL"][
-                    "base_volume_usd"
-                ]
-                total_quote_vol_usd += volumes["volumes"][pair_std]["ALL"][
-                    "quote_volume_usd"
-                ]
-                total_trade_vol_usd += volumes["volumes"][pair_std]["ALL"][
-                    "base_volume_usd"
-                ]
-                total_trade_vol_usd += volumes["volumes"][pair_std]["ALL"][
-                    "quote_volume_usd"
-                ]
+                    if variant == "ALL":
+                        total_base_vol_usd += base_vol_usd
+                        total_quote_vol_usd += quote_vol_usd
+                        total_trade_vol_usd += trade_vol_usd
 
             volumes.update(
                 {

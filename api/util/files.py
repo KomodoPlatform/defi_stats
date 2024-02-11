@@ -39,7 +39,7 @@ class Files:
         self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
 
         # MARKETS CACHE
-        self.markets_summary = f"{folder}/markets/summary.json"
+        self.markets_summary = f"{folder}/generic/markets_summary.json"
 
         # REVIEW
         self.generic_summary = f"{folder}/generic/summary.json"

@@ -269,7 +269,7 @@ def get_liquidity(orderbook, gecko_source):
         # Get combined liquidity for the pair
         orderbook.update(
             {
-                "liquidity_in_usd": orderbook["base_liquidity_usd"]
+                "liquidity_usd": orderbook["base_liquidity_usd"]
                 + orderbook["quote_liquidity_usd"],
             }
         )
