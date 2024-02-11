@@ -267,10 +267,10 @@ def ticker_to_xyz_summary(i):
 @timed
 def ticker_to_market_ticker(i):
     return {
-        f"{i['base_currency']}_{i['quote_currency']}": {
-            "last_swap_price": i["last_swap_price"],
-            "quote_volume": i["quote_volume"],
-            "base_volume": i["base_volume"],
+        f"{i['base']}_{i['quote']}": {
+            "last_swap_price": i["newest_price"],
+            "quote_volume": i["quote_liquidity_coins"],
+            "base_volume": i["base_liquidity_coins"],
             "isFrozen": "0",
         }
     }

@@ -240,17 +240,35 @@ def swaps24(coin: str = "KMD") -> dict:
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
 
 
-"""
 @router.get(
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
 )
 def ticker():
     try:
-        data = memcache.get_tickers()
+        book = memcache.get_pair_orderbook_extended()
         resp = []
-        for i in data["data"]:
-            resp.append(transform.ticker_to_market_ticker(i))
+        data = {}
+        for depair in book["orderbooks"]:
+            for variant in book["orderbooks"][depair]:
+                if variant != "ALL":
+                    v = variant.replace("-segwit", "")
+                    if v not in data:
+                        data.update({
+                            v: {
+                                "last_swap_price": Decimal(book["orderbooks"][depair][variant]["newest_price"]),
+                                "quote_volume": Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"]),
+                                "base_volume": Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"]),
+                                "isFrozen": "0",
+                            }
+                        })
+                    else:
+                        data[v]["quote_volume"] += Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"])
+                        data[v]["base_volume"] += Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"])
+                        if book["orderbooks"][depair][variant]["newest_price"] > data[v]["last_swap_price"]:
+                            data[v]["last_swap_price"] = Decimal(book["orderbooks"][depair][variant]["newest_price"])
+        for v in data:
+            resp.append({v: data[v]})
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
@@ -263,16 +281,35 @@ def ticker():
 )
 def ticker_for_ticker(ticker):
     try:
-        data = memcache.get_tickers()
+        book = memcache.get_pair_orderbook_extended()
         resp = []
-        for i in data["data"]:
-            if ticker in [i["base_currency"], i["quote_currency"]]:
-                resp.append(transform.ticker_to_market_ticker(i))
+        data = {}
+        for depair in book["orderbooks"]:
+            for variant in book["orderbooks"][depair]:
+                if variant != "ALL":
+                    base, quote = derive.base_quote(variant)
+                    if ticker in [base, quote]:
+                        v = variant.replace("-segwit", "")
+                        if v not in data:
+                            data.update({
+                                v: {
+                                    "last_swap_price": Decimal(book["orderbooks"][depair][variant]["newest_price"]),
+                                    "quote_volume": Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"]),
+                                    "base_volume": Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"]),
+                                    "isFrozen": "0",
+                                }
+                            })
+                        else:
+                            data[v]["quote_volume"] += Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"])
+                            data[v]["base_volume"] += Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"])
+                            if book["orderbooks"][depair][variant]["newest_price"] > data[v]["last_swap_price"]:
+                                data[v]["last_swap_price"] = Decimal(book["orderbooks"][depair][variant]["newest_price"])
+        for v in data:
+            resp.append({v: data[v]})
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}
-"""
 
 
 @router.get(
