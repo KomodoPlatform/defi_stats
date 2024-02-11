@@ -168,16 +168,23 @@ def summary_for_ticker(coin: str = "KMD"):
         book = memcache.get_pair_orderbook_extended()
         prices = memcache.get_pair_prices_24hr()
         data = []
+        swaps_count = 0
+        liquidity = 0
+        volume = 0
         for i in summary:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap"] > 0:
+                    logger.calc(i)
                     data.append(i)
+                    swaps_count += int(i["trades_24hr"])
+                    liquidity += Decimal(i['liquidity_usd'])
+                    volume += Decimal(i['volume_usd_24hr'])
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": len(data),
-            "swaps_count": int(vols['total_swaps']),
-            "liquidity_usd": Decimal(book['combined_liquidity_usd']),
-            "volume_usd_24hr": Decimal(vols['trade_volume_usd']),
+            "swaps_count": int(swaps_count),
+            "liquidity_usd": Decimal(liquidity),
+            "volume_usd_24hr": Decimal(volume),
             "data": data,
         }
         return resp

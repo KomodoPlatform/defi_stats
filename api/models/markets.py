@@ -110,11 +110,11 @@ class MarketsSwaps24(BaseModel):
 # markets/summary_for_ticker
 class MarketsSummaryForTickerItem(BaseModel):
     pair: str = "XXX_YYY"
+    base_currency: str = "XXX"
+    quote_currency: str = "YYY"
     trades_24hr: int = 777
-    base: str = "XXX"
     base_volume: str = "777.777777"
     base_price_usd: str = "777.777777"
-    quote: str = "YYY"
     quote_volume: str = "777.777777"
     quote_price_usd: str = "777.777777"
     highest_bid: str = "777.777777"
@@ -126,7 +126,7 @@ class MarketsSummaryForTickerItem(BaseModel):
     price_change_24hr: str = "777.777777"
     price_change_pct_24hr: str = "777.777777"
     last_price: str = "777.777777"
-    last_trade: int = 1777777777
+    last_swap: int = 1777777777
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
 
 

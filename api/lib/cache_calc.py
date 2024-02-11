@@ -361,14 +361,6 @@ class CacheCalc:
                             }
                             merged = merge.market_summary(existing, new)
                             existing = clean.decimal_dicts(merged)
-                            if depair == "KMD_LTC":
-                                pass
-                                """
-                                logger.pair(f"existing: {existing}")
-                                logger.calc(f"new: {new}")
-                                logger.merge(f"merged: {merged}")
-                                logger.query(f"existing: {existing}")
-                                """
                             data.update({variant: existing})
                 resp = [i for i in data.values()]
             return resp
