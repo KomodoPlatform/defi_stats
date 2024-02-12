@@ -37,17 +37,6 @@ def test_format_10f():
     assert transform.format_10f(1.23) == "1.2300000000"
 
 
-def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
-    x = setup_ticker_to_market_ticker
-    ticker_item = sampledata.ticker_item()
-    ticker = ticker_item["ticker_id"]
-    assert ticker in x
-    assert x[ticker]["isFrozen"] == "0"
-    assert x[ticker]["quote_volume"] == ticker_item["quote_volume"]
-    assert x[ticker]["base_volume"] == ticker_item["base_volume"]
-    assert x[ticker]["last_swap_price"] == ticker_item["last_swap_price"]
-
-
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
     x = setup_historical_trades_to_market_trades
     assert (

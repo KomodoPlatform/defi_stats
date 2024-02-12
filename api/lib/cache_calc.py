@@ -104,7 +104,7 @@ class CacheCalc:
             # Filter out pairs older than requested time
             ts = cron.now_utc() - pairs_days * 86400
             pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-            
+
             data = [
                 Pair(
                     pair_str=pair_str,
@@ -153,7 +153,6 @@ class CacheCalc:
         self, trades_days: int = 1, pairs_days: int = 30, from_memcache: bool = False
     ):
         try:
-            return
             if trades_days > pairs_days:
                 pairs_days = trades_days
             # Skip if cache not available yet
@@ -291,7 +290,7 @@ class CacheCalc:
                                     }
                                 )
 
-            msg = f"[pair_prices_24hr] update loop complete"
+            msg = "[pair_prices_24hr] update loop complete"
             return default.result(resp, msg, loglevel="calc")
         except Exception as e:  # pragma: no cover
             msg = f"prices failed! {e}"
@@ -331,12 +330,11 @@ class CacheCalc:
                             if depair in prices:
                                 if i in prices[depair]:
                                     p = prices[depair][i]
-                            l = template.first_last_traded()
+                            lt = template.first_last_traded()
                             if depair in last:
                                 if i in last[depair]:
-                                    l = last[depair][i]
+                                    lt = last[depair][i]
                             new = {
-                                "liquidity_usd": v["base_volume"],
                                 "base_volume": v["base_volume"],
                                 "quote_volume": v["quote_volume"],
                                 "lowest_ask": o["lowest_ask"],
@@ -345,13 +343,13 @@ class CacheCalc:
                                 "highest_price_24hr": o["highest_price_24hr"],
                                 "price_change_24hr": o["price_change_24hr"],
                                 "price_change_pct_24hr": o["price_change_pct_24hr"],
-                                "last_price": l["last_swap_price"],
+                                "last_price": lt["last_swap_price"],
                                 "newest_price": o["newest_price"],
                                 "newest_price_time": o["newest_price_time"],
                                 "oldest_price": o["oldest_price"],
                                 "oldest_price_time": o["oldest_price_time"],
-                                "last_swap": l["last_swap_time"],
-                                "last_swap_uuid": l["last_swap_uuid"],
+                                "last_swap": lt["last_swap_time"],
+                                "last_swap_uuid": lt["last_swap_uuid"],
                                 "trades_24hr": o["trades_24hr"],
                                 "liquidity_usd": o["liquidity_usd"],
                                 "volume_usd_24hr": o["volume_usd_24hr"],

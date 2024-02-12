@@ -55,7 +55,7 @@ def init_missing_cache():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
-def refresh_pair_orderbook_extended():
+def update_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
             CacheItem(name="pair_orderbook_extended").save()

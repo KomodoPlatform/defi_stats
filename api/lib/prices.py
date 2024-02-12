@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from decimal import Decimal
-from util.logger import timed, logger
+from util.logger import timed
 from util.transform import deplatform, invert, template, derive
 
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
+
 
 @timed
 def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):

@@ -19,14 +19,10 @@ import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
 from util.transform import (
-    clean,
-    convert,
     deplatform,
-    sumdata,
     derive,
     invert,
     sortdata,
-    merge,
 )
 
 router = APIRouter()

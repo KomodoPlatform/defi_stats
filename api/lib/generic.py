@@ -21,7 +21,7 @@ class Generic:  # pragma: no cover
 
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Generic: {e}")
-    '''
+
     @timed
     def pairs(self, days: int = 90) -> dict:
         """Returns basic pair info and tags as priced/unpriced"""
@@ -70,7 +70,6 @@ class Generic:  # pragma: no cover
             return default.result(
                 data=pairs, msg=msg, loglevel="warning", ignore_until=2
             )
-    '''
 
     @timed
     def orderbook(

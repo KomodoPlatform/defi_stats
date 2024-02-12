@@ -2,14 +2,14 @@
 from collections import OrderedDict
 from decimal import Decimal
 from functools import cached_property
-from typing import Optional, List, Dict
+from typing import Optional, Dict
 import db.sqldb as db
 import lib.dex_api as dex
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
 from util.cron import cron
-from util.logger import logger, timed
+from util.logger import timed
 from util.transform import (
     sortdata,
     clean,
@@ -68,7 +68,7 @@ class Pair:  # pragma: no cover
                 self.base, gecko_source=self.gecko_source
             )
         return self._base_price_usd
-    
+
     @property
     def quote_price_usd(self):
         if self._quote_price_usd is None:
@@ -76,13 +76,13 @@ class Pair:  # pragma: no cover
                 self.quote, gecko_source=self.gecko_source
             )
         return self._quote_price_usd
-    
+
     @property
     def depair(self):
         if self._depair is None:
             self._depair = deplatform.pair(self.as_str)
         return self._depair
-    
+
     @property
     def coins_config(self):
         if self._coins_config is None:
@@ -461,7 +461,7 @@ class Pair:  # pragma: no cover
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
 
-    #DEPRECATED?
+    # DEPRECATED?
     @timed
     def ticker_info(self, days=1):
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
@@ -490,21 +490,15 @@ class Pair:  # pragma: no cover
                     ),
                 }
             )
-            # logger.calc(data.keys())
-            # logger.calc(data['orderbooks'].keys())
 
             for variant in data["orderbooks"]:
-                # logger.calc(data['orderbooks'][variant])
-                # logger.calc(data['orderbooks'][variant].keys())
-                # data['orderbooks'][variant] = clean.decimal_dicts(data['orderbooks'][variant])
                 data["orderbooks"][variant].update(
                     {
-                        f"num_asks": len(data["orderbooks"][variant]["asks"]),
-                        f"num_bids": len(data["orderbooks"][variant]["bids"]),
+                        "num_asks": len(data["orderbooks"][variant]["asks"]),
+                        "num_bids": len(data["orderbooks"][variant]["bids"]),
                     }
                 )
 
-            # data = clean.decimal_dicts(data)
             ignore_until = 3
             loglevel = "pair"
             msg = f"ticker_info for {self.as_str} ({days} days) complete!"

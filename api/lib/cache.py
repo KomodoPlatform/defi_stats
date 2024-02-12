@@ -91,7 +91,7 @@ class CacheItem:
                     since_updated = int(cron.now_utc()) - data["last_updated"]
                     since_updated_min = int(since_updated / 60)
                     if since_updated_min > self.cache_expiry:
-                        msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
+                        msg = f"{self.name} has not been updated for over {since_updated_min} min"
                         logger.muted(msg)
                 if "data" in data:
                     return data["data"]
@@ -164,22 +164,22 @@ class CacheItem:
                 if self.name == "pair_orderbook_extended":
                     data = cache_calc.CacheCalc().pair_orderbook_extended()
                     memcache.set_pair_orderbook_extended(data)
-                    
+
                 if self.name == "pair_volumes_24hr":
                     data = cache_calc.CacheCalc().pair_volumes_24hr()
                     memcache.set_pair_volumes_24hr(data)
-                    
+
                 if self.name == "pair_prices_24hr":
                     data = cache_calc.CacheCalc().pair_prices_24hr()
                     memcache.set_pair_prices_24hr(data)
-                    
+
                 # MARKETS
                 if self.name == "markets_summary":
                     data = cache_calc.CacheCalc().markets_summary()
                     memcache.set_markets_summary(data)
-                                
+
                 # REVIEW
-                '''
+                """
                 if self.name == "generic_summary":
                     data = stats_api.StatsAPI().pair_summaries()
                     memcache.set_summary(data)
@@ -191,8 +191,8 @@ class CacheItem:
                 if self.name == "generic_tickers_14d":
                     data = cache_calc.CacheCalc().tickers(trades_days=14)
                     memcache.set_tickers_14d(data)
-                '''
-                
+                """
+
             if data is not None:
                 if validate.loop_data(data, self):
                     data = {"last_updated": int(cron.now_utc()), "data": data}

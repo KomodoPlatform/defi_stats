@@ -15,6 +15,7 @@ from models.markets import (
     MarketsOrderbookItem,
     MarketsSwaps24,
     PairTrades,
+    MarketsCurrentLiquidity,
     MarketsSummaryItem,
     MarketsSummaryForTicker,
     MarketsTickerItem,
@@ -25,10 +26,7 @@ from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
 from util.transform import (
-    clean,
-    convert,
     deplatform,
-    sumdata,
     derive,
     invert,
     sortdata,
@@ -55,7 +53,6 @@ def atomicdex_info_api():
     return query.swap_counts()
 
 
-"""
 # New endpoint
 @router.get(
     "/current_liquidity",
@@ -71,7 +68,7 @@ def current_liquidity():
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}"}
-"""
+
 
 
 @router.get(
@@ -169,9 +166,6 @@ def summary_for_ticker(coin: str = "KMD"):
         if "_" in coin:
             return {"error": f"Coin value '{coin}' looks like a pair."}
         summary = memcache.get_markets_summary()
-        vols = memcache.get_pair_volumes_24hr()
-        book = memcache.get_pair_orderbook_extended()
-        prices = memcache.get_pair_prices_24hr()
         data = []
         swaps_count = 0
         liquidity = 0
@@ -327,23 +321,22 @@ def tickers_summary():
 
 @router.get(
     "/trades/{pair_str}/{days_in_past}",
-    response_model=List[PairTrades],
+    # response_model=List[PairTrades],
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(
     pair_str: str = "KMD_LTC",
-    days_in_past: int | None = None,
-    all_variants: bool = False,
+    days_in_past: int = 5
 ):
     try:
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
         data = Markets().trades(
-            pair_str=pair_str, days_in_past=days_in_past, all_variants=all_variants
+            pair_str=pair_str, days_in_past=days_in_past, all_variants=False
         )
         return data
     except BadPairFormatError as e:
-        err = {"error": f"{e.msg}"}
+        err = {"error": f"{type(e)}: {e}"}
         logger.warning(err)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from util.logger import timed, logger
+from util.logger import timed
 from util.transform import deplatform, invert, template
 
 import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
+
 
 @timed
 def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):
@@ -33,7 +34,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):
                     }
                 )
         ignore_until = 3
-        vol = transform.format_10f(data['volume_usd_24hr'])
+        vol = transform.format_10f(data["volume_usd_24hr"])
         if data["trades_24hr"] > 3:
             ignore_until = 0
         return default.result(

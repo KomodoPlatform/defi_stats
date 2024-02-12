@@ -200,11 +200,11 @@ class Convert:
                     resp.update({cleaned_ticker: traded_cache[i]})
         return resp
 
-
     def rekey(self, data, old_key, new_key):
         data.update({new_key: data[old_key]})
         del data[old_key]
         return data
+
 
 @timed
 def orderbook_to_gecko(data):
@@ -623,7 +623,7 @@ class Derive:
                 ]
             return data
         except Exception as e:
-            logger.warning(f"coin variants for {coin} failed")
+            logger.warning(f"coin variants for {coin} failed: {e}")
 
     @timed
     def pair_variants(self, pair_str, segwit_only=False, coins_config=None):
@@ -670,9 +670,8 @@ class Derive:
             variants.sort()
             return variants
         except Exception as e:
-            logger.warning(f"pair variants for {pair_str} failed")
+            logger.warning(f"pair variants for {pair_str} failed: {e}")
 
-            
     @timed
     def pairs_traded_since(self, ts, pairs_last_trade_cache):
         return sorted(
@@ -1079,24 +1078,37 @@ class Merge:
 
     def market_summary(self, existing, new):
         try:
-            existing.update({
-                "base_volume": sumdata.decimals(existing['base_volume'], new['base_volume']),
-                "quote_volume": sumdata.decimals(existing['quote_volume'], new['quote_volume']),
-                "trades_24hr": sumdata.ints(existing['trades_24hr'], new['trades_24hr']),
-                "variants": sumdata.lists(existing['variants'], new['variants'], True),
-                "volume_usd_24hr": sumdata.decimals(existing["volume_usd_24hr"], new["volume_usd_24hr"]),
-                "base_price_usd": new["base_price_usd"],
-                "quote_price_usd": new["quote_price_usd"],
-                "liquidity_usd": new["liquidity_usd"],
-                "liquidity_usd": new["liquidity_usd"],
-            })
-            existing['variants'] = sorted(list(set(existing['variants'])))
+            existing.update(
+                {
+                    "base_volume": sumdata.decimals(
+                        existing["base_volume"], new["base_volume"]
+                    ),
+                    "quote_volume": sumdata.decimals(
+                        existing["quote_volume"], new["quote_volume"]
+                    ),
+                    "trades_24hr": sumdata.ints(
+                        existing["trades_24hr"], new["trades_24hr"]
+                    ),
+                    "variants": sumdata.lists(
+                        existing["variants"], new["variants"], True
+                    ),
+                    "volume_usd_24hr": sumdata.decimals(
+                        existing["volume_usd_24hr"], new["volume_usd_24hr"]
+                    ),
+                    "base_price_usd": new["base_price_usd"],
+                    "quote_price_usd": new["quote_price_usd"],
+                    "liquidity_usd": new["liquidity_usd"],
+                }
+            )
+            existing["variants"] = sorted(list(set(existing["variants"])))
             if int(existing["last_swap"]) < int(new["last_swap"]):
-                existing.update({
-                    "last_price": new['last_price'],
-                    "last_swap": new['last_swap'],
-                    "last_swap_uuid": new['last_swap_uuid'],
-                })
+                existing.update(
+                    {
+                        "last_price": new["last_price"],
+                        "last_swap": new["last_swap"],
+                        "last_swap_uuid": new["last_swap_uuid"],
+                    }
+                )
             if (
                 Decimal(existing["lowest_ask"]) > Decimal(new["lowest_ask"])
                 or Decimal(existing["lowest_ask"]) == 0
@@ -1107,12 +1119,15 @@ class Merge:
                 existing["highest_bid"] = new["highest_bid"]
 
             if (
-                Decimal(existing["lowest_price_24hr"]) > Decimal(new["lowest_price_24hr"])
+                Decimal(existing["lowest_price_24hr"])
+                > Decimal(new["lowest_price_24hr"])
                 or Decimal(existing["lowest_price_24hr"]) == 0
             ):
                 existing["lowest_price_24hr"] = new["lowest_price_24hr"]
 
-            if Decimal(existing["highest_price_24hr"]) < Decimal(new["highest_price_24hr"]):
+            if Decimal(existing["highest_price_24hr"]) < Decimal(
+                new["highest_price_24hr"]
+            ):
                 existing["highest_price_24hr"] = new["highest_price_24hr"]
 
             if (
@@ -1121,17 +1136,21 @@ class Merge:
             ):
                 existing["oldest_price_time"] = int(new["oldest_price_time"])
                 existing["oldest_price"] = Decimal(new["oldest_price"])
-                
+
             if (
                 int(existing["newest_price_time"]) < int(new["newest_price_time"])
                 or int(existing["newest_price_time"]) == 0
             ):
                 existing["newest_price_time"] = int(new["newest_price_time"])
                 existing["newest_price"] = Decimal(new["newest_price"])
-            existing["price_change_24hr"] = Decimal(new["newest_price"]) - Decimal(new["oldest_price"])
+            existing["price_change_24hr"] = Decimal(new["newest_price"]) - Decimal(
+                new["oldest_price"]
+            )
             if Decimal(existing["oldest_price"]) != 0:
                 existing["price_change_pct_24hr"] = format_10f(
-                    Decimal(existing["newest_price"]) / Decimal(existing["oldest_price"]) - 1
+                    Decimal(existing["newest_price"])
+                    / Decimal(existing["oldest_price"])
+                    - 1
                 )
             return existing
         except Exception as e:
@@ -1458,7 +1477,7 @@ class Templates:
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
             "base_price_usd": 0,
-            "quote_price_usd": 0
+            "quote_price_usd": 0,
         }
 
     def volumes_ticker(self):
@@ -1471,7 +1490,7 @@ class Templates:
             "total_volume": 382.170941392,
             "taker_volume_usd": 0.0,
             "maker_volume_usd": 19.001909911823393,
-            "trade_volume_usd": 19.001909911823393
+            "trade_volume_usd": 19.001909911823393,
         }
 
     def ticker_info(self, suffix, base, quote):
@@ -1588,8 +1607,7 @@ class Templates:
             "quote_price_usd": 0,
             "liquidity_usd": 0,
             "volume_usd_24hr": 0,
-            "price_change_24hr": 0
-
+            "price_change_24hr": 0,
         }
 
 

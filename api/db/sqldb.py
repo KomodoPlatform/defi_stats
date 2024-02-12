@@ -886,8 +886,8 @@ class SqlQuery(SqlDB):
         using the higher value for any numeric fields, and with defaults
         reconciled (if available in either of the MM2/Cipi databases).
 
-        For `pair_str` or `coin`, it will return all variants to be combined
-        (or further filtered) later.
+        For `pair_str` or `coin`, it will return all
+        variants to be combined (or further filtered) later.
         """
         try:
             # TODO: Implement limit and trade_type

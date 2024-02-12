@@ -54,7 +54,6 @@ class MarketsOrderbookItem(BaseModel):
     asks: List[MarketsOrderbookAsk]
 
 
-
 # markets/summary
 class MarketsSummaryItem(BaseModel):
     trading_pair: str = "XXX_YYY"

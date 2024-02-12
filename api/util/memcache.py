@@ -61,7 +61,12 @@ def get(key):  # pragma: no cover
         if cached is not None:
             return cached
         i += 1
-    if "orderbook" not in key and "ticker_info" not in key and "prices" not in key and key not in ["testing"]:
+    if (
+        "orderbook" not in key
+        and "ticker_info" not in key
+        and "prices" not in key
+        and key not in ["testing"]
+    ):
         logger.warning(f"Failed to get '{key}' from memcache")
     return None
 
@@ -164,6 +169,7 @@ def get_pair_prices_24hr():  # pragma: no cover
     data = get("pair_prices_24hr")
     return data
 
+
 # MARKETS
 def set_markets_summary(data):  # pragma: no cover
     update("markets_summary", data, 900)
@@ -174,7 +180,7 @@ def get_markets_summary():  # pragma: no cover
     return data
 
 
-'''
+"""
 # SINGLE PURPOSE CACHE
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 900)
@@ -183,7 +189,7 @@ def set_adex_fortnite(data):  # pragma: no cover
 def get_adex_fortnite():  # pragma: no cover
     data = get("adex_fortnite")
     return data
-'''
+"""
 
 # REVIEW CACHE (TOO LARGE)
 # def set_summary(data):  # pragma: no cover
@@ -194,7 +200,7 @@ def get_adex_fortnite():  # pragma: no cover
 # data = get("generic_summary")
 # return data
 
-'''
+"""
 def set_tickers(data):  # pragma: no cover
     update("generic_tickers", data, 900)
 
@@ -212,4 +218,4 @@ def get_tickers_14d():  # pragma: no cover
     data = get("generic_tickers_14d")
     return data
 
-'''
+"""

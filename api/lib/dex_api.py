@@ -7,7 +7,7 @@ from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
 from util.cron import cron
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean, invert, derive, deplatform, template
+from util.transform import sortdata, clean, invert, derive, template
 import lib.prices as prices
 import lib.volumes as volumes
 import util.defaults as default
@@ -88,7 +88,7 @@ class OrderbookRpcThread(threading.Thread):
     def run(self):
         try:
             data = DexAPI().orderbook_rpc(self.base, self.quote)
-            
+
             data = orderbook_extras(self.pair_str, data, self.gecko_source)
             # update the variant cache. Double expiry vs combined to
             # make sure variants are never empty when combined asks.
@@ -212,18 +212,26 @@ def orderbook_extras(pair_str, data, gecko_source):
         )
         vols = volumes.pair_volume_24hr_cache(pair_str)
         data.update(vols)
-        
+
         pair_prices = prices.pair_price_24hr_cache(pair_str)
-        data.update({k:v for k, v in pair_prices.items() if k not in ['swaps', 'trade_volume_usd']})
+        data.update(
+            {
+                k: v
+                for k, v in pair_prices.items()
+                if k not in ["swaps", "trade_volume_usd"]
+            }
+        )
         if data["trades_24hr"] > 3:
             msg = f"{pair_str}: {data['trades_24hr']} trades"
             ignore_until = 0
-        
+
     except Exception as e:  # pragma: no cover
         loglevel = "warning"
         ignore_until = 0
         msg = f"Orderbook.extras failed for {pair_str}: {e}"
-    return default.result(data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until)
+    return default.result(
+        data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+    )
 
 
 @timed

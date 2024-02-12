@@ -2,7 +2,7 @@
 import db.sqldb as db
 from lib.pair import Pair
 from util.logger import logger
-from util.transform import sortdata, clean, deplatform, sumdata
+from util.transform import sortdata, clean, sumdata, derive
 from util.cron import cron
 import util.memcache as memcache
 import util.transform as transform
@@ -26,7 +26,6 @@ class StatsAPI:  # pragma: no cover
 
     def pair_summaries(self, days: int = 1, pairs_days: int = 7):
         try:
-            return
             # TODO: Apply Merge
             if days == "1a":
                 # TODO: disabled, we should not calc this twice
@@ -48,7 +47,8 @@ class StatsAPI:  # pragma: no cover
                         d = memcache.get(cache_name)
                         if d is None:
                             d = Pair(
-                                pair_str=i, pairs_last_trade_cache=pairs_last_trade_cache
+                                pair_str=i,
+                                pairs_last_trade_cache=pairs_last_trade_cache,
                             ).ticker_info(days=days)
 
                 logger.merge(
