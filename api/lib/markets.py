@@ -68,6 +68,7 @@ class Markets:
             )
             resp = []
             base, quote = derive.base_quote(pair_str)
+            is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
             if all_variants:
                 resp = merge.trades(resp, data["ALL"])
             else:
@@ -75,7 +76,10 @@ class Markets:
                     pair_str=pair_str, segwit_only=True, coins_config=self.coins_config
                 )
                 for v in variants:
-                    resp = merge.trades(resp, data[v])
+                    if is_reversed:
+                        resp = merge.trades(resp, data[invert.pair(v)])
+                    else:
+                        resp = merge.trades(resp, data[v])
             return sortdata.dict_lists(resp, "timestamp", reverse=True)
 
         except Exception as e:  # pragma: no cover
