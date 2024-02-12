@@ -128,15 +128,10 @@ def orderbook(
         if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)["ALL"]
-        logger.merge(data.keys())
         if Decimal(data["liquidity_usd"]) > 0:
             if is_reversed:
-                logger.calc("Returning inverted cache")
                 data = invert.markets_orderbook(data)
-        logger.loop(data.keys())
-        logger.pair(data.keys())
-        
-        logger.calc(data)
+
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover

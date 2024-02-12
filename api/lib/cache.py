@@ -83,26 +83,27 @@ class CacheItem:
         return self._data
 
     def get_data(self):
-        data = self.files.load_jsonfile(self.filename)
-        if data is None:  # pragma: no cover
-            data = self.save()
-            return {}
-        if "last_updated" in data:
-            since_updated = int(cron.now_utc()) - data["last_updated"]
-            since_updated_min = int(since_updated / 60)
-            if since_updated_min > self.cache_expiry:
-                msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
-                logger.muted(msg)
-        if "data" in data:
-            return data["data"]
+        data = {}
+        if self.filename is not None:
+            data = self.files.load_jsonfile(self.filename)
+            if data is not None:  # pragma: no cover
+                if "last_updated" in data:
+                    since_updated = int(cron.now_utc()) - data["last_updated"]
+                    since_updated_min = int(since_updated / 60)
+                    if since_updated_min > self.cache_expiry:
+                        msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
+                        logger.muted(msg)
+                if "data" in data:
+                    return data["data"]
         return data
 
     def since_updated_min(self):  # pragma: no cover
-        data = self.files.load_jsonfile(self.filename)
-        if data is not None:
-            if "last_updated" in data:
-                since_updated = int(cron.now_utc()) - data["last_updated"]
-                return int(since_updated / 60)
+        if self.filename is not None:
+            data = self.files.load_jsonfile(self.filename)
+            if data is not None:
+                if "last_updated" in data:
+                    since_updated = int(cron.now_utc()) - data["last_updated"]
+                    return int(since_updated / 60)
         return "unknown"
 
     def update_data(self):
