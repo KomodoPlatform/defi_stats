@@ -6,7 +6,6 @@ def test_cache():
     cache = Cache()
 
     for i in [
-        "adex_fortnite",
         "pair_last_traded"
     ]:
         cache_item = cache.get_item(i)

@@ -183,3 +183,6 @@ This will place the external MM2.db copies into the `defi_stats/DB` folder, whic
     - "Trending pairs" and similar network context stats
     - Automated "Latest release" link / hash for all apps.
 
+### On Update:
+- Run `poetry install` in the `api/` folder to update any deps.
+- If changes to DB, edit `.env` to uncomment `# RESET_TABLE=True` then launch. After launch, disable this again and restart. It will clear the db data and reload the table with new schema.

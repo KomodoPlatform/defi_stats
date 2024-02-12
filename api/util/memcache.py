@@ -174,6 +174,7 @@ def get_markets_summary():  # pragma: no cover
     return data
 
 
+'''
 # SINGLE PURPOSE CACHE
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 900)
@@ -182,7 +183,7 @@ def set_adex_fortnite(data):  # pragma: no cover
 def get_adex_fortnite():  # pragma: no cover
     data = get("adex_fortnite")
     return data
-
+'''
 
 # REVIEW CACHE (TOO LARGE)
 # def set_summary(data):  # pragma: no cover

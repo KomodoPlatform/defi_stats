@@ -235,7 +235,8 @@ def import_dbs():
 def adex_fortnite():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="adex_fortnite").save()
+            pass
+            # CacheItem(name="adex_fortnite").save()
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
         msg = "Adex fortnight loop complete!"

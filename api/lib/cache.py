@@ -36,13 +36,10 @@ class Cache:  # pragma: no cover
                 "coins_config",
                 "fixer_rates",
                 "gecko_source",
-                "adex_fortnite",
                 "pair_last_traded",
                 "pair_volumes_24hr",
                 "coin_volumes_24hr",
                 "pair_orderbook_extended",
-                "generic_summary",
-                "generic_tickers",
                 "prices_tickers_v1",
                 "prices_tickers_v2",
             ]:
@@ -153,7 +150,7 @@ class CacheItem:
                 # FOUNDATIONAL CACHE
                 if self.name == "adex_fortnite":
                     data = stats_api.StatsAPI().adex_fortnite()
-                    memcache.set_adex_fortnite(data)
+                    # memcache.set_adex_fortnite(data)
 
                 if self.name == "coin_volumes_24hr":
                     data = cache_calc.CacheCalc().coin_volumes_24hr()

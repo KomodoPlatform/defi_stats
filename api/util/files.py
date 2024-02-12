@@ -31,7 +31,7 @@ class Files:
         self.gecko_source = f"{folder}/gecko/source.json"
 
         # FOUNDATIONAL CACHE
-        self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
+        # self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
         self.coin_volumes_24hr = f"{folder}/generic/coin_volumes_24hr.json"
         self.pair_last_traded = f"{folder}/generic/pair_last_traded.json"
         self.pair_orderbook_extended = f"{folder}/generic/pair_orderbook_extended.json"

@@ -216,7 +216,6 @@ def orderbook_to_gecko(data):
     asks = [[i["price"], i["volume"]] for i in data["asks"]]
     data["asks"] = asks
     data["bids"] = bids
-    data["ticker_id"] = data["pair"]
     return data
 
 

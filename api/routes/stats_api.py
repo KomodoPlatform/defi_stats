@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from decimal import Decimal
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from util.cron import cron
@@ -14,11 +15,19 @@ from models.stats_api import (
     StatsApiTradeInfo,
 )
 from util.logger import logger
-from util.transform import sortdata, deplatform, derive
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
-
+from util.transform import (
+    clean,
+    convert,
+    deplatform,
+    sumdata,
+    derive,
+    invert,
+    sortdata,
+    merge,
+)
 router = APIRouter()
 cache = Cache()
 
@@ -51,7 +60,8 @@ def atomicdexio():
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
-        return memcache.get_adex_fortnite()
+        pass
+        # return memcache.get_adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
@@ -96,19 +106,37 @@ def ticker():
 
 
 @router.get(
-    "/orderbook/{ticker_id}",
+    "/orderbook/{pair_str}",
     description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
     response_model=StatsApiOrderbook,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def orderbook(
-    ticker_id: str = "KMD_LTC",
+    pair_str: str = "KMD_LTC",
     depth: int = 100,
 ):
     try:
-        pair = Pair(pair_str=ticker_id)
-        data = pair.orderbook(pair_str=ticker_id, depth=depth, no_thread=True)
+        depair = deplatform.pair(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        if is_reversed:
+            cache_name = f"orderbook_{invert.pair(depair)}_ALL"
+        else:
+            cache_name = f"orderbook_{depair}_ALL"
+
+        data = memcache.get(cache_name)
+        if data is None:
+            pair = Pair(pair_str=pair_str)
+            data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)["ALL"]
+        logger.merge(data.keys())
+        if Decimal(data["liquidity_usd"]) > 0:
+            if is_reversed:
+                logger.calc("Returning inverted cache")
+                data = invert.markets_orderbook(data)
+        logger.loop(data.keys())
+        logger.pair(data.keys())
+        
+        logger.calc(data)
         data = transform.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
