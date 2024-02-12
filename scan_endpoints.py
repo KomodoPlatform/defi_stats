@@ -16,9 +16,14 @@ from logger import logger
 swagger = requests.get("http://0.0.0.0:7068/openapi.json").json()
 endpoints = swagger["paths"].keys()
 
+localhost = "http://0.0.0.0:7068"
+test_domain = "https://test.defi-stats.komodo.earth"
 
-def test_swagger_endpoints():
+def test_swagger_endpoints(path=None):
     for i in endpoints:
+        if path is not None:
+            if path not in i:
+                continue
         i = i.replace("{ticker_id}", "KMD_LTC")
         i = i.replace("{pair_str}", "KMD_LTC")
         i = i.replace("{market_pair}", "KMD_LTC")
@@ -33,7 +38,7 @@ def test_swagger_endpoints():
 
         if i.endswith("/distinct"):
             i = f"{i}/?coin=KMD"
-        i = f"http://0.0.0.0:7068{i}"
+        i = f"{localhost}{i}"
 
 
 
@@ -47,6 +52,17 @@ def test_swagger_endpoints():
                 logger.warning(f"{i} failed...")
             else:
                 logger.info(f"{i} ok!")
+                l = r.json()
+                if isinstance(r.json(), list):
+                    l = l[0]
+                local_keys = l.keys()
+                r = requests.get(i.replace(localhost, test_domain))
+                t = r.json()
+                if isinstance(r.json(), list):
+                    t = l[0]
+                test_keys = t.keys()
+                logger.calc(local_keys)
+                logger.loop(test_keys)
         except Exception as e:
             if "last_price" in i:
                 logger.info(f"{i} ok! {r.text}")
@@ -56,4 +72,4 @@ def test_swagger_endpoints():
 
 
 if __name__ == "__main__":
-    test_swagger_endpoints()
+    test_swagger_endpoints("markets")

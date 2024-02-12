@@ -23,6 +23,6 @@ memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").d
 
 
 # memcache.set_summary(CacheItem(name="generic_summary").data)
-memcache.set_tickers(CacheItem(name="generic_tickers").data)
-memcache.set_tickers_14d(CacheItem(name="generic_tickers_14d").data)
+# memcache.set_tickers(CacheItem(name="generic_tickers").data)
+# memcache.set_tickers_14d(CacheItem(name="generic_tickers_14d").data)
 memcache.update("coins_with_segwit", [i.coin for i in Coins().with_segwit], 86400)

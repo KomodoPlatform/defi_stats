@@ -7,9 +7,7 @@ def test_cache():
 
     for i in [
         "adex_fortnite",
-        "pair_last_traded",
-        # "generic_summary",
-        "generic_tickers",
+        "pair_last_traded"
     ]:
         cache_item = cache.get_item(i)
         data = cache_item.save()

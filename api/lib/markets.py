@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+from decimal import Decimal
 from const import MARKETS_PAIRS_DAYS
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
-from util.transform import sortdata, derive, deplatform, invert, merge
+from util.transform import sortdata, derive, deplatform, invert, merge, clean
 from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
@@ -19,11 +20,36 @@ class Markets:
             logger.error(f"Failed to init Markets: {e}")
 
     @timed
-    def tickers(self, trades_days: int = 1, pairs_days: int = MARKETS_PAIRS_DAYS):
+    def tickers(self, coin=None):
         try:
-            # Todo: Set this cache up for temporal filtering
-            tickers = memcache.get_tickers()
-            return tickers
+            book = memcache.get_pair_orderbook_extended()
+            resp = []
+            data = {}
+            for depair in book["orderbooks"]:
+                for variant in book["orderbooks"][depair]:
+                    if variant != "ALL":
+                        v = variant.replace("-segwit", "")
+                        if v not in data:
+                            data.update({
+                                v: {
+                                    "last_price": Decimal(book["orderbooks"][depair][variant]["newest_price"]),
+                                    "quote_volume": Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"]),
+                                    "base_volume": Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"]),
+                                    "isFrozen": "0",
+                                }
+                            })
+                        else:
+                            data[v]["quote_volume"] += Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"])
+                            data[v]["base_volume"] += Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"])
+                            if book["orderbooks"][depair][variant]["newest_price"] > data[v]["last_price"]:
+                                data[v]["last_price"] = Decimal(book["orderbooks"][depair][variant]["newest_price"])
+            for v in data:
+                if data[v]['base_volume'] != 0 and data[v]['quote_volume'] != 0:
+                    base, quote = derive.base_quote(pair_str=v)
+                    if coin is None or coin in [base, quote]:
+                        data[v] = clean.decimal_dicts(data=data[v], to_string=True)
+                        resp.append({v: data[v]})
+            return resp
         except Exception as e:  # pragma: no cover
             msg = f"markets_tickers failed for netid {self.netid}!"
             return default.error(e, msg)

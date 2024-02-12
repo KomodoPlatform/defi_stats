@@ -54,25 +54,10 @@ class MarketsOrderbookItem(BaseModel):
     asks: List[MarketsOrderbookAsk]
 
 
-# markets/pairs_last_trade
-class MarketsPairLastTradeItem(BaseModel):
-    pair: str = "XXX_YYY"
-    swap_count: int = 777
-    last_swap: int = 1777777777
-    last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
-    last_price: float = 777.777777
-    last_taker_amount: float = 777.777777
-    last_maker_amount: float = 777.777777
-    first_price: float = 777.777777
-    first_taker_amount: float = 777.777777
-    first_maker_amount: float = 777.777777
-    sum_taker_traded: float = 777.777777
-    sum_maker_traded: float = 777.777777
-
 
 # markets/summary
 class MarketsSummaryItem(BaseModel):
-    pair: str = "XXX_YYY"
+    trading_pair: str = "XXX_YYY"
     base_currency: str = "XXX"
     quote_currency: str = "YYY"
     trades_24hr: int = 777
@@ -88,7 +73,7 @@ class MarketsSummaryItem(BaseModel):
     highest_bid: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     highest_price_24hr: str = "777.777777"
-    price_change_pct_24hr: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
     last_price: str = "777.777777"
     last_swap_uuid: str = "777.777777"
     last_swap: int = 1777777777
@@ -102,21 +87,25 @@ class MarketsUsdVolume(BaseModel):
 # markets/swaps24
 class MarketsSwaps24(BaseModel):
     ticker: str = "XXX"
-    volume: int = 777
+    volume: float = 777.7777
     volume_usd: float = 777.7777
-    swaps_amount_24hr: float = 777.7777
+    swaps_amount_24hr: int = 777
 
 
 # markets/summary_for_ticker
 class MarketsSummaryForTickerItem(BaseModel):
     pair: str = "XXX_YYY"
-    base_currency: str = "XXX"
-    quote_currency: str = "YYY"
+    # base_currency: str = "XXX"
+    # quote_currency: str = "YYY"
+    base: str = "XXX"
+    quote: str = "YYY"
     trades_24hr: int = 777
     base_volume: str = "777.777777"
-    base_price_usd: str = "777.777777"
+    # base_price_usd: str = "777.777777"
+    base_usd_price: str = "777.777777"
     quote_volume: str = "777.777777"
-    quote_price_usd: str = "777.777777"
+    # quote_price_usd: str = "777.777777"
+    quote_usd_price: str = "777.777777"
     highest_bid: str = "777.777777"
     lowest_ask: str = "777.777777"
     liquidity_usd: str = "777.777777"
@@ -124,9 +113,11 @@ class MarketsSummaryForTickerItem(BaseModel):
     highest_price_24hr: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
     price_change_24hr: str = "777.777777"
-    price_change_pct_24hr: str = "777.777777"
+    # price_change_pct_24hr: str = "777.777777"
+    price_change_percent_24hr: str = "777.777777"
     last_price: str = "777.777777"
-    last_swap: int = 1777777777
+    # last_swap: int = 1777777777
+    last_trade: int = 1777777777
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
 
 
@@ -152,18 +143,10 @@ class PairTrades(BaseModel):
 
 # markets/ticker
 class MarketsTickerItem(BaseModel):
-    ticker_id: str = "XXX_YYY"
-    pool_id: str = "XXX_YYY"
-    base: str = "XXX"
-    target: str = "YYY"
-
-
-# markets/ticker
-class MarketsTickerItemDetail(BaseModel):
-    ticker_id: str = "XXX_YYY"
-    pool_id: str = "XXX_YYY"
-    base: str = "XXX"
-    target: str = "YYY"
+    last_price: str = "777.777777"
+    base_volume: str = "777.777777"
+    quote_volume: str = "777.777777"
+    isFrozen: str = "0"
 
 
 # gecko/tickers

@@ -34,7 +34,7 @@ class Clean:
 
     @timed
     def decimal_dicts(
-        self, data, to_string=False, rounding=8, exclude_keys: List = list()
+        self, data, to_string=False, rounding=10, exclude_keys: List = list()
     ):
         """
         Works for a simple dict with no nesting

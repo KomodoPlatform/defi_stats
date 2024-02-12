@@ -193,7 +193,7 @@ def get_adex_fortnite():  # pragma: no cover
 # data = get("generic_summary")
 # return data
 
-
+'''
 def set_tickers(data):  # pragma: no cover
     update("generic_tickers", data, 900)
 
@@ -211,3 +211,4 @@ def get_tickers_14d():  # pragma: no cover
     data = get("generic_tickers_14d")
     return data
 
+'''

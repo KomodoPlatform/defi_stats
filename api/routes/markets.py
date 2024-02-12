@@ -10,15 +10,14 @@ from models.generic import ErrorMessage
 from util.exceptions import BadPairFormatError
 from models.markets import (
     MarketsUsdVolume,
-    MarketsCurrentLiquidity,
     MarketsFiatRatesItem,
     MarketsAtomicdexIo,
     MarketsOrderbookItem,
-    MarketsPairLastTradeItem,
     MarketsSwaps24,
     PairTrades,
     MarketsSummaryItem,
     MarketsSummaryForTicker,
+    MarketsTickerItem,
 )
 from lib.pair import Pair
 from lib.markets import Markets
@@ -143,7 +142,13 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
 )
 def summary():
     try:
-        return memcache.get_markets_summary()
+        data = memcache.get_markets_summary()
+        # TODO: remove this when dashboard updates
+        for i in data:
+            logger.info(i)
+            i['trading_pair'] = i['pair']
+            i['price_change_percent_24hr'] = i['price_change_pct_24hr']
+        return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/summary]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/summary]: {e}"}
@@ -174,11 +179,18 @@ def summary_for_ticker(coin: str = "KMD"):
         for i in summary:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap"] > 0:
-                    logger.calc(i)
-                    data.append(i)
+                    
                     swaps_count += int(i["trades_24hr"])
                     liquidity += Decimal(i["liquidity_usd"])
                     volume += Decimal(i["volume_usd_24hr"])
+                    i["last_trade"] = i["last_swap"]
+                    i["price_change_percent_24hr"] = i["price_change_pct_24hr"]
+                    i["quote_usd_price"] = i["quote_price_usd"]
+                    i["base_usd_price"] = i["base_price_usd"]
+                    i["base"] = i["base_currency"]
+                    i["quote"] = i["quote_currency"]
+                    data.append(i)
+                    
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": len(data),
@@ -243,33 +255,14 @@ def swaps24(coin: str = "KMD") -> dict:
 @router.get(
     "/ticker",
     description="Simple last price and liquidity for each market pair, traded in last 7 days.",
+    response_model=List[Dict[str, MarketsTickerItem]],
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
 )
 def ticker():
     try:
-        book = memcache.get_pair_orderbook_extended()
-        resp = []
-        data = {}
-        for depair in book["orderbooks"]:
-            for variant in book["orderbooks"][depair]:
-                if variant != "ALL":
-                    v = variant.replace("-segwit", "")
-                    if v not in data:
-                        data.update({
-                            v: {
-                                "last_swap_price": Decimal(book["orderbooks"][depair][variant]["newest_price"]),
-                                "quote_volume": Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"]),
-                                "base_volume": Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"]),
-                                "isFrozen": "0",
-                            }
-                        })
-                    else:
-                        data[v]["quote_volume"] += Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"])
-                        data[v]["base_volume"] += Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"])
-                        if book["orderbooks"][depair][variant]["newest_price"] > data[v]["last_swap_price"]:
-                            data[v]["last_swap_price"] = Decimal(book["orderbooks"][depair][variant]["newest_price"])
-        for v in data:
-            resp.append({v: data[v]})
-        return resp
+        m = Markets()
+        return m.tickers()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker]: {e}"}
@@ -281,32 +274,8 @@ def ticker():
 )
 def ticker_for_ticker(ticker):
     try:
-        book = memcache.get_pair_orderbook_extended()
-        resp = []
-        data = {}
-        for depair in book["orderbooks"]:
-            for variant in book["orderbooks"][depair]:
-                if variant != "ALL":
-                    base, quote = derive.base_quote(variant)
-                    if ticker in [base, quote]:
-                        v = variant.replace("-segwit", "")
-                        if v not in data:
-                            data.update({
-                                v: {
-                                    "last_swap_price": Decimal(book["orderbooks"][depair][variant]["newest_price"]),
-                                    "quote_volume": Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"]),
-                                    "base_volume": Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"]),
-                                    "isFrozen": "0",
-                                }
-                            })
-                        else:
-                            data[v]["quote_volume"] += Decimal(book["orderbooks"][depair][variant]["quote_liquidity_coins"])
-                            data[v]["base_volume"] += Decimal(book["orderbooks"][depair][variant]["base_liquidity_coins"])
-                            if book["orderbooks"][depair][variant]["newest_price"] > data[v]["last_swap_price"]:
-                                data[v]["last_swap_price"] = Decimal(book["orderbooks"][depair][variant]["newest_price"])
-        for v in data:
-            resp.append({v: data[v]})
-        return resp
+        m = Markets()
+        return m.tickers(coin=ticker)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}
