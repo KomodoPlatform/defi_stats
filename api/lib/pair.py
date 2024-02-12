@@ -144,7 +144,7 @@ class Pair:  # pragma: no cover
             swaps_for_pair = self.pg_query.get_swaps(
                 start_time=start_time,
                 end_time=end_time,
-                pair=self.as_str,
+                pair_str=self.as_str,
             )
             for variant in swaps_for_pair:
                 trades_info = []
@@ -200,7 +200,7 @@ class Pair:  # pragma: no cover
                 if len(sells) > 0:
                     sells = sortdata.dict_lists(sells, "timestamp", reverse=True)
                 if variant == "ALL":
-                    pair_str = deplatform.pair(pair_str)
+                    pair_str = deplatform.pair(self.as_str)
                 else:
                     pair_str = variant
                 data = {
@@ -272,7 +272,7 @@ class Pair:  # pragma: no cover
             swaps_for_pair_combo = self.pg_query.get_swaps(
                 start_time=int(cron.now_utc() - 86400 * days),
                 end_time=int(cron.now_utc()),
-                pair=self.as_str,
+                pair_str=self.as_str,
             )
             for variant in swaps_for_pair_combo:
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
@@ -353,70 +353,6 @@ class Pair:  # pragma: no cover
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
-
-    @timed
-    def ticker_info(self, days=1):
-        # TODO: ps: in order for CoinGecko to show +2/-2% depth,
-        # DEX has to provide the formula for +2/-2% depth.
-        try:
-            return
-            suffix = transform.get_suffix(days)
-            key = "ticker_info"
-            cache_name = derive.pair_cachename(key, self.as_str, suffix)
-            data = memcache.get(cache_name)
-            if data is not None and Decimal(data["liquidity_usd"]) > 0:
-                msg = f"Using cache: {cache_name}"
-                return default.result(
-                    data=data, msg=msg, loglevel="pair", ignore_until=3
-                )
-            data = template.ticker_info(suffix, self.base, self.quote)
-            data.update(
-                {
-                    "ticker_id": self.as_str,
-                    "base_currency": self.base,
-                    "quote_currency": self.quote,
-                    "base_price_usd": self.base_price_usd,
-                    "quote_price_usd": self.quote_price_usd,
-                    "priced": self.priced,
-                    "orderbooks": self.orderbook(
-                        self.as_str, depth=100, no_thread=False
-                    ),
-                }
-            )
-            # logger.calc(data.keys())
-            # logger.calc(data['orderbooks'].keys())
-
-            for variant in data["orderbooks"]:
-                # logger.calc(data['orderbooks'][variant])
-                # logger.calc(data['orderbooks'][variant].keys())
-                # data['orderbooks'][variant] = clean.decimal_dicts(data['orderbooks'][variant])
-                data["orderbooks"][variant].update(
-                    {
-                        f"num_asks": len(data["orderbooks"][variant]["asks"]),
-                        f"num_bids": len(data["orderbooks"][variant]["bids"]),
-                    }
-                )
-
-            # data = clean.decimal_dicts(data)
-            ignore_until = 3
-            loglevel = "pair"
-            msg = f"ticker_info for {self.as_str} ({days} days) complete!"
-            # Add to cache if fully populated
-            if Decimal(data["orderbooks"]["ALL"]["liquidity_usd"]) > 0:
-                data = clean.decimal_dicts(data)
-                memcache.update(cache_name, data, 900)
-                msg = f" Added to memcache [{cache_name}]"
-                if Decimal(data["liquidity_usd"]) > 10000:
-                    msg = f'[{cache_name}] liquidity {data["liquidity_usd"]}'
-                    ignore_until = 0
-
-        except Exception as e:  # pragma: no cover
-            ignore_until = 0
-            loglevel = "warning"
-            msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
-        return default.result(
-            data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
-        )
 
     @timed
     def get_swap_prices(self, swaps_for_pair):
@@ -524,3 +460,67 @@ class Pair:  # pragma: no cover
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
+
+    #DEPRECATED?
+    @timed
+    def ticker_info(self, days=1):
+        # TODO: ps: in order for CoinGecko to show +2/-2% depth,
+        # DEX has to provide the formula for +2/-2% depth.
+        try:
+            suffix = transform.get_suffix(days)
+            key = "ticker_info"
+            cache_name = derive.pair_cachename(key, self.as_str, suffix)
+            data = memcache.get(cache_name)
+            if data is not None and Decimal(data["liquidity_usd"]) > 0:
+                msg = f"Using cache: {cache_name}"
+                return default.result(
+                    data=data, msg=msg, loglevel="pair", ignore_until=3
+                )
+            data = template.ticker_info(suffix, self.base, self.quote)
+            data.update(
+                {
+                    "ticker_id": self.as_str,
+                    "base_currency": self.base,
+                    "quote_currency": self.quote,
+                    "base_price_usd": self.base_price_usd,
+                    "quote_price_usd": self.quote_price_usd,
+                    "priced": self.priced,
+                    "orderbooks": self.orderbook(
+                        self.as_str, depth=100, no_thread=False
+                    ),
+                }
+            )
+            # logger.calc(data.keys())
+            # logger.calc(data['orderbooks'].keys())
+
+            for variant in data["orderbooks"]:
+                # logger.calc(data['orderbooks'][variant])
+                # logger.calc(data['orderbooks'][variant].keys())
+                # data['orderbooks'][variant] = clean.decimal_dicts(data['orderbooks'][variant])
+                data["orderbooks"][variant].update(
+                    {
+                        f"num_asks": len(data["orderbooks"][variant]["asks"]),
+                        f"num_bids": len(data["orderbooks"][variant]["bids"]),
+                    }
+                )
+
+            # data = clean.decimal_dicts(data)
+            ignore_until = 3
+            loglevel = "pair"
+            msg = f"ticker_info for {self.as_str} ({days} days) complete!"
+            # Add to cache if fully populated
+            if Decimal(data["orderbooks"]["ALL"]["liquidity_usd"]) > 0:
+                data = clean.decimal_dicts(data)
+                memcache.update(cache_name, data, 900)
+                msg = f" Added to memcache [{cache_name}]"
+                if Decimal(data["liquidity_usd"]) > 10000:
+                    msg = f'[{cache_name}] liquidity {data["liquidity_usd"]}'
+                    ignore_until = 0
+
+        except Exception as e:  # pragma: no cover
+            ignore_until = 0
+            loglevel = "warning"
+            msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
+        return default.result(
+            data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+        )

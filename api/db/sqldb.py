@@ -871,7 +871,7 @@ class SqlQuery(SqlDB):
         limit: int = 100,
         trade_type: int | None = None,
         coin: str | None = None,
-        pair: str | None = None,
+        pair_str: str | None = None,
         pubkey: str | None = None,
         gui: str | None = None,
         version: str | None = None,
@@ -886,7 +886,7 @@ class SqlQuery(SqlDB):
         using the higher value for any numeric fields, and with defaults
         reconciled (if available in either of the MM2/Cipi databases).
 
-        For `pair` or `coin`, it will return all variants to be combined
+        For `pair_str` or `coin`, it will return all variants to be combined
         (or further filtered) later.
         """
         try:
@@ -923,10 +923,10 @@ class SqlQuery(SqlDB):
                     for i in resp:
                         all += resp[i]
                     resp.update({"ALL": all})
-                elif pair is not None:
+                elif pair_str is not None:
                     resp = {}
-                    bridge_swap = validate.is_bridge_swap(pair)
-                    variants = derive.pair_variants(pair)
+                    bridge_swap = validate.is_bridge_swap(pair_str)
+                    variants = derive.pair_variants(pair_str)
                     for variant in variants:
                         # exclude duplication for bridge swaps
                         if bridge_swap and variant != sortdata.pair_by_market_cap(
@@ -1021,7 +1021,7 @@ class SqlQuery(SqlDB):
         """
         pair_str = f"{base}_{quote}"
         swaps = self.get_swaps(
-            pair=pair_str,
+            pair_str=pair_str,
             start_time=start_time,
             end_time=end_time,
             limit=limit,
@@ -1068,7 +1068,7 @@ class SqlQuery(SqlDB):
             start_time=start_time,
             end_time=end_time,
             coin=coin,
-            pair=pair,
+            pair_str=pair,
             pubkey=pubkey,
             gui=gui,
             version=version,
