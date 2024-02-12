@@ -15,7 +15,6 @@ from models.markets import (
     MarketsOrderbookItem,
     MarketsSwaps24,
     PairTrades,
-    MarketsCurrentLiquidity,
     MarketsSummaryItem,
     MarketsSummaryForTicker,
     MarketsTickerItem,
@@ -51,24 +50,6 @@ router = APIRouter()
 def atomicdex_info_api():
     query = db.SqlQuery()
     return query.swap_counts()
-
-
-# New endpoint
-@router.get(
-    "/current_liquidity",
-    response_model=MarketsCurrentLiquidity,
-    description=markets_desc.liquidity,
-    responses={406: {"model": ErrorMessage}},
-    status_code=200,
-)
-def current_liquidity():
-    try:
-        data = memcache.get_tickers()
-        return {"current_liquidity": data["combined_liquidity_usd"]}
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/markets/current_liquidity]: {e}"}
-
 
 
 @router.get(
@@ -142,7 +123,6 @@ def summary():
         data = memcache.get_markets_summary()
         # TODO: remove this when dashboard updates
         for i in data:
-            logger.info(i)
             i["trading_pair"] = i["pair"]
             i["price_change_percent_24hr"] = i["price_change_pct_24hr"]
         return data
@@ -321,7 +301,7 @@ def tickers_summary():
 
 @router.get(
     "/trades/{pair_str}/{days_in_past}",
-    # response_model=List[PairTrades],
+    response_model=List[PairTrades],
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
 def trades(

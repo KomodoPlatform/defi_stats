@@ -14,11 +14,6 @@ class MarketsAtomicdexIo(BaseModel):
     swaps_all_time: int = 999999999
 
 
-# markets/current_liquidity
-class MarketsCurrentLiquidity(BaseModel):
-    current_liquidity: float = 7777.7777
-
-
 # markets/fiat_rates
 class MarketsFiatRatesItem(BaseModel):
     usd_market_cap: float = 7777.7777
