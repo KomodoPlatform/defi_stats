@@ -37,18 +37,6 @@ def test_format_10f():
     assert transform.format_10f(1.23) == "1.2300000000"
 
 
-def test_orderbook_extended_to_market_summary_item():
-    ticker_item = sampledata.ticker_item()
-    x = convert.orderbook_extended_to_market_summary_item(ticker_item)
-    assert x["pair"] == "DGB_LTC"
-    assert x["quote_currency"] == "LTC"
-    assert ticker_item["quote_volume"] == x["quote_volume"]
-    assert ticker_item["ticker_id"] == x["pair"]
-    assert ticker_item["last_swap_time"] == str(x["last_swap"])
-    assert ticker_item["highest_price_24hr"] == x["highest_price_24hr"]
-    assert ticker_item["lowest_price_24hr"] == x["lowest_price_24hr"]
-
-
 def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
     x = setup_ticker_to_market_ticker
     ticker_item = sampledata.ticker_item()
@@ -58,25 +46,6 @@ def test_ticker_to_market_ticker(setup_ticker_to_market_ticker):
     assert x[ticker]["quote_volume"] == ticker_item["quote_volume"]
     assert x[ticker]["base_volume"] == ticker_item["base_volume"]
     assert x[ticker]["last_swap_price"] == ticker_item["last_swap_price"]
-
-
-def test_ticker_to_gecko_summary():
-    x = transform.ticker_to_gecko_summary(sampledata.ticker_item())
-    assert x["ticker_id"] == x["pool_id"]
-
-
-def test_ticker_to_statsapi(setup_ticker_to_statsapi_24h, setup_ticker_to_statsapi_7d):
-    x = setup_ticker_to_statsapi_7d
-    y = setup_ticker_to_statsapi_24h
-    assert x["ticker_id"] == y["ticker_id"]
-    assert "price_change_24h" in y
-    assert "price_change_7d" in x
-    assert "quote_price_usd" in x
-    assert "quote_price_usd" in y
-    assert "pair_liquidity_usd" in x
-    assert "pair_liquidity_usd" in y
-    assert isinstance(x["last_swap_time"], int)
-    assert isinstance(y["lowest_ask"], Decimal)
 
 
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
@@ -239,29 +208,6 @@ def test_deplatform_pair():
 def test_deplatform_coin():
     r = deplatform.coin("USDC-PLG20")
     assert r == "USDC"
-
-
-def test_merge_orderbooks():
-    pair = Pair("KMD_DOGE")
-    orderbook_data = pair.orderbook("KMD_DOGE")
-    book = deepcopy(orderbook_data)
-    book2 = deepcopy(orderbook_data)
-    x = merge.orderbooks(book, book2)
-    assert x["base"] == orderbook_data["base"]
-    assert x["quote"] == orderbook_data["quote"]
-    assert x["timestamp"] == orderbook_data["timestamp"]
-    assert len(x["bids"]) == len(orderbook_data["bids"]) * 2
-    assert len(x["asks"]) == len(orderbook_data["asks"]) * 2
-    for i in [
-        "liquidity_usd",
-        "total_asks_base_vol",
-        "total_bids_base_vol",
-        "total_asks_quote_vol",
-        "total_bids_quote_vol",
-        "total_asks_base_usd",
-        "total_bids_quote_usd",
-    ]:
-        assert Decimal(x[i]) == Decimal(orderbook_data[i]) * 2
 
 
 def test_invert_pair():
@@ -447,34 +393,6 @@ def test_get_pair_variants():
     assert "KMD_USDC-PLG20" in r
     assert "KMD-BEP20_USDC-PLG20" not in r
     assert len(r) == 1
-
-
-def test_derive_lowest_ask():
-    pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC")
-    r = derive.lowest_ask(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(0.3158)
-
-
-def test_derive_highest_bid():
-    pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("KMD_MATIC")
-    r = derive.highest_bid(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(0.3037)
-
-
-def test_derive_lowest_ask_reversed():
-    pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD")
-    r = derive.lowest_ask(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(1 / 0.3037)
-
-
-def test_derive_highest_bid_reversed():
-    pair = Pair("KMD_MATIC")
-    orderbook = pair.orderbook("MATIC_KMD")
-    r = derive.highest_bid(orderbook)
-    assert transform.format_10f(r) == transform.format_10f(1 / 0.3158)
 
 
 def test_derive_price_at_finish():

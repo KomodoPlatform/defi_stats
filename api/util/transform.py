@@ -201,10 +201,6 @@ class Convert:
         return resp
 
 
-    def orderbook_extended_to_market_summary_item(self, data):
-        logger.info(data)
-        return data
-
     def rekey(self, data, old_key, new_key):
         data.update({new_key: data[old_key]})
         del data[old_key]
@@ -1467,13 +1463,15 @@ class Templates:
 
     def volumes_ticker(self):
         return {
+            "taker_swaps": 0,
+            "maker_swaps": 4,
+            "total_swaps": 4,
             "taker_volume": 0,
-            "maker_volume": 0,
-            "trade_volume": 0,
-            "swaps": 0,
-            "taker_volume_usd": 0,
-            "maker_volume_usd": 0,
-            "trade_volume_usd": 0,
+            "maker_volume": 382.170941392,
+            "total_volume": 382.170941392,
+            "taker_volume_usd": 0.0,
+            "maker_volume_usd": 19.001909911823393,
+            "trade_volume_usd": 19.001909911823393
         }
 
     def ticker_info(self, suffix, base, quote):

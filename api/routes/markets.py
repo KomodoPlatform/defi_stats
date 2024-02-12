@@ -146,8 +146,8 @@ def summary():
         # TODO: remove this when dashboard updates
         for i in data:
             logger.info(i)
-            i['trading_pair'] = i['pair']
-            i['price_change_percent_24hr'] = i['price_change_pct_24hr']
+            i["trading_pair"] = i["pair"]
+            i["price_change_percent_24hr"] = i["price_change_pct_24hr"]
         return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/summary]: {e}")
@@ -179,7 +179,7 @@ def summary_for_ticker(coin: str = "KMD"):
         for i in summary:
             if coin in [i["base_currency"], i["quote_currency"]]:
                 if i["last_swap"] > 0:
-                    
+
                     swaps_count += int(i["trades_24hr"])
                     liquidity += Decimal(i["liquidity_usd"])
                     volume += Decimal(i["volume_usd_24hr"])
@@ -190,7 +190,7 @@ def summary_for_ticker(coin: str = "KMD"):
                     i["base"] = i["base_currency"]
                     i["quote"] = i["quote_currency"]
                     data.append(i)
-                    
+
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": len(data),

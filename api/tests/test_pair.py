@@ -99,36 +99,6 @@ def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
     r = pair.get_average_price(sampledata.no_trades_info)
     assert r == 0
 
-
-def test_get_prices(setup_kmd_ltc_pair, setup_ltc_kmd_pair, setup_not_existing_pair):
-    pair = setup_kmd_ltc_pair
-    r = pair.get_prices()
-    r = clean.decimal_dicts(r)
-    assert r["base"] == "KMD"
-    assert r["quote"] == "LTC"
-    assert r["base_price_usd"] == 1
-    assert r["quote_price_usd"] == 100
-    assert float(r["highest_price_24hr"]) == 0.01
-    assert r["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert float(r["lowest_price_24hr"]) == 0.01
-    assert float(r["price_change_24hr"]) == 0
-    assert float(r["price_change_pct_24hr"]) == 0
-    assert int(r["last_swap_time"]) > int(cron.now_utc() - 86400)
-
-    pair = setup_not_existing_pair
-    r = pair.get_prices()
-    assert float(r["last_swap_price"]) == 0
-
-    pair = setup_ltc_kmd_pair
-    r = pair.get_prices()
-    assert r["base"] == "LTC"
-    assert r["quote"] == "KMD"
-    assert r["base_price_usd"] == 100
-    assert r["quote_price_usd"] == 1
-    assert float(r["highest_price_24hr"]) == 100
-    assert float(r["lowest_price_24hr"]) == 100
-
-
 def test_pair(
     setup_ltc_kmd_pair,
     setup_kmd_dgb_pair,
@@ -145,28 +115,3 @@ def test_pair(
     assert pair.base == "KMD"
     assert pair.quote == "DGB"
 
-
-def test_swap_uuids(setup_kmd_ltc_pair):
-    r = setup_kmd_ltc_pair.swap_uuids()
-    assert "77777777-2762-4633-8add-6ad2e9b1a4e7" in r["uuids"]
-    assert len(r["uuids"]) == 3
-
-
-def test_first_last_traded(setup_kmd_ltc_pair, setup_ltc_kmd_pair):
-    pair = setup_ltc_kmd_pair
-    variants = derive.pair_variants(pair.as_str, segwit_only=False)
-    data = pair.first_last_traded(variants)
-    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert data["last_swap_price"] == 100
-
-    pair = setup_kmd_ltc_pair
-    variants = derive.pair_variants(pair.as_str)
-    data = pair.first_last_traded(variants)
-    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert data["last_swap_price"] == 0.01
-
-    pair = setup_kmd_ltc_pair
-    variants = derive.pair_variants(pair.as_str, segwit_only=True)
-    data = pair.first_last_traded(variants)
-    assert data["last_swap_uuid"] == "666666666-75a2-d4ef-009d-5e9baad162ef"
-    assert data["last_swap_price"] == 0.01

@@ -28,6 +28,7 @@ from util.transform import (
     sortdata,
     merge,
 )
+
 router = APIRouter()
 cache = Cache()
 
@@ -80,7 +81,7 @@ def summary():
     try:
         tickers_data = deplatform.tickers(memcache.get_tickers(), priced_only=True)
         tickers = []
-        for i in tickers_data['data']:
+        for i in tickers_data["data"]:
             x = transform.ticker_to_statsapi_summary(i)
             tickers.append(x)
         return tickers
@@ -148,10 +149,7 @@ def orderbook(
     status_code=200,
 )
 def trades(
-    ticker_id: str = "KMD_LTC",
-    limit: int = 100,
-    start_time: int = 0,
-    end_time: int = 0
+    ticker_id: str = "KMD_LTC", limit: int = 100, start_time: int = 0, end_time: int = 0
 ):
     try:
         for value, name in [
@@ -192,7 +190,9 @@ def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
         pairs_last_trade_cache = memcache.get_pair_last_traded()
-        data = derive.last_trade_info(pair_str, pairs_last_trade_cache=pairs_last_trade_cache)
+        data = derive.last_trade_info(
+            pair_str, pairs_last_trade_cache=pairs_last_trade_cache
+        )
         return data["last_swap_price"]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair_str}]: {e}")

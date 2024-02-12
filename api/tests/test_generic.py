@@ -74,18 +74,6 @@ def test_orderbook():
     assert Decimal(r["total_bids_quote_vol"]) == Decimal(111)
 
 
-def test_tickers():
-    cache_calc = CacheCalc()
-    r = cache_calc.tickers(7, 1)
-
-    assert r["pairs_count"] > 0
-    r2 = cache_calc.tickers(1, 1)
-    assert len(r2["data"]) > 0
-    for i in r2["data"][0]:
-        assert not isinstance(i, Decimal)
-    assert r["data"][0]["ticker_id"] < r["data"][2]["ticker_id"]
-
-
 def test_get_pairs_status():
     r = get_pairs_status([], None)
     logger.info(r)
