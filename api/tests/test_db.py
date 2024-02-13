@@ -34,7 +34,7 @@ two_months_ago = now - 5184000
 def test_get_pairs(setup_swaps_db_data):
     # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
-    pairs = DB.get_pairs()  #  defaults to last 7 days
+    pairs = DB.get_pairs()
     logger.info(pairs)
     assert ("KMD_LTC") in pairs
     assert ("LTC_KMD") not in pairs

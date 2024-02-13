@@ -55,10 +55,6 @@ class Clean:
 
     @timed
     def orderbook_data(self, data):
-        """
-        Works for a simple dict with no nesting
-        (e.g. summary_cache.json)
-        """
         try:
             # logger.calc(data.keys())
             for i in ["bids", "asks"]:
@@ -88,13 +84,33 @@ class Clean:
                 data[k] = int(data[k])
             # logger.loop(data.keys())
             return data
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             return default.result(msg=e, loglevel="warning")
 
 
 class Convert:
     def __init__(self):
         pass
+
+
+    def pair_orderbook_extras_to_gecko_tickers(x, vols, prices):
+        return {
+            "ticker_id": x["pair"],
+            "pool_id": x["pair"],
+            "base_currency": x["base"],
+            "target_currency": x["quote"],
+            "base_volume": vols["base_volume"],
+            "target_volume": vols["quote_volume"],
+            "bid": x["highest_bid"],
+            "ask": x["lowest_ask"],
+            "high": x["highest_price_24hr"],
+            "low": x["lowest_price_24hr"],
+            "trades_24hr": vols["swaps"],
+            "last_price": x["newest_price"],
+            "last_trade": x["newest_price_time"],
+            "volume_usd_24hr": vols["trade_volume_usd"],
+            "liquidity_in_usd": x["liquidity_usd"]
+        }
 
     def ticker_to_gecko_pair(self, pair_data):
         return {
@@ -104,6 +120,15 @@ class Convert:
             "target": pair_data["quote_currency"],
             "variants": pair_data["variants"],
         }
+
+    def pair_volume_cache_to_book_extras(pair_str, data):
+        data.update(
+            {
+                "volume_usd_24hr": Decimal(v["trade_volume_usd"]),
+                "trades_24hr": int(v["swaps"]),
+            }
+        )
+        return data
 
     def ticker_to_gecko_ticker(self, ticker_data):
         return {
@@ -135,75 +160,6 @@ class Convert:
             "timestamp": i["timestamp"],
             "type": i["type"],
         }
-
-    def last_traded_to_market(
-        self, pair, last_traded_item, pair_volumes_cache, coins_config
-    ):
-        resp = {
-            "pair": pair,
-            "swap_count": 0,
-            "last_swap": last_traded_item["last_swap_time"],
-            "last_swap_uuid": last_traded_item["last_swap_uuid"],
-            "last_price": last_traded_item["last_swap_price"],
-            "last_taker_amount": 0,
-            "last_maker_amount": 0,
-            "first_swap": last_traded_item["first_swap_time"],
-            "first_swap_uuid": last_traded_item["first_swap_uuid"],
-            "first_price": last_traded_item["first_swap_price"],
-            "first_taker_amount": 0,
-            "first_maker_amount": 0,
-            "sum_maker_traded": 0,
-            "sum_taker_traded": 0,
-            "volume_24hr": 0,
-            "priced": last_traded_item["priced"],
-        }
-
-        if last_traded_item["last_trade_type"] == "buy":
-            resp["last_maker_amount"] = last_traded_item["last_maker_amount"]
-            resp["last_taker_amount"] = last_traded_item["last_taker_amount"]
-        else:
-            resp["last_maker_amount"] = last_traded_item["last_taker_amount"]
-            resp["last_taker_amount"] = last_traded_item["last_maker_amount"]
-        if last_traded_item["first_trade_type"] == "buy":
-            resp["first_maker_amount"] = last_traded_item["first_maker_amount"]
-            resp["first_taker_amount"] = last_traded_item["first_taker_amount"]
-        else:
-            resp["first_maker_amount"] = last_traded_item["first_taker_amount"]
-            resp["first_taker_amount"] = last_traded_item["first_maker_amount"]
-
-        depair = deplatform.pair(pair)
-        pair_volumes_cache = pair_volumes_cache["volumes"]
-        if depair in pair_volumes_cache:
-            if pair in pair_volumes_cache[depair]:
-                cache_data = pair_volumes_cache[depair][pair]
-                resp["swap_count"] = cache_data["swaps"]
-                resp["volume_24hr"] = cache_data["trade_volume_usd"]
-                if last_traded_item["last_trade_type"] == "buy":
-                    resp["sum_maker_traded"] = cache_data["base_volume"]
-                    resp["sum_taker_traded"] = cache_data["quote_volume"]
-                else:
-                    resp["sum_maker_traded"] = cache_data["quote_volume"]
-                    resp["sum_taker_traded"] = cache_data["base_volume"]
-        return resp
-
-    def traded_cache_to_stats_api(self, traded_cache):
-        resp = {}
-        for i in traded_cache:
-            cleaned_ticker = deplatform.pair(i)
-            if cleaned_ticker not in resp:
-                resp.update({cleaned_ticker: traded_cache[i]})
-            else:
-                if (
-                    resp[cleaned_ticker]["last_swap_time"]
-                    < traded_cache[i]["last_swap_time"]
-                ):
-                    resp.update({cleaned_ticker: traded_cache[i]})
-        return resp
-
-    def rekey(self, data, old_key, new_key):
-        data.update({new_key: data[old_key]})
-        del data[old_key]
-        return data
 
 
 @timed
@@ -444,33 +400,6 @@ class Deplatform:
 
     def coin(self, coin):
         return coin.split("-")[0]
-
-    # Unused?
-    def pair_summary_item(self, i):
-        resp = {}
-        keys = i.keys()
-        for k in keys:
-            if k == "ticker_id":
-                resp.update({k: self.pair(i[k])})
-            elif k in ["base_currency", "quote_currency"]:
-                resp.update({k: self.coin(i[k])})
-            else:
-                resp.update({k: i[k]})
-        return resp
-
-    # Unused?
-    def pair_last_trade(self, data):
-        resp = {}
-        for i in data:
-            pair = deplatform.pair(i)
-            if pair not in resp:
-                resp.update({pair: data[i]})
-            else:
-                if data[i]["last_swap_time"] > resp[pair]["last_swap_time"]:
-                    resp[pair]["last_swap_time"] = data[i]["last_swap_time"]
-                    resp[pair]["last_swap_uuid"] = data[i]["last_swap_uuid"]
-                    resp[pair]["last_swap_price"] = data[i]["last_swap_price"]
-        return resp
 
 
 class Derive:
@@ -871,14 +800,7 @@ class Invert:
             "volume": Decimal(i["quote_volume"]),
         }
 
-    def swap_uuids(self, uuids):
-        resp = {"ALL": uuids["ALL"]}
-        for v in uuids:
-            if v != "ALL":
-                resp.update({self.pair(v): uuids[v]})
-        return resp
-
-    def orderbook_extended(self, orderbook):
+    def pair_orderbook(self, orderbook):
         try:
             orderbook.update(
                 {
@@ -898,27 +820,7 @@ class Invert:
             logger.warning(e)
         return orderbook
 
-    def markets_orderbook(self, orderbook):
-        try:
-            orderbook.update(
-                {
-                    "asks": [invert.ask_bid(i) for i in orderbook["bids"]],
-                    "bids": [invert.ask_bid(i) for i in orderbook["asks"]],
-                    "variants": [invert.pair(i) for i in orderbook["variants"]],
-                    "total_asks_base_vol": orderbook["total_bids_quote_vol"],
-                    "total_asks_quote_vol": orderbook["total_bids_base_vol"],
-                    "total_asks_base_usd": orderbook["total_bids_quote_usd"],
-                    "total_bids_base_vol": orderbook["total_asks_quote_vol"],
-                    "total_bids_quote_vol": orderbook["total_asks_base_vol"],
-                    "total_bids_quote_usd": orderbook["total_asks_base_usd"],
-                }
-            )
-            return orderbook
-        except Exception as e:  # pragma: no cover
-            logger.warning(e)
-        return orderbook
-
-    def orderbook(self, orderbook):
+    def orderbook_fixture(self, orderbook):
         try:
             if "rel" in orderbook:
                 quote = orderbook["rel"]
@@ -1170,25 +1072,14 @@ class SortData:
         resp = sorted(data, key=lambda k: k[key], reverse=reverse)
         return resp
 
-    def dicts(self, data: dict, reverse=False) -> dict:
-        """
-        Sort a dict by the value the root key.
-        """
-        k = list(data.keys())
-        k.sort()
-        if reverse:
-            k.reverse()
-        resp = {}
-        for i in k:
-            resp.update({i: data[i]})
-        return resp
 
     def top_items(self, data: List[Dict], sort_key: str, length: int = 5):
         data.sort(key=lambda x: x[sort_key], reverse=True)
         return data[:length]
 
     @timed
-    def top_pairs(self, summaries: list):
+    # TODO: Fix This
+    def top_pairs(self, summaries: list):  # pragma: no cover
         try:
             for i in summaries:
                 i["ticker_id"] = deplatform.pair(i["ticker_id"])
@@ -1210,7 +1101,7 @@ class SortData:
                 "by_current_liquidity_usd": clean.decimal_dicts(top_pairs_by_liquidity),
                 "by_swaps_count": clean.decimal_dicts(top_pairs_by_swaps),
             }
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             logger.error(f"{type(e)} Error in [get_top_pairs]: {e}")
             return {"by_volume": [], "by_liquidity": [], "by_swaps": []}
 
@@ -1238,7 +1129,6 @@ class SortData:
         except Exception as e:  # pragma: no cover
             msg = f"pair_by_market_cap failed: {e}"
             logger.warning(msg)
-
         return pair_str
 
 
@@ -1255,9 +1145,8 @@ class SumData:
             logger.warning(f"y: {y} ({type(y)})")
             raise ValueError
 
-    def numeric_str(self, val1, val2):
-        x = Decimal(val1) + Decimal(val2)
-        return format_10f(x)
+    def numeric_str(self, x, y):
+        return format_10f(self.decimals(x, y))
 
     def lists(self, x, y, sorted=True):
         try:
@@ -1320,15 +1209,6 @@ def get_coin_platform(coin):
 
 
 @timed
-def last_trade_time_filter(data, start_time, end_time):
-    # TODO: handle first/last within variants
-    data = memcache.get_data()
-    data = [i for i in data if data[i]["last_swap_time"] > start_time]
-    data = [i for i in data if data[i]["last_swap_time"] < end_time]
-    return data
-
-
-@timed
 def label_bids_asks(orderbook_data, pair):
     data = template.orderbook(pair)
     for i in ["asks", "bids"]:
@@ -1379,39 +1259,11 @@ def format_10f(number: float | Decimal) -> str:
     return f"{number:.10f}"
 
 
-@timed
-def update_if_greater(existing, new, key, secondary_key=None):
-    if existing[key] < new[key]:
-        existing[key] = new[key]
-        if secondary_key is not None:
-            existing[secondary_key] = new[secondary_key]
-
-
-@timed
-def update_if_lesser(existing, new, key, secondary_key=None):
-    if existing[key] > new[key]:
-        existing[key] = new[key]
-        if secondary_key is not None:
-            existing[secondary_key] = new[secondary_key]
-
-
-class Templates:
+class Templates:  # pragma: no cover
     def __init__(self) -> None:
         pass
 
-    def last_price_for_pair(self):  # pragma: no cover
-        return {"timestamp": 0, "price": 0}
-
-    def liquidity(self):  # pragma: no cover
-        return {
-            "rel_usd_price": 0,
-            "quote_liquidity_coins": 0,
-            "quote_liquidity_usd": 0,
-            "base_price_usd": 0,
-            "base_liquidity_coins": 0,
-            "base_liquidity_usd": 0,
-            "liquidity_usd": 0,
-        }
+    
 
     def pair_info(self, pair_str: str, priced: bool = False) -> dict:
         base, quote = derive.base_quote(pair_str)
@@ -1610,6 +1462,15 @@ class Templates:
             "price_change_24hr": 0,
         }
 
+    def markets_ticker(self, variant, variant_data):
+        return {
+            variant: {
+                "last_price": Decimal(variant_data["newest_price"]),
+                "quote_volume": Decimal(variant_data["quote_liquidity_coins"]),
+                "base_volume": Decimal(variant_data["base_liquidity_coins"]),
+                "isFrozen": "0",
+            }
+        }
 
 template = Templates()
 clean = Clean()

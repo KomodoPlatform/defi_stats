@@ -1338,7 +1338,7 @@ class SqlSource:
 
                     updates = []
                     for each in overlapping_swaps:
-                        # Get dict row for ex         "isting swaps
+                        # Get dict row for existing swaps
                         cipi_data = self.cipi_to_defi_swap(
                             cipi_swaps_data[each.uuid], each.__dict__
                         ).__dict__
@@ -1371,6 +1371,7 @@ class SqlSource:
                     # Add new records left in processing queue
                     for uuid in cipi_swaps_data.keys():
                         swap = self.cipi_to_defi_swap(cipi_swaps_data[uuid])
+                            
                         if "_sa_instance_state" in swap:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
@@ -1433,6 +1434,8 @@ class SqlSource:
                         mm2_swaps_data.pop(each.uuid)
 
                     if len(updates) > 0:
+                        for d in updates:
+                            d = self.ensure_valid_pair(d)
                         # Update existing records
                         bind_values = {
                             i: bindparam(i)
@@ -1500,27 +1503,17 @@ class SqlSource:
             for i in data:
                 # Standardize pair_strings
                 # "pair" should always be sorted by market cap. | KMD_LTC
+                # cipi data has no platform.
                 pair_temp = f'{i["maker_coin"]}_{i["taker_coin"]}'
-                pair = sortdata.pair_by_market_cap(
-                    pair_temp, gecko_source=self.gecko_source
-                )
-                if "fa0bdf92-375d-41c8-af45-5aa11380bf25" == i["uuid"]:
-                    logger.calc(i)
-                    logger.calc(f"pair_temp: {pair_temp}")
-                    logger.calc(f"pair: {pair}")
-                pair_reverse = invert.pair(pair)
-                pair_std = deplatform.pair(pair)
-                pair_std_reverse = invert.pair(pair_std)
-
+                i = self.ensure_valid_pair(i)
                 # Assign price and trade_type
-                if pair_temp == pair:
+                if deplatform.pair(pair_temp) == i['pair_std']:
                     trade_type = "buy"
                     price = Decimal(i["taker_amount"]) / Decimal(i["maker_amount"])
                     reverse_price = Decimal(i["maker_amount"]) / Decimal(
                         i["taker_amount"]
                     )
-
-                elif pair_temp == pair_reverse:
+                elif deplatform.pair(pair_temp) == i['pair_std_reverse']:
                     trade_type = "sell"
                     price = Decimal(i["maker_amount"]) / Decimal(i["taker_amount"])
                     reverse_price = Decimal(i["taker_amount"]) / Decimal(
@@ -1529,19 +1522,7 @@ class SqlSource:
 
                 i.update(
                     {
-                        "pair": pair,
-                        "pair_std": pair_std,
-                        "pair_reverse": pair_reverse,
-                        "pair_std_reverse": pair_std_reverse,
                         "trade_type": trade_type,
-                        "maker_coin_ticker": deplatform.coin(i["maker_coin"]),
-                        "maker_coin_platform": transform.get_coin_platform(
-                            i["maker_coin"]
-                        ),
-                        "taker_coin_ticker": deplatform.coin(i["taker_coin"]),
-                        "taker_coin_platform": transform.get_coin_platform(
-                            i["taker_coin"]
-                        ),
                         "price": price,
                         "reverse_price": reverse_price,
                     }
@@ -1574,9 +1555,7 @@ class SqlSource:
                     ]:
                         if v in [None, ""]:
                             i.update({k: 0})
-                if "fa0bdf92-375d-41c8-af45-5aa11380bf25" == i["uuid"]:
-                    logger.loop(i)
-                    logger.calc(f"normal pair: {i['pair']}")
+                    
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
         msg = "Data normalised"
@@ -1594,6 +1573,7 @@ class SqlSource:
                 for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
                     if i not in cipi_data:
                         cipi_data.update({i: ""})
+                # cipi_data = self.ensure_valid_pair(cipi_data)
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_amount=cipi_data["taker_amount"],
@@ -1620,12 +1600,14 @@ class SqlSource:
                     # Extra columns
                     trade_type=cipi_data["trade_type"],
                     pair=cipi_data["pair"],
-                    pair_reverse=invert.pair(cipi_data["pair"]),
-                    pair_std=deplatform.pair(cipi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(invert.pair(cipi_data["pair"])),
+                    pair_reverse=cipi_data["pair_reverse"],
+                    pair_std=cipi_data["pair_std"],
+                    pair_std_reverse=cipi_data["pair_std_reverse"],
                     last_updated=int(cron.now_utc()),
                 )
             else:
+                cipi_data = self.ensure_valid_pair(cipi_data)
+                defi_data = self.ensure_valid_pair(defi_data)
                 for i in [
                     "taker_coin",
                     "maker_coin",
@@ -1656,6 +1638,7 @@ class SqlSource:
                             )
                             logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
 
+                # cipi_data = self.ensure_valid_pair(cipi_data)
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_coin=cipi_data["taker_coin"],
@@ -1696,19 +1679,45 @@ class SqlSource:
                     # Extra columns
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
-                    pair_reverse=invert.pair(cipi_data["pair"]),
-                    pair_std=deplatform.pair(cipi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(invert.pair(cipi_data["pair"])),
+                    pair_reverse=cipi_data["pair_reverse"],
+                    pair_std=cipi_data["pair_std"],
+                    pair_std_reverse=cipi_data["pair_std_reverse"],
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):
                 data.duration = data.finished_at - data.started_at
             else:
                 data.duration = -1
+
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
         msg = "cipi to defi conversion complete"
         return default.result(msg=msg, data=data, loglevel="muted")
+
+    def ensure_valid_pair(self, data):
+
+        data["maker_coin_ticker"] = deplatform.coin(data["maker_coin"])
+        data["maker_coin_platform"] = transform.get_coin_platform(
+            data["maker_coin"]
+        )
+        data["taker_coin_ticker"] = deplatform.coin(data["taker_coin"])
+        data["taker_coin_platform"] = transform.get_coin_platform(
+            data["taker_coin"]
+        )
+        if data["taker_coin_platform"] != "":
+            _base = f"{data['taker_coin_ticker']}-{data['taker_coin_platform']}"
+        else:
+            _base = f"{data['taker_coin_ticker']}"
+        if data["maker_coin_platform"] != "":
+            _quote = f"{data['maker_coin_ticker']}-{data['maker_coin_platform']}"
+        else:
+            _quote = f"{data['maker_coin_ticker']}"
+        pair = f"{_base}_{_quote}"
+        data["pair"] = sortdata.pair_by_market_cap(pair)
+        data["pair_std"] = deplatform.pair(pair)
+        data["pair_reverse"] = invert.pair(pair)
+        data["pair_std_reverse"] = invert.pair(data["pair_std"])
+        return data
 
     @timed
     def mm2_to_defi_swap(self, mm2_data, defi_data=None):  # pragma: no cover
@@ -1720,6 +1729,7 @@ class SqlSource:
                 for i in ["taker_gui", "maker_gui", "taker_version", "maker_version"]:
                     if i not in mm2_data:
                         mm2_data.update({i: ""})
+                mm2_data = self.ensure_valid_pair(mm2_data)
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_amount=mm2_data["taker_amount"],
@@ -1752,6 +1762,8 @@ class SqlSource:
                     last_updated=int(cron.now_utc()),
                 )
             else:
+                mm2_data = self.ensure_valid_pair(mm2_data)
+                defi_data = self.ensure_valid_pair(defi_data)
                 for i in [
                     "taker_coin",
                     "maker_coin",
@@ -1779,6 +1791,7 @@ class SqlSource:
                             logger.warning(
                                 f"{type(mm2_data[i])} vs {type(defi_data[i])}"
                             )
+               
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_coin=mm2_data["taker_coin"],
@@ -1813,9 +1826,9 @@ class SqlSource:
                     # Extra columns
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],
-                    pair_reverse=invert.pair(defi_data["pair"]),
-                    pair_std=deplatform.pair(defi_data["pair"]),
-                    pair_std_reverse=deplatform.pair(invert.pair(defi_data["pair"])),
+                    pair_reverse=defi_data["pair_reverse"],
+                    pair_std=defi_data["pair_std"],
+                    pair_std_reverse=defi_data["pair_std_reverse"],
                     last_updated=int(cron.now_utc()),
                 )
             if isinstance(data.finished_at, int) and isinstance(data.started_at, int):

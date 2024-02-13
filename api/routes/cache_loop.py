@@ -290,7 +290,10 @@ def refresh_generic_tickers_14d():
 def get_generic_tickers_cache_14d():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="generic_tickers_14d", from_memcache=True).save()
+            CacheItem(
+                name="generic_tickers_14d",
+                from_memcache=True
+            ).save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Generic tickers 14d loop for memcache complete!"

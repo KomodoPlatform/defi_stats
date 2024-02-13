@@ -121,60 +121,6 @@ class SqliteQuery:  # pragma: no cover
             logger.warning(f"{e} in get_uuids with {self.db.db_path}")
             return []
 
-    @timed
-    def build_query(self, **kwargs) -> str:
-        """
-        Avaliable filters:
-            - start: epoch timestamp (integer)
-            - end: epoch timestamp (integer)
-            - cols: columns to return values for (list, default '*')
-            - count: count of records returned (boolean, default false)
-            - sum: sum of column matching filter (boolean, default false)
-            - sum_field: column to return the sum of (string)
-            - limit: number of records to return. (integer, default 1000)
-            - success_only: only successful swaps (boolean, default true)
-            - failed_only: only failed swaps (boolean, default false)
-        """
-        sql = ""
-        try:
-            if "table" in kwargs:
-                sql = f"SELECT * FROM {kwargs['table']}"
-            else:
-                sql = "SELECT * FROM 'stats_swaps'"
-            if "sum" in kwargs and "sum_field" in kwargs == "":
-                raise InvalidParamCombination(
-                    "If calculating sum, you need to specify the sum_field"
-                )
-
-            if "success_only" in kwargs and "failed_only" in kwargs:
-                raise InvalidParamCombination(
-                    "Cant set `success_only` and `failed_only` to true at same time"
-                )
-
-            if "cols" in kwargs:
-                cols = kwargs["cols"]
-                sql.replace("*", f"({', '.join(cols)})")
-
-            if "sum" in kwargs and "count" in kwargs:
-                sql.replace(
-                    "*", f"SUM({kwargs['sum_field']}), COUNT({kwargs['sum_field']})"
-                )
-            elif "count" in kwargs:
-                sql.replace("*", "COUNT(*)")
-            elif "sum" in kwargs:
-                sql.replace("*", f"SUM({kwargs['sum_field']})")
-
-            sql += f" WHERE started_at > {kwargs['start']} AND finished_at < {kwargs['end']}"
-            if "success_only" in kwargs:
-                sql += " AND is_success=1"
-            elif "failed_only" in kwargs:
-                sql += " AND is_success=0"
-            if "filter_sql" in kwargs:
-                sql += kwargs["filter_sql"].replace("WHERE", "AND")
-            return sql
-        except Exception as e:  # pragma: no cover
-            return default.result(msg=e, loglevel="warning")
-
     # Post NetId Migration below
 
 

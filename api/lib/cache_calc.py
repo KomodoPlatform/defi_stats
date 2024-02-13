@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from util.logger import logger, timed
-from util.transform import clean, sortdata, sumdata, derive, convert, merge, template
+from util.transform import clean, sortdata, sumdata, derive, merge, template
 import db.sqldb as db
 from util.cron import cron
 import util.defaults as default
@@ -167,6 +167,12 @@ class CacheCalc:
                 msg = "skipping cache_calc.tickers, coins_config is None"
                 return default.result(msg=msg, loglevel="warning", data=None)
 
+            # Skip if cache not available yet
+            if self.pair_prices_24hr is None:
+                self.pair_prices_24hr = memcache.get_pair_prices_24hr()
+                msg = "skipping cache_calc.tickers, pair_prices_24hr is None"
+                return default.result(msg=msg, loglevel="warning", data=None)
+
             suffix = transform.get_suffix(trades_days)
             ts = cron.now_utc() - pairs_days * 86400
             # Filter out pairs older than requested time
@@ -200,12 +206,6 @@ class CacheCalc:
                         for variant in data[pair]:
                             if variant in prices_data[pair]["prices"]:
                                 logger.calc(prices_data[pair]["prices"][variant])
-                                # logger.calc(data[i][j])
-                                # data[i][j].update(prices_data['prices'][i][j])
-                                # logger.info(prices_data[pair]["prices"][variant])
-                            else:
-                                pass
-                                # logger.warning(f"variant {variant} not found in prices_data!")
                     else:
                         logger.warning(f"{pair} not found in prices_data!")
 

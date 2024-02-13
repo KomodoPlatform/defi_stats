@@ -99,6 +99,7 @@ def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
     r = pair.get_average_price(sampledata.no_trades_info)
     assert r == 0
 
+
 def test_pair(
     setup_ltc_kmd_pair,
     setup_kmd_dgb_pair,
@@ -114,4 +115,3 @@ def test_pair(
     assert not pair.base == "DGB"
     assert pair.base == "KMD"
     assert pair.quote == "DGB"
-

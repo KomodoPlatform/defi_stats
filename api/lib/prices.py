@@ -8,7 +8,7 @@ import util.transform as transform
 
 
 @timed
-def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):
+def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     try:
         # Add 24hr prices
         suffix = transform.get_suffix(1)
@@ -31,11 +31,11 @@ def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):
             loglevel="cached",
             ignore_until=3,
         )
-    except Exception as e:  # pragma: no cover
+    except Exception as e:
         msg = f"{pair_str} failed: {e}!"
         try:
             data = template.pair_prices_info(suffix=suffix, base=base, quote=quote)
             msg += " Returning template!"
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             data = {"error": f"{msg}: {e}"}
         return default.result(data=data, msg=msg, loglevel="warning", ignore_until=0)

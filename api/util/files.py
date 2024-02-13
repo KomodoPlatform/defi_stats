@@ -100,7 +100,7 @@ class Files:
                 if memcache.get("testing") is None:
                     logger.warning(error)
             i += 1
-            time.sleep(0.1)
+            time.sleep(0.2)
         return None
 
     def download_json(self, url):

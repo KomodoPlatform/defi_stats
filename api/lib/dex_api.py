@@ -182,7 +182,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
         data = template.orderbook(pair_str=pair_str)
     is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
-        data = invert.orderbook(data)
+        data = invert.orderbook_fixture(data)
     data = orderbook_extras(pair_str, data, gecko_source)
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
         data = clean.decimal_dicts(data)
@@ -290,14 +290,3 @@ def get_liquidity(orderbook, gecko_source):
         return default.result(
             data=orderbook, msg=msg, loglevel="warning", ignore_until=5
         )
-
-
-@timed
-def add_orderbook_to_cache(pair_str, cache_name, data):
-    try:
-        memcache.update(cache_name, data, 600)
-        msg = f"Updated cache: {cache_name}"
-        return default.result(data, msg, loglevel="request", ignore_until=3)
-    except Exception as e:  # pragma: no cover
-        msg = f"add_orderbook_to_cache failed! {e}"
-        return default.error(e, msg)

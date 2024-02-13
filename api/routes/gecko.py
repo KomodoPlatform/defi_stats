@@ -4,6 +4,7 @@ from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
 from lib.pair import Pair
+from lib.cache_calc import CacheCalc
 from models.generic import ErrorMessage
 from models.gecko import (
     GeckoPairsItem,
@@ -13,7 +14,7 @@ from models.gecko import (
 )
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import convert, deplatform
+from util.transform import convert, deplatform, template
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
@@ -42,15 +43,35 @@ def gecko_pairs():
 @router.get(
     "/tickers",
     description="24-hour price & volume for each CoinGecko compatible pair traded in last 7 days.",
-    response_model=GeckoTickers,
+    # response_model=GeckoTickers,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def gecko_tickers():
     try:
-        tickers = deplatform.tickers(memcache.get_tickers(), priced_only=True)
-        tickers["data"] = [convert.ticker_to_gecko_ticker(i) for i in tickers["data"]]
-        return tickers
+        data = memcache.get_pair_orderbook_extended()
+        volumes = memcache.get_pair_volumes_24hr()
+        prices_data = memcache.get_pair_volumes_24hr()
+        resp = {
+            "last_update": int(cron.now_utc()),
+            "pairs_count": data["pairs_count"],
+            "swaps_count": data["swaps_24hr"],
+            "combined_volume_usd": data["volume_usd_24hr"],
+            "combined_liquidity_usd": data["combined_liquidity_usd"],
+            "data": []
+        }
+        for depair in data['data']:
+            x = data['data'][depair]["ALL"]
+            if depair in volumes["volumes"]:
+                vols = volumes['volumes'][depair]["ALL"]
+            else:
+                vols = template.pair_trade_vol_item()
+            if depair in prices_data:
+                prices = prices_data[depair]["ALL"]
+            else:
+                prices = template.pair_prices_info()
+            data.append(convert.pair_orderbook_extras_to_gecko_tickers(x, vols, prices))
+        return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}

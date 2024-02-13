@@ -9,7 +9,7 @@ import util.defaults as default
 import util.memcache as memcache
 import util.transform as transform
 from util.cron import cron
-from util.logger import timed
+from util.logger import timed, logger
 from util.transform import (
     sortdata,
     clean,
@@ -53,6 +53,7 @@ class Pair:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed! {e}"
             return default.result(msg=msg, loglevel="warning")
 
+    # TODO: Use the props instead of calling function where possible, esp. for depair and variants.
     @property
     def priced(self):
         if self._priced is None:
@@ -275,15 +276,14 @@ class Pair:  # pragma: no cover
                 pair_str=self.as_str,
             )
             for variant in swaps_for_pair_combo:
+                if variant.startswith("KMD_"):
+                    logger.calc(variant)
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
 
-                data.update(
-                    {
-                        variant: template.pair_prices_info(
+                data[variant] = template.pair_prices_info(
                             suffix, base=self.base, quote=self.quote
                         )
-                    }
-                )
+                
                 # TODO: using timestamps as an index works for now,
                 # but breaks when two swaps have the same timestamp.
                 if len(swap_prices) > 0:
@@ -296,24 +296,22 @@ class Pair:  # pragma: no cover
                     price_change = newest_price - oldest_price
                     pct_change = newest_price / oldest_price - 1
 
-                    data[variant].update(
-                        {
-                            "oldest_price_time": swap_keys[
-                                swap_vals.index(oldest_price)
-                            ],
-                            "newest_price_time": swap_keys[
-                                swap_vals.index(newest_price)
-                            ],
-                            "oldest_price": oldest_price,
-                            "newest_price": newest_price,
-                            f"highest_price_{suffix}": highest_price,
-                            f"lowest_price_{suffix}": lowest_price,
-                            f"price_change_pct_{suffix}": pct_change,
-                            f"price_change_{suffix}": price_change,
-                            "base_price_usd": self.base_price_usd,
-                            "quote_price_usd": self.quote_price_usd,
-                        }
-                    )
+                    data[variant] = {
+                        "oldest_price_time": swap_keys[
+                            swap_vals.index(oldest_price)
+                        ],
+                        "newest_price_time": swap_keys[
+                            swap_vals.index(newest_price)
+                        ],
+                        "oldest_price": oldest_price,
+                        "newest_price": newest_price,
+                        f"highest_price_{suffix}": highest_price,
+                        f"lowest_price_{suffix}": lowest_price,
+                        f"price_change_pct_{suffix}": pct_change,
+                        f"price_change_{suffix}": price_change,
+                        "base_price_usd": self.base_price_usd,
+                        "quote_price_usd": self.quote_price_usd,
+                    }
                 data[variant] = clean.decimal_dicts(data[variant])
 
             memcache.update(cache_name, data, 600)
@@ -321,35 +319,6 @@ class Pair:  # pragma: no cover
             return default.result(data=data, msg=msg, loglevel="cached", ignore_until=3)
         except Exception as e:  # pragma: no cover
             msg = f"get_pair_prices_info for {self.as_str} failed! {e}, returning template"
-            return default.result(
-                data=data, msg=msg, loglevel="warning", ignore_until=0
-            )
-
-    @timed
-    def first_last_traded(self, pair_str: str):
-        try:
-            if pair_str == "ALL":
-                variants = self.variants
-            else:
-                variants = [pair_str]
-            data = template.first_last_traded()
-            for variant in variants:
-                x = template.first_last_traded()
-
-                if variant in self.pairs_last_trade_cache:
-                    x = self.pairs_last_trade_cache[variant]
-                elif (
-                    invert.pair(variant) in self.pairs_last_trade_cache
-                ):  # pragma: no cover
-                    x = self.pairs_last_trade_cache[invert.pair(variant)]
-
-                data = merge.first_last_traded(data, x, self.is_reversed)
-
-            msg = f"Got first and last swap for {self.as_str}"
-            return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
-        except Exception as e:  # pragma: no cover
-            data = template.first_last_traded()
-            msg = f"Returning template for {self.as_str} ({e})"
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
@@ -369,24 +338,6 @@ class Pair:  # pragma: no cover
         return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
 
     @timed
-    def swap_uuids(
-        self,
-        start_time: Optional[int] = 0,
-        end_time: Optional[int] = 0,
-    ) -> list:
-        try:
-            data = self.pg_query.swap_uuids(
-                start_time=start_time, end_time=end_time, pair=self.as_str
-            )
-
-        except Exception as e:  # pragma: no cover
-            data = {"uuids": [], "variants": [self.as_str]}
-            msg = f"{self.as_str} swap_uuids failed! {e}"
-            return default.result(data=data, msg=msg, loglevel="warning")
-        msg = f"Completed swap_uuids for {self.as_str}"
-        return default.result(data=data, msg=msg, loglevel="pair", ignore_until=2)
-
-    @timed
     def orderbook(
         self,
         pair_str: str = "KMD_LTC",
@@ -399,7 +350,7 @@ class Pair:  # pragma: no cover
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 msg = {"error": "Market pair should be in `KMD_BTC` format"}
                 return default.result(
-                    data=data, msg=msg, loglevel="error", ignore_until=0
+                    data=None, msg=msg, loglevel="error", ignore_until=0
                 )
 
             combo_orderbook = {"ALL": template.orderbook(depair)}

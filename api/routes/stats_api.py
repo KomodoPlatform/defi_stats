@@ -127,7 +127,7 @@ def orderbook(
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)["ALL"]
         if Decimal(data["liquidity_usd"]) > 0:
             if is_reversed:
-                data = invert.markets_orderbook(data)
+                data = invert.pair_orderbook(data)
 
         data = transform.orderbook_to_gecko(data)
         return data

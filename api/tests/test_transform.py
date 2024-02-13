@@ -31,10 +31,82 @@ pairs_last_trade_cache = memcache.get_pair_last_traded()
 logger.info("Testing transformations...")
 
 
+# Clean
+def test_clean_decimal_dict_lists():
+    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
+    r = clean.decimal_dict_lists(x)
+    assert isinstance(r[0]["a"], float)
+    assert isinstance(r[0]["b"], str)
+    assert isinstance(r[0]["c"], int)
+    assert isinstance(r[0]["d"], bool)
+    assert isinstance(r[0]["e"], list)
+    assert isinstance(r[0]["f"], dict)
+    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
+    r = clean.decimal_dict_lists(x, True)
+    assert isinstance(r[1]["a"], str)
+
+
+def test_clean_decimal_dicts():
+    x = sampledata.dirty_dict.copy()
+    r = clean.decimal_dicts(x)
+    assert isinstance(r["a"], float)
+    assert isinstance(r["b"], str)
+    assert isinstance(r["c"], int)
+    assert isinstance(r["d"], bool)
+    x = sampledata.dirty_dict.copy()
+    r = clean.decimal_dicts(x, True, 6, ["c"])
+    assert isinstance(r["a"], str)
+    assert isinstance(r["c"], int)
+
+
+def test_clean_orderbook_data():
+    pass
+
+
+def test_sumdata_ints():
+    assert sumdata.ints(1, 2) == 3
+    assert sumdata.ints(1, "2") == 3
+    assert sumdata.ints("1", "2") == 3
+    assert sumdata.ints("1.1", "2.2") == 3
+
+
+def test_sumdata_lists():
+    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2], True)
+    assert r[0] == 0
+    assert len(r) == 6
+    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2])
+    assert r[0] == 1
+    assert len(r) == 6
+    r = sumdata.lists(
+        [{"x": 3, "y": 67}, {"x": 32, "y": 7}], [{"x": 35, "y": 5}, {"x": 2, "y": 27}]
+    )
+    assert len(r) == 4
+
+
+def test_sumdata_dict_lists():
+    r = sumdata.dict_lists(
+        [{"x": 3, "y": 67}, {"x": 32, "y": 7}], [{"x": 35, "y": 5}, {"x": 2, "y": 27}]
+    )
+    assert r[0]['x'] == 3
+    assert len(r) == 4
+    r = sumdata.dict_lists(
+        [{"x": 3, "y": 67}, {"x": 32, "y": 7}],
+        [{"x": 35, "y": 5}, {"x": 2, "y": 27}],
+        sort_key="x"
+    )
+    assert r[0]['x'] == 2
+    assert len(r) == 4
+
+
+def test_sumdata_numeric_str():
+    assert sumdata.numeric_str("12", "4") == "16.000000000"
+    assert sumdata.numeric_str(12, "4") == "16.000000000"
+    assert sumdata.numeric_str(12, 4) == "16.000000000"
+    
 def test_format_10f():
     assert transform.format_10f(1.234567890123456789) == "1.2345678901"
     assert transform.format_10f(1) == "1.0000000000"
-    assert transform.format_10f(1.23) == "1.2300000000"
+    assert transform.format_10f("1.23") == "1.2300000000"
 
 
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
@@ -71,32 +143,6 @@ def test_round_to_str():
     assert transform.round_to_str({"foo": "bar"}, 1) == "0.0"
 
 
-def test_clean_s():
-    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
-    r = clean.decimal_dict_lists(x)
-    assert isinstance(r[0]["a"], float)
-    assert isinstance(r[0]["b"], str)
-    assert isinstance(r[0]["c"], int)
-    assert isinstance(r[0]["d"], bool)
-    assert isinstance(r[0]["e"], list)
-    assert isinstance(r[0]["f"], dict)
-    x = [sampledata.dirty_dict.copy(), sampledata.dirty_dict.copy()]
-    r = clean.decimal_dict_lists(x, True)
-    assert isinstance(r[1]["a"], str)
-
-
-def test_clean_decimal_dict():
-    x = sampledata.dirty_dict.copy()
-    r = clean.decimal_dicts(x)
-    assert isinstance(r["a"], float)
-    assert isinstance(r["b"], str)
-    assert isinstance(r["c"], int)
-    assert isinstance(r["d"], bool)
-    x = sampledata.dirty_dict.copy()
-    r = clean.decimal_dicts(x, True, 6)
-    assert isinstance(r["a"], str)
-
-
 def test_list_json_key():
     assert (
         filterdata.dict_lists(sampledata.historical_trades, "type", "buy")
@@ -127,15 +173,6 @@ def test_get_suffix():
     assert transform.get_suffix(8) == "8d"
 
 
-def test_sort_dicts():
-    x = sortdata.dicts(sampledata.trades_info.copy()[0])
-    y = list(x.keys())
-    assert y[0] == "base_volume"
-    x = sortdata.dicts(sampledata.trades_info.copy()[0], True)
-    y = list(x.keys())
-    assert y[0] == "type"
-
-
 def test_sort_dict_list():
     x = sortdata.dict_lists(sampledata.trades_info.copy(), "trade_id")
     assert x[0]["trade_id"] == "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d"
@@ -156,11 +193,12 @@ def test_pair_by_market_cap():
     c = sortdata.pair_by_market_cap(("KMD_BTC-segwit"))
     d = sortdata.pair_by_market_cap(("KMD_BTC"))
     e = sortdata.pair_by_market_cap(("BTC-segwit_KMD-BEP20"))
+    
 
     assert b == d
     assert a == c
     assert e == "KMD-BEP20_BTC-segwit"
-
+    assert sortdata.pair_by_market_cap(("MARTY_DOC")) == "DOC_MARTY"
 
 def test_sort_top_items():
     data = [

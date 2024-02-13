@@ -3,7 +3,7 @@ from decimal import Decimal
 from lib.pair import Pair
 from lib.coins import get_segwit_coins
 from util.logger import timed, logger
-from util.transform import sortdata, derive, invert, merge, clean
+from util.transform import sortdata, derive, invert, merge, clean, template
 from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
@@ -28,47 +28,20 @@ class Markets:
                 for variant in book["orderbooks"][depair]:
                     if variant != "ALL":
                         v = variant.replace("-segwit", "")
+                        v_data = book["orderbooks"][depair][variant]
                         if v not in data:
-                            data.update(
-                                {
-                                    v: {
-                                        "last_price": Decimal(
-                                            book["orderbooks"][depair][variant][
-                                                "newest_price"
-                                            ]
-                                        ),
-                                        "quote_volume": Decimal(
-                                            book["orderbooks"][depair][variant][
-                                                "quote_liquidity_coins"
-                                            ]
-                                        ),
-                                        "base_volume": Decimal(
-                                            book["orderbooks"][depair][variant][
-                                                "base_liquidity_coins"
-                                            ]
-                                        ),
-                                        "isFrozen": "0",
-                                    }
-                                }
-                            )
+                            data.update(template.markets_ticker(v, v_data))
                         else:
                             data[v]["quote_volume"] += Decimal(
-                                book["orderbooks"][depair][variant][
-                                    "quote_liquidity_coins"
-                                ]
+                                v_data["quote_liquidity_coins"]
                             )
                             data[v]["base_volume"] += Decimal(
-                                book["orderbooks"][depair][variant][
-                                    "base_liquidity_coins"
-                                ]
+                                v_data["base_liquidity_coins"]
                             )
                             if (
-                                book["orderbooks"][depair][variant]["newest_price"]
-                                > data[v]["last_price"]
+                                v_data["newest_price"] > data[v]["last_price"]
                             ):
-                                data[v]["last_price"] = Decimal(
-                                    book["orderbooks"][depair][variant]["newest_price"]
-                                )
+                                data[v]["last_price"] = Decimal(v_data["newest_price"])
             for v in data:
                 if data[v]["base_volume"] != 0 and data[v]["quote_volume"] != 0:
                     base, quote = derive.base_quote(pair_str=v)
@@ -92,11 +65,8 @@ class Markets:
                 start_time=start_time,
                 end_time=end_time,
             )
-            logger.calc(len(data))
             resp = []
             base, quote = derive.base_quote(pair_str)
-            logger.calc(base)
-            logger.calc(quote)
             if all_variants:
                 resp = merge.trades(resp, data["ALL"])
             else:

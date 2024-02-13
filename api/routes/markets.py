@@ -33,7 +33,6 @@ from util.transform import (
 )
 import util.memcache as memcache
 from util.transform import template
-import util.transform as transform
 import util.validate as validate
 import db.sqldb as db
 
@@ -99,7 +98,7 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         if Decimal(orderbook_data["liquidity_usd"]) > 0:
             if is_reversed:
                 logger.calc("Returning inverted cache")
-                orderbook_data = invert.markets_orderbook(orderbook_data)
+                orderbook_data = invert.pair_orderbook(orderbook_data)
         logger.loop(orderbook_data.keys())
         orderbook_data.update({"liquidity_usd": orderbook_data["liquidity_usd"]})
         logger.pair(orderbook_data.keys())
@@ -304,10 +303,7 @@ def tickers_summary():
     response_model=List[PairTrades],
     description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
 )
-def trades(
-    pair_str: str = "KMD_LTC",
-    days_in_past: int = 5
-):
+def trades(pair_str: str = "KMD_LTC", days_in_past: int = 5):
     try:
         for value, name in [(days_in_past, "days_in_past")]:
             validate.positive_numeric(value, name)
