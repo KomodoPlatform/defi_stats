@@ -29,17 +29,15 @@ class GeckoTickersItem(BaseModel):
     trades_24hr: str = "777"
     last_price: str = "777.777777"
     last_trade: str = "777.777777"
-    last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
     volume_usd_24hr: str = "777.777777"
     liquidity_usd: str = "777.777777"
-    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 
 # gecko/tickers
 class GeckoTickers(GenericTickersInfo):
     last_update: str = "1777777777"
-    pairs_count: str = "1777777777"
-    swaps_count: str = "1777777777"
+    pairs_count: str = "77777"
+    swaps_count: str = "77777"
     combined_volume_usd: str = "777.777777"
     combined_liquidity_usd: str = "777.777777"
     data: List[GeckoTickersItem]

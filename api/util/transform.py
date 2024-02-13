@@ -93,7 +93,7 @@ class Convert:
         pass
 
 
-    def pair_orderbook_extras_to_gecko_tickers(x, vols, prices):
+    def pair_orderbook_extras_to_gecko_tickers(self, x, vols, prices):
         return {
             "ticker_id": x["pair"],
             "pool_id": x["pair"],
@@ -103,13 +103,13 @@ class Convert:
             "target_volume": vols["quote_volume"],
             "bid": x["highest_bid"],
             "ask": x["lowest_ask"],
-            "high": x["highest_price_24hr"],
-            "low": x["lowest_price_24hr"],
+            "high": prices["highest_price_24hr"],
+            "low": prices["lowest_price_24hr"],
             "trades_24hr": vols["swaps"],
-            "last_price": x["newest_price"],
-            "last_trade": x["newest_price_time"],
+            "last_price": prices["newest_price"],
+            "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
-            "liquidity_in_usd": x["liquidity_usd"]
+            "liquidity_usd": x["liquidity_usd"]
         }
 
     def ticker_to_gecko_pair(self, pair_data):
@@ -120,15 +120,6 @@ class Convert:
             "target": pair_data["quote_currency"],
             "variants": pair_data["variants"],
         }
-
-    def pair_volume_cache_to_book_extras(pair_str, data):
-        data.update(
-            {
-                "volume_usd_24hr": Decimal(v["trade_volume_usd"]),
-                "trades_24hr": int(v["swaps"]),
-            }
-        )
-        return data
 
     def ticker_to_gecko_ticker(self, ticker_data):
         return {
@@ -1330,6 +1321,8 @@ class Templates:  # pragma: no cover
             f"lowest_price_{suffix}": 0,
             "base_price_usd": 0,
             "quote_price_usd": 0,
+            "swaps": 0,
+            "trade_volume_usd": 0
         }
 
     def volumes_ticker(self):
@@ -1408,6 +1401,10 @@ class Templates:  # pragma: no cover
             "base_volume": 0,
             "quote_volume": 0,
             "swaps": 0,
+            "base_volume_usd": 0,
+            "quote_volume_usd": 0,
+            "trade_volume_usd": 0,
+            "dex_price": 0
         }
 
     def last_trade_info(self):
