@@ -1254,7 +1254,15 @@ class Templates:  # pragma: no cover
     def __init__(self) -> None:
         pass
 
-    
+    def gecko_pair_item(self, pair_str: str, coins_config: Dict) -> dict:
+        base, quote = derive.base_quote(pair_str=pair_str)
+        return {
+            "ticker_id": pair_str,
+            "pool_id": pair_str,
+            "base": base,
+            "target": quote,
+            "variants": derive.pair_variants(pair_str=pair_str, coins_config=coins_config)
+        }
 
     def pair_info(self, pair_str: str, priced: bool = False) -> dict:
         base, quote = derive.base_quote(pair_str)

@@ -33,8 +33,11 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        tickers = deplatform.tickers(memcache.get_tickers(), priced_only=True)
-        return [convert.ticker_to_gecko_pair(i) for i in tickers["data"]]
+        coins = memcache.get_coins_config()
+        cache = memcache.get_pair_last_traded()
+        ts = cron.now_utc() - 86400 * 7
+        pairs = derive.pairs_traded_since(ts=ts, pairs_last_trade_cache=cache)
+        return [template.gecko_pair_item(i, coins) for i in pairs]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
