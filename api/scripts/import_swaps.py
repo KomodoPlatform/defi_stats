@@ -13,7 +13,7 @@ if __name__ == "__main__":
     DB = db.SqlSource()
     if RESET_TABLE:
         DB.reset_defi_stats_table()
-    DB.import_swaps(start_dt=date(2020, 5, 5), end_dt=date(2024, 2, 14))
+    DB.import_swaps(start_dt=date(2024, 2, 10), end_dt=date(2024, 2, 15))
 
 
 # DB Table validation:

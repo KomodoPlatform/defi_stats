@@ -92,6 +92,30 @@ class Convert:
     def __init__(self):
         pass
 
+    @timed
+    def orderbook_to_gecko(self, data, depth, reverse=False):
+        if reverse:
+            return {
+                "ticker_id": invert.pair(data["pair"]),
+                "timestamp": int(cron.now_utc()),
+                "variants": derive.pair_variants(pair_str=invert.pair(data["pair"])),
+                "asks": [invert.ask_bid(i) for i in data["bids"]][:depth],
+                "bids": [invert.ask_bid(i) for i in data["asks"]][:depth],
+            }
+        else:
+            return {
+                "ticker_id": data["pair"],
+                "timestamp": int(cron.now_utc()),
+                "variants": derive.pair_variants(pair_str=data["pair"]),
+                "bids": [
+                    [format_10f(i["price"]), format_10f(i["volume"])]
+                    for i in data["bids"]
+                ][:depth],
+                "asks": [
+                    [format_10f(i["price"]), format_10f(i["volume"])]
+                    for i in data["asks"]
+                ][:depth],
+            }
 
     def pair_orderbook_extras_to_gecko_tickers(self, x, vols, prices):
         return {
@@ -109,7 +133,7 @@ class Convert:
             "last_price": prices["newest_price"],
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
-            "liquidity_usd": x["liquidity_usd"]
+            "liquidity_usd": x["liquidity_usd"],
         }
 
     def ticker_to_gecko_pair(self, pair_data):
@@ -145,21 +169,14 @@ class Convert:
     def historical_trades_to_gecko(self, i):
         return {
             "trade_id": i["trade_id"],
+            "base": i["base_coin"],
+            "target": i["quote_coin"],
             "price": i["price"],
             "base_volume": i["base_volume"],
             "target_volume": i["quote_volume"],
             "timestamp": i["timestamp"],
             "type": i["type"],
         }
-
-
-@timed
-def orderbook_to_gecko(data):
-    bids = [[i["price"], i["volume"]] for i in data["bids"]]
-    asks = [[i["price"], i["volume"]] for i in data["asks"]]
-    data["asks"] = asks
-    data["bids"] = bids
-    return data
 
 
 @timed
@@ -787,8 +804,8 @@ class Invert:
 
     def ask_bid(self, i):
         return {
-            "price": Decimal(i["volume"]) / Decimal(i["quote_volume"]),
-            "volume": Decimal(i["quote_volume"]),
+            "price": format_10f(Decimal(i["volume"]) / Decimal(i["quote_volume"])),
+            "volume": format_10f(Decimal(i["quote_volume"])),
         }
 
     def pair_orderbook(self, orderbook):
@@ -1063,7 +1080,6 @@ class SortData:
         resp = sorted(data, key=lambda k: k[key], reverse=reverse)
         return resp
 
-
     def top_items(self, data: List[Dict], sort_key: str, length: int = 5):
         data.sort(key=lambda x: x[sort_key], reverse=True)
         return data[:length]
@@ -1254,6 +1270,16 @@ class Templates:  # pragma: no cover
     def __init__(self) -> None:
         pass
 
+    def gecko_orderbook(self, pair_str: str) -> dict:
+        base, quote = derive.base_quote(pair_str=pair_str)
+        return {
+            "ticker_id": pair_str,
+            "timestamp": int(cron.now_utc()),
+            "bids": [],
+            "asks": [],
+            "variants": [pair_str],
+        }
+
     def gecko_pair_item(self, pair_str: str, coins_config: Dict) -> dict:
         base, quote = derive.base_quote(pair_str=pair_str)
         return {
@@ -1261,7 +1287,9 @@ class Templates:  # pragma: no cover
             "pool_id": pair_str,
             "base": base,
             "target": quote,
-            "variants": derive.pair_variants(pair_str=pair_str, coins_config=coins_config)
+            "variants": derive.pair_variants(
+                pair_str=pair_str, coins_config=coins_config
+            ),
         }
 
     def pair_info(self, pair_str: str, priced: bool = False) -> dict:
@@ -1330,7 +1358,7 @@ class Templates:  # pragma: no cover
             "base_price_usd": 0,
             "quote_price_usd": 0,
             "swaps": 0,
-            "trade_volume_usd": 0
+            "trade_volume_usd": 0,
         }
 
     def volumes_ticker(self):
@@ -1412,7 +1440,7 @@ class Templates:  # pragma: no cover
             "base_volume_usd": 0,
             "quote_volume_usd": 0,
             "trade_volume_usd": 0,
-            "dex_price": 0
+            "dex_price": 0,
         }
 
     def last_trade_info(self):
@@ -1476,6 +1504,7 @@ class Templates:  # pragma: no cover
                 "isFrozen": "0",
             }
         }
+
 
 template = Templates()
 clean = Clean()

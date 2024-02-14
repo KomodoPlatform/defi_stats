@@ -63,7 +63,7 @@ class DexAPI:
                 msg = f"{base} == {quote}: Returning template"
                 resp = template.orderbook(f"{base}_{quote}")
 
-            return default.result(data=resp, msg=msg, loglevel="loop", ignore_until=2)
+            return default.result(data=resp, msg=msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
             data = template.orderbook(pair_str=f"{base}_{quote}")
             msg = f"orderbook rpc failed for {base}_{quote}: {e} {type(e)}. Returning template."
@@ -109,7 +109,7 @@ def get_orderbook(
     gecko_source: Dict,
     variant_cache_name: str,
     depth: int = 100,
-    no_thread: bool = True,
+    no_thread: bool = True
 ):
     try:
         ignore_until = 3
