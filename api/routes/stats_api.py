@@ -2,9 +2,7 @@
 from decimal import Decimal
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from util.cron import cron
 from typing import List
-import db.sqldb as db
 from lib.cache import Cache
 from lib.cache_calc import CacheCalc
 from lib.pair import Pair
@@ -15,17 +13,14 @@ from models.stats_api import (
     StatsApiOrderbook,
     StatsApiTradeInfo,
 )
+from util.cron import cron
 from util.logger import logger
+import db.sqldb as db
+import lib.dex_api as dex
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
-from util.transform import (
-    deplatform,
-    derive,
-    invert,
-    sortdata,
-    convert
-)
+from util.transform import deplatform, derive, invert, sortdata, convert
 
 router = APIRouter()
 cache = Cache()
@@ -40,13 +35,16 @@ cache = Cache()
 )
 def atomicdexio():
     try:
-        cache = Cache(netid="ALL")
-        tickers_data = cache.get_item(name="generic_tickers").data
-        # TODO: Move to new DB
         query = db.SqlQuery()
-        counts = query.swap_counts()
-        counts.update({"current_liquidity": tickers_data["combined_liquidity_usd"]})
-        return counts
+        data = query.swap_counts()
+        tickers_data = CacheCalc().tickers()
+        data.update(
+            {
+                "current_liquidity": tickers_data["combined_liquidity_usd"],
+                "volume_24hr": tickers_data["combined_volume_usd"],
+            }
+        )
+        return data
 
     except Exception as e:  # pragma: no cover
         err = {"error": f"Error in [/api/v3/stats-api/atomicdexio]: {e}"}
@@ -60,7 +58,7 @@ def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
         pass
-        # return memcache.get_adex_fortnite()
+        return memcache.get_adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
@@ -112,23 +110,46 @@ def orderbook(
     depth: int = 100,
 ):
     try:
+        book = memcache.get_pair_orderbook_extended()
+
         depair = deplatform.pair(pair_str)
-        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
-        if is_reversed:
-            cache_name = f"orderbook_{invert.pair(depair)}_ALL"
-        else:
-            cache_name = f"orderbook_{depair}_ALL"
-
-        data = memcache.get(cache_name)
-        if data is None:
-            pair = Pair(pair_str=pair_str)
-            data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)["ALL"]
-        if Decimal(data["liquidity_usd"]) > 0:
-            if is_reversed:
-                data = invert.pair_orderbook(data)
-
-        data = convert.orderbook_to_gecko(data)
-        return data
+        if depair in book["orderbooks"]:
+            data = book["orderbooks"][depair]["ALL"]
+            return convert.orderbook_to_stats_api(data, depth=depth)
+        elif invert.pair(depair) in book["orderbooks"]:
+            data = book["orderbooks"][invert.pair(depair)]["ALL"]
+            return convert.orderbook_to_stats_api(data, depth=depth, reverse=True)
+        # Use direct method if no cache.
+        variant_cache_name = f"orderbook_{pair_str}"
+        coins_config = memcache.get_coins_config()
+        gecko_source = memcache.get_gecko_source()
+        base, quote = derive.base_quote(pair_str=pair_str)
+        data = dex.get_orderbook(
+            base=base,
+            quote=quote,
+            coins_config=coins_config,
+            gecko_source=gecko_source,
+            variant_cache_name=variant_cache_name,
+            depth=depth,
+            no_thread=True,
+        )
+        resp = {
+            "pair": pair_str,
+            "timestamp": int(cron.now_utc()),
+            "variants": [pair_str],
+            "bids": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["bids"]
+            ][:depth],
+            "asks": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["asks"]
+            ][:depth],
+            "total_asks_base_vol": data['base_liquidity_coins'],
+            "total_bids_quote_vol": data['quote_liquidity_coins']            
+        }
+        logger.calc(resp)
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

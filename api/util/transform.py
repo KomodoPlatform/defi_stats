@@ -119,8 +119,48 @@ class Convert:
         return f"{value:.{rounding}f}"
 
     @timed
+    def orderbook_to_stats_api(self, data, depth=100, reverse=False):
+        if reverse:
+            return {
+                "ticker_id": invert.pair(data["pair"]),
+                "timestamp": int(cron.now_utc()),
+                "variants": derive.pair_variants(pair_str=invert.pair(data["pair"])),
+                "asks": [invert.ask_bid(i) for i in data["bids"]][:depth],
+                "bids": [invert.ask_bid(i) for i in data["asks"]][:depth],
+            }
+        else:
+            return  {
+                "pair": data["pair"],
+                "timestamp": int(cron.now_utc()),
+                "variants": derive.pair_variants(pair_str=data["pair"]),
+                "bids": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in data["bids"]
+                ][:depth],
+                "asks": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in data["asks"]
+                ][:depth],
+                "total_asks_base_vol": data['base_liquidity_coins'],
+                "total_bids_quote_vol": data['quote_liquidity_coins']            
+            }
+        
+        {
+                "ticker_id": data["pair"],
+                "timestamp": int(cron.now_utc()),
+                "variants": derive.pair_variants(pair_str=data["pair"]),
+                "bids": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in data["bids"]
+                ][:depth],
+                "asks": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in data["asks"]
+                ][:depth],
+            }
+
+    @timed
     def orderbook_to_gecko(self, data, depth=100, reverse=False):
-        logger.calc(data)
         if reverse:
             return {
                 "ticker_id": invert.pair(data["pair"]),

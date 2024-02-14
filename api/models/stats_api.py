@@ -8,6 +8,7 @@ class StatsApiAtomicdexIo(BaseModel):
     swaps_30d: int = 777777
     swaps_all_time: int = 777777777777
     current_liquidity: float = 7777777.777
+    volume_24hr: float = 7777777.777
 
 
 # stats-api/atomicdex_fortnight
@@ -60,10 +61,11 @@ class StatsApiSummary(BaseModel):
 class StatsApiOrderbook(BaseModel):
     pair: str = "XXX_YYY"
     timestamp: str = "1777777777"
-    bids: List[List] = [["777.777777", "777.777777"]]
-    asks: List[List] = [["777.777777", "777.777777"]]
     total_asks_base_vol: str = "777.777777"
     total_bids_quote_vol: str = "777.777777"
+    variants: List = ["XXX_YYY", "XXX-BEP20_YYY", "XXX_YYY-segwit"]
+    bids: List[List] = [["777.777777", "777.777777"]]
+    asks: List[List] = [["777.777777", "777.777777"]]
 
 
 class StatsApiTradeInfo(BaseModel):
