@@ -6,6 +6,7 @@ from util.cron import cron
 from typing import List
 import db.sqldb as db
 from lib.cache import Cache
+from lib.cache_calc import CacheCalc
 from lib.pair import Pair
 from models.generic import ErrorMessage
 from models.stats_api import (
@@ -76,12 +77,8 @@ def atomicdex_fortnight():
 )
 def summary():
     try:
-        tickers_data = deplatform.tickers(memcache.get_tickers(), priced_only=True)
-        tickers = []
-        for i in tickers_data["data"]:
-            x = transform.ticker_to_statsapi_summary(i)
-            tickers.append(x)
-        return tickers
+        data = CacheCalc().stats_api_summary()
+        return data
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/summary]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats-api/atomicdexio]: {e}"}

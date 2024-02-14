@@ -23,6 +23,7 @@ memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
 memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
 memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
 memcache.set_tickers(CacheItem(name="tickers").data)
+memcache.set_stats_api_summary(CacheItem(name="stats_api_summary").data)
 
 # memcache.set_summary(CacheItem(name="generic_summary").data)
 # memcache.set_tickers(CacheItem(name="generic_tickers").data)

@@ -340,7 +340,9 @@ def ticker_to_statsapi_summary(i):
             f"highest_price_{alt_suffix}": Decimal(i[f"highest_price_{suffix}"]),
             f"lowest_price_{alt_suffix}": Decimal(i[f"lowest_price_{suffix}"]),
             f"price_change_{alt_suffix}": Decimal(i[f"price_change_{suffix}"]),
-            f"price_change_pct_{alt_suffix}": Decimal(i[f"price_change_pct_{suffix}"]),
+            f"price_change_percent_{alt_suffix}": Decimal(
+                i[f"price_change_pct_{suffix}"]
+            ),
             "last_swap_price": i["last_swap_price"],
             "last_swap_time": int(Decimal(i["last_swap_time"])),
             "last_swap_uuid": i["last_swap_uuid"],
@@ -614,6 +616,8 @@ class Derive:
                     for i in data
                     if i.endswith("segwit") or i.replace(decoin, "") == ""
                 ]
+            if len(data) == 0:
+                data = [coin]
             return data
         except Exception as e:
             logger.warning(f"coin variants for {coin} failed: {e}")
@@ -664,6 +668,7 @@ class Derive:
             return variants
         except Exception as e:
             logger.warning(f"pair variants for {pair_str} failed: {e}")
+            return [pair_str]
 
     @timed
     def pairs_traded_since(self, ts, pairs_last_trade_cache):
@@ -967,7 +972,7 @@ class Merge:
             resp = resp + swaps[i]
         return sortdata.dict_lists(resp, "finished_at", reverse=True)
 
-    def orderbooks(self, existing, new):
+    def orderbooks(self, existing, new, gecko_source):
         try:
             existing.update(
                 {
@@ -1008,6 +1013,52 @@ class Merge:
             if Decimal(existing["highest_bid"]) < Decimal(new["highest_bid"]):
                 existing["highest_bid"] = new["highest_bid"]
 
+            if int(Decimal(existing["newest_price_time"])) < int(
+                Decimal(new["newest_price_time"])
+            ):
+                existing["newest_price_time"] = new["newest_price_time"]
+                existing["newest_price"] = new["newest_price"]
+
+            if (
+                existing["oldest_price_time"] > new["oldest_price_time"]
+                or existing["oldest_price_time"] == 0
+            ):
+                existing["oldest_price_time"] = new["oldest_price_time"]
+                existing["oldest_price"] = new["oldest_price"]
+
+            if Decimal(existing["highest_price_24hr"]) < Decimal(
+                new["highest_price_24hr"]
+            ):
+                existing["highest_price_24hr"] = new["highest_price_24hr"]
+
+            if (
+                Decimal(existing["lowest_price_24hr"])
+                > Decimal(new["lowest_price_24hr"])
+                or existing["lowest_price_24hr"] == 0
+            ):
+                existing["lowest_price_24hr"] = new["lowest_price_24hr"]
+
+            existing["price_change_24hr"] = convert.format_10f(
+                Decimal(existing["newest_price"]) - Decimal(existing["oldest_price"])
+            )
+            if Decimal(existing["oldest_price"]) > 0:
+                existing["price_change_pct_24hr"] = convert.format_10f(
+                    Decimal(existing["newest_price"])
+                    / Decimal(existing["oldest_price"])
+                    - 1
+                )
+            else:
+                existing["price_change_pct_24hr"] = convert.format_10f(0)
+            existing.update(
+                {
+                    "base_price_usd": derive.gecko_price(
+                        existing["base"], gecko_source=gecko_source
+                    ),
+                    "quote_price_usd": derive.gecko_price(
+                        existing["quote"], gecko_source=gecko_source
+                    ),
+                }
+            )
             return existing
         except Exception as e:  # pragma: no cover
             logger.warning(new)
@@ -1466,6 +1517,41 @@ class Templates:  # pragma: no cover
             "maker_last_swap_time": 0,
             "taker_last_swap_uuid": 0,
             "taker_last_swap_time": 0,
+        }
+
+    def stats_api_summary(self, pair_str):
+        new = {
+            "ticker_id": pair_str,
+            "base_currency": o["base"],
+            "base_trade_value_usd": 0,
+            "base_liquidity_coins": 0,
+            "base_liquidity_usd": 0,
+            "base_volume": 0,
+            "quote_currency": o["quote"],
+            "quote_trade_value_usd": 0,
+            "quote_liquidity_coins": 0,
+            "quote_liquidity_usd": 0,
+            "quote_volume": 0,
+            "lowest_ask": 0,
+            "highest_bid": 0,
+            "lowest_price_24h": 0,
+            "highest_price_24h": 0,
+            "price_change_24h": 0,
+            "price_change_pct_24h": 0,
+            "newest_price": 0,
+            "newest_price_time": 0,
+            "oldest_price": 0,
+            "oldest_price_time": 0,
+            "last_swap_price": 0,
+            "last_swap_time": 0,
+            "last_swap_uuid": "",
+            "pair_swaps_count": 0,
+            "pair_liquidity_usd": 0,
+            "volume_usd_24h": 0,
+            "pair_trade_value_usd": 0,
+            "base_price_usd": 0,
+            "quote_price_usd": 0,
+            "variants": [i for i in book["orderbooks"][depair] if i != "ALL"],
         }
 
     def markets_summary(self, pair_str):

@@ -44,6 +44,7 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
     memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
     memcache.set_tickers(CacheItem(name="tickers").data)
+    memcache.set_stats_api_summary(CacheItem(name="stats_api_summary").data)
 
     # memcache.set_summary(CacheItem(name="generic_summary").data)
     # memcache.set_tickers(CacheItem(name="generic_tickers").data)
@@ -215,6 +216,19 @@ def gecko_pairs():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Gecko pairs data update loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def stats_api_summary():  # pragma: no cover
+    if memcache.get("testing") is None:
+        try:
+            CacheItem("stats_api_summary").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "stats_api_summary data update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 

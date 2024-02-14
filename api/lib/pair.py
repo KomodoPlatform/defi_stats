@@ -275,8 +275,6 @@ class Pair:  # pragma: no cover
                 pair_str=self.as_str,
             )
             for variant in swaps_for_pair_combo:
-                if variant.startswith("KMD_"):
-                    logger.calc(variant)
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
 
                 data[variant] = template.pair_prices_info(suffix)
@@ -371,7 +369,9 @@ class Pair:  # pragma: no cover
                     combo_orderbook[variant]
                 )
                 combo_orderbook["ALL"] = merge.orderbooks(
-                    combo_orderbook["ALL"], combo_orderbook[variant]
+                    combo_orderbook["ALL"],
+                    combo_orderbook[variant],
+                    gecko_source=self.gecko_source,
                 )
             # Apply depth limit after caching so cache is complete
             # TODO: Recalc liquidity if depth is less than data.

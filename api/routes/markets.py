@@ -82,7 +82,7 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
-
+        gecko_source = memcache.get_gecko_source()
         orderbook_data = template.orderbook(pair_str=pair_str)
         for variant in derive.pair_variants(pair_str=pair_str, segwit_only=True):
             if variant in data:
@@ -92,7 +92,9 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
             else:
                 logger.warning(f"Unable to find orderbook for {variant}")
                 variant_data = template.orderbook(variant)
-            orderbook_data = merge.orderbooks(orderbook_data, variant_data)
+            orderbook_data = merge.orderbooks(
+                orderbook_data, variant_data, gecko_source=gecko_source
+            )
 
         logger.merge(data.keys())
         if Decimal(orderbook_data["liquidity_usd"]) > 0:

@@ -189,6 +189,10 @@ class CacheItem:
                     data = cache_calc.CacheCalc().gecko_pairs(refresh=True)
                     memcache.set_gecko_pairs(data)
 
+                if self.name == "stats_api_summary":
+                    data = cache_calc.CacheCalc().stats_api_summary(refresh=True)
+                    memcache.set_stats_api_summary(data)
+
                 # REVIEW
                 """
                 if self.name == "generic_summary":

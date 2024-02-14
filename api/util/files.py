@@ -39,7 +39,7 @@ class Files:
         self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
 
         # MARKETS CACHE
-        self.markets_summary = f"{folder}/generic/markets_summary.json"
+        self.markets_summary = f"{folder}/markets/summary.json"
 
         # REVIEW
         # self.generic_summary = f"{folder}/generic/summary.json"
@@ -50,6 +50,7 @@ class Files:
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
 
+        self.stats_api_summary = f"{folder}/stats_api/summary.json"
         self.tickers = f"{folder}/generic/tickers.json"
 
     def get_cache_fn(self, name):
