@@ -28,7 +28,6 @@ class CacheCalc:
             data = self.pg_query.pair_last_trade()
             price_status_dict = derive.price_status_dict(data.keys(), self.gecko_source)
             for i in data:
-
                 data[i] = clean.decimal_dicts(data[i])
                 data[i].update(
                     {"priced": helper.get_pair_priced_status(i, price_status_dict)}
@@ -359,6 +358,8 @@ class CacheCalc:
                             }
                             merged = merge.market_summary(existing, new)
                             existing = clean.decimal_dicts(merged)
+                        # remove where no past trades detected
+                        if "last_swap_uuid" != "":
                             data.update({variant: existing})
                 resp = [i for i in data.values()]
             return resp
