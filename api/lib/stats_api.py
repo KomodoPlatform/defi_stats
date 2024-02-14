@@ -37,7 +37,7 @@ class StatsAPI:  # pragma: no cover
                     pairs_days = days
                 ts = cron.now_utc() - days * 86400
                 pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-                suffix = transform.get_suffix(days)
+                suffix = derive.suffix(days)
                 ticker_infos = []
                 if self.gecko_source is None:
                     self.gecko_source = memcache.get_gecko_source()

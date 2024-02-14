@@ -11,7 +11,7 @@ from tests.fixtures_pair import (
     setup_morty_kmd_pair,
 )
 from util.logger import logger
-from util.transform import clean, derive
+from util.transform import clean, derive, convert
 from util.cron import cron
 import util.transform as transform
 
@@ -39,14 +39,14 @@ def test_historical_trades(
     assert len(r_all["buy"]) == 2
     assert r_all["ticker_id"] == "KMD_LTC"
     assert r_all["buy"][0]["type"] == "buy"
-    assert r_all["buy"][0]["base_volume"] == transform.format_10f(100)
-    assert r_all["buy"][0]["quote_volume"] == transform.format_10f(1)
+    assert r_all["buy"][0]["base_volume"] == convert.format_10f(100)
+    assert r_all["buy"][0]["quote_volume"] == convert.format_10f(1)
     assert r_all["buy"][0]["timestamp"] > r_all["buy"][1]["timestamp"]
     assert r_all["sell"][0]["type"] == "sell"
     assert r_all["sell"][0]["base_coin_ticker"] == "KMD"
     assert r_all["sell"][0]["quote_coin_ticker"] == "LTC"
-    assert r_all["sell"][0]["base_volume"] == transform.format_10f(100)
-    assert r_all["sell"][0]["quote_volume"] == transform.format_10f(1)
+    assert r_all["sell"][0]["base_volume"] == convert.format_10f(100)
+    assert r_all["sell"][0]["quote_volume"] == convert.format_10f(1)
     assert Decimal(r_all["buy"][0]["price"]) == Decimal("0.01")
     assert Decimal(r_all["sell"][0]["price"]) == Decimal("0.01")
 
@@ -56,8 +56,8 @@ def test_historical_trades(
     assert len(r_std["buy"]) == 1
     assert len(r_std["sell"]) == 0
     assert r_std["buy"][0]["type"] == "buy"
-    assert r_std["buy"][0]["base_volume"] == transform.format_10f(200)
-    assert r_std["buy"][0]["quote_volume"] == transform.format_10f(2)
+    assert r_std["buy"][0]["base_volume"] == convert.format_10f(200)
+    assert r_std["buy"][0]["quote_volume"] == convert.format_10f(2)
     assert Decimal(r_std["buy"][0]["price"]) == Decimal("0.01")
 
     # Test segwit pair
@@ -94,7 +94,7 @@ def test_historical_trades(
 
 def test_get_average_price(setup_kmd_ltc_pair, setup_not_existing_pair):
     pair = setup_not_existing_pair
-    r = pair.get_average_price(sampledata.trades_info)
+    r = pair.get_average_price(sampledata.historical_trades)
     assert r == 1
     r = pair.get_average_price(sampledata.no_trades_info)
     assert r == 0

@@ -28,4 +28,4 @@ def setup_ticker_to_statsapi_7d():
 
 @pytest.fixture
 def setup_historical_trades_to_market_trades():
-    yield transform.historical_trades_to_market_trades(sampledata.trades_info[0])
+    yield transform.historical_trades_to_market_trades(sampledata.historical_trades[0])

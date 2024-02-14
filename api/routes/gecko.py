@@ -15,7 +15,7 @@ from models.gecko import (
 )
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import convert, deplatform, template, derive, invert, format_10f
+from util.transform import convert, deplatform, derive, invert
 import util.memcache as memcache
 import util.validate as validate
 
@@ -33,11 +33,7 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        coins = memcache.get_coins_config()
-        cache = memcache.get_pair_last_traded()
-        ts = cron.now_utc() - 86400 * 7
-        pairs = derive.pairs_traded_since(ts=ts, pairs_last_trade_cache=cache)
-        return [template.gecko_pair_item(i, coins) for i in pairs]
+        return CacheCalc().gecko_pairs()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -52,34 +48,18 @@ def gecko_pairs():
 )
 def gecko_tickers():
     try:
-        data = memcache.get_pair_orderbook_extended()
-        volumes = memcache.get_pair_volumes_24hr()
-        prices_data = memcache.get_pair_prices_24hr()
+        data = CacheCalc().tickers()
+        logger.calc(data.keys())
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": data["pairs_count"],
-            "swaps_count": data["swaps_24hr"],
-            "combined_volume_usd": data["volume_usd_24hr"],
+            "swaps_count": data["swaps_count"],
+            "combined_volume_usd": data["combined_volume_usd"],
             "combined_liquidity_usd": data["combined_liquidity_usd"],
             "data": [],
         }
-        logger.calc(data.keys())
-        for depair in data["orderbooks"]:
-            base, quote = derive.base_quote(depair)
-            x = data["orderbooks"][depair]["ALL"]
-            if depair in volumes["volumes"]:
-                vols = volumes["volumes"][depair]["ALL"]
-            else:
-                vols = template.pair_trade_vol_item()
-            if depair in prices_data:
-                prices = prices_data[depair]["ALL"]
-            else:
-                prices = template.pair_prices_info(
-                    suffix="24hr", base=base, quote=quote
-                )
-            resp["data"].append(
-                convert.pair_orderbook_extras_to_gecko_tickers(x, vols, prices)
-            )
+        for depair in data["data"]:
+            resp["data"].append(data["data"][depair])
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
@@ -89,7 +69,7 @@ def gecko_tickers():
 @router.get(
     "/orderbook/{pair_str}",
     description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
-    # response_model=GeckoOrderbook,
+    response_model=GeckoOrderbook,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -128,10 +108,12 @@ def gecko_orderbook(
             "timestamp": int(cron.now_utc()),
             "variants": [pair_str],
             "bids": [
-                [format_10f(i["price"]), format_10f(i["volume"])] for i in data["bids"]
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["bids"]
             ][:depth],
             "asks": [
-                [format_10f(i["price"]), format_10f(i["volume"])] for i in data["asks"]
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["asks"]
             ][:depth],
         }
         return resp

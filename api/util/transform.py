@@ -25,7 +25,7 @@ class Clean:
                 for j in i:
                     if isinstance(i[j], Decimal):
                         if to_string:
-                            i[j] = round_to_str(i[j], rounding)
+                            i[j] = convert.round_to_str(i[j], rounding)
                         else:
                             i[j] = round(float(i[j]), rounding)
             return data
@@ -45,7 +45,7 @@ class Clean:
                 if i not in exclude_keys:
                     if isinstance(data[i], Decimal):
                         if to_string:
-                            data[i] = round_to_str(data[i], rounding)
+                            data[i] = convert.round_to_str(data[i], rounding)
                         else:
                             data[i] = float(data[i])
             return data
@@ -60,7 +60,7 @@ class Clean:
             for i in ["bids", "asks"]:
                 for j in data[i]:
                     for k in ["price", "volume"]:
-                        j[k] = format_10f(Decimal(j[k]))
+                        j[k] = convert.format_10f(Decimal(j[k]))
             for i in [
                 "total_asks_base_vol",
                 "total_bids_base_vol",
@@ -79,7 +79,7 @@ class Clean:
                 "quote_liquidity_usd",
             ]:
                 if i in data:
-                    data[i] = format_10f(Decimal(data[i]))
+                    data[i] = convert.format_10f(Decimal(data[i]))
             for k in [i for i in data if i.startswith("trades_")]:
                 data[k] = int(data[k])
             # logger.loop(data.keys())
@@ -93,7 +93,34 @@ class Convert:
         pass
 
     @timed
-    def orderbook_to_gecko(self, data, depth, reverse=False):
+    def format_10f(self, number: float | Decimal) -> str:
+        """
+        Format a float to 10 decimal places.
+        """
+        if isinstance(number, str):
+            number = Decimal(number)
+        return f"{number:.10f}"
+
+    @timed
+    def round_to_str(self, value: Any, rounding=8):
+        try:
+            if isinstance(value, (str, int, float)):
+                value = Decimal(value)
+            if isinstance(value, Decimal):
+                value = value.quantize(Decimal(f'1.{"0" * rounding}'))
+            else:
+                raise TypeError(f"Invalid type: {type(value)}")
+        except (ValueError, TypeError, InvalidOperation) as e:  # pragma: no cover
+            logger.muted(f"{type(e)} Error rounding {value}: {e}")
+            value = 0
+        except Exception as e:  # pragma: no cover
+            logger.error(e)
+            value = 0
+        return f"{value:.{rounding}f}"
+
+    @timed
+    def orderbook_to_gecko(self, data, depth=100, reverse=False):
+        logger.calc(data)
         if reverse:
             return {
                 "ticker_id": invert.pair(data["pair"]),
@@ -108,32 +135,33 @@ class Convert:
                 "timestamp": int(cron.now_utc()),
                 "variants": derive.pair_variants(pair_str=data["pair"]),
                 "bids": [
-                    [format_10f(i["price"]), format_10f(i["volume"])]
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in data["bids"]
                 ][:depth],
                 "asks": [
-                    [format_10f(i["price"]), format_10f(i["volume"])]
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in data["asks"]
                 ][:depth],
             }
 
-    def pair_orderbook_extras_to_gecko_tickers(self, x, vols, prices):
+    def pair_orderbook_extras_to_gecko_tickers(self, book, vols, prices, coins_config):
         return {
-            "ticker_id": x["pair"],
-            "pool_id": x["pair"],
-            "base_currency": x["base"],
-            "target_currency": x["quote"],
+            "ticker_id": book["pair"],
+            "pool_id": book["pair"],
+            "base_currency": book["base"],
+            "target_currency": book["quote"],
             "base_volume": vols["base_volume"],
             "target_volume": vols["quote_volume"],
-            "bid": x["highest_bid"],
-            "ask": x["lowest_ask"],
+            "bid": book["highest_bid"],
+            "ask": book["lowest_ask"],
             "high": prices["highest_price_24hr"],
             "low": prices["lowest_price_24hr"],
             "trades_24hr": vols["swaps"],
             "last_price": prices["newest_price"],
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
-            "liquidity_usd": x["liquidity_usd"],
+            "liquidity_usd": book["liquidity_usd"],
+            "variants": derive.pair_variants(book["pair"], coins_config=coins_config),
         }
 
     def ticker_to_gecko_pair(self, pair_data):
@@ -177,6 +205,20 @@ class Convert:
             "timestamp": i["timestamp"],
             "type": i["type"],
         }
+
+    @timed
+    def label_bids_asks(self, orderbook_data, pair):
+        data = template.orderbook(pair)
+        for i in ["asks", "bids"]:
+            data[i] = [
+                {
+                    "price": convert.format_10f(Decimal(j["price"]["decimal"])),
+                    "volume": j["base_max_volume"]["decimal"],
+                    "quote_volume": j["rel_max_volume"]["decimal"],
+                }
+                for j in orderbook_data[i]
+            ]
+        return data
 
 
 @timed
@@ -243,18 +285,18 @@ def ticker_to_gecko_summary(i):
         "variants": i["variants"],
         "base_currency": i["base_currency"],
         "quote_currency": i["quote_currency"],
-        "highest_bid": format_10f(i["highest_bid"]),
-        "lowest_ask": format_10f(i["lowest_ask"]),
-        "highest_price_24hr": format_10f(i["highest_price_24hr"]),
-        "lowest_price_24hr": format_10f(i["lowest_price_24hr"]),
-        "base_volume": format_10f(i["base_volume"]),
-        "quote_volume": format_10f(i["quote_volume"]),
-        "last_swap_price": format_10f(i["last_swap_price"]),
+        "highest_bid": convert.format_10f(i["highest_bid"]),
+        "lowest_ask": convert.format_10f(i["lowest_ask"]),
+        "highest_price_24hr": convert.format_10f(i["highest_price_24hr"]),
+        "lowest_price_24hr": convert.format_10f(i["lowest_price_24hr"]),
+        "base_volume": convert.format_10f(i["base_volume"]),
+        "quote_volume": convert.format_10f(i["quote_volume"]),
+        "last_swap_price": convert.format_10f(i["last_swap_price"]),
         "last_swap_time": int(Decimal(i["last_swap_time"])),
         "last_swap_uuid": i["last_swap_uuid"],
         "trades_24hr": int(Decimal(i["trades_24hr"])),
-        "combined_volume_usd": format_10f(i["combined_volume_usd"]),
-        "liquidity_usd": format_10f(i["liquidity_usd"]),
+        "combined_volume_usd": convert.format_10f(i["combined_volume_usd"]),
+        "liquidity_usd": convert.format_10f(i["liquidity_usd"]),
     }
     return data
 
@@ -390,15 +432,15 @@ class Deplatform:
                 ):
                     j["lowest_price_24hr"] = i["lowest_price_24hr"]
 
-                j["price_change_24hr"] = format_10f(
+                j["price_change_24hr"] = convert.format_10f(
                     Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
                 )
                 if Decimal(j["oldest_price"]) > 0:
-                    j["price_change_pct_24hr"] = format_10f(
+                    j["price_change_pct_24hr"] = convert.format_10f(
                         Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
                     )
                 else:
-                    j["price_change_pct_24hr"] = format_10f(0)
+                    j["price_change_pct_24hr"] = convert.format_10f(0)
                 j["variants"].sort()
         return tickers_data
 
@@ -473,6 +515,20 @@ class Derive:
     @timed
     def pair_cachename(self, key: str, pair_str: str, suffix: str):
         return f"{key}_{pair_str}_{suffix}"
+
+    @timed
+    def coin_platform(self, coin):
+        r = coin.split("-")
+        if len(r) == 2:
+            return r[1]
+        return ""
+
+    @timed
+    def suffix(self, days: int) -> str:
+        if days == 1:
+            return "24hr"
+        else:
+            return f"{days}d"
 
     def price_status_dict(self, pairs, gecko_source=None):
         try:
@@ -648,11 +704,11 @@ class Derive:
                 return min(prices)
         except KeyError as e:  # pragma: no cover
             logger.warning(e)
-            return default.error(e, data=format_10f(0))
+            return default.error(e, data=convert.format_10f(0))
         except Exception as e:  # pragma: no cover
             logger.warning(e)
-            return default.error(e, data=format_10f(0))
-        return format_10f(0)
+            return default.error(e, data=convert.format_10f(0))
+        return convert.format_10f(0)
 
     @timed
     def highest_bid(self, orderbook: list) -> str:
@@ -663,11 +719,11 @@ class Derive:
                 return max(prices)
         except KeyError as e:  # pragma: no cover
             logger.warning(e)
-            return default.error(e, data=format_10f(0))
+            return default.error(e, data=convert.format_10f(0))
         except Exception as e:  # pragma: no cover
             logger.warning(e)
-            return default.error(e, data=format_10f(0))
-        return format_10f(0)
+            return default.error(e, data=convert.format_10f(0))
+        return convert.format_10f(0)
 
     def app(self, appname):
         logger.query(f"appname: {appname}")
@@ -804,8 +860,10 @@ class Invert:
 
     def ask_bid(self, i):
         return {
-            "price": format_10f(Decimal(i["volume"]) / Decimal(i["quote_volume"])),
-            "volume": format_10f(Decimal(i["quote_volume"])),
+            "price": convert.format_10f(
+                Decimal(i["volume"]) / Decimal(i["quote_volume"])
+            ),
+            "volume": convert.format_10f(Decimal(i["quote_volume"])),
         }
 
     def pair_orderbook(self, orderbook):
@@ -861,7 +919,9 @@ class Invert:
                     {
                         "coin": orderbook["rel"],
                         "price": {
-                            "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
+                            "decimal": convert.format_10f(
+                                1 / Decimal(i["price"]["decimal"])
+                            )
                         },
                         "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
                         "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
@@ -872,7 +932,9 @@ class Invert:
                     {
                         "coin": orderbook["base"],
                         "price": {
-                            "decimal": format_10f(1 / Decimal(i["price"]["decimal"]))
+                            "decimal": convert.format_10f(
+                                1 / Decimal(i["price"]["decimal"])
+                            )
                         },
                         "base_max_volume": {"decimal": i["rel_max_volume"]["decimal"]},
                         "rel_max_volume": {"decimal": i["base_max_volume"]["decimal"]},
@@ -1057,7 +1119,7 @@ class Merge:
                 new["oldest_price"]
             )
             if Decimal(existing["oldest_price"]) != 0:
-                existing["price_change_pct_24hr"] = format_10f(
+                existing["price_change_pct_24hr"] = convert.format_10f(
                     Decimal(existing["newest_price"])
                     / Decimal(existing["oldest_price"])
                     - 1
@@ -1153,12 +1215,12 @@ class SumData:
             raise ValueError
 
     def numeric_str(self, x, y):
-        return format_10f(self.decimals(x, y))
+        return convert.format_10f(self.decimals(x, y))
 
     def lists(self, x, y, sorted=True):
         try:
             data = x + y
-            if [isinstance(i, dict) for i in data]:
+            if True in [isinstance(i, dict) for i in data]:
                 return data
             data = list(set(data))
             if sorted:
@@ -1174,7 +1236,7 @@ class SumData:
         try:
             if sort_key:
                 merged_list = self.lists(x, y, False)
-                if [sort_key in i for i in merged_list]:
+                if True in [sort_key in i for i in merged_list]:
                     return sortdata.dict_lists(merged_list, sort_key)
                 return merged_list
             return self.lists(x, y)
@@ -1186,7 +1248,7 @@ class SumData:
 
     def ints(self, x, y):
         try:
-            return int(x) + int(y)
+            return int(Decimal(x)) + int(Decimal(y))
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
@@ -1203,67 +1265,7 @@ class SumData:
         """
         Sum a key from a list of dicts and format to 10 decimal places.
         """
-        return format_10f(self.json_key(data, key))
-
-
-# Uncategorized
-@timed
-def get_coin_platform(coin):
-    r = coin.split("-")
-    if len(r) == 2:
-        return r[1]
-    return ""
-
-
-@timed
-def label_bids_asks(orderbook_data, pair):
-    data = template.orderbook(pair)
-    for i in ["asks", "bids"]:
-        data[i] = [
-            {
-                "price": format_10f(Decimal(j["price"]["decimal"])),
-                "volume": j["base_max_volume"]["decimal"],
-                "quote_volume": j["rel_max_volume"]["decimal"],
-            }
-            for j in orderbook_data[i]
-        ]
-    return data
-
-
-@timed
-def round_to_str(value: Any, rounding=8):
-    try:
-        if isinstance(value, (str, int, float)):
-            value = Decimal(value)
-        if isinstance(value, Decimal):
-            value = value.quantize(Decimal(f'1.{"0" * rounding}'))
-        else:
-            raise TypeError(f"Invalid type: {type(value)}")
-    except (ValueError, TypeError, InvalidOperation) as e:  # pragma: no cover
-        logger.muted(f"{type(e)} Error rounding {value}: {e}")
-        value = 0
-    except Exception as e:  # pragma: no cover
-        logger.error(e)
-        value = 0
-    return f"{value:.{rounding}f}"
-
-
-@timed
-def get_suffix(days: int) -> str:
-    if days == 1:
-        return "24hr"
-    else:
-        return f"{days}d"
-
-
-@timed
-def format_10f(number: float | Decimal) -> str:
-    """
-    Format a float to 10 decimal places.
-    """
-    if isinstance(number, str):
-        number = Decimal(number)
-    return f"{number:.10f}"
+        return convert.format_10f(self.json_key(data, key))
 
 
 class Templates:  # pragma: no cover
@@ -1345,7 +1347,7 @@ class Templates:  # pragma: no cover
     def gecko_info(self, coin_id):
         return {"usd_market_cap": 0, "usd_price": 0, "coingecko_id": coin_id}
 
-    def pair_prices_info(self, suffix, base, quote):
+    def pair_prices_info(self, suffix):
         return {
             "oldest_price": 0,
             "oldest_price_time": 0,

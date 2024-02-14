@@ -23,6 +23,7 @@ from util.transform import (
     derive,
     invert,
     sortdata,
+    convert
 )
 
 router = APIRouter()
@@ -129,7 +130,7 @@ def orderbook(
             if is_reversed:
                 data = invert.pair_orderbook(data)
 
-        data = transform.orderbook_to_gecko(data)
+        data = convert.orderbook_to_gecko(data)
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

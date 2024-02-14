@@ -32,7 +32,6 @@ from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 from util.transform import template
-import util.transform as transform
 import util.validate as validate
 
 load_dotenv()
@@ -875,6 +874,8 @@ class SqlQuery(SqlDB):
         version: str | None = None,
         success_only: bool = True,
         failed_only: bool = False,
+        limit: int = 100,
+        trade_type: int | None = None,
     ):
         """
         Returns swaps matching filter from any of the SQL databases.
@@ -939,7 +940,7 @@ class SqlQuery(SqlDB):
                             if base in [k["taker_coin"], k["maker_coin"]]
                             and quote in [k["taker_coin"], k["maker_coin"]]
                         ]
-                        
+
                         resp.update({variant: variant_trades})
                     all = []
                     for i in resp:
@@ -1371,7 +1372,7 @@ class SqlSource:
                     # Add new records left in processing queue
                     for uuid in cipi_swaps_data.keys():
                         swap = self.cipi_to_defi_swap(cipi_swaps_data[uuid])
-                            
+
                         if "_sa_instance_state" in swap:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
@@ -1497,11 +1498,10 @@ class SqlSource:
         SQLModel.metadata.create_all(pgdb.engine)
         logger.merge("Recreated PGSQL Table")
 
-
     @timed
     def normalise_swap_data(self, data, is_success=None):
         try:
-            
+
             for i in data:
                 # Standardize pair_strings
                 # "pair" should always be sorted by market cap. | KMD_LTC
@@ -1534,7 +1534,7 @@ class SqlSource:
                     ]:
                         if v in [None, ""]:
                             i.update({k: 0})
-                    
+
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
         msg = "Data normalised"
@@ -1676,11 +1676,11 @@ class SqlSource:
     def ensure_valid_pair(self, data):
         try:
             data["maker_coin_ticker"] = deplatform.coin(data["maker_coin"])
-            data["maker_coin_platform"] = transform.get_coin_platform(
+            data["maker_coin_platform"] = derive.coin_platform(
                 data["maker_coin"]
             )
             data["taker_coin_ticker"] = deplatform.coin(data["taker_coin"])
-            data["taker_coin_platform"] = transform.get_coin_platform(
+            data["taker_coin_platform"] = derive.coin_platform(
                 data["taker_coin"]
             )
             if data["taker_coin_platform"] != "":
@@ -1697,13 +1697,13 @@ class SqlSource:
             data["pair_reverse"] = invert.pair(data["pair"])
             data["pair_std_reverse"] = invert.pair(data["pair_std"])
             # Assign price and trade_type
-            if deplatform.pair(_pair) == data['pair_std']:
+            if deplatform.pair(_pair) == data["pair_std"]:
                 trade_type = "sell"
                 price = Decimal(data["maker_amount"]) / Decimal(data["taker_amount"])
                 reverse_price = Decimal(data["taker_amount"]) / Decimal(
                     data["maker_amount"]
                 )
-            elif deplatform.pair(_pair) == data['pair_std_reverse']:
+            elif deplatform.pair(_pair) == data["pair_std_reverse"]:
                 trade_type = "buy"
                 price = Decimal(data["taker_amount"]) / Decimal(data["maker_amount"])
                 reverse_price = Decimal(data["maker_amount"]) / Decimal(
@@ -1792,7 +1792,7 @@ class SqlSource:
                             logger.warning(
                                 f"{type(mm2_data[i])} vs {type(defi_data[i])}"
                             )
-               
+
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_coin=mm2_data["taker_coin"],

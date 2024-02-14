@@ -123,35 +123,6 @@ class SampleData:
         return []
 
     @property
-    def trades_info(self):
-        return [
-            {
-                "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
-                "price": "0.8000000000",
-                "base_volume": "20",
-                "quote_volume": "15",
-                "timestamp": "1697471102",
-                "type": "buy",
-            },
-            {
-                "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
-                "price": "1.0000000000",
-                "base_volume": "20",
-                "quote_volume": "20",
-                "timestamp": "1697471080",
-                "type": "buy",
-            },
-            {
-                "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
-                "price": "1.2000000000",
-                "base_volume": "20",
-                "quote_volume": "24.5",
-                "timestamp": "1697469503",
-                "type": "buy",
-            },
-        ]
-
-    @property
     def swaps_for_pair(self):
         [
             {
@@ -299,20 +270,18 @@ class SampleData:
     def historical_trades(self):
         return [
             {
-                "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
-                "price": "0.8000000000",
-                "base_volume": "20",
-                "quote_volume": "16",
-                "timestamp": "1697471102",
-                "type": "buy",
-            },
-            {
                 "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
                 "price": "1.0000000000",
                 "base_volume": "20",
                 "quote_volume": "20",
                 "timestamp": "1697471080",
                 "type": "buy",
+                "base_coin": "KMD-BEP20",
+                "quote_coin": "LTC-segwit",
+                "base_coin_ticker": "KMD",
+                "quote_coin_ticker": "LTC",
+                "base_coin_platform": "BEP20",
+                "quote_coin_platform": "segwit",
             },
             {
                 "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
@@ -321,6 +290,27 @@ class SampleData:
                 "quote_volume": "24",
                 "timestamp": "1697469503",
                 "type": "buy",
+                "base_coin": "KMD-BEP20",
+                "quote_coin": "LTC-segwit",
+                "base_coin_ticker": "KMD",
+                "quote_coin_ticker": "LTC",
+                "base_coin_platform": "BEP20",
+                "quote_coin_platform": "segwit",
+            },
+            {
+                "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
+                "price": "0.8000000000",
+                "base_volume": "20",
+                "quote_volume": "16",
+                "timestamp": "1697471102",
+                "type": "buy",
+                "pair": "KMD-BEP20_LTC-segwit",
+                "base_coin": "KMD-BEP20",
+                "quote_coin": "LTC-segwit",
+                "base_coin_ticker": "KMD",
+                "quote_coin_ticker": "LTC",
+                "base_coin_platform": "BEP20",
+                "quote_coin_platform": "segwit",
             },
             {
                 "trade_id": "c80e9b57-406f-4f9c-8b41-79ff2623cc7a",
@@ -329,6 +319,12 @@ class SampleData:
                 "quote_volume": "10",
                 "timestamp": "1697475729",
                 "type": "sell",
+                "base_coin": "KMD-BEP20",
+                "quote_coin": "LTC-segwit",
+                "base_coin_ticker": "KMD",
+                "quote_coin_ticker": "LTC",
+                "base_coin_platform": "BEP20",
+                "quote_coin_platform": "segwit",
             },
             {
                 "trade_id": "09d72ac9-3e55-4e84-9f32-cf22b5b442ad",
@@ -337,6 +333,12 @@ class SampleData:
                 "quote_volume": "20",
                 "timestamp": "1697448297",
                 "type": "sell",
+                "base_coin": "KMD-BEP20",
+                "quote_coin": "LTC-segwit",
+                "base_coin_ticker": "KMD",
+                "quote_coin_ticker": "LTC",
+                "base_coin_platform": "BEP20",
+                "quote_coin_platform": "segwit",
             },
         ]
 
@@ -355,20 +357,18 @@ class SampleData:
             "average_price": "1",
             "buy": [
                 {
-                    "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
-                    "price": "0.8000000000",
-                    "base_volume": "20",
-                    "quote_volume": "16",
-                    "timestamp": "1697471102",
-                    "type": "buy",
-                },
-                {
                     "trade_id": "c76ed996-d44a-4e39-998e-acb68681b0f9",
                     "price": "1.0000000000",
                     "base_volume": "20",
                     "quote_volume": "20",
                     "timestamp": "1697471080",
                     "type": "buy",
+                    "base_coin": "KMD-BEP20",
+                    "quote_coin": "LTC-segwit",
+                    "base_coin_ticker": "KMD",
+                    "quote_coin_ticker": "LTC",
+                    "base_coin_platform": "BEP20",
+                    "quote_coin_platform": "segwit",
                 },
                 {
                     "trade_id": "d2602fa9-6680-42f9-9cb8-20f76275f587",
@@ -377,7 +377,29 @@ class SampleData:
                     "quote_volume": "24",
                     "timestamp": "1697469503",
                     "type": "buy",
+                    "base_coin": "KMD-BEP20",
+                    "quote_coin": "LTC-segwit",
+                    "base_coin_ticker": "KMD",
+                    "quote_coin_ticker": "LTC",
+                    "base_coin_platform": "BEP20",
+                    "quote_coin_platform": "segwit",
                 },
+                {
+                    "trade_id": "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d",
+                    "price": "0.8000000000",
+                    "base_volume": "20",
+                    "quote_volume": "16",
+                    "timestamp": "1697471102",
+                    "type": "buy",
+                    "pair": "KMD-BEP20_LTC-segwit",
+                    "type": "buy",
+                    "base_coin": "KMD-BEP20",
+                    "quote_coin": "LTC-segwit",
+                    "base_coin_ticker": "KMD",
+                    "quote_coin_ticker": "LTC",
+                    "base_coin_platform": "BEP20",
+                    "quote_coin_platform": "segwit",
+                }
             ],
             "sell": [
                 {
@@ -387,6 +409,12 @@ class SampleData:
                     "quote_volume": "10",
                     "timestamp": "1697475729",
                     "type": "sell",
+                    "base_coin": "KMD-BEP20",
+                    "quote_coin": "LTC-segwit",
+                    "base_coin_ticker": "KMD",
+                    "quote_coin_ticker": "LTC",
+                    "base_coin_platform": "BEP20",
+                    "quote_coin_platform": "segwit",
                 },
                 {
                     "trade_id": "09d72ac9-3e55-4e84-9f32-cf22b5b442ad",
@@ -395,7 +423,13 @@ class SampleData:
                     "quote_volume": "20",
                     "timestamp": "1697448297",
                     "type": "sell",
-                },
+                    "base_coin": "KMD-BEP20",
+                    "quote_coin": "LTC-segwit",
+                    "base_coin_ticker": "KMD",
+                    "quote_coin_ticker": "LTC",
+                    "base_coin_platform": "BEP20",
+                    "quote_coin_platform": "segwit",
+                }
             ],
         }
 

@@ -7,11 +7,11 @@ import db.sqldb as db
 import lib.dex_api as dex
 import util.defaults as default
 import util.memcache as memcache
-import util.transform as transform
 from util.cron import cron
 from util.logger import timed, logger
 from util.transform import (
     sortdata,
+    convert,
     clean,
     deplatform,
     sumdata,
@@ -53,7 +53,8 @@ class Pair:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed! {e}"
             return default.result(msg=msg, loglevel="warning")
 
-    # TODO: Use the props instead of calling function where possible, esp. for depair and variants.
+    # TODO: Use the props instead of calling function where
+    # possible, esp. for depair and variants.
     @property
     def priced(self):
         if self._priced is None:
@@ -167,28 +168,26 @@ class Pair:  # pragma: no cover
                         trade_info["pair"] = pair_str
                         trade_info["type"] = swap["trade_type"]
                     base, quote = derive.base_quote(pair_str)
-                    trade_info["price"] = transform.format_10f(price)
+                    trade_info["price"] = convert.format_10f(price)
                     trade_info["base_coin"] = base
                     trade_info["quote_coin"] = quote
                     trade_info["base_coin_ticker"] = deplatform.coin(base)
                     trade_info["quote_coin_ticker"] = deplatform.coin(quote)
-                    trade_info["base_coin_platform"] = transform.get_coin_platform(base)
-                    trade_info["quote_coin_platform"] = transform.get_coin_platform(
-                        quote
-                    )
+                    trade_info["base_coin_platform"] = derive.coin_platform(base)
+                    trade_info["quote_coin_platform"] = derive.coin_platform(quote)
 
                     if trade_info["type"] == "buy":
-                        trade_info["base_volume"] = transform.format_10f(
+                        trade_info["base_volume"] = convert.format_10f(
                             swap["maker_amount"]
                         )
-                        trade_info["quote_volume"] = transform.format_10f(
+                        trade_info["quote_volume"] = convert.format_10f(
                             swap["taker_amount"]
                         )
                     else:
-                        trade_info["base_volume"] = transform.format_10f(
+                        trade_info["base_volume"] = convert.format_10f(
                             swap["taker_amount"]
                         )
-                        trade_info["quote_volume"] = transform.format_10f(
+                        trade_info["quote_volume"] = convert.format_10f(
                             swap["maker_amount"]
                         )
 
@@ -216,7 +215,7 @@ class Pair:  # pragma: no cover
                     "sum_quote_volume_sells": sumdata.json_key_10f(
                         sells, "quote_volume"
                     ),
-                    "average_price": transform.format_10f(
+                    "average_price": convert.format_10f(
                         self.get_average_price(trades_info)
                     ),
                     "buy": buys,
@@ -259,7 +258,7 @@ class Pair:  # pragma: no cover
         Iterates over list of swaps to get prices data for a pair
         """
         try:
-            suffix = transform.get_suffix(days)
+            suffix = derive.suffix(days)
             key = "prices"
             cache_name = derive.pair_cachename(key, self.as_str, suffix)
             data = memcache.get(cache_name)
@@ -280,10 +279,8 @@ class Pair:  # pragma: no cover
                     logger.calc(variant)
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
 
-                data[variant] = template.pair_prices_info(
-                            suffix, base=self.base, quote=self.quote
-                        )
-                
+                data[variant] = template.pair_prices_info(suffix)
+
                 # TODO: using timestamps as an index works for now,
                 # but breaks when two swaps have the same timestamp.
                 if len(swap_prices) > 0:
@@ -297,12 +294,8 @@ class Pair:  # pragma: no cover
                     pct_change = newest_price / oldest_price - 1
 
                     data[variant] = {
-                        "oldest_price_time": swap_keys[
-                            swap_vals.index(oldest_price)
-                        ],
-                        "newest_price_time": swap_keys[
-                            swap_vals.index(newest_price)
-                        ],
+                        "oldest_price_time": swap_keys[swap_vals.index(oldest_price)],
+                        "newest_price_time": swap_keys[swap_vals.index(newest_price)],
                         "oldest_price": oldest_price,
                         "newest_price": newest_price,
                         f"highest_price_{suffix}": highest_price,
@@ -418,7 +411,7 @@ class Pair:  # pragma: no cover
         # TODO: ps: in order for CoinGecko to show +2/-2% depth,
         # DEX has to provide the formula for +2/-2% depth.
         try:
-            suffix = transform.get_suffix(days)
+            suffix = derive.suffix(days)
             key = "ticker_info"
             cache_name = derive.pair_cachename(key, self.as_str, suffix)
             data = memcache.get(cache_name)

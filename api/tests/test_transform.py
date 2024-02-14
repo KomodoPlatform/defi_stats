@@ -72,9 +72,11 @@ def test_sumdata_ints():
 
 def test_sumdata_lists():
     r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2], True)
+    logger.calc(r)
     assert r[0] == 0
     assert len(r) == 6
-    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2])
+    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2], False)
+    logger.calc(r)
     assert r[0] == 1
     assert len(r) == 6
     r = sumdata.lists(
@@ -87,60 +89,61 @@ def test_sumdata_dict_lists():
     r = sumdata.dict_lists(
         [{"x": 3, "y": 67}, {"x": 32, "y": 7}], [{"x": 35, "y": 5}, {"x": 2, "y": 27}]
     )
-    assert r[0]['x'] == 3
+    assert r[0]["x"] == 3
     assert len(r) == 4
     r = sumdata.dict_lists(
         [{"x": 3, "y": 67}, {"x": 32, "y": 7}],
         [{"x": 35, "y": 5}, {"x": 2, "y": 27}],
-        sort_key="x"
+        sort_key="x",
     )
-    assert r[0]['x'] == 2
+    assert r[0]["x"] == 2
     assert len(r) == 4
 
 
 def test_sumdata_numeric_str():
-    assert sumdata.numeric_str("12", "4") == "16.000000000"
-    assert sumdata.numeric_str(12, "4") == "16.000000000"
-    assert sumdata.numeric_str(12, 4) == "16.000000000"
-    
+    assert sumdata.numeric_str("12", "4") == "16.0000000000"
+    assert sumdata.numeric_str(12, "4") == "16.0000000000"
+    assert sumdata.numeric_str(12, 4) == "16.0000000000"
+
+
 def test_format_10f():
-    assert transform.format_10f(1.234567890123456789) == "1.2345678901"
-    assert transform.format_10f(1) == "1.0000000000"
-    assert transform.format_10f("1.23") == "1.2300000000"
+    assert convert.format_10f(1.234567890123456789) == "1.2345678901"
+    assert convert.format_10f(1) == "1.0000000000"
+    assert convert.format_10f("1.23") == "1.2300000000"
 
 
 def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
     x = setup_historical_trades_to_market_trades
     assert (
-        sampledata.trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+        sampledata.historical_trades[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
     )
-    assert sampledata.trades_info[0]["trade_id"] == x["trade_id"]
-    assert sampledata.trades_info[0]["price"] == x["price"]
-    assert sampledata.trades_info[0]["base_volume"] == x["base_volume"]
-    assert sampledata.trades_info[0]["quote_volume"] == x["quote_volume"]
-    assert sampledata.trades_info[0]["timestamp"] == x["timestamp"]
-    assert sampledata.trades_info[0]["type"] == x["type"]
+    assert sampledata.historical_trades[0]["trade_id"] == x["trade_id"]
+    assert sampledata.historical_trades[0]["price"] == x["price"]
+    assert sampledata.historical_trades[0]["base_volume"] == x["base_volume"]
+    assert sampledata.historical_trades[0]["quote_volume"] == x["quote_volume"]
+    assert sampledata.historical_trades[0]["timestamp"] == x["timestamp"]
+    assert sampledata.historical_trades[0]["type"] == x["type"]
 
 
 def test_historical_trades_to_gecko():
-    x = convert.historical_trades_to_gecko(sampledata.trades_info[0])
+    x = convert.historical_trades_to_gecko(sampledata.historical_trades[0])
     assert (
-        sampledata.trades_info[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+        sampledata.historical_trades[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
     )
-    assert sampledata.trades_info[0]["trade_id"] == x["trade_id"]
-    assert sampledata.trades_info[0]["price"] == x["price"]
-    assert sampledata.trades_info[0]["base_volume"] == x["base_volume"]
-    assert sampledata.trades_info[0]["quote_volume"] == x["target_volume"]
-    assert sampledata.trades_info[0]["timestamp"] == x["timestamp"]
-    assert sampledata.trades_info[0]["type"] == x["type"]
+    assert sampledata.historical_trades[0]["trade_id"] == x["trade_id"]
+    assert sampledata.historical_trades[0]["price"] == x["price"]
+    assert sampledata.historical_trades[0]["base_volume"] == x["base_volume"]
+    assert sampledata.historical_trades[0]["quote_volume"] == x["target_volume"]
+    assert sampledata.historical_trades[0]["timestamp"] == x["timestamp"]
+    assert sampledata.historical_trades[0]["type"] == x["type"]
 
 
 def test_round_to_str():
-    assert transform.round_to_str(1.23456789, 4) == "1.2346"
-    assert transform.round_to_str("1.23456789", 8) == "1.23456789"
-    assert transform.round_to_str(Decimal(), 2) == "0.00"
-    assert transform.round_to_str("foo", 4) == "0.0000"
-    assert transform.round_to_str({"foo": "bar"}, 1) == "0.0"
+    assert convert.round_to_str(1.23456789, 4) == "1.2346"
+    assert convert.round_to_str("1.23456789", 8) == "1.23456789"
+    assert convert.round_to_str(Decimal(), 2) == "0.00"
+    assert convert.round_to_str("foo", 4) == "0.0000"
+    assert convert.round_to_str({"foo": "bar"}, 1) == "0.0"
 
 
 def test_list_json_key():
@@ -155,36 +158,37 @@ def test_list_json_key():
 
 
 def test_sum_json_key():
-    assert sumdata.json_key(sampledata.trades_info, "base_volume") == Decimal("60")
-    assert sumdata.json_key(sampledata.trades_info, "quote_volume") == Decimal("59.5")
+    assert sumdata.json_key(sampledata.historical_trades, "base_volume") == Decimal("90")
+    assert sumdata.json_key(sampledata.historical_trades, "quote_volume") == Decimal("90")
 
 
 def test_sum_json_key_10f():
     assert (
-        sumdata.json_key_10f(sampledata.trades_info, "base_volume") == "60.0000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "base_volume") == "60.0000000000"
     )
     assert (
-        sumdata.json_key_10f(sampledata.trades_info, "quote_volume") == "59.5000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "quote_volume") == "59.5000000000"
     )
 
 
 def test_get_suffix():
-    assert transform.get_suffix(1) == "24hr"
-    assert transform.get_suffix(8) == "8d"
+    assert derive.suffix(1) == "24hr"
+    assert derive.suffix(8) == "8d"
 
 
 def test_sort_dict_list():
-    x = sortdata.dict_lists(sampledata.trades_info.copy(), "trade_id")
-    assert x[0]["trade_id"] == "2b22b6b9-c7b2-48c4-acb7-ed9077c8f47d"
-    x = sortdata.dict_lists(sampledata.trades_info.copy(), "trade_id", True)
+    x = sortdata.dict_lists(sampledata.historical_trades.copy(), "trade_id")
+    assert x[0]["trade_id"] == "09d72ac9-3e55-4e84-9f32-cf22b5b442ad"
+    x = sortdata.dict_lists(sampledata.historical_trades.copy(), "trade_id", True)
     assert x[0]["trade_id"] == "d2602fa9-6680-42f9-9cb8-20f76275f587"
 
 
-def test_generic_orderbook_to_gecko():
-    r = transform.orderbook_to_gecko(sampledata.orderbook_as_string)
+def test_convert_orderbook_to_gecko():
+    r = convert.orderbook_to_gecko(sampledata.orderbook_as_string)
+    logger.calc(r)
     assert len(r["bids"]) == len(sampledata.orderbook_as_coords["bids"])
-    assert len(r["bids"][0][1]) == len(sampledata.orderbook_as_coords["bids"][0][1])
-    assert len(r["asks"][0][1]) == len(sampledata.orderbook_as_coords["asks"][0][1])
+    assert r["bids"][0][1] == sampledata.orderbook_as_coords["bids"][0][1]
+    assert r["asks"][0][1] == sampledata.orderbook_as_coords["asks"][0][1]
 
 
 def test_pair_by_market_cap():
@@ -193,12 +197,12 @@ def test_pair_by_market_cap():
     c = sortdata.pair_by_market_cap(("KMD_BTC-segwit"))
     d = sortdata.pair_by_market_cap(("KMD_BTC"))
     e = sortdata.pair_by_market_cap(("BTC-segwit_KMD-BEP20"))
-    
 
     assert b == d
     assert a == c
     assert e == "KMD-BEP20_BTC-segwit"
     assert sortdata.pair_by_market_cap(("MARTY_DOC")) == "DOC_MARTY"
+
 
 def test_sort_top_items():
     data = [

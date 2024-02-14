@@ -35,12 +35,15 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
     memcache.set_gecko_source(CacheItem(name="gecko_source").data)
+    memcache.set_gecko_pairs(CacheItem(name="gecko_pairs").data)
     # memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
     memcache.set_markets_summary(CacheItem(name="markets_summary").data)
     memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
+    memcache.set_pair_prices_24hr(CacheItem(name="pair_prices_24hr").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
     memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
+    memcache.set_tickers(CacheItem(name="tickers").data)
 
     # memcache.set_summary(CacheItem(name="generic_summary").data)
     # memcache.set_tickers(CacheItem(name="generic_tickers").data)
@@ -133,6 +136,20 @@ def pair_last_traded():
         return default.result(msg=msg, loglevel="loop")
 
 
+# TICKERS
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def pair_tickers():
+    if memcache.get("testing") is None:
+        try:
+            CacheCalc().tickers(refresh=True)
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_last_traded loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
 # MARKETS CACHE
 @router.on_event("startup")
 @repeat_every(seconds=60)
@@ -184,7 +201,20 @@ def gecko_data():  # pragma: no cover
             CacheItem("gecko_source").save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
-        msg = "Gecko data update loop complete!"
+        msg = "Gecko source data update loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def gecko_pairs():  # pragma: no cover
+    if memcache.get("testing") is None:
+        try:
+            CacheItem("gecko_pairs").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "Gecko pairs data update loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
@@ -243,33 +273,21 @@ def adex_fortnite():
         return default.result(msg=msg, loglevel="loop")
 
 
-"""
 # REVIEW
 @router.on_event("startup")
 @repeat_every(seconds=300)
 @timed
-def refresh_generic_tickers():
+def refresh_tickers():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="generic_tickers").save()
+            CacheItem(name="tickers").save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
-        msg = "Generic tickers refresh loop complete!"
+        msg = "Tickers refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
-@router.on_event("startup")
-@repeat_every(seconds=60)
-@timed
-def get_generic_tickers():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="generic_tickers", from_memcache=True).save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "Generic tickers loop for memcache complete!"
-        return default.result(msg=msg, loglevel="loop")
-
+"""
 
 @router.on_event("startup")
 @repeat_every(seconds=300)

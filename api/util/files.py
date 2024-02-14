@@ -27,7 +27,7 @@ class Files:
         # For Rates endpoints
         self.fixer_rates = f"{folder}/rates/fixer_rates.json"
 
-        # For CoinGecko endpoints
+        self.gecko_pairs = f"{folder}/gecko/pairs.json"
         self.gecko_source = f"{folder}/gecko/source.json"
 
         # FOUNDATIONAL CACHE
@@ -50,6 +50,8 @@ class Files:
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
 
+        self.tickers = f"{folder}/generic/tickers.json"
+
     def get_cache_fn(self, name):
         return getattr(self, name, None)
 
@@ -64,7 +66,7 @@ class Files:
                             "result": "success",
                             "msg": f"{fn} saved!",
                             "loglevel": "saved",
-                            "ignore_until": 5
+                            "ignore_until": 5,
                         }
                 else:
                     return {

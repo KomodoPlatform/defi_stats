@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 from util.logger import timed
 from util.transform import deplatform, invert, template, derive
-
 import util.defaults as default
 import util.memcache as memcache
-import util.transform as transform
 
 
 @timed
 def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     try:
         # Add 24hr prices
-        suffix = transform.get_suffix(1)
+        suffix = derive.suffix(1)
         base, quote = derive.base_quote(pair_str=pair_str)
-        data = template.pair_prices_info(suffix=suffix, base=base, quote=quote)
+        data = template.pair_prices_info(suffix=suffix)
         depair = deplatform.pair(pair_str)
         prices_data = memcache.get_pair_prices_24hr()
         if prices_data is not None:
@@ -34,7 +32,7 @@ def pair_price_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     except Exception as e:
         msg = f"{pair_str} failed: {e}!"
         try:
-            data = template.pair_prices_info(suffix=suffix, base=base, quote=quote)
+            data = template.pair_prices_info(suffix=suffix)
             msg += " Returning template!"
         except Exception as e:
             data = {"error": f"{msg}: {e}"}

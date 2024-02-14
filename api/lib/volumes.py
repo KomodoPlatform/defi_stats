@@ -5,7 +5,6 @@ from util.transform import deplatform, invert, template
 
 import util.defaults as default
 import util.memcache as memcache
-import util.transform as transform
 
 
 @timed
@@ -31,7 +30,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
         ignore_until = 3
         if data["trades_24hr"] > 3:
             ignore_until = 0
-        msg=f"{pair_str} volume_24hr: {data['volume_usd_24hr']} ({data['trades_24hr']} swaps)"
+        msg = f"{pair_str} volume_24hr: {data['volume_usd_24hr']} ({data['trades_24hr']} swaps)"
         return default.result(
             data=data,
             msg=msg,

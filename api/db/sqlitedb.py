@@ -5,7 +5,6 @@ import sqlite3
 from typing import List
 from const import MM2_DB_PATHS, MM2_NETID
 from util.enums import TablesEnum, NetId, ColumnsEnum
-from util.exceptions import InvalidParamCombination
 from util.files import Files
 from util.logger import logger, timed
 import util.defaults as default

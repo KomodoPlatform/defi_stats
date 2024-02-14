@@ -15,7 +15,6 @@ from tests.fixtures_db import (
 )
 import util.helper as helper
 from util.logger import logger
-from util.transform import format_10f
 
 from const import MM2_DB_PATH_7777, MM2_DB_PATH_8762, MM2_DB_PATH_ALL, DB_MASTER_PATH
 import util.validate as validate

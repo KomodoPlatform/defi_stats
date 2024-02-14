@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from util.logger import logger, timed
 import util.defaults as default
 import util.memcache as memcache
-from util.transform import sortdata, derive
+from util.transform import derive
 
 
 @dataclass
@@ -97,6 +97,7 @@ class Coin:
         return False
 
 
+@timed
 def get_segwit_coins():
     data = memcache.get("coins_with_segwit")
     if data is None:

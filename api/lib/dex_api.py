@@ -7,12 +7,11 @@ from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
 from util.cron import cron
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean, invert, derive, template
+from util.transform import sortdata, clean, invert, derive, template, convert
 import lib.prices as prices
 import lib.volumes as volumes
 import util.defaults as default
 import util.memcache as memcache
-import util.transform as transform
 
 
 class DexAPI:
@@ -93,7 +92,7 @@ class OrderbookRpcThread(threading.Thread):
             # update the variant cache. Double expiry vs combined to
             # make sure variants are never empty when combined asks.
             if len(data["bids"]) > 0 or len(data["asks"]) > 0:
-                if [i.startswith("trades_") for i in data]:
+                if True in [i.startswith("trades_") for i in data]:
                     data = clean.decimal_dicts(data)
                     memcache.update(self.variant_cache_name, data, 900)
 
@@ -142,7 +141,7 @@ def get_orderbook(
                 data = orderbook_extras(
                     pair_str=pair_str, data=data, gecko_source=gecko_source
                 )
-                if [i.startswith("trades_") for i in data]:
+                if True in [i.startswith("trades_") for i in data]:
                     data = clean.decimal_dicts(data)
                     memcache.update(variant_cache_name, data, 900)
                 msg = f"Returning live orderbook for {pair_str}"
@@ -202,7 +201,7 @@ def orderbook_extras(pair_str, data, gecko_source):
         msg = f"Got Orderbook.extras for {pair_str}"
         data["pair"] = pair_str
         data["timestamp"] = int(cron.now_utc())
-        data = transform.label_bids_asks(data, pair_str)
+        data = convert.label_bids_asks(data, pair_str)
         data = get_liquidity(data, gecko_source)
         data.update(
             {

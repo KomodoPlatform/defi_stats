@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from util.logger import logger, timed
-from util.transform import clean, sortdata, sumdata, derive, merge, template
+from util.transform import clean, derive, merge, template, convert
 import db.sqldb as db
 from util.cron import cron
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
-import util.transform as transform
 from lib.pair import Pair
 from util.transform import deplatform
 
@@ -122,7 +121,9 @@ class CacheCalc:
                 if depair not in orderbook_data:
                     orderbook_data.update({depair: {}})
                 for variant in depair_data:
-                    orderbook_data[depair].update({variant: depair_data[variant]})
+                    orderbook_data[depair].update({
+                        variant: clean.decimal_dicts(depair_data[variant])
+                    })
                 swaps += int(depair_data["ALL"]["trades_24hr"])
                 volume_in_usd += Decimal(depair_data["ALL"]["volume_usd_24hr"])
                 liquidity_usd += Decimal(depair_data["ALL"]["liquidity_usd"])
@@ -144,97 +145,42 @@ class CacheCalc:
             msg = "pair_orderbook_extended failed!"
             return default.error(e, msg)
 
-    # MARKETS
-
-    # REVIEW
     @timed
-    def tickers(
-        self, trades_days: int = 1, pairs_days: int = 30, from_memcache: bool = False
-    ):
+    def tickers(self, refresh: bool = False):
         try:
-            if trades_days > pairs_days:
-                pairs_days = trades_days
-            # Skip if cache not available yet
-            if self.pairs_last_trade_cache is None:
-                self.pairs_last_trade_cache = memcache.get_pair_last_traded()
-                msg = "skipping cache_calc.tickers, pairs_last_trade_cache is None"
-                return default.result(msg=msg, loglevel="warning", data=None)
-
-            # Skip if cache not available yet
-            if self.coins_config is None:
-                self.coins_config = memcache.get_coins_config()
-                msg = "skipping cache_calc.tickers, coins_config is None"
-                return default.result(msg=msg, loglevel="warning", data=None)
-
-            # Skip if cache not available yet
-            if self.pair_prices_24hr is None:
-                self.pair_prices_24hr = memcache.get_pair_prices_24hr()
-                msg = "skipping cache_calc.tickers, pair_prices_24hr is None"
-                return default.result(msg=msg, loglevel="warning", data=None)
-
-            suffix = transform.get_suffix(trades_days)
-            ts = cron.now_utc() - pairs_days * 86400
-            # Filter out pairs older than requested time
-            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-            if from_memcache == 1:
-                # Disabled for now
-                # TODO: test if performance boost with this or not
-                data = []
-                key = "ticker_info"
-                for i in pairs:
-                    cache_name = derive.pair_cachename(key, i, suffix)
-                    cache_data = memcache.get(cache_name)
-                    if cache_data is not None:
-                        data.append(cache_data)
-            else:
-                for i in pairs:
-                    p = Pair(
-                        pair_str=i,
-                        pairs_last_trade_cache=self.pairs_last_trade_cache,
-                        coins_config=self.coins_config,
-                    )
-
-                data = {i: p.ticker_info(trades_days) for i in pairs}
-                prices_data = {i: p.get_pair_prices_info(trades_days) for i in pairs}
-                # logger.calc(prices_data.keys())
-                for pair in data:
-                    if pair in prices_data:
-                        logger.loop(prices_data[pair].keys())
-                        logger.merge(prices_data[pair]["prices"].keys())
-                        logger.calc(f"data[pair].keys(): {data[pair].keys()}")
-                        for variant in data[pair]:
-                            if variant in prices_data[pair]["prices"]:
-                                logger.calc(prices_data[pair]["prices"][variant])
-                    else:
-                        logger.warning(f"{pair} not found in prices_data!")
-
-                data_list = [i for i in data if i is not None]
-                data = clean.decimal_dict_lists(data, to_string=True, rounding=10)
-                data = sortdata.dict_lists(data, "ticker_id")
-
-                pairs_count = len(data_list)
-                combined_liquidity_usd = sumdata.json_key_10f(
-                    data_list, "liquidity_usd"
-                )
-
-                tickers_data = {}
-                for i in data:
-                    pair = deplatform.pair(i["ticker_id"])
-                    variant = i["ticker_id"]
-                    if pair not in tickers_data:
-                        tickers_data.update({pair: {}})
-                    tickers_data[pair].update({variant: i})
-
-                pairs_count = 0
-                combined_liquidity_usd = 0
+            resp = memcache.get_tickers()
+            if resp is None or refresh:
+                coins = memcache.get_coins_config()
+                book = memcache.get_pair_orderbook_extended()
+                volumes = memcache.get_pair_volumes_24hr()
+                prices = memcache.get_pair_volumes_24hr()
                 resp = {
-                    "pairs_count": pairs_count,
-                    "combined_liquidity_usd": combined_liquidity_usd,
-                    "tickers": tickers_data,
+                    "last_update": int(cron.now_utc()),
+                    "pairs_count": book["pairs_count"],
+                    "swaps_count": book["swaps_24hr"],
+                    "combined_volume_usd": book["volume_usd_24hr"],
+                    "combined_liquidity_usd": book["combined_liquidity_usd"],
+                    "data": {},
                 }
-                msg = f"Traded_tickers complete! {len(pairs)} pairs traded"
-                msg += f" in last {pairs_days} days"
-            return default.result(resp, msg, loglevel="calc")
+                for depair in book["orderbooks"]:
+                    b = book["orderbooks"][depair]["ALL"]
+                    if depair in volumes["volumes"]:
+                        v = volumes["volumes"][depair]["ALL"]
+                    else:
+                        v = template.pair_trade_vol_item()
+                    if depair in prices:
+                        p = prices[depair]["ALL"]
+                    else:
+                        p = template.pair_prices_info(suffix="24hr")
+                    resp["data"].update(
+                        {
+                            depair: convert.pair_orderbook_extras_to_gecko_tickers(
+                                b, v, p, coins
+                            )
+                        }
+                    )
+                    memcache.set_tickers(resp)
+            return resp
         except Exception as e:  # pragma: no cover
             msg = "tickers failed!"
             return default.error(e, msg)
@@ -318,9 +264,7 @@ class CacheCalc:
                         existing = template.markets_summary(pair_str=variant)
                     if variant not in data:
                         for i in segwit_variants:
-                            p = template.pair_prices_info(
-                                suffix="24hr", base=base, quote=quote
-                            )
+                            p = template.pair_prices_info(suffix="24hr")
                             o = book["orderbooks"][depair][i]
                             v = template.pair_trade_vol_item()
                             if depair in vols["volumes"]:
@@ -366,3 +310,14 @@ class CacheCalc:
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [/api/v3/market/summary]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/market/summary]: {e}"}
+
+    @timed
+    def gecko_pairs(self, refresh: bool = False):
+        resp = memcache.get_gecko_pairs()
+        if resp is None or refresh:
+            coins = memcache.get_coins_config()
+            cache = memcache.get_pair_last_traded()
+            ts = cron.now_utc() - 86400 * 7
+            pairs = derive.pairs_traded_since(ts=ts, pairs_last_trade_cache=cache)
+            resp = [template.gecko_pair_item(i, coins) for i in pairs]
+        return resp

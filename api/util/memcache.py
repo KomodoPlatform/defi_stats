@@ -170,6 +170,24 @@ def get_pair_prices_24hr():  # pragma: no cover
     return data
 
 
+def set_tickers(data):  # pragma: no cover
+    update("tickers", data, 900)
+
+
+def get_tickers():  # pragma: no cover
+    data = get("tickers")
+    return data
+
+
+def set_gecko_pairs(data):  # pragma: no cover
+    update("gecko_pairs", data, 900)
+
+
+def get_gecko_pairs():  # pragma: no cover
+    data = get("gecko_pairs")
+    return data
+
+
 # MARKETS
 def set_markets_summary(data):  # pragma: no cover
     update("markets_summary", data, 900)
