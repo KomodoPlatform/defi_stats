@@ -21,8 +21,8 @@ def main():
 
     desc = 'Import swaps between two dates in the format YYYY-M-D.'
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('start', type=parse_date, help='Start date in YYYY-M-D format', default="2019-9-1")
-    parser.add_argument('end', type=parse_date, help='End date in YYYY-M-D format', default=today)
+    parser.add_argument('--start', type=parse_date, help='Start date in YYYY-M-D format', default="2019-9-1")
+    parser.add_argument('--end', type=parse_date, help='End date in YYYY-M-D format', default=today)
     parser.add_argument('--reset_table', action='store_true', help='Warning: This will dump the table, then recreate it empty.')
 
     args = parser.parse_args()
