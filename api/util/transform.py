@@ -1113,7 +1113,7 @@ class Merge:
                         existing["trades_24hr"], new["trades_24hr"]
                     ),
                     "variants": sumdata.lists(
-                        existing["variants"], new["variants"], True
+                        existing["variants"], new["variants"]
                     ),
                     "volume_usd_24hr": sumdata.decimals(
                         existing["volume_usd_24hr"], new["volume_usd_24hr"]
@@ -1268,15 +1268,12 @@ class SumData:
     def numeric_str(self, x, y):
         return convert.format_10f(self.decimals(x, y))
 
-    def lists(self, x, y, sorted=True):
+    def lists(self, x, y):
         try:
             data = x + y
             if True in [isinstance(i, dict) for i in data]:
                 return data
-            data = list(set(data))
-            if sorted:
-                data.sort()
-            return data
+            return sorted(list(set(data)))
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)}: {e}")
             logger.warning(f"x: {x} ({type(x)})")
@@ -1286,7 +1283,7 @@ class SumData:
     def dict_lists(self, x, y, sort_key=None):
         try:
             if sort_key:
-                merged_list = self.lists(x, y, False)
+                merged_list = self.lists(x, y)
                 if True in [sort_key in i for i in merged_list]:
                     return sortdata.dict_lists(merged_list, sort_key)
                 return merged_list
@@ -1517,41 +1514,6 @@ class Templates:  # pragma: no cover
             "maker_last_swap_time": 0,
             "taker_last_swap_uuid": 0,
             "taker_last_swap_time": 0,
-        }
-
-    def stats_api_summary(self, pair_str):
-        new = {
-            "ticker_id": pair_str,
-            "base_currency": o["base"],
-            "base_trade_value_usd": 0,
-            "base_liquidity_coins": 0,
-            "base_liquidity_usd": 0,
-            "base_volume": 0,
-            "quote_currency": o["quote"],
-            "quote_trade_value_usd": 0,
-            "quote_liquidity_coins": 0,
-            "quote_liquidity_usd": 0,
-            "quote_volume": 0,
-            "lowest_ask": 0,
-            "highest_bid": 0,
-            "lowest_price_24h": 0,
-            "highest_price_24h": 0,
-            "price_change_24h": 0,
-            "price_change_pct_24h": 0,
-            "newest_price": 0,
-            "newest_price_time": 0,
-            "oldest_price": 0,
-            "oldest_price_time": 0,
-            "last_swap_price": 0,
-            "last_swap_time": 0,
-            "last_swap_uuid": "",
-            "pair_swaps_count": 0,
-            "pair_liquidity_usd": 0,
-            "volume_usd_24h": 0,
-            "pair_trade_value_usd": 0,
-            "base_price_usd": 0,
-            "quote_price_usd": 0,
-            "variants": [i for i in book["orderbooks"][depair] if i != "ALL"],
         }
 
     def markets_summary(self, pair_str):

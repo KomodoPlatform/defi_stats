@@ -187,6 +187,7 @@ def get_gecko_pairs():  # pragma: no cover
     data = get("gecko_pairs")
     return data
 
+
 def set_stats_api_summary(data):  # pragma: no cover
     update("stats_api_summary", data, 900)
 

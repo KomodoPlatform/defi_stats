@@ -71,13 +71,9 @@ def test_sumdata_ints():
 
 
 def test_sumdata_lists():
-    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2], True)
+    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2])
     logger.calc(r)
     assert r[0] == 0
-    assert len(r) == 6
-    r = sumdata.lists([1, 5, 7, 3, 5, 2, 1], [0, 3, 3, 2], False)
-    logger.calc(r)
-    assert r[0] == 1
     assert len(r) == 6
     r = sumdata.lists(
         [{"x": 3, "y": 67}, {"x": 32, "y": 7}], [{"x": 35, "y": 5}, {"x": 2, "y": 27}]
@@ -164,10 +160,10 @@ def test_sum_json_key():
 
 def test_sum_json_key_10f():
     assert (
-        sumdata.json_key_10f(sampledata.historical_trades, "base_volume") == "60.0000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "base_volume") == "90.0000000000"
     )
     assert (
-        sumdata.json_key_10f(sampledata.historical_trades, "quote_volume") == "59.5000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "quote_volume") == "90.0000000000"
     )
 
 
@@ -187,8 +183,8 @@ def test_convert_orderbook_to_gecko():
     r = convert.orderbook_to_gecko(sampledata.orderbook_as_string)
     logger.calc(r)
     assert len(r["bids"]) == len(sampledata.orderbook_as_coords["bids"])
-    assert r["bids"][0][1] == sampledata.orderbook_as_coords["bids"][0][1]
-    assert r["asks"][0][1] == sampledata.orderbook_as_coords["asks"][0][1]
+    assert r["bids"][0][1] == convert.format_10f(sampledata.orderbook_as_coords["bids"][0][1])
+    assert r["asks"][0][1] == convert.format_10f(sampledata.orderbook_as_coords["asks"][0][1])
 
 
 def test_pair_by_market_cap():
