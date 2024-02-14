@@ -129,7 +129,7 @@ class Convert:
                 "bids": [invert.ask_bid(i) for i in data["asks"]][:depth],
             }
         else:
-            return  {
+            return {
                 "pair": data["pair"],
                 "timestamp": int(cron.now_utc()),
                 "variants": derive.pair_variants(pair_str=data["pair"]),
@@ -141,23 +141,23 @@ class Convert:
                     [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in data["asks"]
                 ][:depth],
-                "total_asks_base_vol": data['base_liquidity_coins'],
-                "total_bids_quote_vol": data['quote_liquidity_coins']            
+                "total_asks_base_vol": data["base_liquidity_coins"],
+                "total_bids_quote_vol": data["quote_liquidity_coins"],
             }
-        
+
         {
-                "ticker_id": data["pair"],
-                "timestamp": int(cron.now_utc()),
-                "variants": derive.pair_variants(pair_str=data["pair"]),
-                "bids": [
-                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
-                    for i in data["bids"]
-                ][:depth],
-                "asks": [
-                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
-                    for i in data["asks"]
-                ][:depth],
-            }
+            "ticker_id": data["pair"],
+            "timestamp": int(cron.now_utc()),
+            "variants": derive.pair_variants(pair_str=data["pair"]),
+            "bids": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["bids"]
+            ][:depth],
+            "asks": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["asks"]
+            ][:depth],
+        }
 
     @timed
     def orderbook_to_gecko(self, data, depth=100, reverse=False):
@@ -239,6 +239,17 @@ class Convert:
             "trade_id": i["trade_id"],
             "base": i["base_coin"],
             "target": i["quote_coin"],
+            "price": i["price"],
+            "base_volume": i["base_volume"],
+            "target_volume": i["quote_volume"],
+            "timestamp": i["timestamp"],
+            "type": i["type"],
+        }
+
+    def historical_trades_to_stats_api(self, i):
+        return {
+            "pair": i["pair"],
+            "trade_id": i["trade_id"],
             "price": i["price"],
             "base_volume": i["base_volume"],
             "target_volume": i["quote_volume"],
@@ -1152,9 +1163,7 @@ class Merge:
                     "trades_24hr": sumdata.ints(
                         existing["trades_24hr"], new["trades_24hr"]
                     ),
-                    "variants": sumdata.lists(
-                        existing["variants"], new["variants"]
-                    ),
+                    "variants": sumdata.lists(existing["variants"], new["variants"]),
                     "volume_usd_24hr": sumdata.decimals(
                         existing["volume_usd_24hr"], new["volume_usd_24hr"]
                     ),

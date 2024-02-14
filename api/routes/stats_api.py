@@ -145,8 +145,8 @@ def orderbook(
                 [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                 for i in data["asks"]
             ][:depth],
-            "total_asks_base_vol": data['base_liquidity_coins'],
-            "total_bids_quote_vol": data['quote_liquidity_coins']            
+            "total_asks_base_vol": data["base_liquidity_coins"],
+            "total_bids_quote_vol": data["quote_liquidity_coins"],
         }
         logger.calc(resp)
         return resp
@@ -157,14 +157,14 @@ def orderbook(
 
 
 @router.get(
-    "/trades/{ticker_id}",
+    "/trades/{pair_str}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
     response_model=List[StatsApiTradeInfo],
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
 def trades(
-    ticker_id: str = "KMD_LTC", limit: int = 100, start_time: int = 0, end_time: int = 0
+    pair_str: str = "KMD_LTC", limit: int = 100, start_time: int = 0, end_time: int = 0
 ):
     try:
         for value, name in [
@@ -179,7 +179,7 @@ def trades(
             end_time = int(cron.now_utc())
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
-        pair = Pair(pair_str=ticker_id)
+        pair = Pair(pair_str=pair_str)
         data = pair.historical_trades(
             limit=limit,
             start_time=start_time,
@@ -187,6 +187,7 @@ def trades(
         )["ALL"]
         resp = data["buy"] + data["sell"]
         resp = sortdata.dict_lists(resp, "timestamp", True)
+        resp = [convert.historical_trades_to_stats_api(i) for i in resp]
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
