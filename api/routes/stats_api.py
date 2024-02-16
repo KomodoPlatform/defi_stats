@@ -18,7 +18,6 @@ from util.transform import deplatform, derive, invert, sortdata, convert
 import db.sqldb as db
 import lib.dex_api as dex
 import util.memcache as memcache
-import util.transform as transform
 import util.validate as validate
 
 router = APIRouter()
@@ -53,7 +52,7 @@ def atomicdexio():
 
 # TODO: Cache this
 @router.get("/atomicdex_24hr")
-def atomicdex_fortnight():
+def atomicdex_24hr():
     """Extra Summary Statistics over last 24 hrs"""
     try:
         return CacheCalc().adex_24hr()
@@ -99,8 +98,8 @@ def ticker():
     try:
         c = CacheCalc()
         return c.tickers_lite(depaired=True)
-        resp.append(convert.book_to_stats_api_ticker())
-        return resp
+        # resp.append(convert.book_to_stats_api_ticker())
+        # return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}"}
@@ -139,8 +138,6 @@ def orderbook(
             gecko_source=gecko_source,
             variant_cache_name=variant_cache_name,
             depth=depth,
-            no_thread=True,
-            suffix="24hr"
         )
         resp = {
             "pair": pair_str,

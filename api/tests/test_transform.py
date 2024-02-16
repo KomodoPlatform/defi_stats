@@ -101,8 +101,8 @@ def test_format_10f():
     assert convert.format_10f("1.23") == "1.2300000000"
 
 
-def test_historical_trades_to_market_trades(setup_historical_trades_to_market_trades):
-    x = setup_historical_trades_to_market_trades
+def test_historical_trades_to_market_trades():
+    x = convert.historical_trades_to_market_trades(sampledata.historical_trades)
     assert (
         sampledata.historical_trades[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
     )

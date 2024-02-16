@@ -43,7 +43,7 @@ def test_load_jsonfile():
     fn = files.get_cache_fn("foo")
     data = files.load_jsonfile(fn)
     assert "hello" in data[0]
-    assert not files.load_jsonfile("nofile")
+    assert files.load_jsonfile("nofile") is None
 
 
 def test_download_jsonfile():

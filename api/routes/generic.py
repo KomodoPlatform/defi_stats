@@ -64,9 +64,7 @@ def pair_last_traded(pair_str: str = ""):
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
         pair = Pair(pair_str=pair_str)
-        return pair.orderbook(
-            pair_str=pair_str, depth=depth, no_thread=True
-        )
+        return pair.orderbook(pair_str=pair_str, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{type(e)}: {e}"}
         return JSONResponse(status_code=400, content=err)

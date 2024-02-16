@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from tests.fixtures import helper
 from tests.fixtures_data import sampledata
 from tests.fixtures_pair import (
     setup_kmd_dgb_pair,
@@ -13,7 +12,7 @@ from tests.fixtures_pair import (
 from util.logger import logger
 from util.transform import clean, derive, convert
 from util.cron import cron
-import util.transform as transform
+import util.helper as helper
 
 
 # TODO: Tests for USDC and testcoins

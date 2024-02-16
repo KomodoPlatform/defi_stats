@@ -4,7 +4,6 @@ import requests
 from const import API_ROOT_PATH, IS_TESTING
 from util.logger import timed, logger
 import util.defaults as default
-import util.memcache as memcache
 import util.validate as validate
 
 
@@ -35,6 +34,7 @@ class Files:
         self.adex_24hr = f"{folder}/generic/adex_24hr.json"
         self.coin_volumes_24hr = f"{folder}/generic/coin_volumes_24hr.json"
         self.pair_last_traded = f"{folder}/generic/pair_last_traded.json"
+        self.pair_last_traded_24hr = f"{folder}/generic/pair_last_traded_24hr.json"
         self.pair_orderbook_extended = f"{folder}/generic/pair_orderbook_extended.json"
         self.pair_prices_24hr = f"{folder}/generic/pair_prices_24hr.json"
         self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
@@ -93,20 +93,20 @@ class Files:
                 "loglevel": "warning",
             }
 
+    @timed
     def load_jsonfile(self, path):
         i = 0
         while i < 5:
             try:
                 with open(path, "r") as f:
-                    # logger.calc(f"Loading {path}")
-                    return json.load(f)
+                    return default.result(
+                        data=json.load(f), msg=f"Loaded {path}", loglevel="saved"
+                    )
             except Exception as e:  # pragma: no cover
                 error = f"Error loading {path}: {e}"
-                if memcache.get("testing") is None:
-                    logger.warning(error)
             i += 1
             time.sleep(0.2)
-        return None
+        return default.result(data=None, msg=error, loglevel="warning")
 
     def download_json(self, url):
         try:

@@ -162,6 +162,14 @@ def get_pair_last_traded():  # pragma: no cover
     return get("pair_last_traded")
 
 
+def set_pair_last_traded_24hr(data):  # pragma: no cover
+    update("pair_last_traded_24hr", data, 900)
+
+
+def get_pair_last_traded_24hr():  # pragma: no cover
+    return get("pair_last_traded_24hr")
+
+
 def set_pair_prices_24hr(data):  # pragma: no cover
     update("pair_prices_24hr", data, 900)
 
@@ -210,12 +218,14 @@ def set_adex_24hr(data):  # pragma: no cover
 def get_adex_24hr():  # pragma: no cover
     return get("adex_24hr")
 
+
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 900)
 
 
 def get_adex_fortnite():  # pragma: no cover
     return get("adex_fortnite")
+
 
 # REVIEW CACHE (TOO LARGE)
 # def set_summary(data):  # pragma: no cover

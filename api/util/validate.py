@@ -1,8 +1,9 @@
 from decimal import Decimal
-from util.logger import logger
+from util.logger import logger, timed
 from util.exceptions import DataStructureError, BadPairFormatError
 from util.transform import deplatform
 from util.transform import derive
+import util.defaults as default
 
 
 def is_valid_hex(s):
@@ -24,6 +25,27 @@ def positive_numeric(value, name, is_int=False):
     except Exception as e:
         logger.warning(f"{type(e)} Error validating {name}: {e}")
         raise ValueError(f"{name} must be numeric!")
+    return True
+
+
+@timed
+def orderbook_request(base, quote, coins_config):
+    try:
+        if base not in coins_config:
+            msg = f"dex_api.get_orderbook {base} not in coins_config!"
+            raise ValueError
+        elif quote not in coins_config:
+            msg = f"dex_api.get_orderbook {quote} not in coins_config!"
+            raise ValueError
+        elif coins_config[base]["wallet_only"]:
+            msg = f"dex_api.get_orderbook {base} is wallet only!"
+            raise ValueError
+        elif coins_config[quote]["wallet_only"]:
+            msg = f"dex_api.get_orderbook {quote} is wallet only!"
+            raise ValueError
+    except Exception as e:
+        default.result(msg=f"{e} {msg}", data=False, loglevel="debug")
+        return False
     return True
 
 

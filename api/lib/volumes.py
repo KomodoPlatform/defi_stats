@@ -14,11 +14,11 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
         v = None
         depair = deplatform.pair(pair_str)
         volume_data = memcache.get_pair_volumes_24hr()
-        
+
         if depair in volume_data["volumes"]:
             if pair_str in volume_data["volumes"][depair]:
                 v = volume_data["volumes"][depair][pair_str]
-                
+
         elif invert.pair(depair) in volume_data["volumes"]:
             if invert.pair(pair_str) in volume_data["volumes"][invert.pair(depair)]:
                 v = volume_data["volumes"][invert.pair(depair)][invert.pair(pair_str)]
@@ -42,7 +42,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     except Exception as e:
         msg = f"Pair.get_pair_volume_24hr_cache {pair_str} failed: {e}!"
         try:
-            data = template.orderbook(pair_str, suffix="24hr")
+            data = template.pair_volume_item()
             msg += " Returning template!"
         except Exception as e:
             data = {"error": f"{msg}: {e}"}
@@ -82,7 +82,7 @@ def pair_volume_14d_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     except Exception as e:
         msg = f"Pair.get_pair_volume_14d_cache {pair_str} failed: {e}!"
         try:
-            data = template.orderbook(pair_str, suffix="14d")
+            data = template.pair_volume_item(pair_str, suffix="14d")
             msg += " Returning template!"
         except Exception as e:
             data = {"error": f"{msg}: {e}"}

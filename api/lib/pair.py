@@ -2,7 +2,7 @@
 from collections import OrderedDict
 from decimal import Decimal
 from functools import cached_property
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import db.sqldb as db
 import lib.dex_api as dex
 import util.defaults as default
@@ -333,9 +333,15 @@ class Pair:  # pragma: no cover
         self,
         pair_str: str = "KMD_LTC",
         depth: int = 100,
-        no_thread: bool = True,
+        traded_pairs: List = list(),
+        refresh: bool = False,
     ):
         try:
+            if len(traded_pairs) == 0:
+                ts = cron.now_utc() - 30 * 86400
+                traded_pairs = derive.pairs_traded_since(
+                    ts, self.pairs_last_trade_cache
+                )
             depair = deplatform.pair(pair_str)
             pair_tpl = derive.base_quote(pair_str)
             if len(pair_tpl) != 2 or "error" in pair_tpl:
@@ -343,51 +349,60 @@ class Pair:  # pragma: no cover
                 return default.result(
                     data=None, msg=msg, loglevel="error", ignore_until=0
                 )
-
-            combo_orderbook = {"ALL": template.orderbook(depair)}
-            variants = derive.pair_variants(pair_str)
-            for variant in variants:
-                combo_orderbook.update({variant: template.orderbook(variant)})
-                variant_cache_name = f"orderbook_{variant}"
-                base, quote = derive.base_quote(variant)
-                combo_orderbook[variant] = dex.get_orderbook(
-                    base=base,
-                    quote=quote,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    variant_cache_name=variant_cache_name,
-                    depth=depth,
-                    no_thread=no_thread,
-                )
-                combo_orderbook[variant]["bids"] = combo_orderbook[variant]["bids"][
-                    : int(depth)
-                ][::-1]
-                combo_orderbook[variant]["asks"] = combo_orderbook[variant]["asks"][
-                    ::-1
-                ][: int(depth)]
-                combo_orderbook[variant] = clean.orderbook_data(
-                    combo_orderbook[variant]
-                )
-                combo_orderbook["ALL"] = merge.orderbooks(
-                    combo_orderbook["ALL"],
-                    combo_orderbook[variant],
-                    gecko_source=self.gecko_source,
-                )
-            # Apply depth limit after caching so cache is complete
-            # TODO: Recalc liquidity if depth is less than data.
-
-            combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][
-                : int(depth)
-            ][::-1]
-            combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][
-                : int(depth)
-            ]
-            combo_orderbook["ALL"] = clean.orderbook_data(combo_orderbook["ALL"])
-            msg = f"[{depair}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
+            msg = f"pair.orderbook {pair_str} (refresh {refresh})"
             loglevel = "pair"
             ignore_until = 3
-            if Decimal(combo_orderbook["ALL"]["liquidity_usd"]) > 10000:
-                ignore_until = 0
+            combo_orderbook = {"ALL": template.orderbook_extended(depair)}
+            variants = derive.pair_variants(pair_str)
+            for variant in variants:
+                if variant in traded_pairs:
+                    combo_orderbook.update(
+                        {variant: template.orderbook_extended(variant)}
+                    )
+                    variant_cache_name = f"orderbook_{variant}"
+                    base, quote = derive.base_quote(variant)
+                    combo_orderbook[variant] = dex.get_orderbook(
+                        base=base,
+                        quote=quote,
+                        coins_config=self.coins_config,
+                        gecko_source=self.gecko_source,
+                        variant_cache_name=variant_cache_name,
+                        depth=depth,
+                        refresh=refresh,
+                    )
+                    msg = f"Threading {variant} orderbook for cache"
+                    loglevel = "cached"
+                    ignore_until = 3
+                    if not refresh:
+                        combo_orderbook[variant]["bids"] = combo_orderbook[variant][
+                            "bids"
+                        ][: int(depth)][::-1]
+                        combo_orderbook[variant]["asks"] = combo_orderbook[variant][
+                            "asks"
+                        ][::-1][: int(depth)]
+                        combo_orderbook["ALL"] = merge.orderbooks(
+                            existing=combo_orderbook["ALL"],
+                            new=combo_orderbook[variant],
+                            gecko_source=self.gecko_source,
+                            trigger=variant_cache_name,
+                        )
+                        combo_orderbook[variant] = clean.orderbook_data(
+                            combo_orderbook[variant]
+                        )
+            # Apply depth limit after caching so cache is complete
+            # TODO: Recalc liquidity if depth is less than data.
+            if not refresh:
+                combo_orderbook["ALL"]["bids"] = combo_orderbook["ALL"]["bids"][
+                    : int(depth)
+                ][::-1]
+                combo_orderbook["ALL"]["asks"] = combo_orderbook["ALL"]["asks"][::-1][
+                    : int(depth)
+                ]
+                combo_orderbook["ALL"] = clean.orderbook_data(combo_orderbook["ALL"])
+                msg = f"[{depair}] ${combo_orderbook['ALL']['liquidity_usd']} liquidity"
+                if Decimal(combo_orderbook["ALL"]["liquidity_usd"]) > 10000:
+                    ignore_until = 0
+
             return default.result(
                 data=combo_orderbook,
                 msg=msg,
@@ -397,68 +412,13 @@ class Pair:  # pragma: no cover
         except Exception as e:  # pragma: no cover
             msg = f"Pair.orderbook {pair_str} failed: {e}!"
             try:
-                data = template.orderbook(pair_str)
+                data = template.orderbook_extended(pair_str)
+                data = dex.orderbook_extras(
+                    pair_str=pair_str, data=data, gecko_source=self.gecko_source
+                )
                 msg += " Returning template!"
             except Exception as e:  # pragma: no cover
                 data = {"error": f"{msg}: {e}"}
             return default.result(
                 data=data, msg=msg, loglevel="warning", ignore_until=0
             )
-
-    # DEPRECATED?
-    @timed
-    def ticker_info(self, days=1):
-        # TODO: ps: in order for CoinGecko to show +2/-2% depth,
-        # DEX has to provide the formula for +2/-2% depth.
-        try:
-            suffix = derive.suffix(days)
-            key = "ticker_info"
-            cache_name = derive.pair_cachename(key, self.as_str, suffix)
-            data = memcache.get(cache_name)
-            if data is not None and Decimal(data["liquidity_usd"]) > 0:
-                msg = f"Using cache: {cache_name}"
-                return default.result(
-                    data=data, msg=msg, loglevel="pair", ignore_until=3
-                )
-            data = template.ticker_info(suffix, self.base, self.quote)
-            data.update(
-                {
-                    "ticker_id": self.as_str,
-                    "base_currency": self.base,
-                    "quote_currency": self.quote,
-                    "base_price_usd": self.base_price_usd,
-                    "quote_price_usd": self.quote_price_usd,
-                    "priced": self.priced,
-                    "orderbooks": self.orderbook(
-                        self.as_str, depth=100, no_thread=False
-                    ),
-                }
-            )
-
-            for variant in data["orderbooks"]:
-                data["orderbooks"][variant].update(
-                    {
-                        "num_asks": len(data["orderbooks"][variant]["asks"]),
-                        "num_bids": len(data["orderbooks"][variant]["bids"]),
-                    }
-                )
-
-            ignore_until = 3
-            loglevel = "pair"
-            msg = f"ticker_info for {self.as_str} ({days} days) complete!"
-            # Add to cache if fully populated
-            if Decimal(data["orderbooks"]["ALL"]["liquidity_usd"]) > 0:
-                data = clean.decimal_dicts(data)
-                memcache.update(cache_name, data, 900)
-                msg = f" Added to memcache [{cache_name}]"
-                if Decimal(data["liquidity_usd"]) > 10000:
-                    msg = f'[{cache_name}] liquidity {data["liquidity_usd"]}'
-                    ignore_until = 0
-
-        except Exception as e:  # pragma: no cover
-            ignore_until = 0
-            loglevel = "warning"
-            msg = f"ticker_info for {self.as_str} ({days} days) failed! {e}"
-        return default.result(
-            data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until
-        )

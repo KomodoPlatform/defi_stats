@@ -50,10 +50,14 @@ class Cache:  # pragma: no cover
                 since_updated = item.since_updated_min()
                 updated.update({i: since_updated})
                 if to_console:
-                    logger.loop(f"[{i}] last updated: {since_updated} min")
+                    self.print_cache_status(i, since_updated)
             return updated
         except Exception as e:  # pragma: no cover
             logger.warning(e)
+
+    def print_cache_status(self, i, since_updated):
+        msg = f"[{i}] last updated: {since_updated} min"
+        return default.result(msg=msg, loglevel="cached")
 
 
 class CacheItem:
@@ -160,7 +164,7 @@ class CacheItem:
                 if self.name == "adex_24hr":
                     data = cache_calc.CacheCalc().adex_24hr(refresh=True)
                     memcache.set_adex_24hr(data)
-                    
+
                 if self.name == "adex_fortnite":
                     data = cache_calc.CacheCalc().adex_fortnite(refresh=True)
                     memcache.set_adex_fortnite(data)
@@ -168,6 +172,13 @@ class CacheItem:
                 if self.name == "coin_volumes_24hr":
                     data = cache_calc.CacheCalc().coin_volumes_24hr()
                     memcache.set_coin_volumes_24hr(data)
+
+                # PAIR Data
+                if self.name == "pair_last_traded_24hr":
+                    data = cache_calc.CacheCalc().pair_last_traded(
+                        since=cron.days_ago(1)
+                    )
+                    memcache.set_pair_last_traded_24hr(data)
 
                 if self.name == "pair_last_traded":
                     data = cache_calc.CacheCalc().pair_last_traded()
@@ -177,6 +188,10 @@ class CacheItem:
                     data = cache_calc.CacheCalc().pair_orderbook_extended()
                     memcache.set_pair_orderbook_extended(data)
 
+                if self.name == "pair_prices_24hr":
+                    data = cache_calc.CacheCalc().pair_prices_24hr()
+                    memcache.set_pair_prices_24hr(data)
+
                 if self.name == "pair_volumes_24hr":
                     data = cache_calc.CacheCalc().pair_volumes_24hr()
                     memcache.set_pair_volumes_24hr(data)
@@ -184,10 +199,6 @@ class CacheItem:
                 if self.name == "pair_volumes_14d":
                     data = cache_calc.CacheCalc().pair_volumes_14d()
                     memcache.set_pair_volumes_14d(data)
-
-                if self.name == "pair_prices_24hr":
-                    data = cache_calc.CacheCalc().pair_prices_24hr()
-                    memcache.set_pair_prices_24hr(data)
 
                 # MARKETS
                 if self.name == "markets_summary":
@@ -221,7 +232,7 @@ class CacheItem:
                 if validate.loop_data(data, self):
                     data = {"last_updated": int(cron.now_utc()), "data": data}
                     r = self.files.save_json(self.filename, data)
-                    msg = f"{self.filename} saved."
+                    msg = f"Saved {self.filename}"
                     return default.result(
                         data=data, msg=r["msg"], loglevel=r["loglevel"]
                     )

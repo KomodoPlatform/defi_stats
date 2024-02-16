@@ -28,7 +28,6 @@ def check_cache():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=15)
 @timed
 def init_missing_cache():  # pragma: no cover
     memcache.set_coins(CacheItem(name="coins").data)
@@ -40,6 +39,7 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_adex_24hr(CacheItem(name="adex_24hr").data)
     memcache.set_markets_summary(CacheItem(name="markets_summary").data)
     memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
+    memcache.set_pair_last_traded_24hr(CacheItem(name="pair_last_traded_24hr").data)
     memcache.set_pair_prices_24hr(CacheItem(name="pair_prices_24hr").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
     memcache.set_pair_volumes_14d(CacheItem(name="pair_volumes_14d").data)
@@ -59,31 +59,31 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=60)
 @timed
 def update_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
+            # builds from variant caches and saves to file
             CacheItem(name="pair_orderbook_extended").save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def refresh_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
-            memcache.set_pair_orderbook_extended(
-                CacheCalc().pair_orderbook_extended(no_thread=False)
-            )
+            # threaded to populate variant caches
+            CacheCalc().pair_orderbook_extended(refresh=True)
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # PRICES CACHE
@@ -97,7 +97,7 @@ def refresh_prices_24hr():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_prices_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # VOLUMES CACHE
@@ -111,7 +111,7 @@ def get_pair_volumes_24hr():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_volumes_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # VOLUMES CACHE
@@ -125,7 +125,7 @@ def get_pair_volumes_14d():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_volumes_14d refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -138,7 +138,7 @@ def get_coin_volumes_24hr():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "coin_volumes_24hr refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # LAST TRADE
@@ -152,7 +152,20 @@ def pair_last_traded():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_last_traded loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def pair_last_traded_24hr():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_last_traded_24hr").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_last_traded_24hr loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # TICKERS
@@ -166,7 +179,7 @@ def pair_tickers():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_last_traded loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # MARKETS CACHE
@@ -180,7 +193,7 @@ def get_markets_summary():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "markets_summary loop for memcache complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -194,7 +207,7 @@ def prices_service():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Prices update loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # EXTERNAL SOURCES CACHE
@@ -208,7 +221,9 @@ def coins():  # pragma: no cover
                 CacheItem(i).save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
-        return default.result(msg="Coins update loop complete!", loglevel="loop")
+        return default.result(
+            msg="Coins update loop complete!", loglevel="loop", ignore_until=5
+        )
 
 
 @router.on_event("startup")
@@ -221,7 +236,7 @@ def gecko_data():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Gecko source data update loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -234,7 +249,7 @@ def gecko_pairs():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Gecko pairs data update loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -247,7 +262,7 @@ def stats_api_summary():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "stats_api_summary data update loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -260,7 +275,7 @@ def fixer_rates():  # pragma: no cover
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Fixer rates update loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # DATABASE SYNC
@@ -302,7 +317,7 @@ def adex_fortnite():
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
         msg = "Adex fortnight loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 @router.on_event("startup")
@@ -316,7 +331,7 @@ def adex_24hr():
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
         msg = "Adex 24hr loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 # REVIEW
@@ -330,7 +345,7 @@ def refresh_tickers():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Tickers refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
 """

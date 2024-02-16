@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from decimal import Decimal
 from datetime import date, datetime, timezone
 from datetime import time as dt_time
@@ -9,8 +10,6 @@ from sqlalchemy import Numeric, func
 from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
 from typing import Dict
-import time
-
 from const import (
     MYSQL_USERNAME,
     MYSQL_HOSTNAME,
@@ -27,11 +26,10 @@ from const import (
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
-from util.transform import merge, sortdata, deplatform, invert, derive
+from util.transform import merge, sortdata, deplatform, invert, derive, template
 from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
-from util.transform import template
 import util.validate as validate
 
 load_dotenv()
@@ -141,6 +139,14 @@ class SqlFilter:
                 return []
             elif self.table != CipiSwap:
                 return q.filter(self.table.is_success == 1)
+        return q
+
+    @timed
+    def since(self, q, start_time):
+        if self.table in [CipiSwap, CipiSwapFailed]:
+            q = q.filter(self.table.started_at > start_time)
+        else:
+            q = q.filter(self.table.finished_at > start_time)
         return q
 
     @timed
@@ -543,11 +549,11 @@ class SqlQuery(SqlDB):
                 depair = deplatform.pair(variant)
                 if depair not in resp["volumes"]:
                     resp["volumes"].update(
-                        {depair: {"ALL": template.pair_trade_vol_item()}}
+                        {depair: {"ALL": template.pair_volume_item()}}
                     )
                 if variant not in resp["volumes"][depair]:
                     resp["volumes"][depair].update(
-                        {variant: template.pair_trade_vol_item()}
+                        {variant: template.pair_volume_item()}
                     )
 
                 num_swaps = int(i["num_swaps"])
@@ -631,7 +637,7 @@ class SqlQuery(SqlDB):
     # Fastest, slowest, average, [x,y] for graph
     # TODO: Subclass 'last trade'
     @timed
-    def last_trade(self, group_by_cols, is_success: bool = True):
+    def last_trade(self, group_by_cols, is_success: bool = True, since=0):
         try:
             with Session(self.engine) as session:
                 resp = {}
@@ -649,6 +655,7 @@ class SqlQuery(SqlDB):
                     func.concat(*category).label("category"),
                 ]
                 q = session.query(*cols)
+                q = self.sqlfilter.since(q, since)
                 q = self.sqlfilter.success(q, is_success)
                 q = q.distinct(*category)
                 q = q.order_by(*category, self.table.finished_at.desc())
@@ -675,6 +682,7 @@ class SqlQuery(SqlDB):
                     func.concat(*category).label("category"),
                 ]
                 q = session.query(*cols)
+                q = self.sqlfilter.since(q, since)
                 q = self.sqlfilter.success(q, is_success)
                 q = q.distinct(*group_by_cols)
                 q = q.order_by(*group_by_cols, self.table.finished_at.asc())
@@ -698,11 +706,11 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def pair_last_trade(self, is_success: bool = True):
+    def pair_last_trade(self, is_success: bool = True, since=0):
         try:
             group_by_cols = [self.table.pair]
             results = self.last_trade(
-                is_success=is_success, group_by_cols=group_by_cols
+                is_success=is_success, group_by_cols=group_by_cols, since=since
             )
             return default.result(
                 data=results,
@@ -931,7 +939,6 @@ class SqlQuery(SqlDB):
                         if bridge_swap and variant != sortdata.pair_by_market_cap(
                             variant
                         ):
-                            logger.calc(f"BRIDGE SWAP {pair_str}")
                             continue
                         base, quote = derive.base_quote(variant)
                         variant_trades = [
@@ -1676,13 +1683,9 @@ class SqlSource:
     def ensure_valid_pair(self, data):
         try:
             data["maker_coin_ticker"] = deplatform.coin(data["maker_coin"])
-            data["maker_coin_platform"] = derive.coin_platform(
-                data["maker_coin"]
-            )
+            data["maker_coin_platform"] = derive.coin_platform(data["maker_coin"])
             data["taker_coin_ticker"] = deplatform.coin(data["taker_coin"])
-            data["taker_coin_platform"] = derive.coin_platform(
-                data["taker_coin"]
-            )
+            data["taker_coin_platform"] = derive.coin_platform(data["taker_coin"])
             if data["taker_coin_platform"] != "":
                 _base = f"{data['taker_coin_ticker']}-{data['taker_coin_platform']}"
             else:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from util.logger import timed
-from util.transform import deplatform, invert, template, derive
+from util.transform import deplatform, invert, template
 import util.defaults as default
 import util.memcache as memcache
 

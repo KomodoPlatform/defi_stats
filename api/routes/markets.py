@@ -29,8 +29,7 @@ from util.transform import (
     deplatform,
     derive,
     invert,
-    sortdata,
-    merge,
+    sortdata
 )
 import util.memcache as memcache
 from util.transform import template
@@ -82,31 +81,13 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         data = memcache.get(cache_name)
         if data is None:
             pair = Pair(pair_str=pair_str)
-            data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
-        gecko_source = memcache.get_gecko_source()
-        orderbook_data = template.orderbook(pair_str=pair_str, suffix="24hr")
-        for variant in derive.pair_variants(pair_str=pair_str, segwit_only=True):
-            if variant in data:
-                variant_data = data[variant]
-            elif invert.pair(variant) in data:
-                variant_data = data[invert.pair(variant)]
-            else:
-                logger.warning(f"Unable to find orderbook for {variant}")
-                variant_data = template.orderbook(variant, suffix="24hr")
-            orderbook_data = merge.orderbooks(
-                orderbook_data, variant_data, gecko_source=gecko_source,
-                trigger="markets"
-            )
+            data = pair.orderbook(pair_str=pair_str, depth=depth)
 
-        logger.merge(data.keys())
-        if Decimal(orderbook_data["liquidity_usd"]) > 0:
+        if Decimal(data["liquidity_usd"]) > 0:
             if is_reversed:
-                logger.calc("Returning inverted cache")
-                orderbook_data = invert.pair_orderbook(orderbook_data)
-        logger.loop(orderbook_data.keys())
-        orderbook_data.update({"liquidity_usd": orderbook_data["liquidity_usd"]})
-        logger.pair(orderbook_data.keys())
-        return orderbook_data
+                logger.calc("Returning inverted orderbook_extended cache")
+                data = invert.pair_orderbook(data)
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

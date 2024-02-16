@@ -10,7 +10,7 @@ from models.markets import MarketsAtomicdexIo
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata, deplatform, derive, clean, convert
+from util.transform import sortdata, deplatform, derive, clean
 import db.sqldb as db
 from util.cron import cron
 import util.memcache as memcache
@@ -73,7 +73,7 @@ def fiat_rates():
 def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
     try:
         pair = Pair(pair_str=market_pair)
-        return pair.orderbook(pair_str=market_pair, depth=depth, no_thread=True)
+        return pair.orderbook(pair_str=market_pair, depth=depth)
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
