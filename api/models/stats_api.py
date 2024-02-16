@@ -5,6 +5,8 @@ from typing import Dict, List
 # stats-api/atomicdexio
 class StatsApiAtomicdexIo(BaseModel):
     swaps_24hr: int = 777
+    swaps_7d: int = 7777
+    swaps_14d: int = 77777
     swaps_30d: int = 777777
     swaps_all_time: int = 777777777777
     current_liquidity: float = 7777777.777

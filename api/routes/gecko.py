@@ -101,6 +101,7 @@ def gecko_orderbook(
             variant_cache_name=variant_cache_name,
             depth=depth,
             no_thread=True,
+            suffix="24hr"
         )
         resp = {
             "ticker_id": pair_str,

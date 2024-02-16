@@ -94,8 +94,7 @@ def set_coins(data):  # pragma: no cover
 
 
 def get_coins():  # pragma: no cover
-    data = get("coins")
-    return data
+    return get("coins")
 
 
 def set_coins_config(data):  # pragma: no cover
@@ -103,8 +102,7 @@ def set_coins_config(data):  # pragma: no cover
 
 
 def get_coins_config():  # pragma: no cover
-    data = get("coins_config")
-    return data
+    return get("coins_config")
 
 
 def set_fixer_rates(data):  # pragma: no cover
@@ -120,8 +118,7 @@ def set_gecko_source(data):  # pragma: no cover
 
 
 def get_gecko_source():  # pragma: no cover
-    data = get("gecko_source")
-    return data
+    return get("gecko_source")
 
 
 # FOUNDATIONAL CACHE
@@ -130,8 +127,7 @@ def set_pair_orderbook_extended(data):  # pragma: no cover
 
 
 def get_pair_orderbook_extended():  # pragma: no cover
-    data = get("pair_orderbook_extended")
-    return data
+    return get("pair_orderbook_extended")
 
 
 def set_coin_volumes_24hr(data):  # pragma: no cover
@@ -139,8 +135,7 @@ def set_coin_volumes_24hr(data):  # pragma: no cover
 
 
 def get_coin_volumes_24hr():  # pragma: no cover
-    data = get("coin_volumes_24hr")
-    return data
+    return get("coin_volumes_24hr")
 
 
 def set_pair_volumes_24hr(data):  # pragma: no cover
@@ -148,8 +143,15 @@ def set_pair_volumes_24hr(data):  # pragma: no cover
 
 
 def get_pair_volumes_24hr():  # pragma: no cover
-    data = get("pair_volumes_24hr")
-    return data
+    return get("pair_volumes_24hr")
+
+
+def set_pair_volumes_14d(data):  # pragma: no cover
+    update("pair_volumes_14d", data, 900)
+
+
+def get_pair_volumes_14d():  # pragma: no cover
+    return get("pair_volumes_14d")
 
 
 def set_pair_last_traded(data):  # pragma: no cover
@@ -157,8 +159,7 @@ def set_pair_last_traded(data):  # pragma: no cover
 
 
 def get_pair_last_traded():  # pragma: no cover
-    data = get("pair_last_traded")
-    return data
+    return get("pair_last_traded")
 
 
 def set_pair_prices_24hr(data):  # pragma: no cover
@@ -166,8 +167,7 @@ def set_pair_prices_24hr(data):  # pragma: no cover
 
 
 def get_pair_prices_24hr():  # pragma: no cover
-    data = get("pair_prices_24hr")
-    return data
+    return get("pair_prices_24hr")
 
 
 def set_tickers(data):  # pragma: no cover
@@ -175,8 +175,7 @@ def set_tickers(data):  # pragma: no cover
 
 
 def get_tickers():  # pragma: no cover
-    data = get("tickers")
-    return data
+    return get("tickers")
 
 
 def set_gecko_pairs(data):  # pragma: no cover
@@ -184,8 +183,7 @@ def set_gecko_pairs(data):  # pragma: no cover
 
 
 def get_gecko_pairs():  # pragma: no cover
-    data = get("gecko_pairs")
-    return data
+    return get("gecko_pairs")
 
 
 def set_stats_api_summary(data):  # pragma: no cover
@@ -193,8 +191,7 @@ def set_stats_api_summary(data):  # pragma: no cover
 
 
 def get_stats_api_summary():  # pragma: no cover
-    data = get("stats_api_summary")
-    return data
+    return get("stats_api_summary")
 
 
 # MARKETS
@@ -203,20 +200,22 @@ def set_markets_summary(data):  # pragma: no cover
 
 
 def get_markets_summary():  # pragma: no cover
-    data = get("markets_summary")
-    return data
+    return get("markets_summary")
 
 
-"""
-# SINGLE PURPOSE CACHE
+def set_adex_24hr(data):  # pragma: no cover
+    update("adex_24hr", data, 900)
+
+
+def get_adex_24hr():  # pragma: no cover
+    return get("adex_24hr")
+
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 900)
 
 
 def get_adex_fortnite():  # pragma: no cover
-    data = get("adex_fortnite")
-    return data
-"""
+    return get("adex_fortnite")
 
 # REVIEW CACHE (TOO LARGE)
 # def set_summary(data):  # pragma: no cover

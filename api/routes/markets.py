@@ -19,6 +19,7 @@ from models.markets import (
     MarketsSummaryForTicker,
     MarketsTickerItem,
 )
+from lib.cache_calc import CacheCalc
 from lib.pair import Pair
 from lib.markets import Markets
 from routes.metadata import markets_desc
@@ -83,7 +84,7 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth, no_thread=True)
         gecko_source = memcache.get_gecko_source()
-        orderbook_data = template.orderbook(pair_str=pair_str)
+        orderbook_data = template.orderbook(pair_str=pair_str, suffix="24hr")
         for variant in derive.pair_variants(pair_str=pair_str, segwit_only=True):
             if variant in data:
                 variant_data = data[variant]
@@ -91,9 +92,10 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
                 variant_data = data[invert.pair(variant)]
             else:
                 logger.warning(f"Unable to find orderbook for {variant}")
-                variant_data = template.orderbook(variant)
+                variant_data = template.orderbook(variant, suffix="24hr")
             orderbook_data = merge.orderbooks(
-                orderbook_data, variant_data, gecko_source=gecko_source
+                orderbook_data, variant_data, gecko_source=gecko_source,
+                trigger="markets"
             )
 
         logger.merge(data.keys())
@@ -236,8 +238,8 @@ def swaps24(coin: str = "KMD") -> dict:
 )
 def ticker():
     try:
-        m = Markets()
-        return m.tickers()
+        c = CacheCalc()
+        return c.tickers_lite()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker]: {e}"}
@@ -249,8 +251,8 @@ def ticker():
 )
 def ticker_for_ticker(ticker):
     try:
-        m = Markets()
-        return m.tickers(coin=ticker)
+        c = CacheCalc()
+        return c.tickers_lite(coin=ticker)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/ticker_for_ticker]: {e}"}

@@ -18,40 +18,6 @@ class Markets:
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Markets: {e}")
 
-    @timed
-    def tickers(self, coin=None):
-        try:
-            book = memcache.get_pair_orderbook_extended()
-            resp = []
-            data = {}
-            for depair in book["orderbooks"]:
-                for variant in book["orderbooks"][depair]:
-                    if variant != "ALL":
-                        v = variant.replace("-segwit", "")
-                        v_data = book["orderbooks"][depair][variant]
-                        if v not in data:
-                            data.update(template.markets_ticker(v, v_data))
-                        else:
-                            data[v]["quote_volume"] += Decimal(
-                                v_data["quote_liquidity_coins"]
-                            )
-                            data[v]["base_volume"] += Decimal(
-                                v_data["base_liquidity_coins"]
-                            )
-                            if (
-                                v_data["newest_price"] > data[v]["last_price"]
-                            ):
-                                data[v]["last_price"] = Decimal(v_data["newest_price"])
-            for v in data:
-                if data[v]["base_volume"] != 0 and data[v]["quote_volume"] != 0:
-                    base, quote = derive.base_quote(pair_str=v)
-                    if coin is None or coin in [base, quote]:
-                        data[v] = clean.decimal_dicts(data=data[v], to_string=True)
-                        resp.append({v: data[v]})
-            return resp
-        except Exception as e:  # pragma: no cover
-            msg = f"markets_tickers failed for netid {self.netid}!"
-            return default.error(e, msg)
 
     # TODO: Cache this
     def trades(self, pair_str: str, days_in_past: int = 1, all_variants: bool = False):

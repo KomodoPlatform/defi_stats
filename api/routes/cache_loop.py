@@ -36,11 +36,13 @@ def init_missing_cache():  # pragma: no cover
     memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
     memcache.set_gecko_source(CacheItem(name="gecko_source").data)
     memcache.set_gecko_pairs(CacheItem(name="gecko_pairs").data)
-    # memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
+    memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
+    memcache.set_adex_24hr(CacheItem(name="adex_24hr").data)
     memcache.set_markets_summary(CacheItem(name="markets_summary").data)
     memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
     memcache.set_pair_prices_24hr(CacheItem(name="pair_prices_24hr").data)
     memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
+    memcache.set_pair_volumes_14d(CacheItem(name="pair_volumes_14d").data)
     memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
     memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
     memcache.set_tickers(CacheItem(name="tickers").data)
@@ -57,7 +59,7 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=120)
 @timed
 def update_pair_orderbook_extended():
     if memcache.get("testing") is None:
@@ -75,7 +77,9 @@ def update_pair_orderbook_extended():
 def refresh_pair_orderbook_extended():
     if memcache.get("testing") is None:
         try:
-            CacheCalc().pair_orderbook_extended(no_thread=False)
+            memcache.set_pair_orderbook_extended(
+                CacheCalc().pair_orderbook_extended(no_thread=False)
+            )
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_orderbook_extended refresh loop complete!"
@@ -107,6 +111,20 @@ def get_pair_volumes_24hr():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_volumes_24hr refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+# VOLUMES CACHE
+@router.on_event("startup")
+@repeat_every(seconds=60)
+@timed
+def get_pair_volumes_14d():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_volumes_14d").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_volumes_14d refresh loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 
@@ -280,10 +298,24 @@ def adex_fortnite():
     if memcache.get("testing") is None:
         try:
             pass
-            # CacheItem(name="adex_fortnite").save()
+            CacheItem(name="adex_fortnite").save()
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
         msg = "Adex fortnight loop complete!"
+        return default.result(msg=msg, loglevel="loop")
+
+
+@router.on_event("startup")
+@repeat_every(seconds=120)
+@timed
+def adex_24hr():
+    if memcache.get("testing") is None:
+        try:
+            pass
+            CacheItem(name="adex_24hr").save()
+        except Exception as e:
+            logger.warning(default.result(msg=e, loglevel="warning"))
+        msg = "Adex 24hr loop complete!"
         return default.result(msg=msg, loglevel="loop")
 
 

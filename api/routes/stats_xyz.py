@@ -10,13 +10,14 @@ from models.markets import MarketsAtomicdexIo
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata, deplatform, derive, clean
+from util.transform import sortdata, deplatform, derive, clean, convert
 import db.sqldb as db
 from util.cron import cron
 import util.memcache as memcache
 from util.transform import template
 import util.transform as transform
 import util.validate as validate
+from lib.cache_calc import CacheCalc
 
 
 router = APIRouter()
@@ -173,11 +174,8 @@ def swaps24(coin: str = "KMD") -> dict:
 )
 def ticker():
     try:
-        data = memcache.get_tickers()
-        resp = []
-        for i in data["data"]:
-            resp.append(transform.ticker_to_market_ticker(i))
-        return resp
+        c = CacheCalc()
+        return c.tickers_lite(depaired=True)
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/ticker]: {e}"}
@@ -189,12 +187,9 @@ def ticker():
 )
 def ticker_for_ticker(ticker):
     try:
-        data = memcache.get_tickers()
-        resp = []
-        for i in data["data"]:
-            if ticker in [i["base_currency"], i["quote_currency"]]:
-                resp.append(transform.ticker_to_market_ticker(i))
-        return resp
+        c = CacheCalc()
+        return c.tickers(coin=ticker, depaired=True)
+
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}")
         return {

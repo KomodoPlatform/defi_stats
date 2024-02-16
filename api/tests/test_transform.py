@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 from decimal import Decimal
-from copy import deepcopy
-from tests.fixtures_transform import (
-    setup_ticker_to_statsapi_24h,
-    setup_ticker_to_statsapi_7d,
-    setup_ticker_to_market_ticker,
-    setup_historical_trades_to_market_trades,
-)
 from tests.fixtures_data import sampledata, swap_item, swap_item2
 from lib.pair import Pair
 from util.logger import logger

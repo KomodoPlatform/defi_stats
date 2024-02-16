@@ -7,11 +7,11 @@ from models.generic import GenericTickersInfo, GenericTickersItem
 
 # markets/atomicdexio
 class MarketsAtomicdexIo(BaseModel):
-    swaps_24hr: int = 999999999
-    swaps_7d: int = 999999999
-    swaps_14d: int = 999999999
-    swaps_30d: int = 999999999
-    swaps_all_time: int = 999999999
+    swaps_24hr: int = 777
+    swaps_7d: int = 7777
+    swaps_14d: int = 77777
+    swaps_30d: int = 777777
+    swaps_all_time: int = 777777777777
 
 
 # markets/fiat_rates

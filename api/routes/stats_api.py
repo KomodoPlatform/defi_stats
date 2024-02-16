@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import List
@@ -15,12 +14,12 @@ from models.stats_api import (
 )
 from util.cron import cron
 from util.logger import logger
+from util.transform import deplatform, derive, invert, sortdata, convert
 import db.sqldb as db
 import lib.dex_api as dex
 import util.memcache as memcache
 import util.transform as transform
 import util.validate as validate
-from util.transform import deplatform, derive, invert, sortdata, convert
 
 router = APIRouter()
 cache = Cache()
@@ -53,12 +52,22 @@ def atomicdexio():
 
 
 # TODO: Cache this
+@router.get("/atomicdex_24hr")
+def atomicdex_fortnight():
+    """Extra Summary Statistics over last 24 hrs"""
+    try:
+        return CacheCalc().adex_24hr()
+    except Exception as e:  # pragma: no cover
+        msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_24hr]: {e}"
+        logger.warning(msg)
+        return {"error": msg}
+
+
 @router.get("/atomicdex_fortnight")
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""
     try:
-        pass
-        return memcache.get_adex_fortnite()
+        return CacheCalc().adex_fortnite()
     except Exception as e:  # pragma: no cover
         msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_fortnight]: {e}"
         logger.warning(msg)
@@ -88,10 +97,9 @@ def summary():
 )
 def ticker():
     try:
-        data = memcache.get_tickers()
-        resp = []
-        for i in data["data"]:
-            resp.append(transform.ticker_to_market_ticker(i))
+        c = CacheCalc()
+        return c.tickers_lite(depaired=True)
+        resp.append(convert.book_to_stats_api_ticker())
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats-api/ticker]: {e}")
@@ -132,6 +140,7 @@ def orderbook(
             variant_cache_name=variant_cache_name,
             depth=depth,
             no_thread=True,
+            suffix="24hr"
         )
         resp = {
             "pair": pair_str,
@@ -209,7 +218,7 @@ def last_price_for_pair(pair_str="KMD_LTC"):
         data = derive.last_trade_info(
             pair_str, pairs_last_trade_cache=pairs_last_trade_cache
         )
-        return data["last_swap_price"]
+        return data["ALL"]["last_swap_price"]
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v1/last_price/{pair_str}]: {e}")
         return {"error": f"{type(e)} Error in [/api/v1/atomicdexio]: {e}"}

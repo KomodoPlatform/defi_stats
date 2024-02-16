@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from util.cron import cron
-import sqlite3
 from decimal import Decimal
 from db.sqldb import SqlSource, SqlQuery
 from db.sqlitedb import get_sqlite_db, get_sqlite_db_paths

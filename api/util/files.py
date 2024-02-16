@@ -31,12 +31,14 @@ class Files:
         self.gecko_source = f"{folder}/gecko/source.json"
 
         # FOUNDATIONAL CACHE
-        # self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
+        self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
+        self.adex_24hr = f"{folder}/generic/adex_24hr.json"
         self.coin_volumes_24hr = f"{folder}/generic/coin_volumes_24hr.json"
         self.pair_last_traded = f"{folder}/generic/pair_last_traded.json"
         self.pair_orderbook_extended = f"{folder}/generic/pair_orderbook_extended.json"
         self.pair_prices_24hr = f"{folder}/generic/pair_prices_24hr.json"
         self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
+        self.pair_volumes_14d = f"{folder}/generic/pair_volumes_14d.json"
 
         # MARKETS CACHE
         self.markets_summary = f"{folder}/markets/summary.json"

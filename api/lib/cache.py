@@ -9,7 +9,6 @@ import util.memcache as memcache
 import util.validate as validate
 import lib.cache_calc as cache_calc
 import lib.external as external
-import lib.stats_api as stats_api
 
 
 class Cache:  # pragma: no cover
@@ -32,12 +31,15 @@ class Cache:  # pragma: no cover
         try:
             updated = {}
             for i in [
+                "adex_24hr",
+                "adex_fortnite",
                 "coins",
                 "coins_config",
                 "fixer_rates",
                 "gecko_source",
                 "pair_last_traded",
                 "pair_volumes_24hr",
+                "pair_volumes_14d",
                 "coin_volumes_24hr",
                 "pair_orderbook_extended",
                 "prices_tickers_v1",
@@ -113,6 +115,8 @@ class CacheItem:
     @property
     def cache_expiry(self):
         expiry_limits = {
+            "adex_24hr": 5,
+            "adex_fortnite": 10,
             "coins": 1440,
             "coins_config": 1440,
             "pair_last_traded": 5,
@@ -120,6 +124,7 @@ class CacheItem:
             "markets_summary": 5,
             "fixer_rates": 15,
             "pair_volumes_24hr": 15,
+            "pair_volumes_14d": 15,
             "coin_volumes_24hr": 15,
             "pair_orderbook_extended": 15,
             "gecko_pairs": 5,
@@ -152,9 +157,13 @@ class CacheItem:
                     memcache.set_gecko_source(data)
 
                 # FOUNDATIONAL CACHE
+                if self.name == "adex_24hr":
+                    data = cache_calc.CacheCalc().adex_24hr(refresh=True)
+                    memcache.set_adex_24hr(data)
+                    
                 if self.name == "adex_fortnite":
-                    data = stats_api.StatsAPI().adex_fortnite()
-                    # memcache.set_adex_fortnite(data)
+                    data = cache_calc.CacheCalc().adex_fortnite(refresh=True)
+                    memcache.set_adex_fortnite(data)
 
                 if self.name == "coin_volumes_24hr":
                     data = cache_calc.CacheCalc().coin_volumes_24hr()
@@ -171,6 +180,10 @@ class CacheItem:
                 if self.name == "pair_volumes_24hr":
                     data = cache_calc.CacheCalc().pair_volumes_24hr()
                     memcache.set_pair_volumes_24hr(data)
+
+                if self.name == "pair_volumes_14d":
+                    data = cache_calc.CacheCalc().pair_volumes_14d()
+                    memcache.set_pair_volumes_14d(data)
 
                 if self.name == "pair_prices_24hr":
                     data = cache_calc.CacheCalc().pair_prices_24hr()
