@@ -13,7 +13,7 @@ from fastapi.openapi.docs import (
 )
 """
 
-from const import API_HOST, API_PORT
+from const import API_HOST, API_PORT, DEVMODE
 from routes import (
     gecko,
     cache_loop,
@@ -71,13 +71,6 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
-app.include_router(
-    generic.router,
-    prefix="/api/v3/generic",
-    tags=["Generic"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
 
 app.include_router(
     markets.router,
@@ -130,14 +123,6 @@ app.include_router(
 
 
 app.include_router(
-    new_db.router,
-    prefix="/api/v3/new_db",
-    tags=["New DB"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
-
-app.include_router(
     stats_xyz.router,
     prefix="/api/v3/stats_xyz",
     tags=["Stats XYZ"],
@@ -162,6 +147,22 @@ def healthcheck():
         "cache_age_mins": cache.healthcheck(),
     }
 
+if DEVMODE:
+    app.include_router(
+        new_db.router,
+        prefix="/api/v3/new_db",
+        tags=["New DB"],
+        dependencies=[],
+        responses={418: {"description": "I'm a teapot"}},
+    )
+
+    app.include_router(
+        generic.router,
+        prefix="/api/v3/generic",
+        tags=["Generic"],
+        dependencies=[],
+        responses={418: {"description": "I'm a teapot"}},
+    )
 
 """
 @app.get("/docs", include_in_schema=False)

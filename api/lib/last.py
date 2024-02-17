@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict
 from util.logger import timed
 from util.transform import deplatform, invert, template
 import util.defaults as default
@@ -6,11 +7,10 @@ import util.memcache as memcache
 
 
 @timed
-def pair_last_trade_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
+def pair_last_trade_cache(pair_str: str, last_data: Dict):  # pragma: no cover
     try:
         depair = deplatform.pair(pair_str)
         data = template.first_last_traded()
-        last_data = memcache.get_pair_last_traded()
         if last_data is not None:
             if depair in last_data:
                 if pair_str in last_data[depair]:

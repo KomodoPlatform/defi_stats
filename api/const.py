@@ -27,6 +27,7 @@ MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 
 NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
 RESET_TABLE = os.getenv("RESET_TABLE") == "True"
+DEVMODE = os.getenv("DEVMODE") == "True"
 
 IN_DOCKER = os.getenv("IN_DOCKER")
 if IN_DOCKER == "True":

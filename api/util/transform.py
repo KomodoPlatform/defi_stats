@@ -191,6 +191,7 @@ class Convert:
             "low": prices["lowest_price_24hr"],
             "trades_24hr": vols["trades_24hr"],
             "last_price": prices["newest_price_24hr"],
+            "last_swap_uuid": book["last_swap_uuid"],
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
             "liquidity_usd": book["liquidity_usd"],
@@ -1372,6 +1373,7 @@ class Templates:  # pragma: no cover
             "quote_price_usd": 0,
             f"trades_{suffix}": 0,
             "trade_volume_usd": 0,
+            "last_swap_uuid": ""
         }
 
     def volumes_ticker(self):
