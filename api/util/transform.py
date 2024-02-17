@@ -72,6 +72,8 @@ class Clean:
                 "base_liquidity_usd",
                 "quote_liquidity_coins",
                 "quote_liquidity_usd",
+                "highest_bid",
+                "lowest_ask",
             ]:
                 if i in data:
                     data[i] = convert.format_10f(Decimal(data[i]))
@@ -187,8 +189,8 @@ class Convert:
             "ask": book["lowest_ask"],
             "high": prices["highest_price_24hr"],
             "low": prices["lowest_price_24hr"],
-            "trades_24hr": vols["swaps"],
-            "last_price": prices["newest_price"],
+            "trades_24hr": vols["trades_24hr"],
+            "last_price": prices["newest_price_24hr"],
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
             "liquidity_usd": book["liquidity_usd"],
@@ -353,87 +355,13 @@ class Deplatform:
     def __init__(self):
         pass
 
-    def tickers(self, tickers_data, priced_only=False):
-        data = {}
-        # Combine to pair without platforms
-        for i in tickers_data["data"]:
-            if priced_only and not i["priced"]:
-                continue
-            root_pair = self.pair(i["ticker_id"])
-            i["ticker_id"] = root_pair
-            i["base_currency"] = self.coin(i["base_currency"])
-            i["quote_currency"] = self.coin(i["quote_currency"])
-            if root_pair not in data:
-                i["trades_24hr"] = int(i["trades_24hr"])
-                data.update({root_pair: i})
-            else:
-                j = data[root_pair]
-                j["variants"] += i["variants"]
-                j["trades_24hr"] += int(i["trades_24hr"])
-                for key in [
-                    "combined_volume_usd",
-                    "liquidity_usd",
-                    "base_volume",
-                    "base_volume_usd",
-                    "base_liquidity_coins",
-                    "base_liquidity_usd",
-                    "quote_volume",
-                    "quote_volume_usd",
-                    "quote_liquidity_coins",
-                    "quote_liquidity_usd",
-                ]:
-                    # Add to cumulative sum
-                    j[key] = sumdata.numeric_str(i[key], j[key])
-                if Decimal(i["last_swap_time"]) > Decimal(j["last_swap_time"]):
-                    j["last_swap_price"] = i["last_swap_price"]
-                    j["last_swap_time"] = i["last_swap_time"]
-                    j["last_swap_uuid"] = i["last_swap_uuid"]
-
-                if int(Decimal(j["newest_price_time"])) < int(
-                    Decimal(i["newest_price_time"])
-                ):
-                    j["newest_price_time"] = i["newest_price_time"]
-                    j["newest_price"] = i["newest_price"]
-
-                if (
-                    j["oldest_price_time"] > i["oldest_price_time"]
-                    or j["oldest_price_time"] == 0
-                ):
-                    j["oldest_price_time"] = i["oldest_price_time"]
-                    j["oldest_price"] = i["oldest_price"]
-
-                if Decimal(j["highest_bid"]) < Decimal(i["highest_bid"]):
-                    j["highest_bid"] = i["highest_bid"]
-
-                if Decimal(j["lowest_ask"]) > Decimal(i["lowest_ask"]):
-                    j["lowest_ask"] = i["lowest_ask"]
-
-                if Decimal(j["highest_price_24hr"]) < Decimal(i["highest_price_24hr"]):
-                    j["highest_price_24hr"] = i["highest_price_24hr"]
-
-                if (
-                    Decimal(j["lowest_price_24hr"]) > Decimal(i["lowest_price_24hr"])
-                    or j["lowest_price_24hr"] == 0
-                ):
-                    j["lowest_price_24hr"] = i["lowest_price_24hr"]
-
-                j["price_change_24hr"] = convert.format_10f(
-                    Decimal(j["newest_price"]) - Decimal(j["oldest_price"])
-                )
-                if Decimal(j["oldest_price"]) > 0:
-                    j["price_change_pct_24hr"] = convert.format_10f(
-                        Decimal(j["newest_price"]) / Decimal(j["oldest_price"]) - 1
-                    )
-                else:
-                    j["price_change_pct_24hr"] = convert.format_10f(0)
-                j["variants"].sort()
-        return tickers_data
-
     def pair(self, pair):
         base, quote = derive.base_quote(pair)
         return f"{self.coin(base)}_{self.coin(quote)}"
 
     def coin(self, coin):
+        if coin is None:
+            return None
         return coin.split("-")[0]
 
 
@@ -508,6 +436,18 @@ class Derive:
             return r[1]
         return ""
 
+    def highest(self, existing, new, key):
+        existing[key] = max(Decimal(existing[key]), Decimal(new[key]))
+        return existing
+
+    def lowest(self, existing, new, key):
+        if Decimal(new[key]) > 0:
+            if Decimal(existing[key]) > 0:
+                existing[key] = min(Decimal(existing[key]), Decimal(new[key]))
+            else:
+                existing[key] = Decimal(new[key])
+        return existing
+    
     @timed
     def suffix(self, days: int) -> str:
         if days == 1:
@@ -723,15 +663,19 @@ class Derive:
                 )
         return clean.decimal_dict_lists(sortdata.top_items(pair_volumes, "volume"))
 
-    def top_pairs_by_swap_counts(self, vols):
+    def top_pairs_by_swap_counts(self, vols, suffix):
         pair_swap_counts = []
         for depair in vols["volumes"]:
             if "ALL" in vols["volumes"][depair]:
                 data = vols["volumes"][depair]["ALL"]
                 # Filter out test coins
                 if data["trade_volume_usd"] > 0:
-                    pair_swap_counts.append({"pair": depair, "swaps": data["swaps"]})
-        return clean.decimal_dict_lists(sortdata.top_items(pair_swap_counts, "swaps"))
+                    pair_swap_counts.append(
+                        {"pair": depair, f"trades_{suffix}": data[f"trades_{suffix}"]}
+                    )
+        return clean.decimal_dict_lists(
+            sortdata.top_items(pair_swap_counts, f"trades_{suffix}")
+        )
 
     def top_pairs_by_liquidity(self, books):
         pair_liquidity = []
@@ -1006,43 +950,20 @@ class Merge:
                 "base_liquidity_usd",
                 "quote_liquidity_coins",
                 "quote_liquidity_usd",
+                "trade_volume_usd"
             ]
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
             )
-            if (
-                Decimal(existing["lowest_ask"]) > Decimal(new["lowest_ask"])
-                or Decimal(existing["lowest_ask"]) == 0
-            ):
-                existing["lowest_ask"] = new["lowest_ask"]
-
-            if Decimal(existing["highest_bid"]) < Decimal(new["highest_bid"]):
-                existing["highest_bid"] = new["highest_bid"]
-
-            if int(Decimal(existing["newest_price_time"])) < int(
-                Decimal(new["newest_price_time"])
-            ):
-                existing["newest_price_time"] = new["newest_price_time"]
-                existing["newest_price_24hr"] = new["newest_price_24hr"]
-
-            if (
-                existing["oldest_price_time"] > new["oldest_price_time"]
-                or existing["oldest_price_time"] == 0
-            ):
-                existing["oldest_price_time"] = new["oldest_price_time"]
-                existing["oldest_price_24hr"] = new["oldest_price_24hr"]
-
-            if Decimal(existing["highest_price_24hr"]) < Decimal(
-                new["highest_price_24hr"]
-            ):
-                existing["highest_price_24hr"] = new["highest_price_24hr"]
-
-            if (
-                Decimal(existing["lowest_price_24hr"])
-                > Decimal(new["lowest_price_24hr"])
-                or existing["lowest_price_24hr"] == 0
-            ):
-                existing["lowest_price_24hr"] = new["lowest_price_24hr"]
+            existing[f"trades_24hr"] = sumdata.ints(
+                existing[f"trades_24hr"], new[f"trades_24hr"]
+            )
+            existing = derive.lowest(existing, new, key="lowest_ask")
+            existing = derive.lowest(existing, new, key="lowest_price_24hr")
+            existing = derive.highest(existing, new, key="highest_bid")
+            existing = derive.highest(existing, new, key="highest_price_24hr")
+            existing = merge.newest_price(existing, new, "newest_price_24hr")
+            existing = merge.oldest_price(existing, new, "oldest_price_24hr")
 
             existing["price_change_24hr"] = convert.format_10f(
                 Decimal(existing["newest_price_24hr"])
@@ -1137,40 +1058,13 @@ class Merge:
                         "last_swap_uuid": new["last_swap_uuid"],
                     }
                 )
-            if (
-                Decimal(existing["lowest_ask"]) > Decimal(new["lowest_ask"])
-                or Decimal(existing["lowest_ask"]) == 0
-            ):
-                existing["lowest_ask"] = new["lowest_ask"]
+            existing = derive.lowest(existing, new, key="lowest_ask")
+            existing = derive.lowest(existing, new, key="lowest_price_24hr")
+            existing = derive.highest(existing, new, key="highest_bid")
+            existing = derive.highest(existing, new, key="highest_price_24hr")
+            existing = merge.newest_price(existing, new, key=f"newest_price_24hr")
+            existing = merge.oldest_price(existing, new, key=f"oldest_price_24hr")
 
-            if Decimal(existing["highest_bid"]) < Decimal(new["highest_bid"]):
-                existing["highest_bid"] = new["highest_bid"]
-
-            if (
-                Decimal(existing["lowest_price_24hr"])
-                > Decimal(new["lowest_price_24hr"])
-                or Decimal(existing["lowest_price_24hr"]) == 0
-            ):
-                existing["lowest_price_24hr"] = new["lowest_price_24hr"]
-
-            if Decimal(existing["highest_price_24hr"]) < Decimal(
-                new["highest_price_24hr"]
-            ):
-                existing["highest_price_24hr"] = new["highest_price_24hr"]
-
-            if (
-                int(existing["oldest_price_time"]) > int(new["oldest_price_time"])
-                or Decimal(existing["oldest_price_time"]) == 0
-            ):
-                existing["oldest_price_time"] = int(new["oldest_price_time"])
-                existing["oldest_price_24hr"] = Decimal(new["oldest_price_24hr"])
-
-            if (
-                int(existing["newest_price_time"]) < int(new["newest_price_time"])
-                or int(existing["newest_price_time"]) == 0
-            ):
-                existing["newest_price_time"] = int(new["newest_price_time"])
-                existing["newest_price_24hr"] = Decimal(new["newest_price_24hr"])
             existing["price_change_24hr"] = Decimal(new["newest_price_24hr"]) - Decimal(
                 new["oldest_price_24hr"]
             )
@@ -1182,9 +1076,58 @@ class Merge:
                 )
             return existing
         except Exception as e:
-            logger.merge(existing)
-            logger.loop(new)
+            logger.merge(f"existing: {existing}")
+            logger.loop(f"new: {new}")
             logger.warning(e)
+
+
+    def orderbook_prices_data(self, prices_data: List, suffix="24hr") -> dict:
+        existing = template.pair_prices_info(suffix=suffix)
+        for new in prices_data:
+            existing[f"trades_{suffix}"] = sumdata.ints(
+                existing[f"trades_{suffix}"], new[f"trades_{suffix}"]
+            )
+            existing["trade_volume_usd"] = sumdata.decimals(
+                existing["trade_volume_usd"], new["trade_volume_usd"]
+            )
+            existing = derive.lowest(existing, new, key=f"lowest_price_{suffix}")
+            existing = derive.highest(existing, new, key=f"highest_price_{suffix}")
+            existing = self.newest_price(existing, new, key=f"newest_price_{suffix}")
+            existing = self.oldest_price(existing, new, key=f"oldest_price_{suffix}")
+
+        existing[f"price_change_{suffix}"] = Decimal(
+            existing[f"newest_price_{suffix}"]
+        ) - Decimal(existing[f"oldest_price_{suffix}"])
+
+        if Decimal(existing[f"oldest_price_{suffix}"]) > 0:
+            existing[f"price_change_pct_{suffix}"] = convert.format_10f(
+                Decimal(existing[f"newest_price_{suffix}"])
+                / Decimal(existing[f"oldest_price_{suffix}"])
+                - 1
+            )
+        else:
+            existing[f"price_change_pct_{suffix}"] = convert.format_10f(0)
+        return existing
+
+    def newest_price(self, existing, new, key="newest_price"):
+        """Updates to new values if more recent timestamp"""
+        if (
+            int(existing["newest_price_time"]) < int(new["newest_price_time"])
+            or existing["newest_price_time"] == 0
+        ):
+            existing["newest_price_time"] = new["newest_price_time"]
+            existing[key] = new[key]
+        return existing
+
+    def oldest_price(self, existing, new, key="oldest_price"):
+        """Updates to new values if older timestamp"""
+        if (
+            int(existing["oldest_price_time"]) > int(new["oldest_price_time"])
+            or existing["oldest_price_time"] == 0
+        ):
+            existing["oldest_price_time"] = new["oldest_price_time"]
+            existing[key] = new[key]
+        return existing
 
 
 class SortData:
@@ -1422,31 +1365,31 @@ class Templates:  # pragma: no cover
 
     def pair_prices_info(self, suffix):
         return {
-            "oldest_price": 0,
+            f"oldest_price_{suffix}": 0,
             "oldest_price_time": 0,
-            "newest_price": 0,
+            f"newest_price_{suffix}": 0,
             "newest_price_time": 0,
-            f"price_change_pct_{suffix}": 0,
-            f"price_change_{suffix}": 0,
             f"highest_price_{suffix}": 0,
             f"lowest_price_{suffix}": 0,
+            f"price_change_pct_{suffix}": 0,
+            f"price_change_{suffix}": 0,
             "base_price_usd": 0,
             "quote_price_usd": 0,
-            "swaps": 0,
+            f"trades_{suffix}": 0,
             "trade_volume_usd": 0,
         }
 
     def volumes_ticker(self):
         return {
             "taker_swaps": 0,
-            "maker_swaps": 4,
-            "total_swaps": 4,
+            "maker_swaps": 0,
+            "total_swaps": 0,
             "taker_volume": 0,
-            "maker_volume": 382.170941392,
-            "total_volume": 382.170941392,
-            "taker_volume_usd": 0.0,
-            "maker_volume_usd": 19.001909911823393,
-            "trade_volume_usd": 19.001909911823393,
+            "maker_volume": 0,
+            "total_volume": 0,
+            "taker_volume_usd": 0,
+            "maker_volume_usd": 0,
+            "trade_volume_usd": 0,
         }
 
     def ticker_info(self, suffix, base, quote):
@@ -1507,11 +1450,11 @@ class Templates:  # pragma: no cover
             "priced": None,
         }
 
-    def pair_volume_item(self):
+    def pair_volume_item(self, suffix="24hr"):
         return {
             "base_volume": 0,
             "quote_volume": 0,
-            "swaps": 0,
+            f"trades_{suffix}": 0,
             "base_volume_usd": 0,
             "quote_volume_usd": 0,
             "trade_volume_usd": 0,
@@ -1573,7 +1516,8 @@ class Templates:  # pragma: no cover
     def markets_ticker(self, variant, variant_data):
         return {
             variant: {
-                "last_price": Decimal(variant_data["newest_price"]),
+                "last_price": Decimal(variant_data["newest_price_24hr"]),
+                "last_price_time": Decimal(variant_data["newest_price_time"]),
                 "quote_volume": Decimal(variant_data["quote_liquidity_coins"]),
                 "base_volume": Decimal(variant_data["base_liquidity_coins"]),
                 "isFrozen": "0",

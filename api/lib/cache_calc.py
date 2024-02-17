@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from decimal import Decimal
+from lib.pair import Pair
+from util.cron import cron
 from util.logger import logger, timed
 from util.transform import clean, derive, merge, template, convert
 import db.sqldb as db
-from util.cron import cron
+import lib.prices
 import util.defaults as default
 import util.helper as helper
 import util.memcache as memcache
-from lib.pair import Pair
+
+
 from util.transform import deplatform
 
 
@@ -170,49 +173,9 @@ class CacheCalc:
             return default.error(e, msg)
 
     @timed
+    # TODO: Expand to 7d, 14d, 30d etc
     def pair_prices_24hr(self, days=1, from_memcache: bool = False):
-        try:
-            pair_vols = memcache.get_pair_volumes_24hr()
-
-            ts = cron.now_utc() - days * 86400
-            # Filter out pairs older than requested time
-            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-            prices_data = {
-                i: Pair(
-                    pair_str=i,
-                    pairs_last_trade_cache=self.pairs_last_trade_cache,
-                    coins_config=self.coins_config,
-                ).get_pair_prices_info(days)
-                for i in pairs
-            }
-            resp = {}
-            for depair in prices_data:
-                resp.update({depair: {}})
-                variants = sorted(list(prices_data[depair].keys()))
-                for variant in variants:
-                    if prices_data[depair][variant]["newest_price_time"] != 0:
-                        resp[depair].update({variant: prices_data[depair][variant]})
-                        resp[depair][variant].update(
-                            {"swaps": 0, "trade_volume_usd": 0}
-                        )
-                        if depair in pair_vols["volumes"]:
-                            if variant in pair_vols["volumes"][depair]:
-                                resp[depair][variant].update(
-                                    {
-                                        "swaps": pair_vols["volumes"][depair][variant][
-                                            "swaps"
-                                        ],
-                                        "trade_volume_usd": pair_vols["volumes"][
-                                            depair
-                                        ][variant]["trade_volume_usd"],
-                                    }
-                                )
-
-            msg = "[pair_prices_24hr] update loop complete"
-            return default.result(resp, msg, loglevel="calc", ignore_until=3)
-        except Exception as e:  # pragma: no cover
-            msg = f"prices failed! {e}"
-            return default.error(e, msg)
+        return lib.prices.pair_prices(days=days, from_memcache=from_memcache)
 
     @timed
     def markets_summary(self):
@@ -240,7 +203,7 @@ class CacheCalc:
                             o = template.orderbook_extended(pair_str=variant)
                             if i in book["orderbooks"][depair]:
                                 o = book["orderbooks"][depair][i]
-                            v = template.pair_volume_item()
+                            v = template.pair_volume_item(suffix="24hr")
                             if depair in vols["volumes"]:
                                 if i in vols["volumes"][depair]:
                                     v = vols["volumes"][depair][i]
@@ -253,26 +216,29 @@ class CacheCalc:
                                 if i in last[depair]:
                                     lt = last[depair][i]
                             new = {
+                                "base_price_usd": p["base_price_usd"],
+                                "quote_price_usd": p["quote_price_usd"],
+                                "lowest_price_24hr": p["lowest_price_24hr"],
+                                "highest_price_24hr": p["highest_price_24hr"],
+                                "price_change_24hr": p["price_change_24hr"],
+                                "price_change_pct_24hr": p["price_change_pct_24hr"],
+                                
+                                "trades_24hr": v["trades_24hr"],
                                 "base_volume": v["base_volume"],
                                 "quote_volume": v["quote_volume"],
                                 "volume_usd_24hr": v["trade_volume_usd"],
-                                "base_price_usd": p["base_price_usd"],
-                                "quote_price_usd": p["quote_price_usd"],
+                                
                                 "last_price": lt["last_swap_price"],
                                 "last_swap": lt["last_swap_time"],
                                 "last_swap_uuid": lt["last_swap_uuid"],
-                                "lowest_price_24hr": o["lowest_price_24hr"],
-                                "highest_price_24hr": o["highest_price_24hr"],
-                                "price_change_24hr": o["price_change_24hr"],
-                                "price_change_pct_24hr": o["price_change_pct_24hr"],
-                                "trades_24hr": v["swaps"],
+                                
+                                "lowest_ask": o["lowest_ask"],
+                                "highest_bid": o["highest_bid"],
+                                "liquidity_usd": o["liquidity_usd"],
                                 "newest_price_24hr": o["newest_price_24hr"],
                                 "newest_price_time": o["newest_price_time"],
                                 "oldest_price_24hr": o["oldest_price_24hr"],
                                 "oldest_price_time": o["oldest_price_time"],
-                                "lowest_ask": o["lowest_ask"],
-                                "highest_bid": o["highest_bid"],
-                                "liquidity_usd": o["liquidity_usd"],
                                 "variants": segwit_variants,
                             }
                             merged = merge.market_summary(existing, new)
@@ -301,7 +267,7 @@ class CacheCalc:
                     o = book["orderbooks"][depair]["ALL"]
                     lt = template.first_last_traded()
                     p = template.pair_prices_info(suffix="24hr")
-                    v = template.pair_volume_item()
+                    v = template.pair_volume_item(suffix="24hr")
 
                     if depair in vols["volumes"]:
                         if "ALL" in vols["volumes"][depair]:
@@ -381,7 +347,7 @@ class CacheCalc:
                     "current_liquidity": books["combined_liquidity_usd"],
                     "top_pairs": {
                         "by_volume": derive.top_pairs_by_volume(vols),
-                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols),
+                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols, suffix="24hr"),
                         "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
                             books
                         ),
@@ -407,7 +373,7 @@ class CacheCalc:
                     "current_liquidity": books["combined_liquidity_usd"],
                     "top_pairs": {
                         "by_volume": derive.top_pairs_by_volume(vols),
-                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols),
+                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols, suffix="14d"),
                         "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
                             books
                         ),
@@ -431,47 +397,50 @@ class CacheCalc:
             resp = []
             data = {}
             for depair in book["orderbooks"]:
-                if not depaired:
-                    for variant in book["orderbooks"][depair]:
-                        if variant != "ALL":
-                            v = variant.replace("-segwit", "")
-                            v_data = book["orderbooks"][depair][variant]
-                            if v not in data:
-                                data.update(template.markets_ticker(v, v_data))
-                            else:
-                                data[v]["quote_volume"] += Decimal(
-                                    v_data["quote_liquidity_coins"]
-                                )
-                                data[v]["base_volume"] += Decimal(
-                                    v_data["base_liquidity_coins"]
-                                )
-                                if v_data["newest_price"] > data[v]["last_price"]:
-                                    data[v]["last_price"] = Decimal(
-                                        v_data["newest_price"]
+                base, quote = derive.base_quote(pair_str=depair)
+                if deplatform.coin(coin) in [None, base, quote]:
+                    if depaired:
+                        for variant in book["orderbooks"][depair]:
+                            if variant != "ALL":
+                                v = variant.replace("-segwit", "")
+                                v_data = book["orderbooks"][depair][variant]
+                                if v not in data:
+                                    data.update(template.markets_ticker(v, v_data))
+                                else:
+                                    data[v]["quote_volume"] += Decimal(
+                                        v_data["quote_liquidity_coins"]
                                     )
-                else:
-                    v_data = book["orderbooks"][depair]["ALL"]
-                    if v not in data:
-                        data.update(template.markets_ticker(v, v_data))
+                                    data[v]["base_volume"] += Decimal(
+                                        v_data["base_liquidity_coins"]
+                                    )
+                                    logger.info(v_data.keys())
+                                    if v_data["newest_price_time"] > data[v]["last_price_time"]:
+                                        data[v]["last_price"] = Decimal(
+                                            v_data["newest_price_24hr"]
+                                        )
                     else:
-                        data[v]["quote_volume"] += Decimal(
-                            v_data["quote_liquidity_coins"]
-                        )
-                        data[v]["base_volume"] += Decimal(
-                            v_data["base_liquidity_coins"]
-                        )
-                        if v_data["newest_price"] > data[v]["last_price"]:
-                            data[v]["last_price"] = Decimal(v_data["newest_price"])
+                        for variant in book["orderbooks"][depair]:
+                            if variant != "ALL":
+                                v = variant.replace("-segwit", "")
+                                v_data = book["orderbooks"][depair][variant]
+                                if v not in data:
+                                    logger.info(v)
+                                    data.update(template.markets_ticker(v, v_data))
+                                    logger.info(v)
+                                else:
+                                    logger.info(v_data.keys())
+                                    logger.info(data[v].keys())
+                                    # Cover merge of segwit variants
+                                    if v_data["newest_price_24hr"] > data[v]["last_price"]:
+                                        data[v]["last_price"] = Decimal(v_data["newest_price_24hr"])
 
             for v in data:
                 if data[v]["base_volume"] != 0 and data[v]["quote_volume"] != 0:
-                    base, quote = derive.base_quote(pair_str=v)
-                    if coin is None or coin in [base, quote]:
-                        data[v] = clean.decimal_dicts(data=data[v], to_string=True)
-                        resp.append({v: data[v]})
+                    data[v] = clean.decimal_dicts(data=data[v], to_string=True)
+                    resp.append({v: data[v]})
             return resp
         except Exception as e:  # pragma: no cover
-            msg = f"markets_tickers failed for netid {self.netid}!"
+            msg = f"markets_tickers failed!"
             return default.error(e, msg)
 
     @timed
@@ -496,7 +465,7 @@ class CacheCalc:
                     if depair in volumes["volumes"]:
                         v = volumes["volumes"][depair]["ALL"]
                     else:
-                        v = template.pair_volume_item()
+                        v = template.pair_volume_item(suffix="24hr")
                     if depair in prices:
                         p = prices[depair]["ALL"]
                     else:

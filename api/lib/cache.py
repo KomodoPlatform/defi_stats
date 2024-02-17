@@ -234,7 +234,9 @@ class CacheItem:
                     r = self.files.save_json(self.filename, data)
                     msg = f"Saved {self.filename}"
                     return default.result(
-                        data=data, msg=r["msg"], loglevel=r["loglevel"]
+                        data=data, msg=r["msg"],
+                        loglevel=r["loglevel"],
+                        ignore_until=r['ignore_until']
                     )
                 else:
                     logger.warning(

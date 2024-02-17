@@ -27,7 +27,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
             swaps = 0
         else:
             vol = Decimal(v["trade_volume_usd"])
-            swaps = int(v["swaps"])
+            swaps = int(v["trades_24hr"])
         data = {"volume_usd_24hr": vol, "trades_24hr": swaps}
         ignore_until = 3
         if data["trades_24hr"] > 1:
@@ -42,7 +42,7 @@ def pair_volume_24hr_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     except Exception as e:
         msg = f"Pair.get_pair_volume_24hr_cache {pair_str} failed: {e}!"
         try:
-            data = template.pair_volume_item()
+            data = template.pair_volume_item(suffix="24hr")
             msg += " Returning template!"
         except Exception as e:
             data = {"error": f"{msg}: {e}"}
@@ -67,7 +67,7 @@ def pair_volume_14d_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
             swaps = 0
         else:
             vol = Decimal(v["trade_volume_usd"])
-            swaps = int(v["swaps"])
+            swaps = int(v["trades_14d"])
         data = {"volume_usd_14d": vol, "trades_14d": swaps}
         ignore_until = 3
         if data["trades_14d"] > 3:
@@ -82,7 +82,7 @@ def pair_volume_14d_cache(pair_str: str = "KMD_LTC"):  # pragma: no cover
     except Exception as e:
         msg = f"Pair.get_pair_volume_14d_cache {pair_str} failed: {e}!"
         try:
-            data = template.pair_volume_item(pair_str, suffix="14d")
+            data = template.pair_volume_item(suffix="14d")
             msg += " Returning template!"
         except Exception as e:
             data = {"error": f"{msg}: {e}"}

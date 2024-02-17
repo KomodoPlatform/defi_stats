@@ -43,6 +43,9 @@ def orderbook_request(base, quote, coins_config):
         elif coins_config[quote]["wallet_only"]:
             msg = f"dex_api.get_orderbook {quote} is wallet only!"
             raise ValueError
+        elif base == quote:
+            msg = f"dex_api.get_orderbook {quote} == {quote}!"
+            raise ValueError
     except Exception as e:
         default.result(msg=f"{e} {msg}", data=False, loglevel="debug")
         return False

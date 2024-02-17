@@ -513,14 +513,14 @@ class SqlQuery(SqlDB):
             resp = {
                 "start_time": start_time,
                 "end_time": end_time,
-                "range_days": (end_time - start_time) / 86400,
+                "range_days": int((end_time - start_time) / 86400),
                 "total_swaps": 0,
                 "base_volume_usd": 0,
                 "quote_volume_usd": 0,
                 "trade_volume_usd": 0,
                 "volumes": {},
             }
-
+            suffix = derive.suffix(resp["range_days"])
             with Session(self.engine) as session:
                 q = session.query(
                     self.table.pair,
@@ -549,11 +549,11 @@ class SqlQuery(SqlDB):
                 depair = deplatform.pair(variant)
                 if depair not in resp["volumes"]:
                     resp["volumes"].update(
-                        {depair: {"ALL": template.pair_volume_item()}}
+                        {depair: {"ALL": template.pair_volume_item(suffix=suffix)}}
                     )
                 if variant not in resp["volumes"][depair]:
                     resp["volumes"][depair].update(
-                        {variant: template.pair_volume_item()}
+                        {variant: template.pair_volume_item(suffix=suffix)}
                     )
 
                 num_swaps = int(i["num_swaps"])
@@ -564,10 +564,10 @@ class SqlQuery(SqlDB):
                 elif i["trade_type"] == "sell":
                     base_vol = Decimal(i["taker_volume"])
                     quote_vol = Decimal(i["maker_volume"])
-                resp["volumes"][depair]["ALL"]["swaps"] += num_swaps
+                resp["volumes"][depair]["ALL"][f"trades_{suffix}"] += num_swaps
                 resp["volumes"][depair]["ALL"]["base_volume"] += base_vol
                 resp["volumes"][depair]["ALL"]["quote_volume"] += quote_vol
-                resp["volumes"][depair][variant]["swaps"] += num_swaps
+                resp["volumes"][depair][variant][f"trades_{suffix}"] += num_swaps
                 resp["volumes"][depair][variant]["base_volume"] += base_vol
                 resp["volumes"][depair][variant]["quote_volume"] += quote_vol
                 resp["total_swaps"] += num_swaps
@@ -627,7 +627,10 @@ class SqlQuery(SqlDB):
                 }
             )
             return default.result(
-                data=volumes, msg="pair_trade_volumes_usd complete", loglevel="query"
+                data=volumes,
+                msg="pair_trade_volumes_usd complete",
+                loglevel="query",
+                ignore_until=5
             )
 
         except Exception as e:  # pragma: no cover

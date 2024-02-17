@@ -82,11 +82,15 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth)
-
+        if pair_str in data:
+            data = data[pair_str]
+        else:
+            data = data["ALL"]
         if Decimal(data["liquidity_usd"]) > 0:
             if is_reversed:
                 logger.calc("Returning inverted orderbook_extended cache")
                 data = invert.pair_orderbook(data)
+            data["volume_usd_24hr"] = data["trade_volume_usd"]
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -228,7 +232,7 @@ def ticker():
 
 @router.get(
     "/ticker_for_ticker",
-    description="Simple last price and liquidity for each market pair for a specific ticker.",
+    description="Simple last price and liquidity for each market pair for a specific coin , e.g. `KMD`, `KMD-BEP20`.",
 )
 def ticker_for_ticker(ticker):
     try:

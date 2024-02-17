@@ -8,7 +8,7 @@ import lib.dex_api as dex
 import util.defaults as default
 import util.memcache as memcache
 from util.cron import cron
-from util.logger import timed
+from util.logger import timed, logger
 from util.transform import (
     sortdata,
     convert,
@@ -294,8 +294,8 @@ class Pair:  # pragma: no cover
                     data[variant] = {
                         "oldest_price_time": swap_keys[swap_vals.index(oldest_price)],
                         "newest_price_time": swap_keys[swap_vals.index(newest_price)],
-                        "oldest_price": oldest_price,
-                        "newest_price": newest_price,
+                        f"oldest_price_{suffix}": oldest_price,
+                        f"newest_price_{suffix}": newest_price,
                         f"highest_price_{suffix}": highest_price,
                         f"lowest_price_{suffix}": lowest_price,
                         f"price_change_pct_{suffix}": pct_change,

@@ -4,11 +4,11 @@ from typing import Dict
 import requests
 import threading
 from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
+from lib.cache_query import cache_query
 from util.cron import cron
 from util.files import Files
 from util.logger import logger, timed
-from util.transform import sortdata, clean, invert, derive, template, convert
-import lib.prices as prices
+from util.transform import sortdata, clean, invert, derive, template, convert, merge
 import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
@@ -34,7 +34,7 @@ class DexAPI:
             resp = r.json()
             if "error" not in resp:
                 return resp["result"]
-            err = {"error": f'{resp["error_type"]} [{resp["error_data"]}]'}
+            err = {"error": f'{resp.text}]'}
             return err
         except Exception as e:  # pragma: no cover
             logger.warning(params)
@@ -85,8 +85,6 @@ class OrderbookRpcThread(threading.Thread):
             data = orderbook_extras(
                 pair_str=self.pair_str, data=data, gecko_source=self.gecko_source
             )
-            # update the variant cache. Double expiry vs combined to
-            # make sure variants are never empty when combined asks.
             data = clean.decimal_dicts(data)
             memcache.update(self.variant_cache_name, data, 900)
         except Exception as e:  # pragma: no cover
@@ -114,7 +112,8 @@ def get_orderbook(
         If `refresh` is true request is threaded and added to cache.
         If `refresh` is false, resp from cache or standard request.
         """
-        ignore_until = 2
+        ignore_until = 3
+        loglevel="dexrpc"
         pair_str = f"{base}_{quote}"
         if not validate.orderbook_request(
             base=base, quote=quote, coins_config=coins_config
@@ -138,15 +137,17 @@ def get_orderbook(
         if cached is not None:
             data = cached
             msg = f"Returning orderbook for {pair_str} from cache"
+            loglevel="cached"
         else:
             data = DexAPI().orderbook_rpc(base, quote)
             data = orderbook_extras(
                 pair_str=pair_str, data=data, gecko_source=gecko_source
             )
+            if pair_str == "KMD_LTC":
+                logger.merge(data)
             data = clean.decimal_dicts(data)
             memcache.update(variant_cache_name, data, 900)
             msg = f"Updated orderbook cache for {pair_str}"
-        ignore_until = 3
     except Exception as e:  # pragma: no cover
         data = template.orderbook_extended(pair_str=pair_str)
         data = orderbook_extras(pair_str=pair_str, data=data, gecko_source=gecko_source)
@@ -156,7 +157,7 @@ def get_orderbook(
         data=data,
         ignore_until=ignore_until,
         msg=msg,
-        loglevel="loop",
+        loglevel=loglevel,
     )
 
 
@@ -204,31 +205,40 @@ def orderbook_extras(pair_str, data, gecko_source):
                 if "decimal" in data[i]:
                     data[i] = data[i]["decimal"]
         data = get_liquidity(data, gecko_source)
-        price_data = prices.pair_price_24hr_cache(pair_str=pair_str)
-        data.update(
-            {
-                "trades_24hr": price_data["swaps"],
-                "oldest_price_24hr": price_data["oldest_price"],
+        data.update({
+            "highest_bid": derive.highest_bid(data),
+            "lowest_ask": derive.lowest_ask(data),
+        })
+        # Data below needs segwit merge
+        segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
+        prices_data = []
+        for variant in segwit_variants:
+            price_data = cache_query.pair_price_24hr(pair_str=variant)
+            prices_data.append({
+                "trades_24hr": price_data["trades_24hr"],
+                "oldest_price_24hr": price_data["oldest_price_24hr"],
                 "oldest_price_time": price_data["oldest_price_time"],
-                "newest_price_24hr": price_data["newest_price"],
+                "newest_price_24hr": price_data["newest_price_24hr"],
                 "newest_price_time": price_data["newest_price_time"],
                 "highest_price_24hr": price_data["highest_price_24hr"],
                 "lowest_price_24hr": price_data["lowest_price_24hr"],
                 "price_change_pct_24hr": price_data["price_change_pct_24hr"],
                 "price_change_24hr": price_data["price_change_24hr"],
-                "base_price_usd": price_data["base_price_usd"],
-                "quote_price_usd": price_data["quote_price_usd"],
-                "trade_volume_usd": price_data["trade_volume_usd"],
-                "highest_bid": derive.highest_bid(data),
-                "lowest_ask": derive.lowest_ask(data),
-            }
-        )
+                "trade_volume_usd": price_data["trade_volume_usd"]
+            })
+        combined_prices_data = merge.orderbook_prices_data(prices_data, suffix="24hr")
+        combined_prices_data.update({
+            "base_price_usd": derive.gecko_price(base, gecko_source),
+            "quote_price_usd": derive.gecko_price(quote, gecko_source),
+        })
+        data.update(combined_prices_data)
     except Exception as e:  # pragma: no cover
         loglevel = "warning"
         ignore_until = 0
         msg = f"Orderbook.extras failed for {pair_str}: {e}"
-    ignore_until = 5
-    loglevel = "dexrpc"
+        logger.warning(msg)
+    ignore_until = 3
+    loglevel = "pair"
     msg = f"Got Orderbook.extras for {pair_str}"
     return default.result(
         data=data, msg=msg, loglevel=loglevel, ignore_until=ignore_until

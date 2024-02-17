@@ -19,29 +19,24 @@ class Files:
         else:  # pragma: no cover
             folder = f"{API_ROOT_PATH}/cache"
 
-        # Coins repo data
+        # External source cache
         self.coins = f"{folder}/coins/coins.json"
         self.coins_config = f"{folder}/coins/coins_config.json"
-
-        # For Rates endpoints
+        self.gecko_source = f"{folder}/gecko/source.json"
         self.fixer_rates = f"{folder}/rates/fixer_rates.json"
 
-        self.gecko_pairs = f"{folder}/gecko/pairs.json"
-        self.gecko_source = f"{folder}/gecko/source.json"
-
-        # FOUNDATIONAL CACHE
+        # Top Fives
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
         self.adex_24hr = f"{folder}/generic/adex_24hr.json"
-        self.coin_volumes_24hr = f"{folder}/generic/coin_volumes_24hr.json"
-        self.pair_last_traded = f"{folder}/generic/pair_last_traded.json"
-        self.pair_last_traded_24hr = f"{folder}/generic/pair_last_traded_24hr.json"
-        self.pair_orderbook_extended = f"{folder}/generic/pair_orderbook_extended.json"
-        self.pair_prices_24hr = f"{folder}/generic/pair_prices_24hr.json"
-        self.pair_volumes_24hr = f"{folder}/generic/pair_volumes_24hr.json"
-        self.pair_volumes_14d = f"{folder}/generic/pair_volumes_14d.json"
 
-        # MARKETS CACHE
-        self.markets_summary = f"{folder}/markets/summary.json"
+        # Foundational cache
+        self.coin_volumes_24hr = f"{folder}/coins/volumes_24hr.json"
+        self.pair_last_traded = f"{folder}/pairs/last_traded.json"
+        self.pair_last_traded_24hr = f"{folder}/pairs/last_traded_24hr.json"
+        self.pair_orderbook_extended = f"{folder}/pairs/orderbook_extended.json"
+        self.pair_prices_24hr = f"{folder}/pairs/prices_24hr.json"
+        self.pair_volumes_24hr = f"{folder}/pairs/volumes_24hr.json"
+        self.pair_volumes_14d = f"{folder}/pairs/volumes_14d.json"
 
         # REVIEW
         # self.generic_summary = f"{folder}/generic/summary.json"
@@ -52,13 +47,14 @@ class Files:
         self.prices_tickers_v1 = f"{folder}/prices/tickers_v1.json"
         self.prices_tickers_v2 = f"{folder}/prices/tickers_v2.json"
 
+        self.markets_summary = f"{folder}/markets/summary.json"
         self.stats_api_summary = f"{folder}/stats_api/summary.json"
         self.tickers = f"{folder}/generic/tickers.json"
+        self.gecko_pairs = f"{folder}/gecko/pairs.json"
 
     def get_cache_fn(self, name):
         return getattr(self, name, None)
 
-    @timed
     def save_json(self, fn, data):
         try:
             if len(data) > 0:
@@ -67,21 +63,23 @@ class Files:
                         json.dump(data, f, indent=4)
                         return {
                             "result": "success",
-                            "msg": f"{fn} saved!",
+                            "msg": f"Saved {fn}",
                             "loglevel": "saved",
-                            "ignore_until": 5,
+                            "ignore_until": 0,
                         }
                 else:
                     return {
                         "result": "error",
                         "msg": f"Not saving {fn}, data not valid json! Data: ",
                         "loglevel": "warning",
+                        "ignore_until": 0,
                     }
             else:
                 return {
                     "result": "error",
                     "msg": f"Not saving {fn}, data is empty",
                     "loglevel": "warning",
+                    "ignore_until": 0,
                 }
 
         except Exception as e:
@@ -91,6 +89,7 @@ class Files:
                 "result": "error",
                 "msg": f"Not saving {fn}, error with the data: {e}",
                 "loglevel": "warning",
+                "ignore_until": 0,
             }
 
     @timed
@@ -100,7 +99,10 @@ class Files:
             try:
                 with open(path, "r") as f:
                     return default.result(
-                        data=json.load(f), msg=f"Loaded {path}", loglevel="saved"
+                        data=json.load(f),
+                        msg=f"Loaded {path}",
+                        loglevel="saved",
+                        ignore_until=3,
                     )
             except Exception as e:  # pragma: no cover
                 error = f"Error loading {path}: {e}"
