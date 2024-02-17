@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from util.logger import logger, timed
+from util.logger import timed
 from util.transform import invert, derive, template
-import db.sqldb as db
 import util.defaults as default
 import util.memcache as memcache
 
@@ -11,16 +10,10 @@ from util.transform import deplatform
 
 class CacheQuery:
     def __init__(self) -> None:
-        #self.coins_config = memcache.get_coins_config()
-        #self.pairs_last_trade_cache = memcache.get_pair_last_traded()
-        #self.pairs_last_trade_24hr_cache = memcache.get_pair_last_traded_24hr()
-        #self.gecko_source = memcache.get_gecko_source()
-        #self.pg_query = db.SqlQuery()
         pass
 
-
     @timed
-    def pair_price_24hr(self, pair_str: str):  # pragma: no cover
+    def pair_price_24hr(self, pair_str: str):
         try:
             # Add 24hr prices
             suffix = derive.suffix(1)
@@ -50,7 +43,9 @@ class CacheQuery:
                 msg += " Returning template!"
             except Exception as e:
                 data = {"error": f"{msg}: {e}"}
-            return default.result(data=data, msg=msg, loglevel="warning", ignore_until=0)
+            return default.result(
+                data=data, msg=msg, loglevel="warning", ignore_until=0
+            )
 
 
 cache_query = CacheQuery()

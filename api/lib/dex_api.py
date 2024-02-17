@@ -34,7 +34,7 @@ class DexAPI:
             resp = r.json()
             if "error" not in resp:
                 return resp["result"]
-            err = {"error": f'{resp.text}]'}
+            err = {"error": f"{resp}]"}
             return err
         except Exception as e:  # pragma: no cover
             logger.warning(params)
@@ -54,7 +54,8 @@ class DexAPI:
             }
             resp = self.api(params)
             if "error" in resp:
-                raise ValueError
+                data = template.orderbook_rpc_resp(base=base, quote=quote)
+                return default.result(data=data, msg=resp, loglevel="warning", ignore_until=3)
             msg = f"Returning {base}_{quote} orderbook from mm2"
             return default.result(data=resp, msg=msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
@@ -113,7 +114,7 @@ def get_orderbook(
         If `refresh` is false, resp from cache or standard request.
         """
         ignore_until = 3
-        loglevel="dexrpc"
+        loglevel = "dexrpc"
         pair_str = f"{base}_{quote}"
         if not validate.orderbook_request(
             base=base, quote=quote, coins_config=coins_config
@@ -137,7 +138,7 @@ def get_orderbook(
         if cached is not None:
             data = cached
             msg = f"Returning orderbook for {pair_str} from cache"
-            loglevel="cached"
+            loglevel = "cached"
         else:
             data = DexAPI().orderbook_rpc(base, quote)
             data = orderbook_extras(
@@ -205,32 +206,38 @@ def orderbook_extras(pair_str, data, gecko_source):
                 if "decimal" in data[i]:
                     data[i] = data[i]["decimal"]
         data = get_liquidity(data, gecko_source)
-        data.update({
-            "highest_bid": derive.highest_bid(data),
-            "lowest_ask": derive.lowest_ask(data),
-        })
+        data.update(
+            {
+                "highest_bid": derive.highest_bid(data),
+                "lowest_ask": derive.lowest_ask(data),
+            }
+        )
         # Data below needs segwit merge
         segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
         prices_data = []
         for variant in segwit_variants:
             price_data = cache_query.pair_price_24hr(pair_str=variant)
-            prices_data.append({
-                "trades_24hr": price_data["trades_24hr"],
-                "oldest_price_24hr": price_data["oldest_price_24hr"],
-                "oldest_price_time": price_data["oldest_price_time"],
-                "newest_price_24hr": price_data["newest_price_24hr"],
-                "newest_price_time": price_data["newest_price_time"],
-                "highest_price_24hr": price_data["highest_price_24hr"],
-                "lowest_price_24hr": price_data["lowest_price_24hr"],
-                "price_change_pct_24hr": price_data["price_change_pct_24hr"],
-                "price_change_24hr": price_data["price_change_24hr"],
-                "trade_volume_usd": price_data["trade_volume_usd"]
-            })
+            prices_data.append(
+                {
+                    "trades_24hr": price_data["trades_24hr"],
+                    "oldest_price_24hr": price_data["oldest_price_24hr"],
+                    "oldest_price_time": price_data["oldest_price_time"],
+                    "newest_price_24hr": price_data["newest_price_24hr"],
+                    "newest_price_time": price_data["newest_price_time"],
+                    "highest_price_24hr": price_data["highest_price_24hr"],
+                    "lowest_price_24hr": price_data["lowest_price_24hr"],
+                    "price_change_pct_24hr": price_data["price_change_pct_24hr"],
+                    "price_change_24hr": price_data["price_change_24hr"],
+                    "trade_volume_usd": price_data["trade_volume_usd"],
+                }
+            )
         combined_prices_data = merge.orderbook_prices_data(prices_data, suffix="24hr")
-        combined_prices_data.update({
-            "base_price_usd": derive.gecko_price(base, gecko_source),
-            "quote_price_usd": derive.gecko_price(quote, gecko_source),
-        })
+        combined_prices_data.update(
+            {
+                "base_price_usd": derive.gecko_price(base, gecko_source),
+                "quote_price_usd": derive.gecko_price(quote, gecko_source),
+            }
+        )
         data.update(combined_prices_data)
     except Exception as e:  # pragma: no cover
         loglevel = "warning"

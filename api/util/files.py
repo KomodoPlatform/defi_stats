@@ -108,7 +108,8 @@ class Files:
                 error = f"Error loading {path}: {e}"
             i += 1
             time.sleep(0.2)
-        return default.result(data=None, msg=error, loglevel="warning")
+        logger.warning(error)
+        return None
 
     def download_json(self, url):
         try:

@@ -222,16 +222,13 @@ class CacheCalc:
                                 "highest_price_24hr": p["highest_price_24hr"],
                                 "price_change_24hr": p["price_change_24hr"],
                                 "price_change_pct_24hr": p["price_change_pct_24hr"],
-                                
                                 "trades_24hr": v["trades_24hr"],
                                 "base_volume": v["base_volume"],
                                 "quote_volume": v["quote_volume"],
                                 "volume_usd_24hr": v["trade_volume_usd"],
-                                
                                 "last_price": lt["last_swap_price"],
                                 "last_swap": lt["last_swap_time"],
                                 "last_swap_uuid": lt["last_swap_uuid"],
-                                
                                 "lowest_ask": o["lowest_ask"],
                                 "highest_bid": o["highest_bid"],
                                 "liquidity_usd": o["liquidity_usd"],
@@ -347,7 +344,9 @@ class CacheCalc:
                     "current_liquidity": books["combined_liquidity_usd"],
                     "top_pairs": {
                         "by_volume": derive.top_pairs_by_volume(vols),
-                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols, suffix="24hr"),
+                        "by_swaps_count": derive.top_pairs_by_swap_counts(
+                            vols, suffix="24hr"
+                        ),
                         "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
                             books
                         ),
@@ -373,7 +372,9 @@ class CacheCalc:
                     "current_liquidity": books["combined_liquidity_usd"],
                     "top_pairs": {
                         "by_volume": derive.top_pairs_by_volume(vols),
-                        "by_swaps_count": derive.top_pairs_by_swap_counts(vols, suffix="14d"),
+                        "by_swaps_count": derive.top_pairs_by_swap_counts(
+                            vols, suffix="14d"
+                        ),
                         "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
                             books
                         ),
@@ -414,7 +415,10 @@ class CacheCalc:
                                         v_data["base_liquidity_coins"]
                                     )
                                     logger.info(v_data.keys())
-                                    if v_data["newest_price_time"] > data[v]["last_price_time"]:
+                                    if (
+                                        v_data["newest_price_time"]
+                                        > data[v]["last_price_time"]
+                                    ):
                                         data[v]["last_price"] = Decimal(
                                             v_data["newest_price_24hr"]
                                         )
@@ -431,8 +435,13 @@ class CacheCalc:
                                     logger.info(v_data.keys())
                                     logger.info(data[v].keys())
                                     # Cover merge of segwit variants
-                                    if v_data["newest_price_24hr"] > data[v]["last_price"]:
-                                        data[v]["last_price"] = Decimal(v_data["newest_price_24hr"])
+                                    if (
+                                        v_data["newest_price_24hr"]
+                                        > data[v]["last_price"]
+                                    ):
+                                        data[v]["last_price"] = Decimal(
+                                            v_data["newest_price_24hr"]
+                                        )
 
             for v in data:
                 if data[v]["base_volume"] != 0 and data[v]["quote_volume"] != 0:
@@ -440,7 +449,7 @@ class CacheCalc:
                     resp.append({v: data[v]})
             return resp
         except Exception as e:  # pragma: no cover
-            msg = f"markets_tickers failed!"
+            msg = "markets_tickers failed!"
             return default.error(e, msg)
 
     @timed

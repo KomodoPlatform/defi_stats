@@ -30,5 +30,18 @@ class MarketsDesc:
         desc = "Total swaps involving a specific coin (e.g. `KMD`, `KMD-BEP20`) in the last 24hrs."
         return desc
 
+    @property
+    def ticker_for_ticker(self):
+        desc = "Simple last price and liquidity for each market pair for a specific coin,"
+        desc += "e.g. `KMD`, `KMD-BEP20`."
+        return desc
+
+    @property
+    def tickers_summary(self):
+        desc = (
+            "Total swaps and volume involving for each active ticker in the last 24hrs."
+        )
+        return desc
+
 
 markets_desc = MarketsDesc()

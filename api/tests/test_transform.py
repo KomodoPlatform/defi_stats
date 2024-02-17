@@ -7,14 +7,12 @@ from util.transform import (
     convert,
     sortdata,
     clean,
-    merge,
     deplatform,
     sumdata,
     invert,
     filterdata,
     derive,
 )
-import util.transform as transform
 import util.memcache as memcache
 
 gecko_source = memcache.get_gecko_source()
@@ -101,23 +99,11 @@ def test_format_10f():
     assert convert.format_10f("1.23") == "1.2300000000"
 
 
-def test_historical_trades_to_market_trades():
-    x = convert.historical_trades_to_market_trades(sampledata.historical_trades)
-    assert (
-        sampledata.historical_trades[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
-    )
-    assert sampledata.historical_trades[0]["trade_id"] == x["trade_id"]
-    assert sampledata.historical_trades[0]["price"] == x["price"]
-    assert sampledata.historical_trades[0]["base_volume"] == x["base_volume"]
-    assert sampledata.historical_trades[0]["quote_volume"] == x["quote_volume"]
-    assert sampledata.historical_trades[0]["timestamp"] == x["timestamp"]
-    assert sampledata.historical_trades[0]["type"] == x["type"]
-
-
 def test_historical_trades_to_gecko():
     x = convert.historical_trades_to_gecko(sampledata.historical_trades[0])
     assert (
-        sampledata.historical_trades[0]["trade_id"] == "c76ed996-d44a-4e39-998e-acb68681b0f9"
+        sampledata.historical_trades[0]["trade_id"]
+        == "c76ed996-d44a-4e39-998e-acb68681b0f9"
     )
     assert sampledata.historical_trades[0]["trade_id"] == x["trade_id"]
     assert sampledata.historical_trades[0]["price"] == x["price"]
@@ -147,16 +133,22 @@ def test_list_json_key():
 
 
 def test_sum_json_key():
-    assert sumdata.json_key(sampledata.historical_trades, "base_volume") == Decimal("90")
-    assert sumdata.json_key(sampledata.historical_trades, "quote_volume") == Decimal("90")
+    assert sumdata.json_key(sampledata.historical_trades, "base_volume") == Decimal(
+        "90"
+    )
+    assert sumdata.json_key(sampledata.historical_trades, "quote_volume") == Decimal(
+        "90"
+    )
 
 
 def test_sum_json_key_10f():
     assert (
-        sumdata.json_key_10f(sampledata.historical_trades, "base_volume") == "90.0000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "base_volume")
+        == "90.0000000000"
     )
     assert (
-        sumdata.json_key_10f(sampledata.historical_trades, "quote_volume") == "90.0000000000"
+        sumdata.json_key_10f(sampledata.historical_trades, "quote_volume")
+        == "90.0000000000"
     )
 
 
@@ -176,8 +168,12 @@ def test_convert_orderbook_to_gecko():
     r = convert.orderbook_to_gecko(sampledata.orderbook_as_string)
     logger.calc(r)
     assert len(r["bids"]) == len(sampledata.orderbook_as_coords["bids"])
-    assert r["bids"][0][1] == convert.format_10f(sampledata.orderbook_as_coords["bids"][0][1])
-    assert r["asks"][0][1] == convert.format_10f(sampledata.orderbook_as_coords["asks"][0][1])
+    assert r["bids"][0][1] == convert.format_10f(
+        sampledata.orderbook_as_coords["bids"][0][1]
+    )
+    assert r["asks"][0][1] == convert.format_10f(
+        sampledata.orderbook_as_coords["asks"][0][1]
+    )
 
 
 def test_pair_by_market_cap():

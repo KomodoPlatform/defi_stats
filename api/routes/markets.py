@@ -232,7 +232,7 @@ def ticker():
 
 @router.get(
     "/ticker_for_ticker",
-    description="Simple last price and liquidity for each market pair for a specific coin , e.g. `KMD`, `KMD-BEP20`.",
+    description=markets_desc.ticker_for_ticker,
 )
 def ticker_for_ticker(ticker):
     try:
@@ -245,7 +245,7 @@ def ticker_for_ticker(ticker):
 
 @router.get(
     "/tickers_summary",
-    description="Total swaps and volume involving for each active ticker in the last 24hrs.",
+    description=markets_desc.ticker_for_ticker,
 )
 def tickers_summary():
     try:

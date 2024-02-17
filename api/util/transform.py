@@ -447,7 +447,7 @@ class Derive:
             else:
                 existing[key] = Decimal(new[key])
         return existing
-    
+
     @timed
     def suffix(self, days: int) -> str:
         if days == 1:
@@ -950,13 +950,13 @@ class Merge:
                 "base_liquidity_usd",
                 "quote_liquidity_coins",
                 "quote_liquidity_usd",
-                "trade_volume_usd"
+                "trade_volume_usd",
             ]
             existing.update(
                 {i: sumdata.decimals(existing[i], new[i]) for i in numerics}
             )
-            existing[f"trades_24hr"] = sumdata.ints(
-                existing[f"trades_24hr"], new[f"trades_24hr"]
+            existing["trades_24hr"] = sumdata.ints(
+                existing["trades_24hr"], new["trades_24hr"]
             )
             existing = derive.lowest(existing, new, key="lowest_ask")
             existing = derive.lowest(existing, new, key="lowest_price_24hr")
@@ -1062,8 +1062,8 @@ class Merge:
             existing = derive.lowest(existing, new, key="lowest_price_24hr")
             existing = derive.highest(existing, new, key="highest_bid")
             existing = derive.highest(existing, new, key="highest_price_24hr")
-            existing = merge.newest_price(existing, new, key=f"newest_price_24hr")
-            existing = merge.oldest_price(existing, new, key=f"oldest_price_24hr")
+            existing = merge.newest_price(existing, new, key="newest_price_24hr")
+            existing = merge.oldest_price(existing, new, key="oldest_price_24hr")
 
             existing["price_change_24hr"] = Decimal(new["newest_price_24hr"]) - Decimal(
                 new["oldest_price_24hr"]
@@ -1079,7 +1079,6 @@ class Merge:
             logger.merge(f"existing: {existing}")
             logger.loop(f"new: {new}")
             logger.warning(e)
-
 
     def orderbook_prices_data(self, prices_data: List, suffix="24hr") -> dict:
         existing = template.pair_prices_info(suffix=suffix)
@@ -1276,22 +1275,18 @@ class Templates:  # pragma: no cover
 
     def orderbook_rpc_resp(self, base, quote):
         return {
-            "mmrpc": "2.0",
-            "result": {
-                "base": base,
-                "rel": quote,
-                "num_asks": 0,
-                "num_bids": 0,
-                "total_asks_base_vol": {"decimal": "0"},
-                "total_asks_rel_vol": {"decimal": "0"},
-                "total_bids_base_vol": {"decimal": "0"},
-                "total_bids_rel_vol": {"decimal": "0"},
-                "asks": [],
-                "bids": [],
-                "net_id": 7777,
-                "timestamp": 1694183345,
-            },
-            "id": 42,
+            "base": base,
+            "rel": quote,
+            "num_asks": 0,
+            "num_bids": 0,
+            "total_asks_base_vol": {"decimal": "0"},
+            "total_asks_rel_vol": {"decimal": "0"},
+            "total_bids_base_vol": {"decimal": "0"},
+            "total_bids_rel_vol": {"decimal": "0"},
+            "asks": [],
+            "bids": [],
+            "net_id": 7777,
+            "timestamp": 1694183345,
         }
 
     def orderbook_extended(self, pair_str):

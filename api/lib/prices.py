@@ -5,8 +5,6 @@ from util.logger import timed
 from util.transform import derive
 import util.defaults as default
 import util.memcache as memcache
-import util.defaults as default
-import util.memcache as memcache
 
 
 @timed
