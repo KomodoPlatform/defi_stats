@@ -197,20 +197,6 @@ def pair_last_traded_24hr():
         return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
-# TICKERS
-@router.on_event("startup")
-@repeat_every(seconds=90)
-@timed
-def pair_tickers():
-    if memcache.get("testing") is None:
-        try:
-            CacheCalc().tickers(refresh=True)
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "pair_last_traded loop complete!"
-        return default.result(msg=msg, loglevel="loop", ignore_until=5)
-
-
 # MARKETS CACHE
 @router.on_event("startup")
 @repeat_every(seconds=90)
@@ -363,6 +349,21 @@ def adex_24hr():
         return default.result(msg=msg, loglevel="loop", ignore_until=5)
 
 
+
+# TICKERS
+@router.on_event("startup")
+@repeat_every(seconds=90)
+@timed
+def pair_tickers():
+    if memcache.get("testing") is None:
+        try:
+            CacheCalc().tickers(refresh=True)
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_last_traded loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=5)
+
+
 # REVIEW
 @router.on_event("startup")
 @repeat_every(seconds=120)
@@ -370,7 +371,7 @@ def adex_24hr():
 def refresh_tickers():
     if memcache.get("testing") is None:
         try:
-            CacheItem(name="tickers").save()
+            CacheCalc().tickers()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "Tickers refresh loop complete!"
