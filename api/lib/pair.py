@@ -9,7 +9,7 @@ import lib.last as last_traded
 import util.defaults as default
 import util.memcache as memcache
 from util.cron import cron
-from util.logger import timed
+from util.logger import timed, logger
 from util.transform import (
     sortdata,
     convert,
@@ -350,7 +350,7 @@ class Pair:  # pragma: no cover
             if len(traded_pairs) == 0:
                 ts = cron.now_utc() - 30 * 86400
                 traded_pairs = derive.pairs_traded_since(
-                    ts, self.pairs_last_trade_cache
+                    ts, self.pairs_last_trade_cache, deplatformed=False
                 )
             depair = deplatform.pair(pair_str)
             pair_tpl = derive.base_quote(pair_str)
@@ -363,7 +363,7 @@ class Pair:  # pragma: no cover
             loglevel = "pair"
             ignore_until = 3
             combo_orderbook = {"ALL": template.orderbook_extended(depair)}
-            variants = derive.pair_variants(pair_str)
+            variants = derive.pair_variants(depair)
             for variant in variants:
                 if variant in traded_pairs:
                     combo_orderbook.update(

@@ -33,7 +33,6 @@ def test_get_pairs(setup_swaps_db_data):
     # Returns priced and unpriced pairs
     DB = setup_swaps_db_data
     pairs = DB.get_pairs()
-    logger.info(pairs)
     assert ("KMD_LTC") in pairs
     assert ("LTC_KMD") not in pairs
     assert len(pairs) == 8

@@ -130,7 +130,6 @@ def summary():
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        logger.calc(coin)
         if "_" in coin:
             return {"error": f"Coin value '{coin}' looks like a pair."}
         summary = memcache.get_markets_summary()

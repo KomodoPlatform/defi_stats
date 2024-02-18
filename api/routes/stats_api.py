@@ -154,7 +154,6 @@ def orderbook(
             "total_asks_base_vol": data["base_liquidity_coins"],
             "total_bids_quote_vol": data["quote_liquidity_coins"],
         }
-        logger.calc(resp)
         return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

@@ -116,15 +116,21 @@ class CacheCalc:
         try:
             # Filter out pairs older than requested time
             ts = cron.now_utc() - pairs_days * 86400
-            pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-
-            data = [
-                Pair(
-                    pair_str=pair_str,
+            depairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
+            traded_pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache, deplatformed=False)
+            data = []
+            for depair in depairs:
+                x = Pair(
+                    pair_str=depair,
                     coins_config=self.coins_config,
-                ).orderbook(pair_str, depth=100, traded_pairs=pairs, refresh=refresh)
+                ).orderbook(depair, depth=100, traded_pairs=traded_pairs, refresh=refresh)
+                data.append(x)
+            '''
+            data = [
+                
                 for pair_str in pairs
             ]
+            '''
             orderbook_data = {}
             liquidity_usd = 0
             for depair_data in data:
@@ -165,7 +171,7 @@ class CacheCalc:
                 }
             )
 
-            msg = f"pair_orderbook_extended complete! {len(pairs)} pairs traded"
+            msg = f"pair_orderbook_extended complete! {len(traded_pairs)} pairs traded"
             msg += f" in last {pairs_days} days"
             return default.result(resp, msg, loglevel="calc", ignore_until=3)
         except Exception as e:  # pragma: no cover
@@ -409,7 +415,6 @@ class CacheCalc:
                                     data[v]["base_volume"] += Decimal(
                                         v_data["base_liquidity_coins"]
                                     )
-                                    logger.info(v_data.keys())
                                     if (
                                         v_data["newest_price_time"]
                                         > data[v]["last_price_time"]
@@ -423,12 +428,8 @@ class CacheCalc:
                                 v = variant.replace("-segwit", "")
                                 v_data = book["orderbooks"][depair][variant]
                                 if v not in data:
-                                    logger.info(v)
                                     data.update(template.markets_ticker(v, v_data))
-                                    logger.info(v)
                                 else:
-                                    logger.info(v_data.keys())
-                                    logger.info(data[v].keys())
                                     # Cover merge of segwit variants
                                     if (
                                         v_data["newest_price_24hr"]

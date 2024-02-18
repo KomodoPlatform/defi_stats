@@ -313,5 +313,4 @@ def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType
         volumes_dict[d_str] = 0
         if decoin in data["volumes"]:
             volumes_dict[d_str] = data["volumes"][decoin]["ALL"]["total_volume"]
-    logger.calc(volumes_dict)
     return volumes_dict

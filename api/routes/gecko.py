@@ -49,7 +49,6 @@ def gecko_pairs():
 def gecko_tickers():
     try:
         data = CacheCalc().tickers()
-        logger.calc(data)
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": data["pairs_count"],
@@ -101,7 +100,6 @@ def gecko_orderbook(
             variant_cache_name=variant_cache_name,
             depth=depth
         )
-        logger.calc(data)
         resp = {
             "ticker_id": pair_str,
             "timestamp": int(cron.now_utc()),

@@ -47,7 +47,7 @@ def orderbook_request(base, quote, coins_config):
             msg = f"dex_api.get_orderbook {quote} == {quote}!"
             raise ValueError
     except Exception as e:
-        default.result(msg=f"{e} {msg}", data=False, loglevel="debug")
+        default.result(msg=f"{e} {msg}", data=False, loglevel="warning", ignore_until=0)
         return False
     return True
 

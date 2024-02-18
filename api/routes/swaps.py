@@ -20,7 +20,6 @@ def get_swap(uuid: str):
     try:
         query = db.SqlQuery()
         resp = query.get_swap(uuid=uuid)
-        logger.query(resp)
         if "error" in resp:
             raise UuidNotFoundException(resp["error"])
         return resp

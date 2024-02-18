@@ -594,7 +594,13 @@ class Derive:
             return [pair_str]
 
     @timed
-    def pairs_traded_since(self, ts, pairs_last_trade_cache):
+    def pairs_traded_since(self, ts, pairs_last_trade_cache, deplatformed=True):
+        if not deplatformed:
+            pairs = []
+            for i in pairs_last_trade_cache:
+                if pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts:
+                    pairs += list(pairs_last_trade_cache[i].keys())
+            return sorted(list(set(pairs)))
         return sorted(
             list(
                 set(
@@ -1076,8 +1082,6 @@ class Merge:
                 )
             return existing
         except Exception as e:
-            logger.merge(f"existing: {existing}")
-            logger.loop(f"new: {new}")
             logger.warning(e)
 
     def orderbook_prices_data(self, prices_data: List, suffix="24hr") -> dict:

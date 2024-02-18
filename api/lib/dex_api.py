@@ -113,7 +113,7 @@ def get_orderbook(
         If `refresh` is true request is threaded and added to cache.
         If `refresh` is false, resp from cache or standard request.
         """
-        ignore_until = 3
+        ignore_until = 0
         loglevel = "dexrpc"
         pair_str = f"{base}_{quote}"
         if not validate.orderbook_request(
