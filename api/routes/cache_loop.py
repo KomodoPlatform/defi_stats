@@ -22,7 +22,36 @@ def check_cache():  # pragma: no cover
     try:
         cache = Cache()
         cache.healthcheck(to_console=True)
-        logger.info(memcache.stats())
+        memcache_stats = memcache.stats()
+        for k, v in memcache_stats.items():
+            # https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L1270-L1421
+            if k.decode('UTF-8') in [
+                "listen_disabled_num",
+                "uptime",
+                "curr_items",
+                "total_items",
+                "bytes",
+                "slab_reassign_evictions_nomem",
+                "get_hits",
+                "get_misses",
+                "get_expired",
+                "rejected_connections",
+                "connection_structures",
+                "max_connections",
+                "curr_connections",
+                "total_connections",
+                "limit_maxbytes",
+                "accepting_conns",
+                "evictions",
+                "reclaimed",
+                "response_obj_oom",
+                "response_obj_count"
+                "read_buf_count",
+                "read_buf_bytes",
+                "read_buf_bytes_free"
+            ]:
+                default.memcache_stat(msg=f"{k.decode('UTF-8'):<30}: {v}", loglevel="cached")
+        # "listen_disabled_num"
     except Exception as e:
         return default.result(msg=e, loglevel="warning")
 

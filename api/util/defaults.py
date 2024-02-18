@@ -3,6 +3,7 @@ from util.cron import cron
 from util.exceptions import NoDefaultForKeyError
 from const import DEXAPI_8762_HOST
 from dotenv import load_dotenv
+from util.logger import timed
 
 load_dotenv()
 
@@ -94,3 +95,8 @@ def result(
         "ignore_until": ignore_until,
     }
     return r
+
+@timed
+def memcache_stat(msg, **kwargs):
+    return result(msg=msg, **kwargs)
+    
