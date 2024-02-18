@@ -25,12 +25,7 @@ from lib.markets import Markets
 from routes.metadata import markets_desc
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import (
-    deplatform,
-    derive,
-    invert,
-    sortdata
-)
+from util.transform import deplatform, derive, invert, sortdata
 import util.memcache as memcache
 from util.transform import template
 import util.validate as validate
@@ -74,23 +69,21 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
         depair = deplatform.pair(pair_str)
         is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
         if is_reversed:
-            cache_name = f"orderbook_{invert.pair(depair)}_ALL"
+            pair = Pair(pair_str=invert.pair(pair_str))
+            data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
         else:
-            cache_name = f"orderbook_{depair}_ALL"
-
-        data = memcache.get(cache_name)
-        if data is None:
             pair = Pair(pair_str=pair_str)
             data = pair.orderbook(pair_str=pair_str, depth=depth)
+
         if pair_str in data:
             data = data[pair_str]
+        elif invert.pair(pair_str) in data:
+            data = data[invert.pair(pair_str)]
         else:
             data = data["ALL"]
-        if Decimal(data["liquidity_usd"]) > 0:
-            if is_reversed:
-                logger.calc("Returning inverted orderbook_extended cache")
-                data = invert.pair_orderbook(data)
-            data["volume_usd_24hr"] = data["trade_volume_usd"]
+        if is_reversed:
+            data = invert.pair_orderbook(data)
+        data["volume_usd_24hr"] = data["trade_volume_usd"]
         return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}

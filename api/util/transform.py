@@ -838,9 +838,8 @@ class Invert:
         try:
             orderbook.update(
                 {
-                    "asks": [invert.ask_bid(i) for i in orderbook["bids"]],
-                    "bids": [invert.ask_bid(i) for i in orderbook["asks"]],
-                    "variants": [invert.pair(i) for i in orderbook["variants"]],
+                    "asks": [self.ask_bid(i) for i in orderbook["bids"]],
+                    "bids": [self.ask_bid(i) for i in orderbook["asks"]],
                     "total_asks_base_vol": orderbook["total_bids_quote_vol"],
                     "total_asks_quote_vol": orderbook["total_bids_base_vol"],
                     "total_asks_base_usd": orderbook["total_bids_quote_usd"],
@@ -849,6 +848,12 @@ class Invert:
                     "total_bids_quote_usd": orderbook["total_asks_base_usd"],
                 }
             )
+            if "variants" in orderbook:
+                orderbook.update(
+                    {
+                        "variants": [self.pair(i) for i in orderbook["variants"]],
+                    }
+                )
             return orderbook
         except Exception as e:  # pragma: no cover
             logger.warning(e)

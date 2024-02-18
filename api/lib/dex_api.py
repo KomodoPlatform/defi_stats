@@ -55,7 +55,9 @@ class DexAPI:
             resp = self.api(params)
             if "error" in resp:
                 data = template.orderbook_rpc_resp(base=base, quote=quote)
-                return default.result(data=data, msg=resp, loglevel="warning", ignore_until=3)
+                return default.result(
+                    data=data, msg=resp, loglevel="warning", ignore_until=3
+                )
             msg = f"Returning {base}_{quote} orderbook from mm2"
             return default.result(data=resp, msg=msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
@@ -113,7 +115,7 @@ def get_orderbook(
         If `refresh` is true request is threaded and added to cache.
         If `refresh` is false, resp from cache or standard request.
         """
-        ignore_until = 0
+        ignore_until = 1
         loglevel = "dexrpc"
         pair_str = f"{base}_{quote}"
         if not validate.orderbook_request(
