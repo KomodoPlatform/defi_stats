@@ -832,12 +832,22 @@ class Invert:
                 Decimal(i["volume"]) / Decimal(i["quote_volume"])
             ),
             "volume": convert.format_10f(Decimal(i["quote_volume"])),
+            "quote_volume": convert.format_10f(Decimal(i["volume"])),
         }
 
     def pair_orderbook(self, orderbook):
         try:
             orderbook.update(
                 {
+                    "pair": self.pair(orderbook["pair"]),
+                    "base": orderbook["quote"],
+                    "quote": orderbook["base"],
+                    "base_liquidity_coins": orderbook["quote_liquidity_coins"],
+                    "quote_liquidity_coins": orderbook["base_liquidity_coins"],
+                    "base_liquidity_usd": orderbook["quote_liquidity_usd"],
+                    "quote_liquidity_usd": orderbook["base_liquidity_usd"],
+                    "base_price_usd": orderbook["quote_price_usd"],
+                    "quote_price_usd": orderbook["base_price_usd"],
                     "asks": [self.ask_bid(i) for i in orderbook["bids"]],
                     "bids": [self.ask_bid(i) for i in orderbook["asks"]],
                     "total_asks_base_vol": orderbook["total_bids_quote_vol"],
@@ -854,6 +864,33 @@ class Invert:
                         "variants": [self.pair(i) for i in orderbook["variants"]],
                     }
                 )
+            for i in [
+                "highest_bid",
+                "lowest_ask",
+                "oldest_price_24hr",
+                "newest_price_24hr",
+                "highest_price_24hr",
+                "lowest_price_24hr",
+            ]:
+                if Decimal(orderbook[i]) != 0:
+                    orderbook[i] = 1 / Decimal(orderbook[i])
+
+            orderbook.update(
+                {
+                    "price_change_24hr": convert.format_10f(
+                        Decimal(orderbook["newest_price_24hr"])
+                        - Decimal(orderbook["oldest_price_24hr"])
+                    )
+                }
+            )
+            if Decimal(orderbook["oldest_price_24hr"]) > 0:
+                orderbook["price_change_pct_24hr"] = convert.format_10f(
+                    Decimal(orderbook["newest_price_24hr"])
+                    / Decimal(orderbook["oldest_price_24hr"])
+                    - 1
+                )
+            else:
+                orderbook["price_change_pct_24hr"] = convert.format_10f(0)
             return orderbook
         except Exception as e:  # pragma: no cover
             logger.warning(e)

@@ -117,44 +117,36 @@ def orderbook(
     depth: int = 100,
 ):
     try:
-        book = memcache.get_pair_orderbook_extended()
 
         depair = deplatform.pair(pair_str)
-        if depair in book["orderbooks"]:
-            data = book["orderbooks"][depair]["ALL"]
-            return convert.orderbook_to_stats_api(data, depth=depth)
-        elif invert.pair(depair) in book["orderbooks"]:
-            data = book["orderbooks"][invert.pair(depair)]["ALL"]
-            return convert.orderbook_to_stats_api(data, depth=depth, reverse=True)
-        # Use direct method if no cache.
-        variant_cache_name = f"orderbook_{pair_str}"
-        coins_config = memcache.get_coins_config()
-        gecko_source = memcache.get_gecko_source()
-        base, quote = derive.base_quote(pair_str=pair_str)
-        data = dex.get_orderbook(
-            base=base,
-            quote=quote,
-            coins_config=coins_config,
-            gecko_source=gecko_source,
-            variant_cache_name=variant_cache_name,
-            depth=depth,
+        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        if is_reversed:
+            pair = Pair(pair_str=invert.pair(pair_str))
+            data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
+        else:
+            pair = Pair(pair_str=pair_str)
+            data = pair.orderbook(pair_str=pair_str, depth=depth)
+
+        resp = data["ALL"]
+        if is_reversed:
+            resp = invert.pair_orderbook(resp)
+        resp.update(
+            {
+                "variants": sorted(list(set(data.keys()))),
+                "asks": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in resp["asks"]
+                ][:depth],
+                "bids": [
+                    [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                    for i in resp["bids"]
+                ][:depth],
+                "total_asks_base_vol": resp["base_liquidity_coins"],
+                "total_bids_quote_vol": resp["quote_liquidity_coins"],
+            }
         )
-        resp = {
-            "pair": pair_str,
-            "timestamp": int(cron.now_utc()),
-            "variants": [pair_str],
-            "bids": [
-                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
-                for i in data["bids"]
-            ][:depth],
-            "asks": [
-                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
-                for i in data["asks"]
-            ][:depth],
-            "total_asks_base_vol": data["base_liquidity_coins"],
-            "total_bids_quote_vol": data["quote_liquidity_coins"],
-        }
         return resp
+
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

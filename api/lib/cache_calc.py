@@ -452,6 +452,9 @@ class CacheCalc:
     def tickers(self, refresh: bool = False):
         try:
             resp = memcache.get_tickers()
+            msg = ""
+            loglevel="cached"
+            ignore_until = 5
             if resp is None or refresh:
                 coins = memcache.get_coins_config()
                 book = memcache.get_pair_orderbook_extended()
@@ -484,10 +487,13 @@ class CacheCalc:
                             }
                         )
                     memcache.set_tickers(resp)
-            msg = "Tickers cache updated"
-            return default.result(
-                data=resp, msg=msg, loglevel="cached", ignore_until=0
-            )
+                msg = "Tickers cache updated"
+                ignore_until = 0
         except Exception as e:  # pragma: no cover
-            msg = "tickers failed!"
+            msg = f"tickers failed! {e}"
+            ignore_until = 0
+            loglevel="warning"
             return default.error(e, msg)
+        return default.result(
+            data=resp, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+        )

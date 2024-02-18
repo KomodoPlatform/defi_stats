@@ -22,7 +22,7 @@ from util.cron import cron
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata, deplatform
+from util.transform import sortdata, deplatform, invert
 import db.sqldb as db
 import util.memcache as memcache
 import util.transform as transform
@@ -83,17 +83,25 @@ def fiat_rates():
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
-        pair = Pair(pair_str=pair_str)
-        data = pair.orderbook(pair_str=pair_str, depth=depth)
-        for variant in data:
-            data[variant].update(
-                {
-                    "oldest_price": data[variant]["oldest_price_24hr"],
-                    "newest_price": data[variant]["newest_price_24hr"],
-                    "volume_usd_24hr": data[variant]["trade_volume_usd"],
-                }
-            )
-        return data
+        
+
+        depair = deplatform.pair(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        if is_reversed:
+            pair = Pair(pair_str=invert.pair(pair_str))
+            data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
+        else:
+            pair = Pair(pair_str=pair_str)
+            data = pair.orderbook(pair_str=pair_str, depth=depth)
+
+        resp = data["ALL"]
+        if is_reversed:
+            resp = invert.pair_orderbook(resp)
+        resp['newest_price'] = resp['newest_price_24hr']
+        resp['volume_usd_24hr'] = resp['trade_volume_usd']
+        resp['oldest_price'] = resp['oldest_price_24hr']
+        resp['variants'] = sorted(list(set(data.keys())))
+        return {pair_str: resp}
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
