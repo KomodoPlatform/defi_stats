@@ -3,7 +3,6 @@ from typing import Dict
 from util.logger import timed
 from util.transform import deplatform, invert, template
 import util.defaults as default
-import util.memcache as memcache
 
 
 @timed

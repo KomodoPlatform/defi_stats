@@ -41,34 +41,41 @@ def test_swagger_endpoints(path=None):
         i = f"{localhost}{i}"
 
 
-
+        logger.merge(f"================== {i} ==================")
         r = requests.get(i)
         try:
-            if "error" in r.json():
-                logger.warning(f"err: {r.json()}")
-                logger.warning(f"{i} failed...")
-            elif r.status_code != 200:
-                logger.warning(f"{r.status_code}")
-                logger.warning(f"{i} failed...")
+            if r.status_code != 200:
+                logger.warning(f"Status Code: {r.status_code}")
             else:
-                logger.info(f"{i} ok!")
+                logger.query(f"Status Code: {r.status_code}")
+                
+            if "error" in r.text:
+                logger.warning(f"err: {r.text[:50]}")
+                raise ValueError
+            else:
                 l = r.json()
+                l_txt = r.text[:60]
                 if isinstance(r.json(), list):
                     l = l[0]
-                local_keys = l.keys()
+
+                # Get test domain response
                 r = requests.get(i.replace(localhost, test_domain))
                 t = r.json()
+                t_txt = r.text[:60]
                 if isinstance(r.json(), list):
-                    t = l[0]
-                test_keys = t.keys()
-                logger.calc(local_keys)
-                logger.loop(test_keys)
+                    t = t[0]
+                    
+                local_keys = list(l.keys()) 
+                test_keys = list(t.keys())
+                logger.calc(f"Local:       {l_txt}")
+                logger.calc(f"Local:       {local_keys[:10]}")
+                logger.loop(f"Test domain: {t_txt}")
+                logger.loop(f"Test domain: {test_keys[:10]}")
         except Exception as e:
-            if "last_price" in i:
-                logger.info(f"{i} ok! {r.text}")
-            else:
-                logger.warning(f"{i} failed...")
-                logger.warning(f"{e}: {r.text}")
+            logger.calc(type(e))
+            logger.calc(e)
+            logger.warning(f"failed...")
+            logger.warning(f"{e}: {r.text[:100]}")
 
 
 if __name__ == "__main__":

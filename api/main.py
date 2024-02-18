@@ -20,6 +20,7 @@ from routes import (
     swaps,
     rates,
     coins,
+    pairs,
     markets,
     prices,
     binance,
@@ -55,13 +56,6 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
-app.include_router(
-    coins.router,
-    prefix="/api/v3/coins",
-    tags=["Coins"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
 
 app.include_router(
     gecko.router,
@@ -96,13 +90,6 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
-app.include_router(
-    swaps.router,
-    prefix="/api/v3/swaps",
-    tags=["Swaps"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
 
 app.include_router(
     stats_api.router,
@@ -146,6 +133,31 @@ def healthcheck():
         "status": "ok",
         "cache_age_mins": cache.healthcheck(),
     }
+
+
+app.include_router(
+    coins.router,
+    prefix="/api/v3/coins",
+    tags=["Coins"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    pairs.router,
+    prefix="/api/v3/pairs",
+    tags=["Pairs"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
+app.include_router(
+    swaps.router,
+    prefix="/api/v3/swaps",
+    tags=["Swaps"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
 
 if DEVMODE:
     app.include_router(

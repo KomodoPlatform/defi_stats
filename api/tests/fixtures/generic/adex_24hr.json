@@ -1,53 +1,53 @@
 {
     "last_updated": 1708251458,
     "data": {
-        "days": 14,
-        "swaps_count": 11,
-        "swaps_volume": 3702117.91,
+        "days": 1,
+        "swaps_count": 8,
+        "swaps_volume": 1100917.91,
         "current_liquidity": 484911.0,
         "top_pairs": {
             "by_volume": [
                 {
                     "pair": "KMD_BTC",
-                    "volume": 3200000.0
-                },
-                {
-                    "pair": "LTC_BTC",
-                    "volume": 500100.0
-                },
-                {
-                    "pair": "DGB_LTC",
-                    "volume": 1200.01
+                    "volume": 1100000.0
                 },
                 {
                     "pair": "KMD_LTC",
                     "volume": 800.0
                 },
                 {
+                    "pair": "DGB_LTC",
+                    "volume": 100.01
+                },
+                {
                     "pair": "KMD_DGB",
                     "volume": 16.9
+                },
+                {
+                    "pair": "MORTY_KMD",
+                    "volume": 1.0
                 }
             ],
             "by_swaps_count": [
                 {
                     "pair": "KMD_LTC",
-                    "trades_14d": 3
-                },
-                {
-                    "pair": "DGB_LTC",
-                    "trades_14d": 2
-                },
-                {
-                    "pair": "KMD_BTC",
-                    "trades_14d": 2
+                    "trades_24hr": 3
                 },
                 {
                     "pair": "KMD_DGB",
-                    "trades_14d": 2
+                    "trades_24hr": 2
                 },
                 {
-                    "pair": "LTC_BTC",
-                    "trades_14d": 1
+                    "pair": "DGB_LTC",
+                    "trades_24hr": 1
+                },
+                {
+                    "pair": "KMD_BTC",
+                    "trades_24hr": 1
+                },
+                {
+                    "pair": "MORTY_KMD",
+                    "trades_24hr": 1
                 }
             ],
             "by_current_liquidity_usd": [

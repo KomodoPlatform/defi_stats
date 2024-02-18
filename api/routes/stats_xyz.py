@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
+from datetime import datetime, timedelta
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from decimal import Decimal
-from datetime import datetime, timedelta
-from const import MARKETS_PAIRS_DAYS
+from typing import Dict, List
 from lib.pair import Pair
+from lib.cache_calc import CacheCalc
 from models.generic import ErrorMessage
-from models.markets import MarketsAtomicdexIo
+from models.stats_xyz import (
+    StatsXyzOrderbookItem,
+    StatsXyzTickerItem,
+    StatsXyzSwaps24,
+    StatsXyzTrades,
+    StatsXyzTickerSummary,
+    StatsXyzUsdVolume,
+    StatsXyzAtomicdexIo,
+    StatsXyzLiquidity,
+    StatsXyzSummary,
+)
+from routes.metadata import stats_xyz_desc
+from util.cron import cron
 from util.enums import TradeType
 from util.logger import logger
 from util.exceptions import BadPairFormatError
-from util.transform import sortdata, deplatform, derive, clean
+from util.transform import sortdata, deplatform
 import db.sqldb as db
-from util.cron import cron
 import util.memcache as memcache
-from util.transform import template
 import util.transform as transform
 import util.validate as validate
-from lib.cache_calc import CacheCalc
 
 
 router = APIRouter()
@@ -26,8 +35,8 @@ router = APIRouter()
 # TODO: Move to new DB
 @router.get(
     "/atomicdexio",
-    description="Returns atomic swap counts over a variety of periods",
-    response_model=MarketsAtomicdexIo,
+    description=stats_xyz_desc.atomicdexio,
+    response_model=StatsXyzAtomicdexIo,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -40,7 +49,8 @@ def atomicdex_info_api():
 # New endpoint
 @router.get(
     "/current_liquidity",
-    description="Global liquidity on the orderbook for all pairs.",
+    description=stats_xyz_desc.current_liquidity,
+    response_model=StatsXyzLiquidity,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -56,7 +66,7 @@ def current_liquidity():
 
 @router.get(
     "/fiat_rates",
-    description="Coin prices in USD (where available)",
+    description=stats_xyz_desc.fiat_rates,
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
@@ -65,54 +75,47 @@ def fiat_rates():
 
 
 @router.get(
-    "/orderbook/{market_pair}",
-    description="Get Orderbook for a market pair in `KMD_LTC` format.",
+    "/orderbook/{pair_str}",
+    description=stats_xyz_desc.orderbook,
     responses={406: {"model": ErrorMessage}},
+    response_model=Dict[str, StatsXyzOrderbookItem],
     status_code=200,
 )
-def orderbook(market_pair: str = "KMD_LTC", depth: int = 100):
+def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
-        pair = Pair(pair_str=market_pair)
-        return pair.orderbook(pair_str=market_pair, depth=depth)
+        pair = Pair(pair_str=pair_str)
+        data = pair.orderbook(pair_str=pair_str, depth=depth)
+        for variant in data:
+            data[variant].update(
+                {
+                    "oldest_price": data[variant]["oldest_price_24hr"],
+                    "newest_price": data[variant]["newest_price_24hr"],
+                    "volume_usd_24hr": data[variant]["trade_volume_usd"],
+                }
+            )
+        return data
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
 
 
-@router.get(
-    "/pairs_last_trade",
-    description="Returns last trade info for all pairs matching the filter",
-    responses={406: {"model": ErrorMessage}},
-    status_code=200,
-)
-def pair_last_traded(
-    start_time: int = 0,
-    end_time: int = int(cron.now_utc()),
-) -> list:
-    data = memcache.get_pair_last_traded()
-    filtered_data = []
-    for i in data:
-        if data[i]["last_swap_time"] > start_time:
-            if data[i]["last_swap_time"] < end_time:
-                data[i].update({"pair": i})
-                filtered_data.append(data[i])
-    return filtered_data
-
-
 # Migrated from https://stats.testchain.xyz/api/v1/summary
 @router.get(
     "/summary",
-    description=f"24-hour price & volume for each pair traded in last {MARKETS_PAIRS_DAYS} days.",
+    description=stats_xyz_desc.summary,
     responses={406: {"model": ErrorMessage}},
+    response_model=List[StatsXyzSummary],
     status_code=200,
 )
 def summary():
     try:
-        data = memcache.get_tickers()
+        data = memcache.get_pair_orderbook_extended()
         resp = []
-        for i in data["data"]:
-            resp.append(transform.ticker_to_xyz_summary(i))
+        for depair in data["orderbooks"]:
+            resp.append(
+                transform.ticker_to_xyz_summary(data["orderbooks"][depair]["ALL"])
+            )
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/tickers]: {e}")
@@ -122,22 +125,21 @@ def summary():
 # Migrated from https://stats.testchain.xyz/api/v1/summary_for_ticker/KMD
 @router.get(
     "/summary_for_ticker/{coin}",
-    description="24h price & volume for market pairs with a specific coin traded in last 7 days",
+    description=stats_xyz_desc.summary_for_ticker,
     responses={406: {"model": ErrorMessage}},
+    response_model=List[StatsXyzSummary],
     status_code=200,
 )
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        data = memcache.get_pair_last_traded()
-        resp = memcache.get_tickers()
-        new_data = []
-        for i in resp["data"]:
-            if coin in [i["base_currency"], i["quote_currency"]]:
-                if i["last_swap_time"] == 0:
-                    if i["ticker_id"] in data:
-                        i = i | data[i["ticker_id"]]
-                new_data.append(transform.to_summary_for_ticker_xyz_item(i))
+        data = memcache.get_pair_orderbook_extended()
+        resp = []
+        decoin = deplatform.coin(coin)
+        for depair in data["orderbooks"]:
+            item = data["orderbooks"][depair]["ALL"]
+            if decoin in [item["base"], item["quote"]]:
+                resp.append(transform.ticker_to_xyz_summary(item))
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(
@@ -150,19 +152,30 @@ def summary_for_ticker(coin: str = "KMD"):
 
 @router.get(
     "/swaps24/{coin}",
-    description="Total swaps involving a specific coin (e.g. `KMD`) in the last 24hrs.",
+    description=stats_xyz_desc.swaps24,
     responses={406: {"model": ErrorMessage}},
+    response_model=StatsXyzSwaps24,
     status_code=200,
 )
 def swaps24(coin: str = "KMD") -> dict:
     # TODO: Lower than xyz source. Is it combined?
     try:
-        data = memcache.get_tickers()
-        trades = 0
-        for i in data["data"]:
-            if coin in [i["base_currency"], i["quote_currency"]]:
-                trades += int(i["trades_24hr"])
-        return {"ticker": coin, "swaps_amount_24h": trades}
+        data = memcache.get_coin_volumes_24hr()
+        decoin = deplatform.coin(coin)
+        if decoin in data["volumes"]:
+            item = data["volumes"][decoin]["ALL"]
+            return {
+                "ticker": coin,
+                "swaps_amount_24h": item["total_swaps"],
+                "volume": item["total_volume"],
+                "volume_usd": item["trade_volume_usd"],
+            }
+        return {
+            "ticker": coin,
+            "swaps_amount_24h": 0,
+            "volume": 0,
+            "volume_usd": 0,
+        }
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}"}
@@ -170,7 +183,9 @@ def swaps24(coin: str = "KMD") -> dict:
 
 @router.get(
     "/ticker",
-    description="Simple last price and liquidity for each market pair, traded in last 7 days.",
+    description=stats_xyz_desc.ticker,
+    response_model=List[Dict[str, StatsXyzTickerItem]],
+    status_code=200,
 )
 def ticker():
     try:
@@ -183,12 +198,14 @@ def ticker():
 
 @router.get(
     "/ticker_for_ticker",
-    description="Simple last price and liquidity for each market pair for a specific ticker.",
+    description=stats_xyz_desc.ticker_for_ticker,
+    response_model=List[Dict[str, StatsXyzTickerItem]],
+    status_code=200,
 )
 def ticker_for_ticker(ticker):
     try:
         c = CacheCalc()
-        return c.tickers(coin=ticker, depaired=True)
+        return c.tickers_lite(coin=ticker, depaired=True)
 
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/ticker_for_ticker]: {e}")
@@ -199,40 +216,35 @@ def ticker_for_ticker(ticker):
 
 @router.get(
     "/tickers_summary",
-    description="Total swaps and volume involving for each active ticker in the last 24hrs.",
+    description=stats_xyz_desc.tickers_summary,
+    response_model=Dict[str, StatsXyzTickerSummary],
+    status_code=200,
 )
 def tickers_summary():
     try:
-        data = memcache.get_tickers()
+        data = memcache.get_coin_volumes_24hr()
         resp = {}
-        for i in data["data"]:
-            base = i["base_currency"]
-            rel = i["quote_currency"]
-            for ticker in [base, rel]:
-                if ticker not in resp:
-                    resp.update({ticker: {"trades_24h": 0, "volume_24h": 0}})
-                resp[ticker]["trades_24h"] += int(i["trades_24hr"])
-                if ticker == base:
-                    resp[ticker]["volume_24h"] += Decimal(i["base_volume"])
-                elif ticker == rel:
-                    resp[ticker]["volume_24h"] += Decimal(i["quote_volume"])
-        resp = clean.decimal_dicts(resp)
-        with_action = {}  # has a recent swap
-        tickers = list(resp.keys())
-        tickers.sort()
-        for ticker in tickers:
-            tickers = list(resp[ticker])
-            if resp[ticker]["trades_24h"] > 0:
-                with_action.update({ticker: resp[ticker]})
-        return with_action
+        for depair in data["volumes"]:
+            item = data["volumes"][depair]["ALL"]
+            resp.update(
+                {
+                    depair: {
+                        "trades_24h": item["total_swaps"],
+                        "volume_24h": item["total_volume"],
+                    }
+                }
+            )
+        return resp
     except Exception as e:  # pragma: no cover
-        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}")
-        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/swaps24]: {e}"}
+        logger.warning(f"{type(e)} Error in [/api/v3/stats_xyz/tickers_summary]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats_xyz/tickers_summary]: {e}"}
 
 
 @router.get(
     "/trades/{pair_str}/{days_in_past}",
-    description="Trades for the last 'x' days for a pair in `KMD_LTC` format.",
+    description=stats_xyz_desc.trades,
+    response_model=List[StatsXyzTrades],
+    status_code=200,
 )
 def trades(pair_str: str = "KMD_LTC", days_in_past: int | None = None):
     try:
@@ -263,14 +275,15 @@ def trades(pair_str: str = "KMD_LTC", days_in_past: int | None = None):
 # Migrated from https://stats.testchain.xyz/api/v1/usd_volume_24h
 @router.get(
     "/usd_volume_24hr",
-    description="Volume (in USD) traded in last 24hrs.",
+    description=stats_xyz_desc.usd_volume_24hr,
     responses={406: {"model": ErrorMessage}},
+    response_model=StatsXyzUsdVolume,
     status_code=200,
 )
 def usd_volume_24h():
     try:
-        data = memcache.get_tickers()
-        return {"usd_volume_24h": data["combined_volume_usd"]}
+        data = memcache.get_pair_volumes_24hr()
+        return {"usd_volume_24h": data["trade_volume_usd"]}
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/markets/usd_volume_24h]: {e}"}
@@ -278,18 +291,17 @@ def usd_volume_24h():
 
 @router.get(
     "/volumes_ticker/{coin}/{days_in_past}",
-    description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
+    description=stats_xyz_desc.trades,
+    response_model=Dict[str, float],
+    status_code=200,
 )
-def volumes_history_ticker(
-    coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL
-):
+def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType.ALL):
     # TODO: Use new DB
     volumes_dict = {}
     query = db.SqlQuery()
     gecko_source = memcache.get_gecko_source()
     # Individual tickers only, no merge except segwit
-    stripped_coin = deplatform.coin(coin)
-    variants = derive.coin_variants(coin, segwit_only=True)
+    decoin = deplatform.coin(coin)
     for i in range(0, int(days_in_past)):
         d = datetime.today() - timedelta(days=i)
         d_str = d.strftime("%Y-%m-%d")
@@ -298,11 +310,8 @@ def volumes_history_ticker(
         end_time = int(day_ts) + 86400
         volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
         data = query.coin_trade_volumes_usd(volumes, gecko_source)
-        volumes_dict[d_str] = template.volumes_ticker()
-        for variant in variants:
-            if stripped_coin in data["volumes"]:
-                if variant in data["volumes"][stripped_coin]:
-                    volumes_dict[d_str] = (
-                        volumes_dict[d_str] | data["volumes"][stripped_coin][variant]
-                    )
+        volumes_dict[d_str] = 0
+        if decoin in data["volumes"]:
+            volumes_dict[d_str] = data["volumes"][decoin]["ALL"]["total_volume"]
+    logger.calc(volumes_dict)
     return volumes_dict

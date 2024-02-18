@@ -389,11 +389,6 @@ class CacheCalc:
     @timed
     def tickers_lite(self, coin=None, depaired=False):
         try:
-            # TODO: add to memcache
-            if depaired:
-                cache_name = "tickers_depaired"
-            else:
-                cache_name = "tickers_variants"
             book = memcache.get_pair_orderbook_extended()
             resp = []
             data = {}
@@ -460,7 +455,7 @@ class CacheCalc:
                 coins = memcache.get_coins_config()
                 book = memcache.get_pair_orderbook_extended()
                 volumes = memcache.get_pair_volumes_24hr()
-                prices = memcache.get_pair_volumes_24hr()
+                prices = memcache.get_pair_prices_24hr()
                 resp = {
                     "last_update": int(cron.now_utc()),
                     "pairs_count": book["pairs_count"],
@@ -470,24 +465,28 @@ class CacheCalc:
                     "data": {},
                 }
                 for depair in book["orderbooks"]:
-                    b = book["orderbooks"][depair]["ALL"]
-                    if depair in volumes["volumes"]:
-                        v = volumes["volumes"][depair]["ALL"]
-                    else:
+                    if "ALL" in book["orderbooks"][depair]:
                         v = template.pair_volume_item(suffix="24hr")
-                    if depair in prices:
-                        p = prices[depair]["ALL"]
-                    else:
                         p = template.pair_prices_info(suffix="24hr")
-                    resp["data"].update(
-                        {
-                            depair: convert.pair_orderbook_extras_to_gecko_tickers(
-                                b, v, p, coins
-                            )
-                        }
-                    )
+                        b = book["orderbooks"][depair]["ALL"]
+                        if depair in volumes["volumes"]:
+                            if "ALL" in volumes["volumes"][depair]:
+                                v = volumes["volumes"][depair]["ALL"]
+                        if depair in prices:
+                            if "ALL" in prices[depair]:
+                                p = prices[depair]["ALL"]
+                        resp["data"].update(
+                            {
+                                depair: convert.pair_orderbook_extras_to_gecko_tickers(
+                                    b, v, p, coins
+                                )
+                            }
+                        )
                     memcache.set_tickers(resp)
-            return resp
+            msg = "Tickers cache updated"
+            return default.result(
+                data=resp, msg=msg, loglevel="cached", ignore_until=0
+            )
         except Exception as e:  # pragma: no cover
             msg = "tickers failed!"
             return default.error(e, msg)

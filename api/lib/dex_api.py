@@ -144,8 +144,6 @@ def get_orderbook(
             data = orderbook_extras(
                 pair_str=pair_str, data=data, gecko_source=gecko_source
             )
-            if pair_str == "KMD_LTC":
-                logger.merge(data)
             data = clean.decimal_dicts(data)
             memcache.update(variant_cache_name, data, 900)
             msg = f"Updated orderbook cache for {pair_str}"

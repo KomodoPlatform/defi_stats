@@ -1,13 +1,13 @@
 {
-    "last_updated": 1707135916,
+    "last_updated": 1708251449,
     "data": {
-        "start_time": 1707049516,
-        "end_time": 1707135916,
+        "start_time": 1708165049,
+        "end_time": 1708251449,
         "range_days": 1.0,
         "total_swaps": 8,
-        "maker_volume_usd": 50250.95,
-        "taker_volume_usd": 500208.005,
-        "trade_volume_usd": 550458.955,
+        "maker_volume_usd": 100501.9,
+        "taker_volume_usd": 1000416.01,
+        "trade_volume_usd": 1100917.91,
         "volumes": {
             "BTC": {
                 "ALL": {

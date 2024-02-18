@@ -29,16 +29,19 @@ NODE_TYPE = os.getenv("NODE_TYPE") or "dev"
 RESET_TABLE = os.getenv("RESET_TABLE") == "True"
 DEVMODE = os.getenv("DEVMODE") == "True"
 
+
+if os.getenv("IS_TESTING") == "True":
+    IS_TESTING = True
+else:
+    IS_TESTING = False
+
+
 IN_DOCKER = os.getenv("IN_DOCKER")
 if IN_DOCKER == "True":
     IN_DOCKER = True
 else:
     IN_DOCKER = False
 
-if os.getenv("IS_TESTING") == "True":
-    IS_TESTING = True
-else:
-    IS_TESTING = False
 
 if IN_DOCKER:
     DEXAPI_7777_HOST = os.getenv("DEXAPI_7777_HOST")

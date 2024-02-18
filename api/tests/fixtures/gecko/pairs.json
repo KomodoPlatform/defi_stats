@@ -1,0 +1,65 @@
+{
+    "last_updated": 1708251450,
+    "data": [
+        {
+            "ticker_id": "DGB_LTC",
+            "pool_id": "DGB_LTC",
+            "base": "DGB",
+            "target": "LTC",
+            "variants": [
+                "DGB-segwit_LTC",
+                "DGB-segwit_LTC-segwit",
+                "DGB_LTC",
+                "DGB_LTC-segwit"
+            ]
+        },
+        {
+            "ticker_id": "KMD_BTC",
+            "pool_id": "KMD_BTC",
+            "base": "KMD",
+            "target": "BTC",
+            "variants": [
+                "KMD-BEP20_BTC",
+                "KMD-BEP20_BTC-BEP20",
+                "KMD-BEP20_BTC-segwit",
+                "KMD_BTC",
+                "KMD_BTC-BEP20",
+                "KMD_BTC-segwit"
+            ]
+        },
+        {
+            "ticker_id": "KMD_DGB",
+            "pool_id": "KMD_DGB",
+            "base": "KMD",
+            "target": "DGB",
+            "variants": [
+                "KMD-BEP20_DGB",
+                "KMD-BEP20_DGB-segwit",
+                "KMD_DGB",
+                "KMD_DGB-segwit"
+            ]
+        },
+        {
+            "ticker_id": "KMD_LTC",
+            "pool_id": "KMD_LTC",
+            "base": "KMD",
+            "target": "LTC",
+            "variants": [
+                "KMD-BEP20_LTC",
+                "KMD-BEP20_LTC-segwit",
+                "KMD_LTC",
+                "KMD_LTC-segwit"
+            ]
+        },
+        {
+            "ticker_id": "MORTY_KMD",
+            "pool_id": "MORTY_KMD",
+            "base": "MORTY",
+            "target": "KMD",
+            "variants": [
+                "MORTY_KMD",
+                "MORTY_KMD-BEP20"
+            ]
+        }
+    ]
+}

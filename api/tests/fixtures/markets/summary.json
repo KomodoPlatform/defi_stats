@@ -1,0 +1,65 @@
+{
+    "last_updated": 1708251458,
+    "data": [
+        {
+            "pair": "DGB_LTC",
+            "base_currency": "DGB",
+            "quote_currency": "LTC",
+            "base_volume": 1.0,
+            "quote_volume": 1.0,
+            "lowest_ask": 0,
+            "highest_bid": 0.0,
+            "lowest_price_24hr": 1.0,
+            "highest_price_24hr": 1.0,
+            "price_change_pct_24hr": 0,
+            "oldest_price_24hr": 0,
+            "oldest_price_time": 0,
+            "newest_price_24hr": 1.0,
+            "newest_price_time": 1708247446,
+            "last_price": 1.0,
+            "last_swap": 1708247446,
+            "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
+            "variants": [
+                "DGB-segwit_LTC",
+                "DGB-segwit_LTC-segwit",
+                "DGB_LTC",
+                "DGB_LTC-segwit"
+            ],
+            "trades_24hr": 1,
+            "base_price_usd": 0,
+            "quote_price_usd": 0,
+            "liquidity_usd": 0,
+            "volume_usd_24hr": 100.01,
+            "price_change_24hr": 0.0
+        },
+        {
+            "pair": "KMD_LTC",
+            "base_currency": "KMD",
+            "quote_currency": "LTC",
+            "base_volume": 400.0,
+            "quote_volume": 4.0,
+            "lowest_ask": 26.0,
+            "highest_bid": 24.0,
+            "lowest_price_24hr": 0.01,
+            "highest_price_24hr": 0.01,
+            "price_change_pct_24hr": "0.0000000000",
+            "oldest_price_24hr": 0,
+            "oldest_price_time": 0,
+            "newest_price_24hr": 0.01,
+            "newest_price_time": 1708243848,
+            "last_price": 0.01,
+            "last_swap": 1708247452,
+            "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
+            "variants": [
+                "KMD_LTC",
+                "KMD_LTC-segwit"
+            ],
+            "trades_24hr": 3,
+            "base_price_usd": 1.0,
+            "quote_price_usd": 100.0,
+            "liquidity_usd": 0,
+            "volume_usd_24hr": 800.0,
+            "price_change_24hr": 0.0
+        }
+    ]
+}

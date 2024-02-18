@@ -9,7 +9,7 @@ import lib.last as last_traded
 import util.defaults as default
 import util.memcache as memcache
 from util.cron import cron
-from util.logger import timed, logger
+from util.logger import timed
 from util.transform import (
     sortdata,
     convert,
@@ -259,8 +259,9 @@ class Pair:  # pragma: no cover
         Iterates over list of swaps to get prices data for a pair
         """
         try:
-            suffix = derive.suffix(days)
             key = "prices"
+            ignore_until = 3
+            suffix = derive.suffix(days)
             cache_name = derive.pair_cachename(key, self.as_str, suffix)
             data = memcache.get(cache_name)
             if data is not None:
@@ -305,13 +306,18 @@ class Pair:  # pragma: no cover
                         f"price_change_{suffix}": price_change,
                         "base_price_usd": self.base_price_usd,
                         "quote_price_usd": self.quote_price_usd,
-                        "last_swap_uuid": last["last_swap_uuid"]
+                        "last_swap_uuid": last["last_swap_uuid"],
                     }
                 data[variant] = clean.decimal_dicts(data[variant])
 
             memcache.update(cache_name, data, 600)
+            if abs(data["ALL"][f"price_change_{suffix}"]) > 0.02:
+                ignore_until = 0
+                msg = f'[{self.as_str}] 24hr price change {data["ALL"][f"price_change_{suffix}"]}%'
             msg = f"get_pair_prices_info for {self.as_str} complete!"
-            return default.result(data=data, msg=msg, loglevel="cached", ignore_until=0)
+            return default.result(
+                data=data, msg=msg, loglevel="cached", ignore_until=ignore_until
+            )
         except Exception as e:  # pragma: no cover
             msg = f"get_pair_prices_info for {self.as_str} failed! {e}, returning template"
             return default.result(

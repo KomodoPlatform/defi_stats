@@ -191,7 +191,7 @@ class Convert:
             "low": prices["lowest_price_24hr"],
             "trades_24hr": vols["trades_24hr"],
             "last_price": prices["newest_price_24hr"],
-            "last_swap_uuid": book["last_swap_uuid"],
+            "last_swap_uuid": prices["last_swap_uuid"],
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
             "liquidity_usd": book["liquidity_usd"],
@@ -299,20 +299,19 @@ def to_summary_for_ticker_xyz_item(data):  # pragma: no cover
 @timed
 def ticker_to_xyz_summary(i):
     return {
-        "ticker_id": f"{i['base_currency']}_{i['quote_currency']}",
-        "base_currency": i["base_currency"],
-        "base_volume": i["base_volume"],
-        "quote_currency": i["quote_currency"],
-        "quote_volume": i["quote_volume"],
+        "trading_pair": i["pair"],
+        "trades_24h": int(i["trades_24hr"]),
+        "base_currency": i["base"],
+        "quote_currency": i["quote"],
+        "base_volume": i["base_liquidity_coins"],
+        "quote_volume": i["quote_liquidity_coins"],
         "lowest_ask": i["lowest_ask"],
-        "last_swap_timestamp": int(i["last_swap_time"]),
         "highest_bid": i["highest_bid"],
-        "price_change_pct_24h": str(i["price_change_pct_24hr"]),
-        "highest_price_24hr": i["highest_price_24hr"],
-        "lowest_price_24hr": i["lowest_price_24hr"],
-        "trades_24hr": int(i["trades_24hr"]),
-        "last_swap": int(i["last_swap_time"]),
-        "last_swap_price": i["last_swap_price"],
+        "lowest_price_24h": i["lowest_price_24hr"],
+        "highest_price_24h": i["highest_price_24hr"],
+        "price_change_percent_24h": str(i["price_change_pct_24hr"]),
+        "last_price": i["newest_price_24hr"],
+        "last_swap_timestamp": int(i["newest_price_time"]),
     }
 
 
@@ -1373,7 +1372,7 @@ class Templates:  # pragma: no cover
             "quote_price_usd": 0,
             f"trades_{suffix}": 0,
             "trade_volume_usd": 0,
-            "last_swap_uuid": ""
+            "last_swap_uuid": "",
         }
 
     def volumes_ticker(self):

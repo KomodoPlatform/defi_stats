@@ -37,6 +37,7 @@ class Cache:  # pragma: no cover
                 "coins_config",
                 "fixer_rates",
                 "gecko_source",
+                "gecko_pairs",
                 "pair_last_traded",
                 "pair_volumes_24hr",
                 "pair_volumes_14d",
@@ -234,9 +235,10 @@ class CacheItem:
                     r = self.files.save_json(self.filename, data)
                     msg = f"Saved {self.filename}"
                     return default.result(
-                        data=data, msg=r["msg"],
+                        data=data,
+                        msg=r["msg"],
                         loglevel=r["loglevel"],
-                        ignore_until=r['ignore_until']
+                        ignore_until=r["ignore_until"],
                     )
                 else:
                     logger.warning(
@@ -248,3 +250,22 @@ class CacheItem:
         except Exception as e:  # pragma: no cover
             msg = f"{self.filename} Failed. {type(e)}: {e}"
             return default.error(e, msg=msg)
+
+
+def reset_cache_files():
+    memcache.set_coins(CacheItem(name="coins").data)
+    memcache.set_coins_config(CacheItem(name="coins_config").data)
+    memcache.set_fixer_rates(CacheItem(name="fixer_rates").data)
+    memcache.set_gecko_source(CacheItem(name="gecko_source").data)
+    memcache.set_gecko_pairs(CacheItem(name="gecko_pairs").data)
+    memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr").data)
+    memcache.set_pair_last_traded(CacheItem(name="pair_last_traded").data)
+    memcache.set_pair_prices_24hr(CacheItem(name="pair_prices_24hr").data)
+    memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr").data)
+    memcache.set_pair_volumes_14d(CacheItem(name="pair_volumes_14d").data)
+    memcache.set_pair_orderbook_extended(CacheItem(name="pair_orderbook_extended").data)
+    memcache.set_adex_24hr(CacheItem(name="adex_24hr").data)
+    memcache.set_adex_fortnite(CacheItem(name="adex_fortnite").data)
+    memcache.set_tickers(CacheItem(name="tickers").data)
+    memcache.set_markets_summary(CacheItem(name="markets_summary").data)
+    memcache.set_stats_api_summary(CacheItem(name="stats_api_summary").data)
