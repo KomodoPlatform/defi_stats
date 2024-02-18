@@ -114,7 +114,7 @@ def get_fixer_rates():  # pragma: no cover
 
 
 def set_gecko_source(data):  # pragma: no cover
-    update("gecko_source", data, 900)
+    update("gecko_source", data, 1800)
 
 
 def get_gecko_source():  # pragma: no cover
