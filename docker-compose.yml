@@ -58,7 +58,7 @@ services:
     restart: always
     depends_on:
       - pgsqldb
-    command: ["memcached", "-I", "10m"]
+    command: ["memcached", "-I", "40m", "-m", "100m"]
 
   pgsqldb:
     container_name: pgsqldb
