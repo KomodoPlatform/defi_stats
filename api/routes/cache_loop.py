@@ -170,7 +170,7 @@ def pair_last_traded_24hr():
 
 # TICKERS
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=90)
 @timed
 def pair_tickers():
     if memcache.get("testing") is None:
@@ -184,7 +184,7 @@ def pair_tickers():
 
 # MARKETS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=90)
 @timed
 def get_markets_summary():
     if memcache.get("testing") is None:
@@ -227,7 +227,7 @@ def coins():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=450)
 @timed
 def gecko_data():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -253,7 +253,7 @@ def gecko_pairs():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=90)
 @timed
 def stats_api_summary():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -289,7 +289,7 @@ def populate_pgsqldb_loop():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=150)
+@repeat_every(seconds=180)
 @timed
 def import_dbs():
     if memcache.get("testing") is None:
@@ -336,7 +336,7 @@ def adex_24hr():
 
 # REVIEW
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 @timed
 def refresh_tickers():
     if memcache.get("testing") is None:
