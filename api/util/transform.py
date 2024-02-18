@@ -598,8 +598,10 @@ class Derive:
         if not deplatformed:
             pairs = []
             for i in pairs_last_trade_cache:
-                if pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts:
-                    pairs += list(pairs_last_trade_cache[i].keys())
+                for j in pairs_last_trade_cache[i]:
+                    if pairs_last_trade_cache[i][j]["last_swap_time"] > ts:
+                        if j != "ALL":
+                            pairs.append(j)
             return sorted(list(set(pairs)))
         return sorted(
             list(
