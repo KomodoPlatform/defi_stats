@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 from decimal import Decimal
 from datetime import date, datetime, timezone
@@ -19,8 +20,7 @@ from const import (
     POSTGRES_USERNAME,
     POSTGRES_PASSWORD,
     POSTGRES_PORT,
-    MM2_DB_PATH_ALL,
-    IS_TESTING,
+    MM2_DB_PATH_ALL
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from util.exceptions import InvalidParamCombination
@@ -49,7 +49,7 @@ class SqlDB:
             self.user = POSTGRES_USERNAME
             self.password = POSTGRES_PASSWORD
             self.port = POSTGRES_PORT
-            if IS_TESTING:
+            if os.getenv("IS_TESTING") == "True" == "True":
                 self.table = DefiSwapTest
             else:
                 self.table = DefiSwap

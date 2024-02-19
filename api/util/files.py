@@ -1,7 +1,8 @@
+import os
 import time
 import json
 import requests
-from const import API_ROOT_PATH, IS_TESTING
+from const import API_ROOT_PATH
 from util.logger import timed, logger
 import util.defaults as default
 import util.validate as validate
@@ -12,7 +13,7 @@ class Files:
         self.kwargs = kwargs
         self.options = []
         default.params(self, self.kwargs, self.options)
-        if IS_TESTING:
+        if os.getenv("IS_TESTING") == "True" == "True":
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"
             self.bar = f"{folder}/bar.json"

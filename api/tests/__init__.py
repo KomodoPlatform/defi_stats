@@ -8,4 +8,5 @@ from lib.coins import Coins
 from lib.cache import reset_cache_files
 import util.memcache as memcache
 
+os.environ["IS_TESTING"] = "True"
 reset_cache_files()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
@@ -308,6 +309,10 @@ class CacheItem:
 
 
 def reset_cache_files():
+    if 'IS_TESTING' in os.environ:
+        logger.calc(f"Resetting cache [testing: {os.environ['IS_TESTING']}]")
+    else:
+        os.environ['IS_TESTING'] = "False"
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     coins_config = memcache.get_coins_config()
     memcache.set_coins(CacheItem(name="coins", coins_config=coins_config).data)

@@ -5,6 +5,8 @@ from pymemcache.client.base import PooledClient
 API_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(API_ROOT_PATH)
 
+import lib
+
 
 def pytest_sessionfinish(session, exitstatus):
     """
@@ -16,3 +18,4 @@ def pytest_sessionfinish(session, exitstatus):
 
     MEMCACHE.flush_all()
     os.environ["IS_TESTING"] = "False"
+    lib.cache.reset_cache_files()

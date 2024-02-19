@@ -27,25 +27,30 @@ class JsonSerde(object):  # pragma: no cover
 
 try:  # pragma: no cover
     MEMCACHE = PooledClient(
-        ("memcached", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
+        ("memcached", 11211),
+        serde=JsonSerde(),
+        timeout=10,
+        max_pool_size=50,
+        ignore_exc=True,
     )
     logger.info("Connected to memcached docker container")
-    if os.getenv("IS_TESTING"):
+    if os.getenv("IS_TESTING") == "True":
         MEMCACHE.set("testing", True, 3600)
 
 except Exception as e:  # pragma: no cover
     logger.muted(e)
     MEMCACHE = PooledClient(
-        ("localhost", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
+        ("localhost", 11211),
+        serde=JsonSerde(),
+        timeout=10,
+        max_pool_size=50,
+        ignore_exc=True,
     )
     logger.info("Connected to memcached on localhost")
-    if os.getenv("IS_TESTING"):
+    if os.getenv("IS_TESTING") == "True":
         MEMCACHE.set("testing", True, 3600)
 
 MEMCACHE.cache_memlimit = MEMCACHE_LIMIT
-
-if os.getenv("IS_TESTING"):
-    MEMCACHE.set("testing", True, 3600)
 
 
 def stats():  # pragma: no cover
@@ -54,7 +59,7 @@ def stats():  # pragma: no cover
 
 def get(key):  # pragma: no cover
     i = 0
-    if os.getenv("IS_TESTING") and key != "testing":
+    if os.getenv("IS_TESTING") == "True" and key != "testing":
         key = f"{key}-testing"
     while i < 7:
         cached = None
@@ -78,7 +83,7 @@ def get(key):  # pragma: no cover
 @timed
 def update(key, value, expiry):
     try:
-        if os.getenv("IS_TESTING") and key != "testing":
+        if os.getenv("IS_TESTING") == "True" and key != "testing":
             key = f"{key}-testing"
         if value is not None:
             MEMCACHE.set(key, value, expiry)

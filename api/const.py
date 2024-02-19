@@ -30,12 +30,6 @@ RESET_TABLE = os.getenv("RESET_TABLE") == "True"
 DEVMODE = os.getenv("DEVMODE") == "True"
 
 
-if os.getenv("IS_TESTING") == "True":
-    IS_TESTING = True
-else:
-    IS_TESTING = False
-
-
 IN_DOCKER = os.getenv("IN_DOCKER")
 if IN_DOCKER == "True":
     IN_DOCKER = True
