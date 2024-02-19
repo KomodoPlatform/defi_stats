@@ -43,3 +43,5 @@ def test_coin(
     assert setup_coin_doc.mcap == 0
     assert setup_coin_ltc.mcap > 0
     assert setup_coin_ltc.usd_price > 0
+    assert setup_coin_kmd.is_priced
+    assert not setup_coin_doc.is_priced

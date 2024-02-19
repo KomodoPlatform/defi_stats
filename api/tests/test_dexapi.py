@@ -19,6 +19,10 @@ def test_orderbook():
     assert "bids" in r
     assert "asks" in r
 
+    r2 = api.orderbook_rpc("LTC", "KMD")
+    assert len(r["bids"]) == len(r2["asks"])
+    assert len(r2["bids"]) == len(r["asks"])
+
     r = api.orderbook_rpc("KMD", "DASH")
     assert "bids" in r
     assert "asks" in r

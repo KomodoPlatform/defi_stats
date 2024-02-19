@@ -114,14 +114,6 @@ class Coin:
         return self.usd_price > 0
 
     @property
-    def is_tradable(self):
-        if self.coin in self.coins_config:
-            if self.is_wallet_only:
-                return False
-            return True
-        return False
-
-    @property
     def has_segwit(self):
         if self.coin.endswith("-segwit"):
             return True

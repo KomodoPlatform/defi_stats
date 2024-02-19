@@ -77,10 +77,10 @@ class Clean:
             ]:
                 if i in data:
                     data[i] = convert.format_10f(Decimal(data[i]))
-                else:
+                else:  # pragma: no cover
                     logger.warning(f"{i} not in data!")
             return data
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 
 

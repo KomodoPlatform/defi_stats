@@ -35,7 +35,7 @@ class CacheQuery:
                 loglevel="cached",
                 ignore_until=5,
             )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             msg = f"{pair_str} failed: {e}!"
             try:
                 data = template.pair_prices_info(suffix=suffix)
