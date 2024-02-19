@@ -24,7 +24,6 @@ class JsonSerde(object):  # pragma: no cover
             return json.loads(value.decode("utf-8"))
         raise Exception("Unknown serialization format")
 
-
 try:  # pragma: no cover
     MEMCACHE = PooledClient(
         ("memcached", 11211),
@@ -33,9 +32,10 @@ try:  # pragma: no cover
         max_pool_size=50,
         ignore_exc=True,
     )
-    logger.info("Connected to memcached docker container")
+    MEMCACHE.set("foo", "bar", 60)
     if os.getenv("IS_TESTING") == "True":
         MEMCACHE.set("testing", True, 3600)
+    logger.info("Connected to memcached docker container")
 
 except Exception as e:  # pragma: no cover
     logger.muted(e)
@@ -93,7 +93,7 @@ def update(key, value, expiry):
     except Exception as e:
         msg = f"{key} memcache not updated: {e}"
         logger.warning(f"Failed to cache {key}! {e}")
-        logger.warning(f"Failed to cache {value}!")
+        logger.warning(f"Failed to cache {str(value)[:100]}!")
     return default.result(data=key, msg=msg, loglevel="warning", ignore_until=0)
 
 

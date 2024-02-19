@@ -381,18 +381,11 @@ class SqlQuery(SqlDB):
                 volumes["taker_volume_usd"] += taker_vol
                 volumes["trade_volume_usd"] += total_vol
 
-            volumes.update(
-                {
-                    "taker_volume_usd": volumes["taker_volume_usd"],
-                    "maker_volume_usd": volumes["maker_volume_usd"],
-                    "trade_volume_usd": volumes["trade_volume_usd"],
-                }
-            )
             return default.result(
                 data=volumes,
-                msg="coin_trade_volumes_usd complete",
+                msg=f"coin_trade_volumes_usd complete [US${volumes['trade_volume_usd']}]",
                 loglevel="query",
-                ignore_until=5,
+                ignore_until=0,
             )
 
         except Exception as e:  # pragma: no cover
@@ -536,9 +529,9 @@ class SqlQuery(SqlDB):
             )
             return default.result(
                 data=volumes,
-                msg="pair_trade_volumes_usd complete",
+                msg=f"pair_trade_volumes_usd complete [US${total_trade_vol_usd}]",
                 loglevel="query",
-                ignore_until=5,
+                ignore_until=0,
             )
 
         except Exception as e:  # pragma: no cover

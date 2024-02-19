@@ -9,6 +9,10 @@ sys.path.append(API_ROOT_PATH)
 import db.sqldb as db
 from util.logger import logger
 
+from lib.cache import reset_cache_files
+
+os.environ["IS_TESTING"] = "False"
+reset_cache_files()
 
 def parse_date(date_str):
     try:
