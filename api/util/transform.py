@@ -94,8 +94,6 @@ class Convert:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
 
-
-
     @timed
     def format_10f(self, number: float | Decimal) -> str:
         """
@@ -473,7 +471,7 @@ class Derive:
     @timed
     def price_status_dict(self, pairs, gecko_source):
         try:
-            cache_name = 'price_status'
+            cache_name = "price_status"
             loglevel = "cached"
             msg = "Got prices_dict_cache"
             ignore_until = 3
@@ -493,7 +491,9 @@ class Derive:
         except Exception as e:  # pragma: no cover
             loglevel = "warning"
             msg = f"price_status_dict failed! {e}"
-        return default.result(data=pairs_dict, msg=msg, loglevel=loglevel, ignore_until=ignore_until)
+        return default.result(
+            data=pairs_dict, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+        )
 
     def gecko_price(self, ticker, gecko_source) -> float:
         try:
@@ -837,7 +837,6 @@ class Invert:
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
-
 
     def pair(self, pair_str):
         base, quote = derive.base_quote(pair_str, True)
@@ -1313,8 +1312,6 @@ class Templates:  # pragma: no cover
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
-
-
 
     def gecko_orderbook(self, pair_str: str) -> dict:
         base, quote = derive.base_quote(pair_str=pair_str)

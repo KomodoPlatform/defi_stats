@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from typing import Dict
 from dataclasses import dataclass
-from util.logger import logger, timed
-import util.cron as cron
+from util.logger import logger
+from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
 from util.transform import derive
@@ -11,15 +11,21 @@ from util.transform import derive
 @dataclass
 class Coins:  # pragma: no cover
     def __init__(self, coins_config=None, gecko_source=None):
-        self.init_at = cron.utc_now()
-        self._config = coins_config
-        self._gecko_source = gecko_source
-        self.coins = [Coin(coin=i, coins_config=self.config, gecko_source=self.gecko_source) for i in self.config]
-        self.tickers = sorted([j for j in self.config.keys()])
+        try:
+            self.init_at = cron.now_utc()
+            self._config = coins_config
+            self._gecko_source = gecko_source
+            self.coins = [
+                Coin(coin=i, coins_config=self.config, gecko_source=self.gecko_source)
+                for i in self.config
+            ]
+            self.tickers = sorted([j for j in self.config.keys()])
+        except Exception as e:  # pragma: no cover
+            logger.error(f"Failed to init Coins: {e}")
 
     @property
     def age(self):
-        return cron.utc_now() - self.init_at
+        return cron.now_utc() - self.init_at
 
     @property
     def gecko_source(self):
@@ -65,7 +71,7 @@ class Coins:  # pragma: no cover
 
 
 class Coin:
-    def __init__(self, coin, coins_config: Dict, **kwargs):
+    def __init__(self, coin, coins_config: Dict, gecko_source=None, **kwargs):
         try:
             # Set params
             self.kwargs = kwargs
@@ -74,6 +80,7 @@ class Coin:
             self.coin = coin
             self.ticker = self.coin.split("-")[0]
             self.coins_config = coins_config
+            self._gecko_source = gecko_source
 
             # Designate coin
             if self.coin in self.coins_config:
@@ -87,6 +94,12 @@ class Coin:
         except Exception as e:  # pragma: no cover
             msg = f"Init Coin for {coin} failed!"
             logger.error(f"{type(e)} {msg}: {e}")
+
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
 
     @property
     def usd_price(self):

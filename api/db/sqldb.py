@@ -4,7 +4,6 @@ from decimal import Decimal
 from datetime import date, datetime, timezone
 from datetime import time as dt_time
 from dotenv import load_dotenv
-from enum import Enum
 from itertools import chain
 from sqlalchemy import Numeric, func
 from sqlalchemy.sql.expression import bindparam
@@ -1276,7 +1275,11 @@ class SqlSource:
     ):
         try:
             # Import in Sqlite (all) database
-            mm2_sqlite = SqlQuery(db_type="sqlite", db_path=MM2_DB_PATH_ALL, gecko_source=self.gecko_source)
+            mm2_sqlite = SqlQuery(
+                db_type="sqlite",
+                db_path=MM2_DB_PATH_ALL,
+                gecko_source=self.gecko_source,
+            )
             mm2_swaps = mm2_sqlite.get_swaps(start_time=start_time, end_time=end_time)
             mm2_swaps = self.normalise_swap_data(mm2_swaps)
             if len(mm2_swaps) > 0:
@@ -1721,7 +1724,9 @@ class SqlSource:
         msg = f"Importing swaps from {day.strftime('%Y-%m-%d')} {day}"
         start_ts = datetime.combine(day, dt_time()).timestamp()
         end_ts = datetime.combine(day, dt_time()).timestamp() + 86400
-        SqlSource(gecko_source=self.gecko_source).populate_pgsqldb(start_time=start_ts, end_time=end_ts)
+        SqlSource(gecko_source=self.gecko_source).populate_pgsqldb(
+            start_time=start_ts, end_time=end_ts
+        )
         return default.result(msg=msg, loglevel="merge", ignore_until=0)
 
     @timed

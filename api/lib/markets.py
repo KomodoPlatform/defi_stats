@@ -24,13 +24,13 @@ class Markets:
         if self._gecko_source is None:
             self._gecko_source = memcache.get_gecko_source()
         return self._gecko_source
-    
+
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
-    
+
     # TODO: Cache this
     @timed
     def trades(self, pair_str: str, days_in_past: int = 1, all_variants: bool = False):
@@ -50,9 +50,7 @@ class Markets:
             if all_variants:
                 resp = merge.trades(resp, data["ALL"])
             else:
-                variants = derive.pair_variants(
-                    pair_str=pair_str, segwit_only=True
-                )
+                variants = derive.pair_variants(pair_str=pair_str, segwit_only=True)
                 for v in variants:
                     if v in data:
                         resp = merge.trades(resp, data[v])

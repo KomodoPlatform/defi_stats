@@ -14,9 +14,8 @@ from models.stats_api import (
 )
 from util.cron import cron
 from util.logger import logger
-from util.transform import deplatform, derive, invert, sortdata, convert
+from util.transform import derive, invert, sortdata, convert
 import db.sqldb as db
-import lib.dex_api as dex
 import util.memcache as memcache
 import util.validate as validate
 
@@ -118,8 +117,9 @@ def orderbook(
 ):
     try:
         gecko_source = memcache.get_gecko_source()
-        depair = deplatform.pair(pair_str)
-        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str, gecko_source=gecko_source)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(
+            pair_str, gecko_source=gecko_source
+        )
         if is_reversed:
             pair = Pair(pair_str=invert.pair(pair_str), gecko_source=gecko_source)
             data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)

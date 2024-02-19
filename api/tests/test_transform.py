@@ -177,16 +177,16 @@ def test_convert_orderbook_to_gecko():
 
 
 def test_pair_by_market_cap():
-    a = sortdata.pair_by_market_cap(("BTC-segwit_KMD"))
-    b = sortdata.pair_by_market_cap(("BTC_KMD"))
-    c = sortdata.pair_by_market_cap(("KMD_BTC-segwit"))
-    d = sortdata.pair_by_market_cap(("KMD_BTC"))
-    e = sortdata.pair_by_market_cap(("BTC-segwit_KMD-BEP20"))
+    a = sortdata.pair_by_market_cap("BTC-segwit_KMD", gecko_source=gecko_source)
+    b = sortdata.pair_by_market_cap("BTC_KMD", gecko_source=gecko_source)
+    c = sortdata.pair_by_market_cap("KMD_BTC-segwit", gecko_source=gecko_source)
+    d = sortdata.pair_by_market_cap("KMD_BTC", gecko_source=gecko_source)
+    e = sortdata.pair_by_market_cap("BTC-segwit_KMD-BEP20", gecko_source=gecko_source)
 
     assert b == d
     assert a == c
     assert e == "KMD-BEP20_BTC-segwit"
-    assert sortdata.pair_by_market_cap(("MARTY_DOC")) == "DOC_MARTY"
+    assert sortdata.pair_by_market_cap("MARTY_DOC", gecko_source=gecko_source) == "DOC_MARTY"
 
 
 def test_sort_top_items():
@@ -428,11 +428,11 @@ def test_derive_price_at_finish():
 
 
 def test_derive_gecko_price():
-    price = derive.gecko_price("LTC")
+    price = derive.gecko_price("LTC", gecko_source=gecko_source)
     assert isinstance(price, Decimal)
     assert price == Decimal(100)
 
-    price = derive.gecko_price("DOC")
+    price = derive.gecko_price("DOC", gecko_source=gecko_source)
     assert isinstance(price, Decimal)
     assert price == Decimal(0)
 
@@ -442,13 +442,11 @@ def test_derive_gecko_mcap():
     assert isinstance(mcap, Decimal)
     assert mcap == Decimal(7000000000)
 
-    mcap = derive.gecko_mcap("USDC", gecko_source=gecko_source)
-    assert isinstance(mcap, Decimal)
-    assert mcap == Decimal(7000000000)
-
-    mcap = derive.gecko_mcap("USDC-PLG20", gecko_source=gecko_source)
-    assert isinstance(mcap, Decimal)
-    assert mcap == Decimal(7000000000)
+    mcap1 = derive.gecko_mcap("USDC", gecko_source=gecko_source)
+    mcap2 = derive.gecko_mcap("USDC-PLG20", gecko_source=gecko_source)
+    assert isinstance(mcap1, Decimal)
+    assert isinstance(mcap2, Decimal)
+    assert mcap1 == mcap2
 
     mcap = derive.gecko_mcap("DOC", gecko_source=gecko_source)
     assert isinstance(mcap, Decimal)

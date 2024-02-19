@@ -67,7 +67,6 @@ def fiat_rates():
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
         gecko_source = memcache.get_gecko_source()
-        depair = deplatform.pair(pair_str)
         is_reversed = pair_str != sortdata.pair_by_market_cap(
             pair_str, gecko_source=gecko_source
         )
@@ -329,7 +328,6 @@ def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType
     try:
         volumes_dict = {}
         query = db.SqlQuery()
-        gecko_source = memcache.get_gecko_source()
         # Individual tickers only, no merge except segwit
         decoin = deplatform.coin(coin)
         variants = derive.coin_variants(coin, segwit_only=True)
@@ -340,7 +338,7 @@ def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType
             start_time = int(day_ts)
             end_time = int(day_ts) + 86400
             volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
-            data = query.coin_trade_volumes_usd(volumes, gecko_source)
+            data = query.coin_trade_volumes_usd(volumes)
             volumes_dict[d_str] = template.volumes_ticker()
             for variant in variants:
                 if decoin in data["volumes"]:

@@ -14,7 +14,6 @@ import db.sqldb as db
 from util.cron import cron
 from util.transform import derive
 import util.validate as validate
-import util.memcache as memcache
 
 router = APIRouter()
 cache = Cache()
@@ -353,7 +352,6 @@ def coin_trade_volumes_usd(
     version: str | None = None,
 ):
     try:
-        gecko_source = memcache.get_gecko_source()
         if start_time == 0:
             start_time = int(cron.now_utc()) - 86400
         if end_time == 0:
@@ -363,7 +361,7 @@ def coin_trade_volumes_usd(
             start_time=start_time,
             end_time=end_time,
         )
-        return query.coin_trade_volumes_usd(volumes=volumes, gecko_source=gecko_source)
+        return query.coin_trade_volumes_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -399,7 +397,6 @@ def pair_trade_volumes_usd(
             coin=coin,
             gui=gui,
         )
-        gecko_source = memcache.get_gecko_source()
         return query.pair_trade_volumes_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}

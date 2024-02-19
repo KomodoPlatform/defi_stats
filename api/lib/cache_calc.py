@@ -56,7 +56,7 @@ class CacheCalc:
             # logger.info("Getting _coin_volumes_24hr_cache")
             self._coin_volumes_24hr_cache = memcache.get_coin_volumes_24hr()
         return self._coin_volumes_24hr_cache
-    
+
     @timed
     def coin_volumes_24hr(self):
         try:
@@ -113,14 +113,12 @@ class CacheCalc:
             msg = f"pairs_last_traded failed! {e}"
             logger.warning(msg)
 
-
     @property
     def pair_prices_24hr_cache(self):
         if self._pair_prices_24hr_cache is None:
             # logger.loop("sourcing pair_prices_24hr_cache")
             self._pair_prices_24hr_cache = memcache.get_pair_prices_24hr()
         return self._pair_prices_24hr_cache
-
 
     @timed
     # TODO: Expand to 7d, 14d, 30d etc
@@ -131,7 +129,9 @@ class CacheCalc:
     def pairs_orderbook_extended_cache(self):
         if self._pairs_orderbook_extended_cache is None:
             # logger.loop("sourcing pairs_orderbook_extended_cache")
-            self._pairs_orderbook_extended_cache = memcache.get_pairs_orderbook_extended()
+            self._pairs_orderbook_extended_cache = (
+                memcache.get_pairs_orderbook_extended()
+            )
         return self._pairs_orderbook_extended_cache
 
     @timed
@@ -149,18 +149,11 @@ class CacheCalc:
                     pair_str=depair,
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
-                    pair_prices_24hr_cache=self.pair_prices_24hr_cache
-                    
+                    pair_prices_24hr_cache=self.pair_prices_24hr_cache,
                 ).orderbook(
                     depair, depth=100, traded_pairs=traded_pairs, refresh=refresh
                 )
                 data.append(x)
-            """
-            data = [
-                
-                for pair_str in pairs
-            ]
-            """
             orderbook_data = {}
             liquidity_usd = 0
             for depair_data in data:
@@ -208,8 +201,6 @@ class CacheCalc:
             msg = "pairs_orderbook_extended failed!"
             return default.error(e, msg)
 
-
-
     @property
     def pair_volumes_24hr_cache(self):
         if self._pair_volumes_24hr_cache is None:
@@ -254,7 +245,6 @@ class CacheCalc:
         except Exception as e:  # pragma: no cover
             msg = f"pair_volumes_14d failed! {e}"
             logger.warning(msg)
-
 
     # TODO: Add props for the below
 

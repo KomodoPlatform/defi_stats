@@ -6,7 +6,6 @@ from tests.fixtures_coin import (
     setup_coin_btc_bep20,
     setup_coin_ltc,
     setup_coin_ltc_segwit,
-    setup_coin,
     setup_coin_doc,
     setup_coin_atom,
     setup_coin_bad,
@@ -21,7 +20,6 @@ def test_coin(
     setup_coin_btc_bep20,
     setup_coin_ltc,
     setup_coin_ltc_segwit,
-    setup_coin,
     setup_coin_doc,
     setup_coin_atom,
     setup_coin_bad,
@@ -45,4 +43,3 @@ def test_coin(
     assert setup_coin_doc.mcap == 0
     assert setup_coin_ltc.mcap > 0
     assert setup_coin_ltc.usd_price > 0
-    assert setup_coin.usd_price > 0

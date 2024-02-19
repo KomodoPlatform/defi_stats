@@ -29,15 +29,19 @@ try:  # pragma: no cover
     MEMCACHE = PooledClient(
         ("memcached", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
     )
-    MEMCACHE.get("test")
     logger.info("Connected to memcached docker container")
+    if os.getenv("IS_TESTING"):
+        MEMCACHE.set("testing", True, 3600)
+
 except Exception as e:  # pragma: no cover
     logger.muted(e)
     MEMCACHE = PooledClient(
         ("localhost", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
     )
-    MEMCACHE.get("test")
     logger.info("Connected to memcached on localhost")
+    if os.getenv("IS_TESTING"):
+        MEMCACHE.set("testing", True, 3600)
+
 MEMCACHE.cache_memlimit = MEMCACHE_LIMIT
 
 if os.getenv("IS_TESTING"):

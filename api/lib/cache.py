@@ -21,13 +21,11 @@ class Cache:  # pragma: no cover
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
 
-
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
-    
 
     def get_item(self, name):
         try:
@@ -71,9 +69,14 @@ class Cache:  # pragma: no cover
 
 
 class CacheItem:
-    def __init__(self, name, from_memcache: bool = False,
-                 coins_config=None, gecko_source=None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        name,
+        from_memcache: bool = False,
+        coins_config=None,
+        gecko_source=None,
+        **kwargs,
+    ) -> None:
         try:
             self.name = name
             self.kwargs = kwargs
@@ -95,13 +98,12 @@ class CacheItem:
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init CacheItem '{name}': {e}")
 
-
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
-    
+
     @property
     def gecko_source(self):
         if self._gecko_source is None:
@@ -185,64 +187,90 @@ class CacheItem:
                     memcache.set_fixer_rates(data)
 
                 if self.name == "gecko_source":
-                    data = external.CoinGeckoAPI(coins_config=self.coins_config).get_gecko_source()
+                    data = external.CoinGeckoAPI(
+                        coins_config=self.coins_config
+                    ).get_gecko_source()
                     memcache.set_gecko_source(data)
 
                 # FOUNDATIONAL CACHE
                 if self.name == "adex_24hr":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).adex_24hr(refresh=True)
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_24hr(refresh=True)
                     memcache.set_adex_24hr(data)
 
                 if self.name == "adex_fortnite":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).adex_fortnite(refresh=True)
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_fortnite(refresh=True)
                     memcache.set_adex_fortnite(data)
 
                 if self.name == "coin_volumes_24hr":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).coin_volumes_24hr()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).coin_volumes_24hr()
                     memcache.set_coin_volumes_24hr(data)
 
                 # PAIR Data
                 if self.name == "pairs_last_traded_24hr":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pairs_last_traded(
-                        since=cron.days_ago(1)
-                    )
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_last_traded(since=cron.days_ago(1))
                     memcache.set_pairs_last_traded_24hr(data)
 
                 if self.name == "pairs_last_traded":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pairs_last_traded()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_last_traded()
                     memcache.set_pairs_last_traded(data)
 
                 if self.name == "pairs_orderbook_extended":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pairs_orderbook_extended()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_orderbook_extended()
                     memcache.set_pairs_orderbook_extended(data)
 
                 if self.name == "pair_prices_24hr":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pair_prices_24hr()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_prices_24hr()
                     memcache.set_pair_prices_24hr(data)
 
                 if self.name == "pair_volumes_24hr":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pair_volumes_24hr()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_volumes_24hr()
                     memcache.set_pair_volumes_24hr(data)
 
                 if self.name == "pair_volumes_14d":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).pair_volumes_14d()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_volumes_14d()
                     memcache.set_pair_volumes_14d(data)
 
                 # MARKETS
                 if self.name == "markets_summary":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).markets_summary()
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).markets_summary()
                     memcache.set_markets_summary(data)
 
                 if self.name == "tickers":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).tickers(refresh=True)
+                    data = cache_calc.CacheCalc(coins_config=self.coins_config).tickers(
+                        refresh=True
+                    )
                     memcache.set_tickers(data)
 
                 if self.name == "gecko_pairs":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).gecko_pairs(refresh=True)
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).gecko_pairs(refresh=True)
                     memcache.set_gecko_pairs(data)
 
                 if self.name == "stats_api_summary":
-                    data = cache_calc.CacheCalc(coins_config=self.coins_config).stats_api_summary(refresh=True)
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).stats_api_summary(refresh=True)
                     memcache.set_stats_api_summary(data)
 
                 # REVIEW
@@ -283,17 +311,41 @@ def reset_cache_files():
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     coins_config = memcache.get_coins_config()
     memcache.set_coins(CacheItem(name="coins", coins_config=coins_config).data)
-    memcache.set_fixer_rates(CacheItem(name="fixer_rates", coins_config=coins_config).data)
-    memcache.set_gecko_source(CacheItem(name="gecko_source", coins_config=coins_config).data)
-    memcache.set_gecko_pairs(CacheItem(name="gecko_pairs", coins_config=coins_config).data)
-    memcache.set_coin_volumes_24hr(CacheItem(name="coin_volumes_24hr", coins_config=coins_config).data)
-    memcache.set_pairs_last_traded(CacheItem(name="pairs_last_traded", coins_config=coins_config).data)
-    memcache.set_pair_prices_24hr(CacheItem(name="pair_prices_24hr", coins_config=coins_config).data)
-    memcache.set_pair_volumes_24hr(CacheItem(name="pair_volumes_24hr", coins_config=coins_config).data)
-    memcache.set_pair_volumes_14d(CacheItem(name="pair_volumes_14d", coins_config=coins_config).data)
-    memcache.set_pairs_orderbook_extended(CacheItem(name="pairs_orderbook_extended", coins_config=coins_config).data)
+    memcache.set_fixer_rates(
+        CacheItem(name="fixer_rates", coins_config=coins_config).data
+    )
+    memcache.set_gecko_source(
+        CacheItem(name="gecko_source", coins_config=coins_config).data
+    )
+    memcache.set_gecko_pairs(
+        CacheItem(name="gecko_pairs", coins_config=coins_config).data
+    )
+    memcache.set_coin_volumes_24hr(
+        CacheItem(name="coin_volumes_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pairs_last_traded(
+        CacheItem(name="pairs_last_traded", coins_config=coins_config).data
+    )
+    memcache.set_pair_prices_24hr(
+        CacheItem(name="pair_prices_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pair_volumes_24hr(
+        CacheItem(name="pair_volumes_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pair_volumes_14d(
+        CacheItem(name="pair_volumes_14d", coins_config=coins_config).data
+    )
+    memcache.set_pairs_orderbook_extended(
+        CacheItem(name="pairs_orderbook_extended", coins_config=coins_config).data
+    )
     memcache.set_adex_24hr(CacheItem(name="adex_24hr", coins_config=coins_config).data)
-    memcache.set_adex_fortnite(CacheItem(name="adex_fortnite", coins_config=coins_config).data)
+    memcache.set_adex_fortnite(
+        CacheItem(name="adex_fortnite", coins_config=coins_config).data
+    )
     memcache.set_tickers(CacheItem(name="tickers", coins_config=coins_config).data)
-    memcache.set_markets_summary(CacheItem(name="markets_summary", coins_config=coins_config).data)
-    memcache.set_stats_api_summary(CacheItem(name="stats_api_summary", coins_config=coins_config).data)
+    memcache.set_markets_summary(
+        CacheItem(name="markets_summary", coins_config=coins_config).data
+    )
+    memcache.set_stats_api_summary(
+        CacheItem(name="stats_api_summary", coins_config=coins_config).data
+    )

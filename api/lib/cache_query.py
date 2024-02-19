@@ -2,7 +2,6 @@
 from util.logger import timed
 from util.transform import invert, derive, template
 import util.defaults as default
-import util.memcache as memcache
 
 
 from util.transform import deplatform

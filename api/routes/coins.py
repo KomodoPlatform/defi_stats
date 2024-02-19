@@ -21,10 +21,13 @@ files = Files()
 def get_gecko_ids():
     try:
         cache_name = 'gecko_api_ids'
-        data = {"timestamp": int(cron.now_utc()), "ids": {}}
-        coins_config = memcache.get_gecko_source()
-        for coin in coins_config:
-            data["ids"].update({coin: coins_config[coin]["coingecko_id"]})
+        data = memcache.get(cache_name)
+        if data is None:
+            data = {"timestamp": int(cron.now_utc()), "ids": {}}
+            coins_config = memcache.get_gecko_source()
+            for coin in coins_config:
+                data["ids"].update({coin: coins_config[coin]["coingecko_id"]})
+            memcache.update(cache_name, data, 600)
         return data
     except Exception as e:
         err = {"error": f"{e}"}

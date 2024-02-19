@@ -9,7 +9,7 @@ import lib.last as last_traded
 import util.defaults as default
 import util.memcache as memcache
 from util.cron import cron
-from util.logger import timed, logger
+from util.logger import timed
 from util.transform import (
     sortdata,
     convert,

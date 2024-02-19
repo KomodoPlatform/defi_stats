@@ -66,9 +66,7 @@ def params(object, kwargs: Dict, options: List[str] = list()) -> None:
     return result(msg=msg, loglevel="debug", ignore_until=10)
 
 
-def error(
-    e, msg=None, loglevel="error", ignore_until=0, data=None
-):  # pragma: no cover
+def error(e, msg=None, loglevel="error", ignore_until=0, data=None):  # pragma: no cover
     if msg is None:
         msg = e
     else:
@@ -84,9 +82,7 @@ def error(
     return r
 
 
-def result(
-    data=None, msg=None, loglevel="debug", ignore_until=0
-):  # pragma: no cover
+def result(data=None, msg=None, loglevel="debug", ignore_until=0):  # pragma: no cover
     r = {
         "result": "success",
         "message": msg,
@@ -96,7 +92,7 @@ def result(
     }
     return r
 
+
 @timed
 def memcache_stat(msg, **kwargs):
     return result(msg=msg, **kwargs)
-    
