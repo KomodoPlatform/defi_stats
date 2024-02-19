@@ -38,7 +38,7 @@ class Cron:
         return self.from_ts - num * self.week
 
     def daterange(self, start_date, end_date):  # pragma: no cover
-        for n in range(int((end_date - start_date).days)):
+        for n in range(int((end_date - start_date).days)+2):
             yield start_date + timedelta(n)
 
 
