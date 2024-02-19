@@ -3,11 +3,10 @@ from fastapi import APIRouter
 from util.logger import logger
 from models.tickers import TickersSummary
 from models.generic import ErrorMessage
-from lib.cache_calc import CacheCalc
+import util.memcache as memcache
 
 
 router = APIRouter()
-cache = CacheCalc()
 
 
 # Used for stats display for pairs in Legacy desktop
@@ -21,7 +20,7 @@ cache = CacheCalc()
 def summary():
     try:
         # Load from cache
-        return CacheCalc().tickers()
+        return memcache.get_tickers()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/tickers/summary]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/tickers/summary]: {e}"}

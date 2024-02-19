@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=60)
 @timed
 def check_cache():  # pragma: no cover
     """Checks when cache items last updated"""
@@ -49,7 +49,7 @@ def check_cache():  # pragma: no cover
                 "read_buf_count",
                 "read_buf_bytes",
                 "read_buf_bytes_free"
-            ]:
+            ] or 1 == 1:
                 default.memcache_stat(msg=f"{k.decode('UTF-8'):<30}: {v}", loglevel="cached")
         # "listen_disabled_num"
     except Exception as e:
