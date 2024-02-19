@@ -386,6 +386,7 @@ class CacheCalc:
                                 "pair_liquidity_usd": o["liquidity_usd"],
                                 "base_price_usd": p["base_price_usd"],
                                 "quote_price_usd": p["quote_price_usd"],
+                                "rel_price_usd": p["quote_price_usd"],
                                 "variants": variants,
                             }
                         )
