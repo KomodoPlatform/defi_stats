@@ -351,6 +351,7 @@ class CacheCalc:
                         data = clean.decimal_dicts(
                             {
                                 "ticker_id": depair,
+                                "trading_pair": depair,
                                 "base_currency": o["base"],
                                 "base_trade_value_usd": v["base_volume_usd"],
                                 "base_liquidity_coins": o["base_liquidity_coins"],
@@ -363,6 +364,11 @@ class CacheCalc:
                                 "quote_liquidity_coins": o["quote_liquidity_coins"],
                                 "quote_liquidity_usd": o["quote_liquidity_usd"],
                                 "quote_volume": v["quote_volume"],
+                                "rel_currency": o["quote"],
+                                "rel_trade_value_usd": v["quote_volume_usd"],
+                                "rel_liquidity_coins": o["quote_liquidity_coins"],
+                                "rel_liquidity_usd": o["quote_liquidity_usd"],
+                                "rel_volume": v["quote_volume"],
                                 "lowest_ask": o["lowest_ask"],
                                 "highest_bid": o["highest_bid"],
                                 "lowest_price_24h": o["lowest_price_24hr"],
@@ -520,7 +526,7 @@ class CacheCalc:
     def tickers(self, refresh: bool = False):
         try:
             resp = memcache.get_tickers()
-            msg = ""
+            msg = "Got tickers from cache"
             loglevel = "cached"
             ignore_until = 5
             if refresh:
@@ -554,8 +560,8 @@ class CacheCalc:
                                     )
                                 }
                             )
-            memcache.set_tickers(resp)
-            msg = "Tickers cache updated"
+                memcache.set_tickers(resp)
+                msg = "Tickers cache updated"
             ignore_until = 0
         except Exception as e:  # pragma: no cover
             msg = f"tickers failed! {e}"

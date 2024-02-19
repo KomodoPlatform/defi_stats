@@ -44,10 +44,6 @@ def test_swagger_endpoints(path=None):
         logger.merge(f"================== {i} ==================")
         r = requests.get(i)
         try:
-            if r.status_code != 200:
-                logger.warning(f"Status Code: {r.status_code}")
-            else:
-                logger.query(f"Status Code: {r.status_code}")
                 
             if "error" in r.text:
                 logger.warning(f"err: {r.text[:50]}")
@@ -59,9 +55,9 @@ def test_swagger_endpoints(path=None):
                     l = l[0]
 
                 # Get test domain response
-                r = requests.get(i.replace(localhost, test_domain))
-                t = r.json()
-                t_txt = r.text[:60]
+                r2 = requests.get(i.replace(localhost, test_domain))
+                t = r2.json()
+                t_txt = r2.text[:60]
                 if isinstance(r.json(), list):
                     t = t[0]
                     
@@ -69,8 +65,18 @@ def test_swagger_endpoints(path=None):
                 test_keys = list(t.keys())
                 logger.calc(f"Local:       {l_txt}")
                 logger.calc(f"Local:       {local_keys[:10]}")
+                if r.status_code != 200:
+                    logger.warning(f"Status Code: {r.status_code}")
+                else:
+                    logger.calc(f"Status Code: {r.status_code}")
+                logger.calc(f"Elapsed:       {r.elapsed}")
                 logger.loop(f"Test domain: {t_txt}")
                 logger.loop(f"Test domain: {test_keys[:10]}")
+                if r.status_code != 200:
+                    logger.warning(f"Status Code: {r2.status_code}")
+                else:
+                    logger.loop(f"Status Code: {r2.status_code}")
+                logger.loop(f"Elapsed: {r2.elapsed}")
         except Exception as e:
             logger.calc(type(e))
             logger.calc(e)

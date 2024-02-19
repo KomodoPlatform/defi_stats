@@ -30,6 +30,7 @@ class StatsApiAtomicdexFortnight(BaseModel):
 
 class StatsApiSummary(BaseModel):
     ticker_id: str = "XXX_YYY"
+    trading_pair: str = "XXX_YYY"
     pair_swaps_count: int = 7777
     base_currency: str = "XXX"
     base_volume: float = 777.777777
@@ -43,6 +44,12 @@ class StatsApiSummary(BaseModel):
     quote_liquidity_coins: float = 777.777777
     quote_liquidity_usd: float = 777.777777
     quote_trade_value_usd: float = 777.777777
+    rel_currency: str = "YYY"
+    rel_volume: float = 777.777777
+    rel_price_usd: float = 777.777777
+    rel_liquidity_coins: float = 777.777777
+    rel_liquidity_usd: float = 777.777777
+    rel_trade_value_usd: float = 777.777777
     pair_liquidity_usd: float = 777.777777
     pair_trade_value_usd: float = 777.777777
     lowest_ask: float = 777.777777
@@ -53,11 +60,6 @@ class StatsApiSummary(BaseModel):
     price_change_percent_24h: float = 777.777777
     last_price: float = 777.777777
     last_trade: int = 1777777777
-    oldest_price_time: int = 777
-    oldest_price: float = 777.777777
-    newest_price_time: int = 777
-    newest_price: float = 777.777777
-    variants: List = ["XXX_YYY", "XXX-BEP20_YYY", "XXX_YYY-segwit"]
 
 
 class StatsApiOrderbook(BaseModel):
