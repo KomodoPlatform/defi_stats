@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from const import MM2_RPC_PORTS, MM2_NETID
-from util.logger import timed
+from util.logger import timed, logger
 import util.defaults as default
 from util.transform import template
 

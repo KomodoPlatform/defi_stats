@@ -83,24 +83,29 @@ def fiat_rates():
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
-        
-
+        gecko_source = memcache.get_gecko_source()
         depair = deplatform.pair(pair_str)
-        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(
+            pair_str, gecko_source=gecko_source
+        )
         if is_reversed:
             pair = Pair(pair_str=invert.pair(pair_str))
-            data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
+            data = pair.orderbook(
+                pair_str=invert.pair(pair_str), depth=depth, gecko_source=gecko_source
+            )
         else:
             pair = Pair(pair_str=pair_str)
-            data = pair.orderbook(pair_str=pair_str, depth=depth)
+            data = pair.orderbook(
+                pair_str=pair_str, depth=depth, gecko_source=gecko_source
+            )
 
         resp = data["ALL"]
         if is_reversed:
             resp = invert.pair_orderbook(resp)
-        resp['newest_price'] = resp['newest_price_24hr']
-        resp['volume_usd_24hr'] = resp['trade_volume_usd']
-        resp['oldest_price'] = resp['oldest_price_24hr']
-        resp['variants'] = sorted(list(set(data.keys())))
+        resp["newest_price"] = resp["newest_price_24hr"]
+        resp["volume_usd_24hr"] = resp["trade_volume_usd"]
+        resp["oldest_price"] = resp["oldest_price_24hr"]
+        resp["variants"] = sorted(list(set(data.keys())))
         return {pair_str: resp}
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
@@ -118,7 +123,7 @@ def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
 )
 def summary():
     try:
-        data = memcache.get_pair_orderbook_extended()
+        data = memcache.get_pairs_orderbook_extended()
         resp = []
         for depair in data["orderbooks"]:
             resp.append(
@@ -141,7 +146,7 @@ def summary():
 def summary_for_ticker(coin: str = "KMD"):
     # TODO: Segwit not merged in this endpoint yet
     try:
-        data = memcache.get_pair_orderbook_extended()
+        data = memcache.get_pairs_orderbook_extended()
         resp = []
         decoin = deplatform.coin(coin)
         for depair in data["orderbooks"]:

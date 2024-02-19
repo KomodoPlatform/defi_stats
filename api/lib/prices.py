@@ -8,21 +8,25 @@ import util.memcache as memcache
 
 
 @timed
-def pair_prices(days=1, from_memcache: bool = False):
+def pair_prices(days=1, from_memcache: bool = False, coins_config=None, gecko_source=None):
     try:
         # Get cached data
         suffix = derive.suffix(days)
-        coins_config = memcache.get_coins_config()
-        pairs_last_trade_cache = memcache.get_pair_last_traded()
+        if coins_config is None:
+            coins_config = memcache.get_coins_config()
+        if gecko_source is None:
+            gecko_source = memcache.get_gecko_source()
+        pairs_last_traded_cache = memcache.get_pairs_last_traded()
         pair_vols = memcache.get_pair_volumes_24hr()
         # Filter out pairs older than requested time
         ts = cron.now_utc() - days * 86400
-        pairs = derive.pairs_traded_since(ts, pairs_last_trade_cache)
+        pairs = derive.pairs_traded_since(ts, pairs_last_traded_cache)
         prices_data = {
             i: Pair(
                 pair_str=i,
-                pairs_last_trade_cache=pairs_last_trade_cache,
+                pairs_last_traded_cache=pairs_last_traded_cache,
                 coins_config=coins_config,
+                gecko_source=gecko_source,
             ).get_pair_prices_info(days)
             for i in pairs
         }

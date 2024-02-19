@@ -37,14 +37,14 @@ def tickers():
 
 
 @router.get(
-    "/pair_last_traded",
+    "/pairs_last_traded",
     description="Time and price of last trade for all pairs. Segwit pairs are merged.",
     responses={406: {"model": ErrorMessage}},
     status_code=200,
 )
-def pair_last_traded(pair_str: str = ""):
+def pairs_last_traded(pair_str: str = ""):
     try:
-        data = memcache.get_pair_last_traded()
+        data = memcache.get_pairs_last_traded()
         if pair_str != "":
             if pair_str in data:
                 return data[pair_str]

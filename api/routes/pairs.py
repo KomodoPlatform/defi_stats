@@ -13,7 +13,7 @@ router = APIRouter()
     status_code=200,
 )
 def last_traded():
-    return memcache.get_pair_last_traded()
+    return memcache.get_pairs_last_traded()
 
 
 @router.get(
@@ -23,7 +23,7 @@ def last_traded():
     status_code=200,
 )
 def orderbook_extended():
-    return memcache.get_pair_orderbook_extended()
+    return memcache.get_pairs_orderbook_extended()
 
 
 @router.get(

@@ -199,108 +199,17 @@ class SqlQuery(SqlDB):
         db_type="pgsql",
         db_path=None,
         external=False,
-        with_enums=False,
+        gecko_source=None,
     ) -> None:
         SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
-        if with_enums:
-            self.enums = self.get_enums()
-            self.no_distinct_cols = [
-                "duration",
-                "finished_at",
-                "id",
-                "last_updated",
-                "maker_amount",
-                "maker_coin_usd_price",
-                "price",
-                "reverse_price",
-                "started_at",
-                "taker_amount",
-                "taker_coin_usd_price",
-                "uuid",
-            ]
+        self._gecko_source = gecko_source
 
-    @timed
     @property
-    def ValidTickers(self):
-        return Enum(
-            "ValidTickers",
-            {i: i for i in self.enums["tickers"]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidPlatforms(self):
-        return Enum(
-            "ValidPlatforms",
-            {i: i for i in self.enums["platforms"]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def DefiSwapColumns(self):
-        return Enum(
-            "DefiSwapColumns",
-            {i: i for i in self.enums["defi_swap_cols"]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def DefiSwapColumnsDistinct(self):
-        return Enum(
-            "DefiSwapColumnsDistinct",
-            {
-                i: i
-                for i in self.enums["defi_swap_cols"]
-                if i not in self.no_distinct_cols
-            },
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidGuis(self):
-        return Enum(
-            "ValidGuis",
-            {i: i for i in self.enums["guis"] if i not in ["", None]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidPairs(self):
-        return Enum(
-            "ValidPairs",
-            {i: i for i in self.enums["pairs"] if i not in ["", None]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidPubkeys(self):
-        return Enum(
-            "ValidPubkeys",
-            {i: i for i in self.enums["pubkeys"] if i not in ["", None]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidVersions(self):
-        return Enum(
-            "ValidVersions",
-            {i: i for i in self.enums["versions"] if i not in ["", None]},
-            type=str,
-        )
-
-    @timed
-    @property
-    def ValidCoins(self):
-        coins_config = memcache.get_coins_config()
-        data = sorted([j for j in coins_config.keys()])
-        return Enum("ValidCoins", {i: i for i in data}, type=str)
+    def gecko_source(self):
+        if self._gecko_source is None:
+            logger.calc("sourcing gecko")
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
 
     # TODO: Subclass 'volumes'
     @timed
@@ -445,7 +354,7 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def coin_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
+    def coin_trade_volumes_usd(self, volumes: Dict) -> list:
         """
         Returns volume traded of coin between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -454,7 +363,7 @@ class SqlQuery(SqlDB):
         """
         try:
             for coin in volumes["volumes"]:
-                usd_price = derive.gecko_price(coin, gecko_source)
+                usd_price = derive.gecko_price(coin, self.gecko_source)
                 for variant in volumes["volumes"][coin]:
                     maker_vol = volumes["volumes"][coin][variant]["maker_volume"]
                     taker_vol = volumes["volumes"][coin][variant]["taker_volume"]
@@ -582,7 +491,7 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def pair_trade_volumes_usd(self, volumes: Dict, gecko_source: Dict) -> list:
+    def pair_trade_volumes_usd(self, volumes: Dict) -> list:
         """
         Returns volume traded of a pair between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -595,8 +504,8 @@ class SqlQuery(SqlDB):
             total_trade_vol_usd = 0
             for depair in volumes["volumes"]:
                 base, quote = derive.base_quote(depair)
-                base_price_usd = derive.gecko_price(base, gecko_source)
-                quote_price_usd = derive.gecko_price(quote, gecko_source)
+                base_price_usd = derive.gecko_price(base, self.gecko_source)
+                quote_price_usd = derive.gecko_price(quote, self.gecko_source)
 
                 for variant in volumes["volumes"][depair]:
                     base_vol = volumes["volumes"][depair][variant]["base_volume"]
@@ -630,7 +539,7 @@ class SqlQuery(SqlDB):
                 data=volumes,
                 msg="pair_trade_volumes_usd complete",
                 loglevel="query",
-                ignore_until=5
+                ignore_until=5,
             )
 
         except Exception as e:  # pragma: no cover
@@ -940,7 +849,7 @@ class SqlQuery(SqlDB):
                     for variant in variants:
                         # exclude duplication for bridge swaps
                         if bridge_swap and variant != sortdata.pair_by_market_cap(
-                            variant
+                            variant, gecko_source=self.gecko_source
                         ):
                             continue
                         base, quote = derive.base_quote(variant)
@@ -1109,12 +1018,11 @@ class SqlQuery(SqlDB):
                 column="pair", start_time=start_time, end_time=end_time
             )
 
-            gecko_source = memcache.get_gecko_source()
             # Sort pair by ticker mcap to expose duplicates
             sorted_pairs = list(
                 set(
                     [
-                        sortdata.pair_by_market_cap(i, gecko_source=gecko_source)
+                        sortdata.pair_by_market_cap(i, gecko_source=self.gecko_source)
                         for i in pairs
                     ]
                 )
@@ -1123,7 +1031,7 @@ class SqlQuery(SqlDB):
                 data=sorted_pairs,
                 msg="Got generic pairs from db",
                 loglevel="query",
-                ignore_until=2,
+                ignore_until=0,
             )
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
@@ -1252,58 +1160,6 @@ class SqlQuery(SqlDB):
                 logger.merge(i)
 
     @timed
-    def get_enums(self):
-        coins_config = memcache.get_coins_config()
-        return {
-            "pairs": sorted(self.get_distinct(column="pair")),
-            "tickers": sorted(
-                list(set([j.split("-")[0] for j in coins_config.keys()]))
-            ),
-            "platforms": sorted(
-                list(
-                    set(
-                        [
-                            j.split("-")[1]
-                            for j in coins_config.keys()
-                            if len(j.split("-")) > 1
-                        ]
-                    )
-                )
-            ),
-            "defi_swap_cols": get_columns(self.table),
-            "maker_guis": sorted(self.get_distinct(column="maker_gui")),
-            "taker_guis": sorted(self.get_distinct(column="taker_gui")),
-            "guis": sorted(
-                list(
-                    set(
-                        self.get_distinct(column="taker_gui")
-                        + self.get_distinct(column="maker_gui")
-                    )
-                )
-            ),
-            "maker_pubkeys": sorted(self.get_distinct(column="maker_pubkey")),
-            "taker_pubkeys": sorted(self.get_distinct(column="taker_pubkey")),
-            "pubkeys": sorted(
-                list(
-                    set(
-                        self.get_distinct(column="taker_pubkey")
-                        + self.get_distinct(column="maker_pubkey")
-                    )
-                )
-            ),
-            "maker_versions": sorted(self.get_distinct(column="maker_version")),
-            "taker_versions": sorted(self.get_distinct(column="taker_version")),
-            "versions": sorted(
-                list(
-                    set(
-                        self.get_distinct(column="taker_version")
-                        + self.get_distinct(column="maker_version")
-                    )
-                )
-            ),
-        }
-
-    @timed
     def swap_counts(self):  # pragma: no cover
         month_ago = int(cron.now_utc()) - 86400 * 30
         fortnight_ago = int(cron.now_utc()) - 86400 * 14
@@ -1319,8 +1175,18 @@ class SqlQuery(SqlDB):
 
 
 class SqlSource:
-    def __init__(self) -> None:
-        self.gecko_source = memcache.get_gecko_source()
+    def __init__(
+        self,
+        gecko_source: Dict | None = None,
+    ) -> None:
+        self._gecko_source = gecko_source
+
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            # logger.calc("sourcing gecko")
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
 
     @timed
     def import_cipi_swaps(
@@ -1332,7 +1198,7 @@ class SqlSource:
     ):
         try:
             # import Cipi's swap data
-            ext_mysql = SqlQuery(db_type="mysql")
+            ext_mysql = SqlQuery(db_type="mysql", gecko_source=self.gecko_source)
             cipi_swaps = ext_mysql.get_swaps(start_time=start_time, end_time=end_time)
             cipi_swaps = self.normalise_swap_data(cipi_swaps)
             if len(cipi_swaps) > 0:
@@ -1410,7 +1276,7 @@ class SqlSource:
     ):
         try:
             # Import in Sqlite (all) database
-            mm2_sqlite = SqlQuery(db_type="sqlite", db_path=MM2_DB_PATH_ALL)
+            mm2_sqlite = SqlQuery(db_type="sqlite", db_path=MM2_DB_PATH_ALL, gecko_source=self.gecko_source)
             mm2_swaps = mm2_sqlite.get_swaps(start_time=start_time, end_time=end_time)
             mm2_swaps = self.normalise_swap_data(mm2_swaps)
             if len(mm2_swaps) > 0:
@@ -1487,7 +1353,7 @@ class SqlSource:
     ):
         try:
             pgdb = SqlUpdate(db_type="pgsql")
-            pgdb_query = SqlQuery(db_type="pgsql")
+            pgdb_query = SqlQuery(db_type="pgsql", gecko_source=self.gecko_source)
             self.import_cipi_swaps(
                 pgdb, pgdb_query, start_time=start_time, end_time=end_time
             )
@@ -1698,7 +1564,9 @@ class SqlSource:
             else:
                 _quote = f"{data['maker_coin_ticker']}"
             _pair = f"{_base}_{_quote}"
-            data["pair"] = sortdata.pair_by_market_cap(_pair)
+            data["pair"] = sortdata.pair_by_market_cap(
+                _pair, gecko_source=self.gecko_source
+            )
             data["pair_std"] = deplatform.pair(data["pair"])
             data["pair_reverse"] = invert.pair(data["pair"])
             data["pair_std_reverse"] = invert.pair(data["pair_std"])
@@ -1853,7 +1721,7 @@ class SqlSource:
         msg = f"Importing swaps from {day.strftime('%Y-%m-%d')} {day}"
         start_ts = datetime.combine(day, dt_time()).timestamp()
         end_ts = datetime.combine(day, dt_time()).timestamp() + 86400
-        SqlSource().populate_pgsqldb(start_time=start_ts, end_time=end_ts)
+        SqlSource(gecko_source=self.gecko_source).populate_pgsqldb(start_time=start_ts, end_time=end_ts)
         return default.result(msg=msg, loglevel="merge", ignore_until=0)
 
     @timed

@@ -400,7 +400,7 @@ def pair_trade_volumes_usd(
             gui=gui,
         )
         gecko_source = memcache.get_gecko_source()
-        return query.pair_trade_volumes_usd(volumes=volumes, gecko_source=gecko_source)
+        return query.pair_trade_volumes_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

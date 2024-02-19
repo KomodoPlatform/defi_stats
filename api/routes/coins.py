@@ -20,6 +20,7 @@ files = Files()
 )
 def get_gecko_ids():
     try:
+        cache_name = 'gecko_api_ids'
         data = {"timestamp": int(cron.now_utc()), "ids": {}}
         coins_config = memcache.get_gecko_source()
         for coin in coins_config:

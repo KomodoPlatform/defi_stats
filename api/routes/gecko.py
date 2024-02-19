@@ -79,7 +79,7 @@ def gecko_orderbook(
 ):
     # No extras needed, but cache combines variants.
     try:
-        book = memcache.get_pair_orderbook_extended()
+        book = memcache.get_pairs_orderbook_extended()
         depair = deplatform.pair(pair_str)
         if depair in book["orderbooks"]:
             data = book["orderbooks"][depair]["ALL"]

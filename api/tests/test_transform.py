@@ -17,7 +17,7 @@ import util.memcache as memcache
 
 gecko_source = memcache.get_gecko_source()
 coins_config = memcache.get_coins_config()
-pairs_last_trade_cache = memcache.get_pair_last_traded()
+pairs_last_traded_cache = memcache.get_pairs_last_traded()
 
 logger.info("Testing transformations...")
 
@@ -438,10 +438,18 @@ def test_derive_gecko_price():
 
 
 def test_derive_gecko_mcap():
-    mcap = derive.gecko_mcap("LTC")
+    mcap = derive.gecko_mcap("LTC", gecko_source=gecko_source)
     assert isinstance(mcap, Decimal)
     assert mcap == Decimal(7000000000)
 
-    mcap = derive.gecko_mcap("DOC")
+    mcap = derive.gecko_mcap("USDC", gecko_source=gecko_source)
+    assert isinstance(mcap, Decimal)
+    assert mcap == Decimal(7000000000)
+
+    mcap = derive.gecko_mcap("USDC-PLG20", gecko_source=gecko_source)
+    assert isinstance(mcap, Decimal)
+    assert mcap == Decimal(7000000000)
+
+    mcap = derive.gecko_mcap("DOC", gecko_source=gecko_source)
     assert isinstance(mcap, Decimal)
     assert mcap == Decimal(0)

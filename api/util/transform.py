@@ -86,7 +86,15 @@ class Clean:
 
 class Convert:
     def __init__(self):
-        pass
+        self._coins_config = None
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
+
 
     @timed
     def format_10f(self, number: float | Decimal) -> str:
@@ -177,7 +185,7 @@ class Convert:
                 ][:depth],
             }
 
-    def pair_orderbook_extras_to_gecko_tickers(self, book, vols, prices, coins_config):
+    def pair_orderbook_extras_to_gecko_tickers(self, book, vols, prices):
         return {
             "ticker_id": book["pair"],
             "pool_id": book["pair"],
@@ -195,7 +203,7 @@ class Convert:
             "last_trade": prices["newest_price_time"],
             "volume_usd_24hr": vols["trade_volume_usd"],
             "liquidity_usd": book["liquidity_usd"],
-            "variants": derive.pair_variants(book["pair"], coins_config=coins_config),
+            "variants": derive.pair_variants(book["pair"]),
         }
 
     def ticker_to_gecko_pair(self, pair_data):
@@ -367,7 +375,13 @@ class Deplatform:
 
 class Derive:
     def __init__(self):
-        pass
+        self._coins_config = None
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
 
     @timed
     def base_quote(self, pair_str, reverse=False, deplatform=False):
@@ -455,28 +469,34 @@ class Derive:
         else:
             return f"{days}d"
 
-    def price_status_dict(self, pairs, gecko_source=None):
+    # TODO: cache this
+    @timed
+    def price_status_dict(self, pairs, gecko_source):
         try:
-            if gecko_source is None:
-                gecko_source = memcache.get_gecko_source()
-            pairs_dict = {"priced_gecko": [], "unpriced": []}
-            for pair_str in pairs:
-                base, quote = derive.base_quote(pair_str)
-                base_price_usd = self.gecko_price(base, gecko_source=gecko_source)
-                quote_price_usd = self.gecko_price(quote, gecko_source=gecko_source)
-                if base_price_usd > 0 and quote_price_usd > 0:
-                    pairs_dict["priced_gecko"].append(pair_str)
-                else:  # pragma: no cover
-                    pairs_dict["unpriced"].append(pair_str)
-            return pairs_dict
+            cache_name = 'price_status'
+            loglevel = "cached"
+            msg = "Got prices_dict_cache"
+            ignore_until = 3
+            pairs_dict = memcache.get(cache_name)
+            if pairs_dict is None:
+                pairs_dict = {"priced_gecko": [], "unpriced": []}
+                for pair_str in pairs:
+                    base, quote = derive.base_quote(pair_str)
+                    base_price_usd = self.gecko_price(base, gecko_source=gecko_source)
+                    quote_price_usd = self.gecko_price(quote, gecko_source=gecko_source)
+                    if base_price_usd > 0 and quote_price_usd > 0:
+                        pairs_dict["priced_gecko"].append(pair_str)
+                    else:  # pragma: no cover
+                        pairs_dict["unpriced"].append(pair_str)
+                    ignore_until = 0
+                memcache.update(cache_name, pairs_dict, 600)
         except Exception as e:  # pragma: no cover
-            msg = "price_status_dict failed!"
-            return default.error(e, msg)
+            loglevel = "warning"
+            msg = f"price_status_dict failed! {e}"
+        return default.result(data=pairs_dict, msg=msg, loglevel=loglevel, ignore_until=ignore_until)
 
-    def gecko_price(self, ticker, gecko_source=None) -> float:
+    def gecko_price(self, ticker, gecko_source) -> float:
         try:
-            if gecko_source is None:
-                gecko_source = memcache.get_gecko_source()
             if ticker in gecko_source:
                 return Decimal(gecko_source[ticker]["usd_price"])
         except KeyError as e:  # pragma: no cover
@@ -487,10 +507,8 @@ class Derive:
             logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
         return Decimal(0)  # pragma: no cover
 
-    def gecko_mcap(self, ticker, gecko_source=None) -> float:
+    def gecko_mcap(self, ticker, gecko_source) -> float:
         try:
-            if gecko_source is None:
-                gecko_source = memcache.get_gecko_source()
             if ticker in gecko_source:
                 return Decimal(gecko_source[ticker]["usd_market_cap"])
         except KeyError as e:  # pragma: no cover
@@ -502,13 +520,13 @@ class Derive:
         return Decimal(0)  # pragma: no cover
 
     @timed
-    def last_trade_info(self, pair_str: str, pairs_last_trade_cache: Dict):
+    def last_trade_info(self, pair_str: str, pairs_last_traded_cache: Dict):
         try:
-            if pair_str in pairs_last_trade_cache:
-                return pairs_last_trade_cache[pair_str]
+            if pair_str in pairs_last_traded_cache:
+                return pairs_last_traded_cache[pair_str]
             reverse_pair = invert.pair(pair_str, True)
-            if reverse_pair in pairs_last_trade_cache:
-                return pairs_last_trade_cache[reverse_pair]
+            if reverse_pair in pairs_last_traded_cache:
+                return pairs_last_traded_cache[reverse_pair]
         except Exception as e:  # pragma: no cover
             logger.warning(e)
         return template.last_trade_info()
@@ -526,10 +544,9 @@ class Derive:
                 return [coin]
             else:
                 coin = coin_parts[0]
-            coins_config = memcache.get_coins_config()
             data = [
                 i
-                for i in coins_config
+                for i in self.coins_config
                 if (i.replace(coin, "") == "" or i.replace(coin, "").startswith("-"))
             ]
             if segwit_only:
@@ -546,7 +563,7 @@ class Derive:
             logger.warning(f"coin variants for {coin} failed: {e}")
 
     @timed
-    def pair_variants(self, pair_str, segwit_only=False, coins_config=None):
+    def pair_variants(self, pair_str, segwit_only=False):
         try:
             if pair_str == "ALL":
                 return ["ALL"]
@@ -562,22 +579,20 @@ class Derive:
                 base_variants = []
                 quote_variants = []
                 segvars = []
-                if not coins_config:
-                    coins_config = memcache.get_coins_config()
                 debase = deplatform.coin(base)
                 dequote = deplatform.coin(quote)
                 if base.endswith("segwit") or base == debase:
-                    if debase in coins_config:
+                    if debase in self.coins_config:
                         base_variants.append(debase)
-                    if f"{debase}-segwit" in coins_config:
+                    if f"{debase}-segwit" in self.coins_config:
                         base_variants.append(f"{debase}-segwit")
                 else:
                     base_variants = [base]
 
                 if quote.endswith("segwit") or quote == dequote:
-                    if dequote in coins_config:
+                    if dequote in self.coins_config:
                         quote_variants.append(dequote)
-                    if f"{dequote}-segwit" in coins_config:
+                    if f"{dequote}-segwit" in self.coins_config:
                         quote_variants.append(f"{dequote}-segwit")
                 else:
                     quote_variants = [quote]
@@ -594,12 +609,12 @@ class Derive:
             return [pair_str]
 
     @timed
-    def pairs_traded_since(self, ts, pairs_last_trade_cache, deplatformed=True):
+    def pairs_traded_since(self, ts, pairs_last_traded_cache, deplatformed=True):
         if not deplatformed:
             pairs = []
-            for i in pairs_last_trade_cache:
-                for j in pairs_last_trade_cache[i]:
-                    if pairs_last_trade_cache[i][j]["last_swap_time"] > ts:
+            for i in pairs_last_traded_cache:
+                for j in pairs_last_traded_cache[i]:
+                    if pairs_last_traded_cache[i][j]["last_swap_time"] > ts:
                         if j != "ALL":
                             pairs.append(j)
             return sorted(list(set(pairs)))
@@ -608,8 +623,8 @@ class Derive:
                 set(
                     [
                         i
-                        for i in pairs_last_trade_cache
-                        if pairs_last_trade_cache[i]["ALL"]["last_swap_time"] > ts
+                        for i in pairs_last_traded_cache
+                        if pairs_last_traded_cache[i]["ALL"]["last_swap_time"] > ts
                     ]
                 )
             )
@@ -815,7 +830,14 @@ class Derive:
 
 class Invert:
     def __init__(self):
-        pass
+        self._coins_config = None
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
 
     def pair(self, pair_str):
         base, quote = derive.base_quote(pair_str, True)
@@ -1193,10 +1215,9 @@ class SortData:
         return data[:length]
 
     @timed
-    def pair_by_market_cap(self, pair_str: str, gecko_source=None) -> str:
+    def pair_by_market_cap(self, pair_str: str, gecko_source) -> str:
         try:
-            if gecko_source is None:
-                gecko_source = memcache.get_gecko_source()
+            # TODO: If gecko source is none, compare with db pairs.
             if gecko_source is not None:
                 base, quote = derive.base_quote(pair_str)
                 base_mc = 0
@@ -1285,7 +1306,15 @@ class SumData:
 
 class Templates:  # pragma: no cover
     def __init__(self) -> None:
-        pass
+        self._coins_config = None
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
+
 
     def gecko_orderbook(self, pair_str: str) -> dict:
         base, quote = derive.base_quote(pair_str=pair_str)
@@ -1297,16 +1326,14 @@ class Templates:  # pragma: no cover
             "variants": [pair_str],
         }
 
-    def gecko_pair_item(self, pair_str: str, coins_config: Dict) -> dict:
+    def gecko_pair_item(self, pair_str: str) -> dict:
         base, quote = derive.base_quote(pair_str=pair_str)
         return {
             "ticker_id": pair_str,
             "pool_id": pair_str,
             "base": base,
             "target": quote,
-            "variants": derive.pair_variants(
-                pair_str=pair_str, coins_config=coins_config
-            ),
+            "variants": derive.pair_variants(pair_str=pair_str),
         }
 
     def pair_info(self, pair_str: str, priced: bool = False) -> dict:

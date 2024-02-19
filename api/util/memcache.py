@@ -27,14 +27,14 @@ class JsonSerde(object):  # pragma: no cover
 
 try:  # pragma: no cover
     MEMCACHE = PooledClient(
-        ("memcached", 11211), serde=JsonSerde(), timeout=10, max_pool_size=250
+        ("memcached", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
     )
     MEMCACHE.get("test")
     logger.info("Connected to memcached docker container")
 except Exception as e:  # pragma: no cover
     logger.muted(e)
     MEMCACHE = PooledClient(
-        ("localhost", 11211), serde=JsonSerde(), timeout=10, max_pool_size=250
+        ("localhost", 11211), serde=JsonSerde(), timeout=10, max_pool_size=50, ignore_exc=True
     )
     MEMCACHE.get("test")
     logger.info("Connected to memcached on localhost")
@@ -122,12 +122,12 @@ def get_gecko_source():  # pragma: no cover
 
 
 # FOUNDATIONAL CACHE
-def set_pair_orderbook_extended(data):  # pragma: no cover
-    update("pair_orderbook_extended", data, 3600)
+def set_pairs_orderbook_extended(data):  # pragma: no cover
+    update("pairs_orderbook_extended", data, 3600)
 
 
-def get_pair_orderbook_extended():  # pragma: no cover
-    return get("pair_orderbook_extended")
+def get_pairs_orderbook_extended():  # pragma: no cover
+    return get("pairs_orderbook_extended")
 
 
 def set_coin_volumes_24hr(data):  # pragma: no cover
@@ -154,20 +154,20 @@ def get_pair_volumes_14d():  # pragma: no cover
     return get("pair_volumes_14d")
 
 
-def set_pair_last_traded(data):  # pragma: no cover
-    update("pair_last_traded", data, 3600)
+def set_pairs_last_traded(data):  # pragma: no cover
+    update("pairs_last_traded", data, 3600)
 
 
-def get_pair_last_traded():  # pragma: no cover
-    return get("pair_last_traded")
+def get_pairs_last_traded():  # pragma: no cover
+    return get("pairs_last_traded")
 
 
-def set_pair_last_traded_24hr(data):  # pragma: no cover
-    update("pair_last_traded_24hr", data, 3600)
+def set_pairs_last_traded_24hr(data):  # pragma: no cover
+    update("pairs_last_traded_24hr", data, 3600)
 
 
-def get_pair_last_traded_24hr():  # pragma: no cover
-    return get("pair_last_traded_24hr")
+def get_pairs_last_traded_24hr():  # pragma: no cover
+    return get("pairs_last_traded_24hr")
 
 
 def set_pair_prices_24hr(data):  # pragma: no cover

@@ -117,14 +117,14 @@ def orderbook(
     depth: int = 100,
 ):
     try:
-
+        gecko_source = memcache.get_gecko_source()
         depair = deplatform.pair(pair_str)
-        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str, gecko_source=gecko_source)
         if is_reversed:
-            pair = Pair(pair_str=invert.pair(pair_str))
+            pair = Pair(pair_str=invert.pair(pair_str), gecko_source=gecko_source)
             data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
         else:
-            pair = Pair(pair_str=pair_str)
+            pair = Pair(pair_str=pair_str, gecko_source=gecko_source)
             data = pair.orderbook(pair_str=pair_str, depth=depth)
 
         resp = data["ALL"]
@@ -202,9 +202,9 @@ def trades(
 def last_price_for_pair(pair_str="KMD_LTC"):
     """Last trade price for a given pair."""
     try:
-        pairs_last_trade_cache = memcache.get_pair_last_traded()
+        pairs_last_traded_cache = memcache.get_pairs_last_traded()
         data = derive.last_trade_info(
-            pair_str, pairs_last_trade_cache=pairs_last_trade_cache
+            pair_str, pairs_last_traded_cache=pairs_last_traded_cache
         )
         return data["ALL"]["last_swap_price"]
     except Exception as e:  # pragma: no cover

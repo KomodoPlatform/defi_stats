@@ -69,12 +69,13 @@ class DexAPI:
 
 
 class OrderbookRpcThread(threading.Thread):
-    def __init__(self, base, quote, variant_cache_name, depth, gecko_source):
+    def __init__(self, base, quote, variant_cache_name, depth, gecko_source, pair_prices_24hr_cache):
         threading.Thread.__init__(self)
         try:
             self.base = base
             self.quote = quote
             self.gecko_source = gecko_source
+            self.pair_prices_24hr_cache = pair_prices_24hr_cache
             self.pair_str = f"{self.base}_{self.quote}"
             self.variant_cache_name = variant_cache_name
             self.depth = depth
@@ -86,7 +87,7 @@ class OrderbookRpcThread(threading.Thread):
         try:
             data = DexAPI().orderbook_rpc(self.base, self.quote)
             data = orderbook_extras(
-                pair_str=self.pair_str, data=data, gecko_source=self.gecko_source
+                pair_str=self.pair_str, data=data, gecko_source=self.gecko_source, pair_prices_24hr_cache=self.pair_prices_24hr_cache
             )
             data = clean.decimal_dicts(data)
             memcache.update(self.variant_cache_name, data, 900)
@@ -109,12 +110,16 @@ def get_orderbook(
     variant_cache_name: str,
     depth: int = 100,
     refresh=False,
+    pair_prices_24hr_cache=None
 ):
     try:
         """
         If `refresh` is true request is threaded and added to cache.
         If `refresh` is false, resp from cache or standard request.
         """
+        if pair_prices_24hr_cache is None:
+            logger.loop("sourcing 24h prices")
+            pair_prices_24hr_cache = memcache.get_pair_prices_24hr()
         ignore_until = 1
         loglevel = "dexrpc"
         pair_str = f"{base}_{quote}"
@@ -123,7 +128,7 @@ def get_orderbook(
         ):
             raise ValueError
         if memcache.get("testing") is not None:
-            return get_orderbook_fixture(pair_str, gecko_source=gecko_source)
+            return get_orderbook_fixture(pair_str, gecko_source=gecko_source, pair_prices_24hr_cache=pair_prices_24hr_cache)
         if refresh:
             t = OrderbookRpcThread(
                 base,
@@ -131,6 +136,7 @@ def get_orderbook(
                 variant_cache_name=variant_cache_name,
                 depth=depth,
                 gecko_source=gecko_source,
+                pair_prices_24hr_cache=pair_prices_24hr_cache
             )
             t.start()
             return None
@@ -144,14 +150,14 @@ def get_orderbook(
         else:
             data = DexAPI().orderbook_rpc(base, quote)
             data = orderbook_extras(
-                pair_str=pair_str, data=data, gecko_source=gecko_source
+                pair_str=pair_str, data=data, gecko_source=gecko_source, pair_prices_24hr_cache=pair_prices_24hr_cache
             )
             data = clean.decimal_dicts(data)
             memcache.update(variant_cache_name, data, 900)
             msg = f"Updated orderbook cache for {pair_str}"
     except Exception as e:  # pragma: no cover
         data = template.orderbook_extended(pair_str=pair_str)
-        data = orderbook_extras(pair_str=pair_str, data=data, gecko_source=gecko_source)
+        data = orderbook_extras(pair_str=pair_str, data=data, gecko_source=gecko_source, pair_prices_24hr_cache=pair_prices_24hr_cache)
         ignore_until = 0
         msg = f"dex_api.get_orderbook {pair_str} failed: {e}! Returning template"
     return default.result(
@@ -163,7 +169,7 @@ def get_orderbook(
 
 
 @timed
-def get_orderbook_fixture(pair_str, gecko_source):
+def get_orderbook_fixture(pair_str, gecko_source, pair_prices_24hr_cache):
     files = Files()
     path = f"{API_ROOT_PATH}/tests/fixtures/orderbook"
     fn = f"{pair_str}.json"
@@ -180,7 +186,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
     is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
     if is_reversed:
         data = invert.orderbook_fixture(data)
-    data = orderbook_extras(pair_str, data, gecko_source)
+    data = orderbook_extras(pair_str, data, gecko_source, pair_prices_24hr_cache)
     if len(data["bids"]) > 0 or len(data["asks"]) > 0:
         data = clean.decimal_dicts(data)
     return default.result(
@@ -192,7 +198,7 @@ def get_orderbook_fixture(pair_str, gecko_source):
 
 
 @timed
-def orderbook_extras(pair_str, data, gecko_source):
+def orderbook_extras(pair_str, data, gecko_source, pair_prices_24hr_cache):
     try:
         data["pair"] = pair_str
         base, quote = derive.base_quote(pair_str=pair_str)
@@ -216,7 +222,7 @@ def orderbook_extras(pair_str, data, gecko_source):
         segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
         prices_data = []
         for variant in segwit_variants:
-            price_data = cache_query.pair_price_24hr(pair_str=variant)
+            price_data = cache_query.pair_price_24hr(pair_str=variant, pair_prices_24hr=pair_prices_24hr_cache)
             prices_data.append(
                 {
                     "trades_24hr": price_data["trades_24hr"],

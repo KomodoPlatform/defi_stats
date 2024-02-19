@@ -66,13 +66,16 @@ def fiat_rates():
 )
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
+        gecko_source = memcache.get_gecko_source()
         depair = deplatform.pair(pair_str)
-        is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str)
+        is_reversed = pair_str != sortdata.pair_by_market_cap(
+            pair_str, gecko_source=gecko_source
+        )
         if is_reversed:
-            pair = Pair(pair_str=invert.pair(pair_str))
+            pair = Pair(pair_str=invert.pair(pair_str), gecko_source=gecko_source)
             data = pair.orderbook(pair_str=invert.pair(pair_str), depth=depth)
         else:
-            pair = Pair(pair_str=pair_str)
+            pair = Pair(pair_str=pair_str, gecko_source=gecko_source)
             data = pair.orderbook(pair_str=pair_str, depth=depth)
 
         if pair_str in data:

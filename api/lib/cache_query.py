@@ -13,14 +13,14 @@ class CacheQuery:
         pass
 
     @timed
-    def pair_price_24hr(self, pair_str: str):
+    def pair_price_24hr(self, pair_str: str, pair_prices_24hr):
         try:
             # Add 24hr prices
             suffix = derive.suffix(1)
             base, quote = derive.base_quote(pair_str=pair_str)
             data = template.pair_prices_info(suffix=suffix)
             depair = deplatform.pair(pair_str)
-            prices_data = memcache.get_pair_prices_24hr()
+            prices_data = pair_prices_24hr
             if prices_data is not None:
                 if depair in prices_data:
                     if pair_str in prices_data[depair]:

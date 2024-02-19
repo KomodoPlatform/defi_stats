@@ -15,19 +15,82 @@ from util.transform import deplatform
 
 
 class CacheCalc:
-    def __init__(self) -> None:
-        self.coins_config = memcache.get_coins_config()
-        self.pairs_last_trade_cache = memcache.get_pair_last_traded()
-        self.pairs_last_trade_24hr_cache = memcache.get_pair_last_traded_24hr()
-        self.gecko_source = memcache.get_gecko_source()
-        self.pg_query = db.SqlQuery()
+    def __init__(
+        self,
+        coins_config=None,
+        gecko_source=None,
+        pairs_last_traded_cache=None,
+        pairs_last_traded_24hr_cache=None,
+        pair_prices_24hr_cache=None,
+        pairs_orderbook_extended_cache=None,
+        pair_volumes_24hr_cache=None,
+    ) -> None:
+        self._coins_config = coins_config
+        self._gecko_source = gecko_source
+        self._pairs_last_traded_cache = pairs_last_traded_cache
+        self._pairs_last_traded_24hr_cache = pairs_last_traded_24hr_cache
+        self._pairs_orderbook_extended_cache = pairs_orderbook_extended_cache
+        self._pair_prices_24hr_cache = pair_prices_24hr_cache
+        self._pair_volumes_24hr_cache = pair_volumes_24hr_cache
 
-    # FOUNDATIONAL CACHE
+    @property
+    def pg_query(self):
+        return db.SqlQuery(gecko_source=self.gecko_source)
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            # logger.calc("sourcing gecko")
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
+
+    @property
+    def coin_volumes_24hr_cache(self):
+        if self._coin_volumes_24hr_cache is None:
+            # logger.info("Getting _coin_volumes_24hr_cache")
+            self._coin_volumes_24hr_cache = memcache.get_coin_volumes_24hr()
+        return self._coin_volumes_24hr_cache
+    
     @timed
-    def pair_last_traded(self, since=0):
+    def coin_volumes_24hr(self):
         try:
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
+            vols = self.pg_query.coin_trade_volumes()
+            vols_usd = self.pg_query.coin_trade_volumes_usd(vols)
+            for coin in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][coin]:
+                    vols_usd["volumes"][coin][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][coin][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "coin_volumes_24hr complete!"
+            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
+        except Exception as e:  # pragma: no cover
+            msg = f"coin_volumes_24hr failed! {e}"
+            logger.warning(msg)
+
+    @property
+    def pairs_last_traded_cache(self):
+        if self._pairs_last_traded_cache is None:
+            # logger.info("Getting pairs_last_traded_cache")
+            self._pairs_last_traded_cache = memcache.get_pairs_last_traded()
+        return self._pairs_last_traded_cache
+
+    @property
+    def pairs_last_traded_24hr_cache(self):
+        if self._pairs_last_traded_24hr_cache is None:
+            # logger.info("Getting pairs_last_traded_24hr_cache")
+            self._pairs_last_traded_24hr_cache = memcache.get_pairs_last_traded_24hr()
+        return self._pairs_last_traded_24hr_cache
+
+    @timed
+    def pairs_last_traded(self, since=0):
+        try:
             data = self.pg_query.pair_last_trade(since=since)
             price_status_dict = derive.price_status_dict(data.keys(), self.gecko_source)
             for i in data:
@@ -44,93 +107,60 @@ class CacheCalc:
                 all = resp[depair]["ALL"]
                 x = resp[depair][variant]
                 all = merge.first_last_traded(all, x)
-            msg = "pair_last_traded complete!"
+            msg = "pairs_last_traded complete!"
             return default.result(resp, msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
-            msg = f"pair_last_traded failed! {e}"
+            msg = f"pairs_last_traded failed! {e}"
             logger.warning(msg)
 
-    @timed
-    def coin_volumes_24hr(self):
-        try:
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-            vols = self.pg_query.coin_trade_volumes()
-            vols_usd = self.pg_query.coin_trade_volumes_usd(vols, self.gecko_source)
-            for coin in vols_usd["volumes"]:
-                for variant in vols_usd["volumes"][coin]:
-                    vols_usd["volumes"][coin][variant] = clean.decimal_dicts(
-                        vols_usd["volumes"][coin][variant]
-                    )
-            vols_usd = clean.decimal_dicts(vols_usd)
-            msg = "coin_volumes_24hr complete!"
-            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
-        except Exception as e:  # pragma: no cover
-            msg = f"coin_volumes_24hr failed! {e}"
-            logger.warning(msg)
+
+    @property
+    def pair_prices_24hr_cache(self):
+        if self._pair_prices_24hr_cache is None:
+            # logger.loop("sourcing pair_prices_24hr_cache")
+            self._pair_prices_24hr_cache = memcache.get_pair_prices_24hr()
+        return self._pair_prices_24hr_cache
+
 
     @timed
-    def pair_volumes_24hr(self):
-        try:
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-            vols = self.pg_query.pair_trade_volumes()
-            vols_usd = self.pg_query.pair_trade_volumes_usd(vols, self.gecko_source)
-            for pair_str in vols_usd["volumes"]:
-                for variant in vols_usd["volumes"][pair_str]:
-                    vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
-                        vols_usd["volumes"][pair_str][variant]
-                    )
-            vols_usd = clean.decimal_dicts(vols_usd)
-            msg = "pair_volumes_24hr complete!"
-            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
-        except Exception as e:  # pragma: no cover
-            msg = f"pair_volumes_24hr failed! {e}"
-            logger.warning(msg)
+    # TODO: Expand to 7d, 14d, 30d etc
+    def pair_prices_24hr(self, days=1, from_memcache: bool = False):
+        return lib.prices.pair_prices(days=days, from_memcache=from_memcache)
+
+    @property
+    def pairs_orderbook_extended_cache(self):
+        if self._pairs_orderbook_extended_cache is None:
+            # logger.loop("sourcing pairs_orderbook_extended_cache")
+            self._pairs_orderbook_extended_cache = memcache.get_pairs_orderbook_extended()
+        return self._pairs_orderbook_extended_cache
 
     @timed
-    def pair_volumes_14d(self):
-        try:
-            if self.gecko_source is None:
-                self.gecko_source = memcache.get_gecko_source()
-            start_time = int(cron.now_utc()) - 86400 * 14
-            end_time = int(cron.now_utc())
-            vols = self.pg_query.pair_trade_volumes(
-                start_time=start_time, end_time=end_time
-            )
-            vols_usd = self.pg_query.pair_trade_volumes_usd(vols, self.gecko_source)
-            for pair_str in vols_usd["volumes"]:
-                for variant in vols_usd["volumes"][pair_str]:
-                    vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
-                        vols_usd["volumes"][pair_str][variant]
-                    )
-            vols_usd = clean.decimal_dicts(vols_usd)
-            msg = "pair_volumes_14d complete!"
-            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
-        except Exception as e:  # pragma: no cover
-            msg = f"pair_volumes_14d failed! {e}"
-            logger.warning(msg)
-
-    @timed
-    def pair_orderbook_extended(self, pairs_days: int = 30, refresh: bool = False):
+    def pairs_orderbook_extended(self, pairs_days: int = 30, refresh: bool = False):
         try:
             # Filter out pairs older than requested time
             ts = cron.now_utc() - pairs_days * 86400
-            depairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache)
-            traded_pairs = derive.pairs_traded_since(ts, self.pairs_last_trade_cache, deplatformed=False)
+            depairs = derive.pairs_traded_since(ts, self.pairs_last_traded_cache)
+            traded_pairs = derive.pairs_traded_since(
+                ts, self.pairs_last_traded_cache, deplatformed=False
+            )
             data = []
             for depair in depairs:
                 x = Pair(
                     pair_str=depair,
                     coins_config=self.coins_config,
-                ).orderbook(depair, depth=100, traded_pairs=traded_pairs, refresh=refresh)
+                    gecko_source=self.gecko_source,
+                    pair_prices_24hr_cache=self.pair_prices_24hr_cache
+                    
+                ).orderbook(
+                    depair, depth=100, traded_pairs=traded_pairs, refresh=refresh
+                )
                 data.append(x)
-            '''
+            """
             data = [
                 
                 for pair_str in pairs
             ]
-            '''
+            """
             orderbook_data = {}
             liquidity_usd = 0
             for depair_data in data:
@@ -156,7 +186,7 @@ class CacheCalc:
                             )
                 liquidity_usd += Decimal(depair_data["ALL"]["liquidity_usd"])
 
-            vols_24hr = memcache.get_pair_volumes_24hr()
+            vols_24hr = self.pair_volumes_24hr()
             if vols_24hr is not None:
                 swaps_24hr = vols_24hr["total_swaps"]
                 volume_usd_24hr = vols_24hr["trade_volume_usd"]
@@ -171,35 +201,79 @@ class CacheCalc:
                 }
             )
 
-            msg = f"pair_orderbook_extended complete! {len(traded_pairs)} pairs traded"
+            msg = f"pairs_orderbook_extended complete! {len(traded_pairs)} pairs traded"
             msg += f" in last {pairs_days} days"
             return default.result(resp, msg, loglevel="calc", ignore_until=3)
         except Exception as e:  # pragma: no cover
-            msg = "pair_orderbook_extended failed!"
+            msg = "pairs_orderbook_extended failed!"
             return default.error(e, msg)
 
+
+
+    @property
+    def pair_volumes_24hr_cache(self):
+        if self._pair_volumes_24hr_cache is None:
+            # logger.loop("sourcing pair_volumes_24hr_cache")
+            self._pair_volumes_24hr_cache = memcache.get_pair_volumes_24hr()
+        return self._pair_volumes_24hr_cache
+
     @timed
-    # TODO: Expand to 7d, 14d, 30d etc
-    def pair_prices_24hr(self, days=1, from_memcache: bool = False):
-        return lib.prices.pair_prices(days=days, from_memcache=from_memcache)
+    def pair_volumes_24hr(self):
+        try:
+            vols = self.pg_query.pair_trade_volumes()
+            vols_usd = self.pg_query.pair_trade_volumes_usd(vols)
+            for pair_str in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][pair_str]:
+                    vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][pair_str][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "pair_volumes_24hr complete!"
+            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
+        except Exception as e:  # pragma: no cover
+            msg = f"pair_volumes_24hr failed! {e}"
+            logger.warning(msg)
+
+    @timed
+    def pair_volumes_14d(self):
+        try:
+            start_time = int(cron.now_utc()) - 86400 * 14
+            end_time = int(cron.now_utc())
+            vols = self.pg_query.pair_trade_volumes(
+                start_time=start_time, end_time=end_time
+            )
+            vols_usd = self.pg_query.pair_trade_volumes_usd(vols)
+            for pair_str in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][pair_str]:
+                    vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][pair_str][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "pair_volumes_14d complete!"
+            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
+        except Exception as e:  # pragma: no cover
+            msg = f"pair_volumes_14d failed! {e}"
+            logger.warning(msg)
+
+
+    # TODO: Add props for the below
 
     @timed
     def markets_summary(self):
         try:
             resp = []
             data = {}
-            coins_config = memcache.get_coins_config()
-            book = memcache.get_pair_orderbook_extended()
-            vols = memcache.get_pair_volumes_24hr()
-            last = memcache.get_pair_last_traded()
-            prices = memcache.get_pair_prices_24hr()
-            if None not in [coins_config, book, vols, last, prices]:
-                
+            book = self.pairs_orderbook_extended_cache
+            vols = self.pair_volumes_24hr_cache
+            last = self.pairs_last_traded_cache
+            prices = self.pair_prices_24hr_cache
+            if None not in [self.coins_config, book, vols, last, prices]:
+
                 for depair in book["orderbooks"]:
                     base, quote = derive.base_quote(depair)
                     for variant in book["orderbooks"][depair]:
                         segwit_variants = derive.pair_variants(
-                            variant, segwit_only=True, coins_config=coins_config
+                            variant, segwit_only=True
                         )
                         variant = variant.replace("-segwit", "")
                         if variant == "ALL":
@@ -263,12 +337,11 @@ class CacheCalc:
             resp = memcache.get_stats_api_summary()
             if refresh:
                 resp = []
-                coins = memcache.get_coins()
-                book = memcache.get_pair_orderbook_extended()
-                vols = memcache.get_pair_volumes_24hr()
-                last = memcache.get_pair_last_traded()
-                prices = memcache.get_pair_prices_24hr()
-                if None not in [coins, book, vols, last, prices]:
+                book = self.pairs_orderbook_extended_cache
+                vols = self.pair_volumes_24hr_cache
+                last = self.pairs_last_traded_cache
+                prices = self.pair_prices_24hr_cache
+                if None not in [book, vols, last, prices]:
                     for depair in book["orderbooks"]:
                         o = book["orderbooks"][depair]["ALL"]
                         lt = template.first_last_traded()
@@ -284,7 +357,7 @@ class CacheCalc:
                         if depair in last:
                             if "ALL" in last[depair]:
                                 lt = last[depair]["ALL"]
-                        variants = derive.pair_variants(pair_str=depair, coins_config=coins)
+                        variants = derive.pair_variants(pair_str=depair)
                         data = clean.decimal_dicts(
                             {
                                 "ticker_id": depair,
@@ -332,20 +405,19 @@ class CacheCalc:
     def gecko_pairs(self, refresh: bool = False):
         resp = memcache.get_gecko_pairs()
         if resp is None or refresh:
-            coins = memcache.get_coins_config()
-            cache = memcache.get_pair_last_traded()
-            if None not in [coins, cache]:
+            cache = self.pairs_last_traded_cache
+            if None not in [self.coins_config, cache]:
                 ts = cron.now_utc() - 86400 * 7
-                pairs = derive.pairs_traded_since(ts=ts, pairs_last_trade_cache=cache)
-                resp = [template.gecko_pair_item(i, coins) for i in pairs]
+                pairs = derive.pairs_traded_since(ts=ts, pairs_last_traded_cache=cache)
+                resp = [template.gecko_pair_item(i) for i in pairs]
         return resp
 
     def adex_24hr(self, refresh=False):
         try:
             data = memcache.get_adex_24hr()
             if data is None or refresh:
-                books = memcache.get_pair_orderbook_extended()
-                vols = memcache.get_pair_volumes_24hr()
+                books = self.pairs_orderbook_extended_cache
+                vols = self.pair_volumes_24hr_cache
                 if None not in [books, vols]:
                     data = {
                         "days": 1,
@@ -372,8 +444,8 @@ class CacheCalc:
         try:
             data = memcache.get_adex_fortnite()
             if data is None or refresh:
-                books = memcache.get_pair_orderbook_extended()
-                vols = memcache.get_pair_volumes_14d()
+                books = self.pairs_orderbook_extended_cache
+                vols = self.pair_volumes_14d()
                 if None not in [books, vols]:
                     data = {
                         "days": 14,
@@ -399,7 +471,7 @@ class CacheCalc:
     @timed
     def tickers_lite(self, coin=None, depaired=False):
         try:
-            book = memcache.get_pair_orderbook_extended()
+            book = self.pairs_orderbook_extended_cache
             if book is None:
                 return
             resp = []
@@ -459,14 +531,13 @@ class CacheCalc:
         try:
             resp = memcache.get_tickers()
             msg = ""
-            loglevel="cached"
+            loglevel = "cached"
             ignore_until = 5
             if refresh:
-                coins = memcache.get_coins_config()
-                book = memcache.get_pair_orderbook_extended()
-                volumes = memcache.get_pair_volumes_24hr()
-                prices = memcache.get_pair_prices_24hr()
-                if None not in [coins, book, volumes, prices]:
+                book = self.pairs_orderbook_extended_cache
+                volumes = self.pair_volumes_24hr_cache
+                prices = self.pair_prices_24hr_cache
+                if None not in [self.coins_config, book, volumes, prices]:
                     resp = {
                         "last_update": int(cron.now_utc()),
                         "pairs_count": book["pairs_count"],
@@ -489,17 +560,17 @@ class CacheCalc:
                             resp["data"].update(
                                 {
                                     depair: convert.pair_orderbook_extras_to_gecko_tickers(
-                                        b, v, p, coins
+                                        b, v, p
                                     )
                                 }
                             )
-                        memcache.set_tickers(resp)
-                    msg = "Tickers cache updated"
-                    ignore_until = 0
+            memcache.set_tickers(resp)
+            msg = "Tickers cache updated"
+            ignore_until = 0
         except Exception as e:  # pragma: no cover
             msg = f"tickers failed! {e}"
             ignore_until = 0
-            loglevel="warning"
+            loglevel = "warning"
             return default.error(e, msg)
         return default.result(
             data=resp, msg=msg, loglevel=loglevel, ignore_until=ignore_until

@@ -33,9 +33,10 @@ class Pair:  # pragma: no cover
     def __init__(
         self,
         pair_str: str = "KMD_LTC",
-        pairs_last_trade_cache: Dict | None = None,
+        pairs_last_traded_cache: Dict | None = None,
         coins_config: Dict | None = None,
         gecko_source: Dict | None = None,
+        pair_prices_24hr_cache: Dict | None = None,
     ):
         try:
             self.as_str = pair_str
@@ -48,7 +49,8 @@ class Pair:  # pragma: no cover
             self._quote_price_usd = None
             self._coins_config = coins_config
             self._gecko_source = gecko_source
-            self._pairs_last_trade_cache = pairs_last_trade_cache
+            self._pair_prices_24hr_cache = pair_prices_24hr_cache
+            self._pairs_last_traded_cache = pairs_last_traded_cache
 
         except Exception as e:  # pragma: no cover
             msg = f"Init Pair for {pair_str} failed! {e}"
@@ -99,15 +101,21 @@ class Pair:  # pragma: no cover
         return self._gecko_source
 
     @property
-    def pairs_last_trade_cache(self):
-        if self._pairs_last_trade_cache is None:
-            self._pairs_last_trade_cache = memcache.get_pair_last_traded()
-        return self._pairs_last_trade_cache
+    def pairs_last_traded_cache(self):
+        if self._pairs_last_traded_cache is None:
+            self._pairs_last_traded_cache = memcache.get_pairs_last_traded()
+        return self._pairs_last_traded_cache
+
+    @property
+    def pair_prices_24hr_cache(self):
+        if self._pair_prices_24hr_cache is None:
+            self._pair_prices_24hr_cache = memcache.get_pair_prices_24hr()
+        return self._pair_prices_24hr_cache
 
     @property
     def pg_query(self):
         if self._pg_query is None:
-            self._pg_query = db.SqlQuery()
+            self._pg_query = db.SqlQuery(gecko_source=self.gecko_source)
         return self._pg_query
 
     @cached_property
@@ -118,15 +126,11 @@ class Pair:  # pragma: no cover
 
     @cached_property
     def variants(self):
-        return derive.pair_variants(
-            self.as_str, segwit_only=False, coins_config=self.coins_config
-        )
+        return derive.pair_variants(self.as_str, segwit_only=False)
 
     @cached_property
     def segwit_variants(self):
-        return derive.pair_variants(
-            self.as_str, segwit_only=True, coins_config=self.coins_config
-        )
+        return derive.pair_variants(self.as_str, segwit_only=True)
 
     @timed
     def historical_trades(
@@ -267,7 +271,7 @@ class Pair:  # pragma: no cover
             if data is not None:
                 msg = f"get_pair_prices_info for {self.as_str} using cache!"
                 return default.result(
-                    data=data, msg=msg, loglevel="cached", ignore_until=3
+                    data=data, msg=msg, loglevel="pair", ignore_until=3
                 )
             data = {}
             data = clean.decimal_dicts(data)
@@ -276,7 +280,7 @@ class Pair:  # pragma: no cover
                 end_time=int(cron.now_utc()),
                 pair_str=self.as_str,
             )
-            last_data = memcache.get_pair_last_traded()
+            last_data = self.pairs_last_traded_cache
             for variant in swaps_for_pair_combo:
                 last = last_traded.pair_last_trade_cache(self.as_str, last_data)
                 swap_prices = self.get_swap_prices(swaps_for_pair_combo[variant])
@@ -316,7 +320,7 @@ class Pair:  # pragma: no cover
                 msg = f'[{self.as_str}] 24hr price change {data["ALL"][f"price_change_{suffix}"]}%'
             msg = f"get_pair_prices_info for {self.as_str} complete!"
             return default.result(
-                data=data, msg=msg, loglevel="cached", ignore_until=ignore_until
+                data=data, msg=msg, loglevel="pair", ignore_until=ignore_until
             )
         except Exception as e:  # pragma: no cover
             msg = f"get_pair_prices_info for {self.as_str} failed! {e}, returning template"
@@ -350,7 +354,7 @@ class Pair:  # pragma: no cover
             if len(traded_pairs) == 0:
                 ts = cron.now_utc() - 30 * 86400
                 traded_pairs = derive.pairs_traded_since(
-                    ts, self.pairs_last_trade_cache, deplatformed=False
+                    ts, self.pairs_last_traded_cache, deplatformed=False
                 )
             depair = deplatform.pair(pair_str)
             pair_tpl = derive.base_quote(pair_str)
@@ -376,12 +380,12 @@ class Pair:  # pragma: no cover
                         quote=quote,
                         coins_config=self.coins_config,
                         gecko_source=self.gecko_source,
+                        pair_prices_24hr_cache=self.pair_prices_24hr_cache,
                         variant_cache_name=variant_cache_name,
                         depth=depth,
                         refresh=refresh,
                     )
                     msg = f"Threading {variant} orderbook for cache"
-                    loglevel = "cached"
                     ignore_until = 3
                     if not refresh:
                         combo_orderbook[variant]["bids"] = combo_orderbook[variant][
@@ -424,7 +428,10 @@ class Pair:  # pragma: no cover
             try:
                 data = template.orderbook_extended(pair_str)
                 data = dex.orderbook_extras(
-                    pair_str=pair_str, data=data, gecko_source=self.gecko_source
+                    pair_str=pair_str,
+                    data=data,
+                    gecko_source=self.gecko_source,
+                    pair_prices_24hr_cache=self.pair_prices_24hr_cache,
                 )
                 msg += " Returning template!"
             except Exception as e:  # pragma: no cover
