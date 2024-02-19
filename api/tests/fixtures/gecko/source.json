@@ -53,5 +53,10 @@
         "usd_market_cap": 2000000000,
         "usd_price": 1.0,
         "coingecko_id": "usd-coin"
+    },
+    "USDC-PLG20": {
+        "usd_market_cap": 2000000000,
+        "usd_price": 1.0,
+        "coingecko_id": "usd-coin"
     }
 }

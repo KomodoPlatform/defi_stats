@@ -1,10 +1,10 @@
 {
-    "last_updated": 1708251450,
+    "last_updated": 1708360487,
     "data": {
         "DGB_LTC": {
             "ALL": {
-                "oldest_price_time": 1708247446,
-                "newest_price_time": 1708247446,
+                "oldest_price_time": 1708356709,
+                "newest_price_time": 1708356709,
                 "oldest_price_24hr": 1.0,
                 "newest_price_24hr": 1.0,
                 "highest_price_24hr": 1.0,
@@ -18,8 +18,8 @@
                 "trade_volume_usd": 100.01
             },
             "DGB_LTC": {
-                "oldest_price_time": 1708247446,
-                "newest_price_time": 1708247446,
+                "oldest_price_time": 1708356709,
+                "newest_price_time": 1708356709,
                 "oldest_price_24hr": 1.0,
                 "newest_price_24hr": 1.0,
                 "highest_price_24hr": 1.0,
@@ -35,8 +35,8 @@
         },
         "KMD_BTC": {
             "ALL": {
-                "oldest_price_time": 1708240249,
-                "newest_price_time": 1708240249,
+                "oldest_price_time": 1708349512,
+                "newest_price_time": 1708349512,
                 "oldest_price_24hr": 1e-06,
                 "newest_price_24hr": 1e-06,
                 "highest_price_24hr": 1e-06,
@@ -50,8 +50,8 @@
                 "trade_volume_usd": 1100000.0
             },
             "KMD_BTC": {
-                "oldest_price_time": 1708240249,
-                "newest_price_time": 1708240249,
+                "oldest_price_time": 1708349512,
+                "newest_price_time": 1708349512,
                 "oldest_price_24hr": 1e-06,
                 "newest_price_24hr": 1e-06,
                 "highest_price_24hr": 1e-06,
@@ -67,8 +67,8 @@
         },
         "KMD_DGB": {
             "ALL": {
-                "oldest_price_time": 1708247444,
-                "newest_price_time": 1708247502,
+                "oldest_price_time": 1708356707,
+                "newest_price_time": 1708356765,
                 "oldest_price_24hr": 1000.0,
                 "newest_price_24hr": 555.55555556,
                 "highest_price_24hr": 1000.0,
@@ -82,8 +82,8 @@
                 "trade_volume_usd": 16.9
             },
             "KMD-BEP20_DGB-segwit": {
-                "oldest_price_time": 1708247444,
-                "newest_price_time": 1708247502,
+                "oldest_price_time": 1708356707,
+                "newest_price_time": 1708356765,
                 "oldest_price_24hr": 1000.0,
                 "newest_price_24hr": 555.55555556,
                 "highest_price_24hr": 1000.0,
@@ -99,8 +99,8 @@
         },
         "KMD_LTC": {
             "ALL": {
-                "oldest_price_time": 1708236650,
-                "newest_price_time": 1708236650,
+                "oldest_price_time": 1708345913,
+                "newest_price_time": 1708345913,
                 "oldest_price_24hr": 0.01,
                 "newest_price_24hr": 0.01,
                 "highest_price_24hr": 0.01,
@@ -114,8 +114,8 @@
                 "trade_volume_usd": 800.0
             },
             "KMD_LTC": {
-                "oldest_price_time": 1708236650,
-                "newest_price_time": 1708236650,
+                "oldest_price_time": 1708345913,
+                "newest_price_time": 1708345913,
                 "oldest_price_24hr": 0.01,
                 "newest_price_24hr": 0.01,
                 "highest_price_24hr": 0.01,
@@ -129,8 +129,8 @@
                 "trade_volume_usd": 400.0
             },
             "KMD_LTC-segwit": {
-                "oldest_price_time": 1708243848,
-                "newest_price_time": 1708243848,
+                "oldest_price_time": 1708353111,
+                "newest_price_time": 1708353111,
                 "oldest_price_24hr": 0.01,
                 "newest_price_24hr": 0.01,
                 "highest_price_24hr": 0.01,
@@ -146,8 +146,8 @@
         },
         "MORTY_KMD": {
             "ALL": {
-                "oldest_price_time": 1708247443,
-                "newest_price_time": 1708247443,
+                "oldest_price_time": 1708356706,
+                "newest_price_time": 1708356706,
                 "oldest_price_24hr": 1.0,
                 "newest_price_24hr": 1.0,
                 "highest_price_24hr": 1.0,
@@ -161,8 +161,8 @@
                 "trade_volume_usd": 1.0
             },
             "MORTY_KMD": {
-                "oldest_price_time": 1708247443,
-                "newest_price_time": 1708247443,
+                "oldest_price_time": 1708356706,
+                "newest_price_time": 1708356706,
                 "oldest_price_24hr": 1.0,
                 "newest_price_24hr": 1.0,
                 "highest_price_24hr": 1.0,
