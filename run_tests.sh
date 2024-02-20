@@ -3,4 +3,4 @@
 # Starting DeFi API
 cd $(pwd)/api
 clear
-poetry run pytest -vv 
+poetry run pytest -vv $1

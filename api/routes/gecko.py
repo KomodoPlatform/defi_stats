@@ -1,30 +1,23 @@
 #!/usr/bin/env python3
-import time
+from util.cron import cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
-from util.logger import logger
+from lib.pair import Pair
+from lib.cache_calc import CacheCalc
+import lib.dex_api as dex
+from models.generic import ErrorMessage
 from models.gecko import (
     GeckoPairsItem,
     GeckoTickers,
     GeckoOrderbook,
     GeckoHistoricalTrades,
 )
-from models.generic import ErrorMessage
-from lib.cache import Cache
-from lib.pair import Pair
-from util.enums import TradeType, NetId
-
+from util.enums import TradeType
+from util.logger import logger
+from util.transform import convert, deplatform, derive, invert
+import util.memcache as memcache
 import util.validate as validate
-from lib.generic import Generic
-from util.transform import (
-    orderbook_to_gecko,
-    pairs_to_gecko,
-    historical_trades_to_gecko,
-)
-from lib.cache import load_generic_pairs
-
-import util.transform as transform
 
 
 router = APIRouter()
@@ -40,7 +33,7 @@ router = APIRouter()
 )
 def gecko_pairs():
     try:
-        return pairs_to_gecko(load_generic_pairs())
+        return CacheCalc().gecko_pairs()
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/pairs]: {e}"}
@@ -55,17 +48,25 @@ def gecko_pairs():
 )
 def gecko_tickers():
     try:
-        cache = Cache(netid="ALL")
-        data = cache.get_item(name="generic_tickers").data
-        data["data"] = [transform.ticker_to_gecko(i) for i in data["data"]]
-        return data
+        data = CacheCalc().tickers()
+        resp = {
+            "last_update": int(cron.now_utc()),
+            "pairs_count": data["pairs_count"],
+            "swaps_count": data["swaps_count"],
+            "combined_volume_usd": data["combined_volume_usd"],
+            "combined_liquidity_usd": data["combined_liquidity_usd"],
+            "data": [],
+        }
+        for depair in data["data"]:
+            resp["data"].append(data["data"][depair])
+        return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}"}
 
 
 @router.get(
-    "/orderbook/{ticker_id}",
+    "/orderbook/{pair_str}",
     description="Returns live orderbook for a compatible pair (e.g. `KMD_LTC` ).",
     response_model=GeckoOrderbook,
     responses={406: {"model": ErrorMessage}},
@@ -73,15 +74,46 @@ def gecko_tickers():
 )
 def gecko_orderbook(
     response: Response,
-    ticker_id: str = "KMD_LTC",
+    pair_str: str = "KMD_LTC",
     depth: int = 100,
-    netid: NetId = NetId.ALL,
 ):
+    # No extras needed, but cache combines variants.
     try:
-        generic = Generic(netid=netid.value)
-        data = generic.orderbook(pair_str=ticker_id, depth=depth)
-        data = orderbook_to_gecko(data)
-        return data
+        book = memcache.get_pairs_orderbook_extended()
+        depair = deplatform.pair(pair_str)
+        if depair in book["orderbooks"]:
+            data = book["orderbooks"][depair]["ALL"]
+            return convert.orderbook_to_gecko(data, depth=depth)
+        elif invert.pair(depair) in book["orderbooks"]:
+            data = book["orderbooks"][invert.pair(depair)]["ALL"]
+            return convert.orderbook_to_gecko(data, depth=depth, reverse=True)
+        # Use direct method if no cache.
+        variant_cache_name = f"orderbook_{pair_str}"
+        coins_config = memcache.get_coins_config()
+        gecko_source = memcache.get_gecko_source()
+        base, quote = derive.base_quote(pair_str=pair_str)
+        data = dex.get_orderbook(
+            base=base,
+            quote=quote,
+            coins_config=coins_config,
+            gecko_source=gecko_source,
+            variant_cache_name=variant_cache_name,
+            depth=depth
+        )
+        resp = {
+            "ticker_id": pair_str,
+            "timestamp": int(cron.now_utc()),
+            "variants": [pair_str],
+            "bids": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["bids"]
+            ][:depth],
+            "asks": [
+                [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
+                for i in data["asks"]
+            ][:depth],
+        }
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -89,7 +121,7 @@ def gecko_orderbook(
 
 
 @router.get(
-    "/historical_trades/{ticker_id}",
+    "/historical_trades/{pair_str}",
     description="Trade history for CoinGecko compatible pairs. Use format `KMD_LTC`",
     response_model=GeckoHistoricalTrades,
     responses={406: {"model": ErrorMessage}},
@@ -98,13 +130,16 @@ def gecko_orderbook(
 def gecko_historical_trades(
     response: Response,
     trade_type: TradeType = TradeType.ALL,
-    ticker_id: str = "KMD_LTC",
+    pair_str: str = "KMD_LTC",
     limit: int = 100,
-    start_time: int = int(time.time() - 86400),
-    end_time: int = int(time.time()),
-    netid: NetId = NetId.ALL,
+    start_time: int = 0,
+    end_time: int = 0,
 ):
     try:
+        if start_time == 0:
+            start_time = int(cron.now_utc() - 86400)
+        if end_time == 0:
+            end_time = int(cron.now_utc())
         for value, name in [
             (limit, "limit"),
             (start_time, "start_time"),
@@ -113,18 +148,30 @@ def gecko_historical_trades(
             validate.positive_numeric(value, name)
         if start_time > end_time:
             raise ValueError("start_time must be less than end_time")
-        if trade_type not in ["all", "buy", "sell"]:
-            raise ValueError("trade_type must be one of: 'all', 'buy', 'sell'")
-        pair = Pair(pair_str=ticker_id)
+        pair = Pair(pair_str=pair_str)
         data = pair.historical_trades(
-            trade_type=trade_type,
             limit=limit,
             start_time=start_time,
             end_time=end_time,
-        )
-        data["buy"] = [historical_trades_to_gecko(i) for i in data["buy"]]
-        data["sell"] = [historical_trades_to_gecko(i) for i in data["sell"]]
-        return data
+        )["ALL"]
+        base, target = derive.base_quote(pair_str=pair_str)
+        resp = {
+            "ticker_id": pair_str,
+            "base": base,
+            "target": target,
+            "start_time": str(start_time),
+            "end_time": str(end_time),
+            "limit": str(limit),
+            "trades_count": data["trades_count"],
+            "sum_base_volume_buys": data["sum_base_volume_buys"],
+            "sum_target_volume_buys": data["sum_quote_volume_buys"],
+            "sum_base_volume_sells": data["sum_base_volume_sells"],
+            "sum_target_volume_sells": data["sum_quote_volume_sells"],
+            "average_price": data["average_price"],
+            "buy": [convert.historical_trades_to_gecko(i) for i in data["buy"]],
+            "sell": [convert.historical_trades_to_gecko(i) for i in data["sell"]],
+        }
+        return resp
     except Exception as e:  # pragma: no cover
         err = {"error": f"{e}"}
         logger.warning(err)

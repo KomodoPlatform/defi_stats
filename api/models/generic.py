@@ -7,13 +7,13 @@ class GenericTickersItem(BaseModel):
     ticker_id: str = "XXX_YYY"
     base_currency: str = "XXX"
     base_volume: str = "777.777777"
-    target_currency: str = "YYY"
-    target_volume: str = "777.777777"
+    quote_currency: str = "YYY"
+    quote_volume: str = "777.777777"
     highest_bid: str = "777.777777"
     lowest_ask: str = "777.777777"
     highest_price_24hr: str = "777.777777"
     lowest_price_24hr: str = "777.777777"
-    liquidity_in_usd: str = "777.777777"
+    liquidity_usd: str = "777.777777"
     last_trade: str = "1777777777"
 
 
@@ -42,14 +42,14 @@ class GenericOrderbookItem(BaseModel):
     liquidity_usd: str = "777.777777"
     trades_24hr: str = "777"
     volume_usd_24hr: str = "777.777777"
-    price_change_percent_24hr: str = "777.777777"
+    price_change_pct_24hr: str = "777.777777"
 
 
 class GenericPairsData(BaseModel):
     ticker_id: str = "XXX_YYY"
     pool_id: str = "XXX_YYY"
     base: str = "XXX"
-    target: str = "YYY"
+    quote: str = "YYY"
     priced: bool = True
 
 
@@ -60,17 +60,19 @@ class GenericPairs(BaseModel):
 
 class GenericLastTradedData(BaseModel):
     swap_count: int = 777
-    last_swap: int = 1777777777
+    last_swap_price: float = 777.777777
+    last_swap_time: int = 1777777777
     last_swap_uuid: str = "77777777-7777-7777-7777-777777777777"
-    last_price: float = 777.777777
-    last_taker_amount: float = 777.777777
-    last_maker_amount: float = 777.777777
-    sum_taker_traded: float = 777.777777
-    sum_maker_traded: float = 777.777777
+    base_volume_24hr: float = 777.777777
+    trade_volume_usd_24hr: float = 777.777777
+    base_volume_usd_24hr: float = 777.777777
+    quote_volume_24hr: float = 777.777777
+    quote_volume_usd_24hr: float = 777.777777
+    priced: bool = True
 
 
 class GenericLastTraded(BaseModel):
-    timestamp: int = 1777777777
+    last_updated: int = 1777777777
     data: Dict[str, GenericLastTradedData]
 
 
@@ -86,7 +88,7 @@ class ApiIds(BaseModel):
 
 
 class UsdVolume(BaseModel):
-    usd_volume_24hr: float = 1234567.89
+    usd_volume_24hr: float = 7777.7777
 
 
 class SwapUuids(BaseModel):
@@ -125,3 +127,45 @@ class HealthCheck(BaseModel):
     timestamp: int = 1777777777
     status: str = "ok"
     cache_age_mins: Dict[str, Any]
+
+
+class CoinTradeVolume(BaseModel):
+    swaps: int = 777
+    taker_volume: float = 777.777777
+    maker_volume: float = 777.777777
+    trade_volume: float = 777.777777
+    taker_volume_usd: float = 777.777777
+    maker_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+
+
+class CoinTradeVolumes(BaseModel):
+    swaps: int = 77777
+    range_days: float = 777.77
+    start_time: int = 1777777777
+    end_time: int = 1777777777
+    taker_volume_usd: float = 777.777777
+    maker_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    volumes: Dict[str, Dict[str, CoinTradeVolume]]
+
+
+class PairTradeVolume(BaseModel):
+    swaps: int = 777
+    dex_price: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    base_volume: float = 777.777777
+    base_volume_usd: float = 777.777777
+    quote_volume: float = 777.777777
+    quote_volume_usd: float = 777.777777
+
+
+class PairTradeVolumes(BaseModel):
+    swaps: int = 77777
+    range_days: float = 777.77
+    start_time: int = 1777777777
+    end_time: int = 1777777777
+    base_volume_usd: float = 777.777777
+    quote_volume_usd: float = 777.777777
+    trade_volume_usd: float = 777.777777
+    volumes: Dict[str, Dict[str, PairTradeVolume]]

@@ -18,6 +18,8 @@ ENV MM_CONF_PATH="/home/komodian/mm2/MM2.json"
 ENV MM_COINS_PATH="/home/komodian/mm2/coins"
 ENV MM_LOG="/home/komodian/mm2/mm2.log"
 ENV USERPASS=${userpass}
+ENV RUST_LOG="info,libp2p_gossipsub::behaviour=off,mm2_p2p::behaviours=off,mm2_main::mm2::lp_network=off,coins::lp_price=off"
+# "mm2_main::mm2::rpc=off,mm2_libp2p::peers_exchange=off,rustls::check=off,rustls::conn=off,atomicdex_gossipsub::behaviour=off,mm2_libp2p::atomicdex_behaviour=warn,coins::utxo::utxo_builder::utxo_coin_builder=warn"
 
 ENV PATH=/app:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 

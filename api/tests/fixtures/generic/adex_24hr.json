@@ -1,0 +1,73 @@
+{
+    "last_updated": 1708360499,
+    "data": {
+        "days": 1,
+        "swaps_count": 8,
+        "swaps_volume": 1100917.91,
+        "current_liquidity": 969822.0,
+        "top_pairs": {
+            "by_volume": [
+                {
+                    "pair": "KMD_BTC",
+                    "volume": 1100000.0
+                },
+                {
+                    "pair": "KMD_LTC",
+                    "volume": 800.0
+                },
+                {
+                    "pair": "DGB_LTC",
+                    "volume": 100.01
+                },
+                {
+                    "pair": "KMD_DGB",
+                    "volume": 16.9
+                },
+                {
+                    "pair": "MORTY_KMD",
+                    "volume": 1.0
+                }
+            ],
+            "by_swaps_count": [
+                {
+                    "pair": "KMD_LTC",
+                    "trades_24hr": 3
+                },
+                {
+                    "pair": "KMD_DGB",
+                    "trades_24hr": 2
+                },
+                {
+                    "pair": "DGB_LTC",
+                    "trades_24hr": 1
+                },
+                {
+                    "pair": "KMD_BTC",
+                    "trades_24hr": 1
+                },
+                {
+                    "pair": "MORTY_KMD",
+                    "trades_24hr": 1
+                }
+            ],
+            "by_current_liquidity_usd": [
+                {
+                    "pair": "KMD_LTC",
+                    "liquidity": 969822.0
+                },
+                {
+                    "pair": "DGB_LTC",
+                    "liquidity": 0.0
+                },
+                {
+                    "pair": "KMD_BTC",
+                    "liquidity": 0.0
+                },
+                {
+                    "pair": "KMD_DGB",
+                    "liquidity": 0.0
+                }
+            ]
+        }
+    }
+}

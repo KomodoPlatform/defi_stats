@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
-import time
-from lib.external import FixerAPI, CoinGeckoAPI
-from lib.generic import Generic
-from lib.markets import Markets
-from lib.stats_api import StatsAPI
-from util.defaults import default_error, set_params, default_result
+import os
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
-from util.logger import logger
+from util.logger import logger, timed
 from util.urls import Urls
+from util.cron import cron
+import util.defaults as default
+import util.memcache as memcache
 import util.validate as validate
-from const import MARKETS_PAIRS_DAYS
+import lib.cache_calc as cache_calc
+import lib.external as external
 
 
 class Cache:  # pragma: no cover
-    def __init__(self, **kwargs):
+    def __init__(self, coins_config=None, **kwargs):
         try:
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
-            set_params(self, self.kwargs, self.options)
+            self._coins_config = coins_config
+            self.options = []
+            default.params(self, self.kwargs, self.options)
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init Cache: {e}")
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
 
     def get_item(self, name):
         try:
@@ -29,38 +35,59 @@ class Cache:  # pragma: no cover
             msg = f"{type(e)} Error in [Cache.load_cache]: {e}"
             raise CacheItemNotFound(msg)
 
-    def updated_since(self, healthcheck=False):  # pragma: no cover
-        updated = {}
-        for i in [
-            "coins_config",
-            "gecko_source",
-            "coins",
-            "generic_pairs",
-            "generic_tickers",
-            "generic_last_traded",
-            "fixer_rates",
-            "prices_tickers_v1",
-            "prices_tickers_v2",
-            "statsapi_adex_fortnite",
-            "statsapi_summary",
-        ]:
-            item = self.get_item(i)
-            since_updated = item.since_updated_min()
-            if not healthcheck:
-                logger.loop(f"[{i}] last updated: {since_updated} min")
-            updated.update({i: since_updated})
-        return updated
+    def healthcheck(self, to_console=False):  # pragma: no cover
+        try:
+            updated = {}
+            for i in [
+                "adex_24hr",
+                "adex_fortnite",
+                "coins",
+                "coins_config",
+                "fixer_rates",
+                "gecko_source",
+                "gecko_pairs",
+                "pairs_last_traded",
+                "pair_volumes_24hr",
+                "pair_volumes_14d",
+                "coin_volumes_24hr",
+                "pairs_orderbook_extended",
+                "prices_tickers_v1",
+                "prices_tickers_v2",
+                "tickers",
+            ]:
+                item = self.get_item(i)
+                since_updated = item.since_updated_min()
+                updated.update({i: since_updated})
+                if to_console:
+                    self.print_cache_status(i, since_updated)
+            return updated
+        except Exception as e:  # pragma: no cover
+            logger.warning(e)
+
+    def print_cache_status(self, i, since_updated):
+        msg = f"[{i}] last updated: {since_updated} min"
+        return default.result(msg=msg, loglevel="cached")
 
 
 class CacheItem:
-    def __init__(self, name, **kwargs) -> None:
+    def __init__(
+        self,
+        name,
+        from_memcache: bool = False,
+        coins_config=None,
+        gecko_source=None,
+        **kwargs,
+    ) -> None:
         try:
             self.name = name
             self.kwargs = kwargs
-            self.options = ["netid", "db"]
-            set_params(self, self.kwargs, self.options)
-
-            self.files = Files(netid=self.netid)
+            self.from_memcache = from_memcache
+            self._coins_config = coins_config
+            self._gecko_source = gecko_source
+            self.options = []
+            self._data = {}
+            default.params(self, self.kwargs, self.options)
+            self.files = Files()
             self.filename = self.files.get_cache_fn(name)
             if self.filename is None:
                 raise CacheFilenameNotFound(
@@ -69,9 +96,21 @@ class CacheItem:
 
             self.urls = Urls()
             self.source_url = self.urls.get_cache_url(name)
-            self._data = {}
         except Exception as e:  # pragma: no cover
             logger.error(f"Failed to init CacheItem '{name}': {e}")
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
+
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            logger.calc("sourcing gecko")
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
 
     @property
     def data(self):  # pragma: no cover
@@ -82,24 +121,27 @@ class CacheItem:
         return self._data
 
     def get_data(self):
-        data = self.files.load_jsonfile(self.filename)
-        if data is None:  # pragma: no cover
-            data = self.save()
-        if "last_updated" in data:
-            since_updated = int(time.time()) - data["last_updated"]
-            since_updated_min = int(since_updated / 60)
-            if since_updated_min > self.cache_expiry:
-                msg = f"{self.name} has not been updated for over {since_updated_min} minutes"
-                logger.muted(msg)
-        if "data" in data:
-            return data["data"]
+        data = {}
+        if self.filename is not None:
+            data = self.files.load_jsonfile(self.filename)
+            if data is not None:  # pragma: no cover
+                if "last_updated" in data:
+                    since_updated = int(cron.now_utc()) - data["last_updated"]
+                    since_updated_min = int(since_updated / 60)
+                    if since_updated_min > self.cache_expiry:
+                        msg = f"{self.name} has not been updated for over {since_updated_min} min"
+                        logger.muted(msg)
+                if "data" in data:
+                    return data["data"]
         return data
 
     def since_updated_min(self):  # pragma: no cover
-        data = self.files.load_jsonfile(self.filename)
-        if "last_updated" in data:
-            since_updated = int(time.time()) - data["last_updated"]
-            return int(since_updated / 60)
+        if self.filename is not None:
+            data = self.files.load_jsonfile(self.filename)
+            if data is not None:
+                if "last_updated" in data:
+                    since_updated = int(cron.now_utc()) - data["last_updated"]
+                    return int(since_updated / 60)
         return "unknown"
 
     def update_data(self):
@@ -108,139 +150,207 @@ class CacheItem:
     @property
     def cache_expiry(self):
         expiry_limits = {
+            "adex_24hr": 5,
+            "adex_fortnite": 10,
             "coins": 1440,
             "coins_config": 1440,
-            "generic_last_traded": 1,
+            "pairs_last_traded": 5,
             "gecko_source": 15,
+            "markets_summary": 5,
             "fixer_rates": 15,
+            "pair_volumes_24hr": 15,
+            "pair_volumes_14d": 15,
+            "coin_volumes_24hr": 15,
+            "pairs_orderbook_extended": 15,
+            "gecko_pairs": 5,
+            "tickers": 5,
         }
         if self.name in expiry_limits:
             return expiry_limits[self.name]
         return 5
 
+    # TODO: Cache orderbooks to file? Volumes / prices? Liquidity? Swaps?
+    # The reason to do this is to reduce population times on restarts.
+    @timed
     def save(self, data=None):  # pragma: no cover
         try:
-            # Handle external mirrored data easily
+            # EXTERNAL SOURCE CACHE
             if self.source_url is not None:
                 data = self.files.download_json(self.source_url)
+                if self.name == "coins_config":
+                    memcache.set_coins_config(data)
+                if self.name == "coins":
+                    memcache.set_coins(data)
             else:
+                # EXTERNAL SOURCE CACHE
                 if self.name == "fixer_rates":
-                    data = FixerAPI().latest()
+                    data = external.FixerAPI().latest()
+                    memcache.set_fixer_rates(data)
 
                 if self.name == "gecko_source":
-                    data = CoinGeckoAPI().get_gecko_source()
+                    data = external.CoinGeckoAPI(
+                        coins_config=self.coins_config
+                    ).get_gecko_source()
+                    memcache.set_gecko_source(data)
 
-                if self.name == "gecko_tickers":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers(pairs_days=7)
+                # FOUNDATIONAL CACHE
+                if self.name == "adex_24hr":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_24hr(refresh=True)
+                    memcache.set_adex_24hr(data)
 
-                if self.name == "statsapi_adex_fortnite":
-                    data = StatsAPI(db=self.db).adex_fortnite()
+                if self.name == "adex_fortnite":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_fortnite(refresh=True)
+                    memcache.set_adex_fortnite(data)
 
-                if self.name == "statsapi_summary":
-                    data = StatsAPI(db=self.db).pair_summaries()
+                if self.name == "coin_volumes_24hr":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).coin_volumes_24hr()
+                    memcache.set_coin_volumes_24hr(data)
 
-                if self.name == "generic_tickers":
-                    data = Generic(netid="ALL", db=self.db).traded_tickers()
+                # PAIR Data
+                if self.name == "pairs_last_traded_24hr":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_last_traded(since=cron.days_ago(1))
+                    memcache.set_pairs_last_traded_24hr(data)
 
-                if self.name == "generic_last_traded":
-                    data = Generic(netid="ALL", db=self.db).last_traded()
+                if self.name == "pairs_last_traded":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_last_traded()
+                    memcache.set_pairs_last_traded(data)
 
-                if self.name == "generic_pairs":
-                    data = Generic(netid="ALL", db=self.db).traded_pairs_info()
+                if self.name == "pairs_orderbook_extended":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pairs_orderbook_extended()
+                    memcache.set_pairs_orderbook_extended(data)
 
-                if self.name == "markets_pairs":
-                    data = Markets(netid=self.netid, db=self.db).pairs(
-                        days=MARKETS_PAIRS_DAYS
+                if self.name == "pair_prices_24hr":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_prices_24hr()
+                    memcache.set_pair_prices_24hr(data)
+
+                if self.name == "pair_volumes_24hr":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_volumes_24hr()
+                    memcache.set_pair_volumes_24hr(data)
+
+                if self.name == "pair_volumes_14d":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_volumes_14d()
+                    memcache.set_pair_volumes_14d(data)
+
+                # MARKETS
+                if self.name == "markets_summary":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).markets_summary()
+                    memcache.set_markets_summary(data)
+
+                if self.name == "tickers":
+                    data = cache_calc.CacheCalc(coins_config=self.coins_config).tickers(
+                        refresh=True
                     )
+                    memcache.set_tickers(data)
 
-                if self.name == "markets_tickers":
-                    data = Markets(netid=self.netid, db=self.db).tickers(
-                        pairs_days=MARKETS_PAIRS_DAYS
-                    )
+                if self.name == "gecko_pairs":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).gecko_pairs(refresh=True)
+                    memcache.set_gecko_pairs(data)
+
+                if self.name == "stats_api_summary":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).stats_api_summary(refresh=True)
+                    memcache.set_stats_api_summary(data)
+
+                # REVIEW
+                """
+                if self.name == "generic_summary":
+                    data = stats_api.StatsAPI().pair_summaries()
+                    memcache.set_summary(data)
+
+                if self.name == "generic_tickers_14d":
+                    data = cache_calc.CacheCalc().tickers(trades_days=14)
+                    memcache.set_tickers_14d(data)
+                """
 
             if data is not None:
-                if validate.loop_data(data, self, "ALL"):
-                    data = {"last_updated": int(time.time()), "data": data}
-                    self.files.save_json(self.filename, data)
+                if validate.loop_data(data, self):
+                    data = {"last_updated": int(cron.now_utc()), "data": data}
+                    r = self.files.save_json(self.filename, data)
+                    msg = f"Saved {self.filename}"
+                    return default.result(
+                        data=data,
+                        msg=r["msg"],
+                        loglevel=r["loglevel"],
+                        ignore_until=r["ignore_until"],
+                    )
                 else:
-                    msg = {
-                        "error": f"failed to save {self.name}, data failed validation: {data}"
-                    }
-                    logger.warning(msg)
-                    return msg
-
+                    logger.warning(
+                        f"failed to save {self.name}, data failed validation: {data}"
+                    )
             else:
-                msg = {"error": f"failed to save {self.name}, data is 'None'"}
-                logger.warning(msg)
-                return msg
+                logger.warning(f"failed to save {self.name}, data is 'None'")
 
         except Exception as e:  # pragma: no cover
-            return default_error(e)
-        msg = {"success": f"{self.filename} saved."}
-        return default_result(data=data, msg=msg, loglevel="merge")
+            msg = f"{self.filename} Failed. {type(e)}: {e}"
+            return default.error(e, msg=msg)
 
 
-def load_gecko_source():  # pragma: no cover
-    try:
-        # logger.merge("Loading Gecko source")
-        return CacheItem("gecko_source").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_gecko_source]: {e}")
-        return {}
-
-
-def load_coins_config():  # pragma: no cover
-    try:
-        return CacheItem("coins_config").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_coins_config]: {e}")
-        return {}
-
-
-def load_coins():  # pragma: no cover
-    try:
-        return CacheItem("coins").data
-    except Exception as e:
-        logger.error(f"{type(e)} Error in [load_coins]: {e}")
-        return {}
-
-
-def load_generic_last_traded():  # pragma: no cover
-    try:
-        cache_item = CacheItem("generic_last_traded")
-        return cache_item.data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_generic_last_traded]: {e}")
-        return {}
-
-
-def load_generic_pairs():  # pragma: no cover
-    try:
-        return CacheItem("generic_pairs").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [generic_pairs]: {e}")
-        return {}
-
-
-def load_generic_tickers():  # pragma: no cover
-    try:
-        return CacheItem("generic_tickers").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [generic_tickers]: {e}")
-        return {}
-
-
-def load_adex_fortnite():  # pragma: no cover
-    try:
-        return CacheItem("statsapi_adex_fortnite").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_adex_fortnite]: {e}")
-        return {}
-
-
-def load_statsapi_summary():  # pragma: no cover
-    try:
-        return CacheItem("statsapi_summary").data
-    except Exception as e:  # pragma: no cover
-        logger.error(f"{type(e)} Error in [load_statsapi_summary]: {e}")
-        return {}
+def reset_cache_files():
+    if 'IS_TESTING' in os.environ:
+        logger.calc(f"Resetting cache [testing: {os.environ['IS_TESTING']}]")
+    else:
+        os.environ['IS_TESTING'] = "False"
+    memcache.set_coins_config(CacheItem(name="coins_config").data)
+    coins_config = memcache.get_coins_config()
+    memcache.set_coins(CacheItem(name="coins", coins_config=coins_config).data)
+    memcache.set_fixer_rates(
+        CacheItem(name="fixer_rates", coins_config=coins_config).data
+    )
+    memcache.set_gecko_source(
+        CacheItem(name="gecko_source", coins_config=coins_config).data
+    )
+    memcache.set_gecko_pairs(
+        CacheItem(name="gecko_pairs", coins_config=coins_config).data
+    )
+    memcache.set_coin_volumes_24hr(
+        CacheItem(name="coin_volumes_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pairs_last_traded(
+        CacheItem(name="pairs_last_traded", coins_config=coins_config).data
+    )
+    memcache.set_pair_prices_24hr(
+        CacheItem(name="pair_prices_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pair_volumes_24hr(
+        CacheItem(name="pair_volumes_24hr", coins_config=coins_config).data
+    )
+    memcache.set_pair_volumes_14d(
+        CacheItem(name="pair_volumes_14d", coins_config=coins_config).data
+    )
+    memcache.set_pairs_orderbook_extended(
+        CacheItem(name="pairs_orderbook_extended", coins_config=coins_config).data
+    )
+    memcache.set_adex_24hr(CacheItem(name="adex_24hr", coins_config=coins_config).data)
+    memcache.set_adex_fortnite(
+        CacheItem(name="adex_fortnite", coins_config=coins_config).data
+    )
+    memcache.set_tickers(CacheItem(name="tickers", coins_config=coins_config).data)
+    memcache.set_markets_summary(
+        CacheItem(name="markets_summary", coins_config=coins_config).data
+    )
+    memcache.set_stats_api_summary(
+        CacheItem(name="stats_api_summary", coins_config=coins_config).data
+    )

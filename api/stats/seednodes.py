@@ -3,7 +3,7 @@ import os
 import csv
 import sys
 import json
-import time
+from util.cron import cron
 import requests
 import sqlite3
 from dotenv import load_dotenv
@@ -477,7 +477,7 @@ def import_seednode_stats():
 
 
 if __name__ == "__main__":
-    active_versions = get_active_mm2_versions(time.time())
+    active_versions = get_active_mm2_versions(cron.now_utc())
     logger.info(f"Local MM2 version: {get_local_version().json()}")
     print(f"active_versions: {active_versions}")
 

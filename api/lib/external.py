@@ -1,37 +1,32 @@
 #!/usr/bin/env python3
 import requests
 import time
-from datetime import datetime
-from util.files import Files
-from util.exceptions import ApiKeyNotFoundException
 from const import FIXER_API_KEY
-from util.logger import logger
-from util.defaults import set_params, default_error
+from util.files import Files
 from util.helper import get_chunks
-import util.templates as template
-import lib
+from util.logger import logger
+import util.defaults as default
+from util.transform import template
+import util.memcache as memcache
 
 
 class CoinGeckoAPI:
-    def __init__(self, **kwargs):
+    def __init__(self, coins_config=None, **kwargs):
         try:
             self.kwargs = kwargs
             self.options = []
-            set_params(self, self.kwargs, self.options)
+            default.params(self, self.kwargs, self.options)
             self.files = Files()
+            self._coins_config = coins_config
             # logger.loop("Getting gecko_source for CoinGeckoAPI")
-
-            if "gecko_source" in kwargs:
-                self.gecko_source = kwargs["gecko_source"]
-            else:
-                self.gecko_source = lib.load_gecko_source()
-
-            if "coins_config" in kwargs:
-                self.coins_config = kwargs["coins_config"]
-            else:
-                self.coins_config = lib.load_coins_config()
         except Exception as e:  # pragma: no cover
-            logger.error({"error": f"{type(e)} Failed to init Orderbook: {e}"})
+            logger.error({"error": f"{type(e)} Failed to init CoinGeckoAPI: {e}"})
+
+    @property
+    def coins_config(self):
+        if self._coins_config is None:
+            self._coins_config = memcache.get_coins_config()
+        return self._coins_config
 
     def get_gecko_coin_ids(self) -> list:
         coin_ids = list(
@@ -68,7 +63,10 @@ class CoinGeckoAPI:
         return gecko_coins
 
     def get_gecko_source(self):  # pragma: no cover
+        if memcache.get("testing") is not None:
+            return self.files.load_jsonfile(self.gecko_source)
         param_limit = 200
+        # TODO: we should cache the api ids
         coin_ids = self.get_gecko_coin_ids()
         gecko_info = self.get_gecko_info()
         gecko_coins = self.get_gecko_coins(gecko_info, coin_ids)
@@ -85,7 +83,7 @@ class CoinGeckoAPI:
                 gecko_source = r.json()
             except Exception as e:
                 msg = f"Failed for url: {url}!"
-                return default_error(e, msg)
+                return default.error(e, msg)
             for coin_id in gecko_source:
                 try:
                     coins = gecko_coins[coin_id]
@@ -116,9 +114,13 @@ class FixerAPI:  # pragma: no cover
 
     def latest(self):
         try:
+            # TODO: move this to defi-stats.komodo.earth
+            return requests.get("https://rates.komodo.earth/api/v1/usd_rates").json()
+            """
             if self.api_key == "":
                 raise ApiKeyNotFoundException("FIXER_API key not set!")
-            r = requests.get(f"{self.base_url}/latest?access_key={self.api_key}")
+            url = f"{self.base_url}/latest?access_key={self.api_key}"
+            r = requests.get(url)
             received_rates = r.json()
             received_rates["date"] = str(
                 datetime.fromtimestamp(received_rates["timestamp"])
@@ -132,9 +134,9 @@ class FixerAPI:  # pragma: no cover
             received_rates["rates"]["USD"] = 1.0
             received_rates["rates"].pop("BTC")
             return received_rates
-
+            """
         except Exception as e:
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
 
 
 class BinanceAPI:  # pragma: no cover

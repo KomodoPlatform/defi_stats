@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+from datetime import datetime
 from os.path import basename, dirname, abspath
-import time
 import logging
 import functools
-from util.defaults import set_params
+
 
 PROJECT_ROOT_PATH = dirname(dirname(abspath(__file__)))
 
@@ -69,31 +69,88 @@ class CustomFormatter(logging.Formatter):
     def format(self, record):
         if record.levelname == "STOPWATCH":
             log_fmt = (
-                self.yellow
+                self.pink
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "PAIR":
+            # Blue for lib class
+            log_fmt = (
+                self.skyblue
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+            )
+        elif record.levelname == "DEXRPC":
+            # Blue for lib class
+            log_fmt = (
+                self.iceblue
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "SOURCED":
+            # Blue for lib class
+            log_fmt = (
+                self.blue
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
         elif record.levelname == "QUERY":
+            # Yellow for incoming data
             log_fmt = (
                 self.lightyellow
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
+        elif record.levelname == "REQUEST":
+            # Yellow for incoming data
+            log_fmt = (
+                self.gold
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
         elif record.levelname == "LOOP":
+            # Purple for cache loops
             log_fmt = (
                 self.purple
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
-        elif record.levelname == "MUTED":
+        elif record.levelname == "CALC":
+            # Cyan for data processing
             log_fmt = (
-                self.muted
+                self.lightcyan
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
-        elif record.levelname == "CALC":
+        elif record.levelname == "MERGE":
+            # Cyan for data processing
             log_fmt = (
-                self.lightcyan
+                self.cyan
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "CACHED":
+            # Green for data storage
+            log_fmt = (
+                self.drabgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "SAVED":
+            # Green for data storage
+            log_fmt = (
+                self.mintgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+                + self.reset
+            )
+        elif record.levelname == "UPDATED":
+            # Green for data storage
+            log_fmt = (
+                self.lightgreen
+                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
+            )
+        elif record.levelname == "MUTED":
+            log_fmt = (
+                self.muted
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
@@ -103,43 +160,9 @@ class CustomFormatter(logging.Formatter):
                 + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
                 + self.reset
             )
-        elif record.levelname == "MERGE":
-            log_fmt = (
-                self.mintgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "DEXRPC":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "REQUEST":
-            log_fmt = (
-                self.lightyellow
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            )
-        elif record.levelname == "UPDATED":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-            )
-        elif record.levelname == "PAIR":
-            log_fmt = (
-                self.skyblue
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-            )
-        elif record.levelname == "SAVE":
-            log_fmt = (
-                self.drabgreen
-                + "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s (%(filename)s:%(lineno)d)"
-                + self.reset
-            ) + self.reset
         else:
             log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
+        formatter = logging.Formatter(log_fmt, datefmt="%d-%b-%y %H:%M:%S")
         return formatter.format(record)
 
 
@@ -176,11 +199,23 @@ handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
-# Shows DB imports
+
+addLoggingLevel("SOURCED", logging.DEBUG + 14)
+logger.setLevel("SOURCED")
+
+
+addLoggingLevel("SAVED", logging.DEBUG + 13)
+logger.setLevel("SAVED")
+
+
+addLoggingLevel("CACHED", logging.DEBUG + 12)
+logger.setLevel("CACHED")
+
+
 addLoggingLevel("PAIR", logging.DEBUG + 11)
 logger.setLevel("PAIR")
 
-# Shows DB imports
+
 addLoggingLevel("MERGE", logging.DEBUG + 9)
 logger.setLevel("MERGE")
 
@@ -204,11 +239,6 @@ logger.setLevel("LOOP")
 addLoggingLevel("CALC", logging.DEBUG + 4)
 logger.setLevel("CALC")
 
-# Shows cache loop updates
-addLoggingLevel("SAVE", logging.DEBUG + 3)
-logger.setLevel("SAVE")
-
-
 # Shows generally ignorable errors, e.g. CoinConfigNotFound
 addLoggingLevel("MUTED", logging.DEBUG - 1)
 logger.setLevel("MUTED")
@@ -224,8 +254,8 @@ def send_log(loglevel, msg):
             logger.info(f"   {msg}")
         case "muted":
             pass
-        case "save":
-            logger.save(f"   {msg}")
+        case "saved":
+            logger.saved(f"  {msg}")
         case "merge":
             logger.merge(f"  {msg}")
         case "merge":
@@ -248,41 +278,36 @@ def send_log(loglevel, msg):
             logger.pair(f"   {msg}")
         case "query":
             logger.query(f"  {msg}")
+        case "sourced":
+            logger.sourced(f"{msg}")
         case "request":
             logger.request(f"{msg}")
+        case "cached":
+            logger.cached(f" {msg}")
         case _:
-            logger.debug(f"   {msg}")
+            logger.debug(f"  {msg}")
 
 
 class StopWatch:
-    def __init__(self, start_time, **kwargs) -> None:
+    def __init__(self, start_time, trace, loglevel="debug", msg="") -> None:
         self.start_time = start_time
-        self.get_stopwatch(**kwargs)
+        self.msg = msg
+        self.trace = trace
+        self.loglevel = loglevel
+        self.get_stopwatch()
 
-    def get_stopwatch(self, **kwargs):
-        options = ["trigger", "msg", "loglevel"]
-        set_params(self, kwargs, options)
-        duration = int(time.time()) - int(self.start_time)
-        if self.trigger == 0:
-            self.trigger = 10
-        self.trigger = 0
-
-        # if duration < 5
-        #       and not (self.error
-        #       or self.debug or self.warning or self.loop):
-        #    self.muted = True
-        if duration >= self.trigger:
-            if not isinstance(self.msg, str):
-                self.msg = str(self.msg)
-            lineno = self.trace["lineno"]
-            filename = self.trace["file"]
-            func = self.trace["function"]
-            if PROJECT_ROOT_PATH in self.msg:
-                self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
-            self.msg = f"|{duration:>4} sec | {func:<20} | {str(self.msg):<70} "
-            self.msg += f"| {basename(filename)}:{lineno}"
-
-            send_log(loglevel=self.loglevel, msg=self.msg)
+    def get_stopwatch(self):
+        duration = int(datetime.utcnow().timestamp()) - int(self.start_time)
+        if not isinstance(self.msg, str):
+            self.msg = str(self.msg)
+        lineno = self.trace["lineno"]
+        filename = self.trace["file"]
+        func = self.trace["function"]
+        if PROJECT_ROOT_PATH in self.msg:
+            self.msg = self.msg.replace(f"{PROJECT_ROOT_PATH}/", "")
+        self.msg = f"{duration:>2} sec | {func:<20} | {str(self.msg):<80} "
+        self.msg += f"| {basename(filename)}:{lineno}"
+        send_log(loglevel=self.loglevel, msg=self.msg)
 
 
 def get_trace(func, error=None):
@@ -306,21 +331,22 @@ def show_pallete():
     logger.critical("critical")
     logger.updated("updated")
     logger.merge("merge")
-    logger.save("save")
+    logger.saved("saved")
     logger.calc("calc")
     logger.dexrpc("dexrpc")
     logger.loop("loop")
     logger.muted("muted")
     logger.query("query")
     logger.request("request")
+    logger.cached("cached")
 
 
 # A decorator for returning runtime of functions:def timed(func):
 def timed(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        start_time = int(time.time())
-        duration = int(time.time()) - start_time
+        start_time = int(datetime.utcnow().timestamp())
+        duration = int(datetime.utcnow().timestamp()) - start_time
         trace = get_trace(func)
         msg = "<<< no msg provided >>>"
         try:
@@ -343,7 +369,7 @@ def timed(func):
                     loglevel = result["loglevel"]
                     send = True
                 else:
-                    # if not using `default_result`
+                    # if not using `default.result`
                     return result
                 if "message" in result:
                     msg = result["message"]
@@ -353,7 +379,7 @@ def timed(func):
                     send = True
                 if duration >= ignore_until and send:
                     StopWatch(start_time, trace=trace, loglevel=loglevel, msg=msg)
-                # Using `default_result`, with actual data to return
+                # Using `default.result`, with actual data to return
                 if "data" in result:
                     if result["data"] is not None:
                         result = result["data"]

@@ -1,11 +1,11 @@
-from util.defaults import set_params
+import util.defaults as default
 
 
 class Urls:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.options = ["netid"]
-        set_params(self, self.kwargs, self.options)
+        self.options = []
+        default.params(self, self.kwargs, self.options)
         self.bar = "https://api.github.com/users/smk762"
         coins_repo = "https://raw.githubusercontent.com/KomodoPlatform/coins"
         self.coins = f"{coins_repo}/master/coins"

@@ -1,7 +1,9 @@
-import time
+from typing import List, Dict
+from util.cron import cron
 from util.exceptions import NoDefaultForKeyError
-from const import DEXAPI_8762_HOST, IS_TESTING
+from const import DEXAPI_8762_HOST
 from dotenv import load_dotenv
+from util.logger import timed
 
 load_dotenv()
 
@@ -12,7 +14,6 @@ def arg_defaults():
         "true": ["wal", "order_by_mcap"],
         "none": ["source_url", "db_path", "db"],
         "now": ["end"],
-        "ALL": ["netid"],
         "default_host": ["mm2_host"],
         "zero": ["trigger"],
         "kmd": ["coin"],
@@ -34,8 +35,6 @@ def default_val(key: str):
                 return False
             if val.lower() == "none":
                 return None
-            if val.lower() == "all":
-                return "ALL"
             if val.lower() == "empty_string":
                 return ""
             if val.lower() == "zero":
@@ -45,19 +44,15 @@ def default_val(key: str):
             if val.lower() == "default_host":
                 return DEXAPI_8762_HOST
             if val.lower() == "now":
-                return int(time.time())
+                return int(cron.now_utc())
             else:
                 return "debug"
     raise NoDefaultForKeyError(f"No default value for {key}!")  # pragma: no cover
 
 
-def set_params(object: object(), kwargs: dict(), options: list()) -> None:
+def params(object, kwargs: Dict, options: List[str] = list()) -> None:
     # Set the defaults from object options if not already set
     try:
-        if IS_TESTING:
-            setattr(object, "testing", True)
-        else:
-            setattr(object, "testing", False)
         [setattr(object, k, v) for k, v in kwargs.items()]
 
         for arg in arg_defaults()["args"]:
@@ -66,14 +61,12 @@ def set_params(object: object(), kwargs: dict(), options: list()) -> None:
                     setattr(object, arg, default_val(arg))
     except Exception as e:  # pragma: no cover
         msg = "Setting default params failed!"
-        return default_error(e.msg)
+        return error(e.msg)
     msg = "Setting default params complete!"
-    return default_result(msg=msg, loglevel="debug", ignore_until=10)
+    return result(msg=msg, loglevel="debug", ignore_until=10)
 
 
-def default_error(
-    e, msg=None, loglevel="error", ignore_until=0, data=None
-):  # pragma: no cover
+def error(e, msg=None, loglevel="error", ignore_until=0, data=None):  # pragma: no cover
     if msg is None:
         msg = e
     else:
@@ -89,9 +82,7 @@ def default_error(
     return r
 
 
-def default_result(
-    data=None, msg=None, loglevel="debug", ignore_until=0
-):  # pragma: no cover
+def result(data=None, msg=None, loglevel="debug", ignore_until=0):  # pragma: no cover
     r = {
         "result": "success",
         "message": msg,
@@ -100,3 +91,8 @@ def default_result(
         "ignore_until": ignore_until,
     }
     return r
+
+
+@timed
+def memcache_stat(msg, **kwargs):
+    return result(msg=msg, **kwargs)

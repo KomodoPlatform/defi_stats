@@ -34,6 +34,11 @@
         "usd_price": 100,
         "coingecko_id": "litecoin"
     },
+    "MATIC": {
+        "usd_market_cap": 7000000000,
+        "usd_price": 100,
+        "coingecko_id": "litecoin"
+    },
     "LTC-segwit": {
         "usd_market_cap": 7000000000,
         "usd_price": 100,
@@ -45,6 +50,11 @@
         "coingecko_id": "dogecoin"
     },
     "USDC": {
+        "usd_market_cap": 2000000000,
+        "usd_price": 1.0,
+        "coingecko_id": "usd-coin"
+    },
+    "USDC-PLG20": {
         "usd_market_cap": 2000000000,
         "usd_price": 1.0,
         "coingecko_id": "usd-coin"

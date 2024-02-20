@@ -1,32 +1,27 @@
-import os
-import sys
-import pytest
-
-API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(API_ROOT_PATH)
-
+import util.memcache as memcache
 from lib.cache import Cache
 
-from util.helper import (
-    get_mm2_rpc_port,
-    get_netid_filename,
-    get_chunks,
-    get_price_at_finish,
-)
-from util.logger import logger
-from tests.fixtures_db import setup_swaps_db_data, setup_time
 
-
-def test_cache(setup_swaps_db_data):
-    db = setup_swaps_db_data
-    cache = Cache(db=db)
+def test_cache():
+    cache = Cache()
 
     for i in [
-        "generic_last_traded",
-        "generic_pairs",
-        "generic_tickers",
+        "coin_volumes_24hr",
+        "pairs_last_traded",
+        "pairs_last_traded_24hr",
+        "pair_prices_24hr",
+        "pair_volumes_24hr",
+        "pair_volumes_14d",
+        "gecko_pairs",
+        "pairs_orderbook_extended",
+        "markets_summary",
+        "stats_api_summary",
+        "adex_24hr",
+        "adex_fortnite",
+        "prices_tickers_v1",
+        "prices_tickers_v2",
+        "tickers",
     ]:
         cache_item = cache.get_item(i)
         data = cache_item.save()
-        logger.info(data)
         assert "error" not in data

@@ -5,9 +5,12 @@ from typing import Dict, List
 # stats-api/atomicdexio
 class StatsApiAtomicdexIo(BaseModel):
     swaps_24hr: int = 777
+    swaps_7d: int = 7777
+    swaps_14d: int = 77777
     swaps_30d: int = 777777
     swaps_all_time: int = 777777777777
     current_liquidity: float = 7777777.777
+    volume_24hr: float = 7777777.777
 
 
 # stats-api/atomicdex_fortnight
@@ -26,6 +29,7 @@ class StatsApiAtomicdexFortnight(BaseModel):
 
 
 class StatsApiSummary(BaseModel):
+    ticker_id: str = "XXX_YYY"
     trading_pair: str = "XXX_YYY"
     pair_swaps_count: int = 7777
     base_currency: str = "XXX"
@@ -40,6 +44,12 @@ class StatsApiSummary(BaseModel):
     quote_liquidity_coins: float = 777.777777
     quote_liquidity_usd: float = 777.777777
     quote_trade_value_usd: float = 777.777777
+    rel_currency: str = "YYY"
+    rel_volume: float = 777.777777
+    rel_price_usd: float = 777.777777
+    rel_liquidity_coins: float = 777.777777
+    rel_liquidity_usd: float = 777.777777
+    rel_trade_value_usd: float = 777.777777
     pair_liquidity_usd: float = 777.777777
     pair_trade_value_usd: float = 777.777777
     lowest_ask: float = 777.777777
@@ -55,10 +65,11 @@ class StatsApiSummary(BaseModel):
 class StatsApiOrderbook(BaseModel):
     pair: str = "XXX_YYY"
     timestamp: str = "1777777777"
-    bids: List[List] = [["777.777777", "777.777777"]]
-    asks: List[List] = [["777.777777", "777.777777"]]
     total_asks_base_vol: str = "777.777777"
     total_bids_quote_vol: str = "777.777777"
+    variants: List = ["XXX_YYY", "XXX-BEP20_YYY", "XXX_YYY-segwit"]
+    bids: List[List] = [["777.777777", "777.777777"]]
+    asks: List[List] = [["777.777777", "777.777777"]]
 
 
 class StatsApiTradeInfo(BaseModel):

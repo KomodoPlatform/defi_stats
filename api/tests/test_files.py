@@ -5,16 +5,14 @@ from util.urls import Urls
 
 from util.helper import (
     get_mm2_rpc_port,
-    get_netid_filename,
     get_chunks,
-    get_price_at_finish,
 )
 
 API_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-files = Files(netid="7777")
-urls = Urls(netid="7777")
+files = Files()
+urls = Urls()
 
 
 def test_save_json():
@@ -38,14 +36,14 @@ def test_save_json():
 
     data = [{"hello": "world"}]
     resp = files.save_json(fn, data)
-    assert resp["loglevel"] == "save"
+    assert resp["loglevel"] == "saved"
 
 
 def test_load_jsonfile():
     fn = files.get_cache_fn("foo")
     data = files.load_jsonfile(fn)
     assert "hello" in data[0]
-    assert not files.load_jsonfile("nofile")
+    assert files.load_jsonfile("nofile") is None
 
 
 def test_download_jsonfile():
@@ -57,4 +55,4 @@ def test_download_jsonfile():
 
 def test_get_cache_fn():
     fn = files.get_cache_fn("fixer_rates")
-    assert fn.endswith("fixer_io.json")
+    assert fn.endswith("fixer_rates.json")

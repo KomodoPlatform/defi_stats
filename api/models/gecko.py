@@ -11,6 +11,7 @@ class GeckoPairsItem(BaseModel):
     pool_id: str = "XXX_YYY"
     base: str = "XXX"
     target: str = "YYY"
+    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 
 # inside gecko/tickers
@@ -29,23 +30,35 @@ class GeckoTickersItem(BaseModel):
     last_price: str = "777.777777"
     last_trade: str = "777.777777"
     volume_usd_24hr: str = "777.777777"
-    liquidity_in_usd: str = "777.777777"
+    liquidity_usd: str = "777.777777"
+    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
 
 
 # gecko/tickers
 class GeckoTickers(GenericTickersInfo):
     last_update: str = "1777777777"
-    pairs_count: str = "1777777777"
-    swaps_count: str = "1777777777"
-    combined_volume_usd: str = "999999999"
-    combined_liquidity_usd: str = "999999999"
+    pairs_count: str = "77777"
+    swaps_count: str = "77777"
+    combined_volume_usd: str = "777.777777"
+    combined_liquidity_usd: str = "777.777777"
     data: List[GeckoTickersItem]
+
+
+class Ask(BaseModel):
+    price: str = "777.777777"
+    volume: str = "777.777777"
+
+
+class Bid(BaseModel):
+    price: str = "777.777777"
+    volume: str = "777.777777"
 
 
 # gecko/orderbook
 class GeckoOrderbook(BaseModel):
     ticker_id: str = "XXX_YYY"
     timestamp: str = "1777777777"
+    variants: List[str] = ["XXX_YYY", "XXX-segwit_YYY", "XXX_YYY-BEP20"]
     bids: List[List] = [["777.777777", "777.777777"]]
     asks: List[List] = [["777.777777", "777.777777"]]
 
@@ -53,6 +66,8 @@ class GeckoOrderbook(BaseModel):
 # inside gecko/historical_trades
 class GeckoBuyItem(BaseModel):
     trade_id: str = "77777777-7777-7777-7777-777777777777"
+    base: str = "XXX"
+    target: str = "YYY"
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
@@ -63,6 +78,8 @@ class GeckoBuyItem(BaseModel):
 # inside gecko/historical_trades
 class GeckoSellItem(BaseModel):
     trade_id: str = "77777777-7777-7777-7777-777777777777"
+    base: str = "XXX"
+    target: str = "YYY"
     price: str = "777.777777"
     base_volume: str = "777.777777"
     target_volume: str = "777.777777"
@@ -73,6 +90,8 @@ class GeckoSellItem(BaseModel):
 # gecko/historical_trades
 class GeckoHistoricalTrades(BaseModel):
     ticker_id: str = "XXX_YYY"
+    base: str = "XXX"
+    target: str = "YYY"
     start_time: str = "1777777777"
     end_time: str = "1777777777"
     limit: str = "777"

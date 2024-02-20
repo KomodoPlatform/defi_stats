@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import time
+import os
+from decimal import Decimal
+
 import sqlite3
 from typing import List
 from const import (
@@ -15,24 +17,18 @@ from const import (
 )
 from db.sqlitedb import (
     get_sqlite_db,
-    is_source_db,
-    get_netid,
-    list_sqlite_dbs,
-    compare_uuid_fields,
     SqliteDB,
 )
-from util.defaults import default_error, default_result
+from util.cron import cron
 from util.enums import NetId
 from util.logger import logger, timed
-import lib
+import util.defaults as default
+import util.helper as helper
+import util.validate as validate
 
 
 class SqliteMerge:
-    def __init__(self, testing=False):
-        self.testing = testing
-        self.gecko_source = lib.load_gecko_source()
-        self.coins_config = lib.load_coins_config()
-        self.last_traded_cache = lib.load_generic_last_traded()
+    def __init__(self):
         self.init_dbs()
 
     @timed
@@ -45,30 +41,20 @@ class SqliteMerge:
         self.update_master_dbs()
         self.get_db_row_counts()
         msg = "Souce database import completed!"
-        return default_result(msg=msg, loglevel="merge", ignore_until=10)
+        return default.result(msg=msg, loglevel="merge", ignore_until=10)
 
     def clean_source_dbs(self):  # pragma: no cover
         # Denullify source databases, move to 'clean' folder
         try:
             source_dbs = list_sqlite_dbs(DB_SOURCE_PATH)
             for fn in source_dbs:
-                if is_source_db(fn):
+                if validate.is_source_db(fn):
                     src_db_path = f"{DB_SOURCE_PATH}/{fn}"
-                    src_db = get_sqlite_db(
-                        db_path=src_db_path,
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    )
+                    src_db = get_sqlite_db(db_path=src_db_path)
                     src_db.update.denullify_stats_swaps()
 
                     dest_db_path = f"{DB_CLEAN_PATH}/{fn}"
-                    dest_db = get_sqlite_db(
-                        db_path=dest_db_path,
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    )
+                    dest_db = get_sqlite_db(db_path=dest_db_path)
                     dest_db.update.create_swap_stats_table()
                     self.merge_db_tables(
                         src_db=src_db,
@@ -81,33 +67,18 @@ class SqliteMerge:
                     for i in [src_db, dest_db]:
                         i.close()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"{len(source_dbs)} source databases cleaned."
-        return default_result(msg=msg, loglevel="merge")
+        return default.result(msg=msg, loglevel="merge")
 
     @timed
     def get_db_row_counts(self, temp=False):  # pragma: no cover
         path = MM2_DB_PATHS["temp_7777"] if temp else MM2_DB_PATHS["7777"]
-        db_7777 = get_sqlite_db(
-            db_path=path,
-            coins_config=self.coins_config,
-            gecko_source=self.gecko_source,
-            last_traded_cache=self.last_traded_cache,
-        )
+        db_7777 = get_sqlite_db(db_path=path)
         path = MM2_DB_PATHS["temp_8762"] if temp else MM2_DB_PATHS["8762"]
-        db_8762 = get_sqlite_db(
-            db_path=path,
-            coins_config=self.coins_config,
-            gecko_source=self.gecko_source,
-            last_traded_cache=self.last_traded_cache,
-        )
+        db_8762 = get_sqlite_db(db_path=path)
         path = MM2_DB_PATHS["temp_ALL"] if temp else MM2_DB_PATHS["ALL"]
-        db_all = get_sqlite_db(
-            db_path=path,
-            coins_config=self.coins_config,
-            gecko_source=self.gecko_source,
-            last_traded_cache=self.last_traded_cache,
-        )
+        db_all = get_sqlite_db(db_path=path)
 
         db_8762.update.remove_overlaps(db_7777)
         rows = db_7777.query.get_row_count("stats_swaps")
@@ -122,7 +93,7 @@ class SqliteMerge:
             i.close()
         if temp:
             msg = f"Temp DB rows: [{msg_7777}] [{msg_8762}] [{msg_ALL}]"
-        return default_result(msg=msg, loglevel="merge")
+        return default.result(msg=msg, loglevel="merge")
 
     @timed
     def update_master_dbs(self):  # pragma: no cover
@@ -130,18 +101,8 @@ class SqliteMerge:
         try:
             for i in NetId:
                 i = i.value
-                src_db = get_sqlite_db(
-                    db_path=MM2_DB_PATHS[f"temp_{i}"],
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
-                dest_db = get_sqlite_db(
-                    db_path=MM2_DB_PATHS[f"{i}"],
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
+                src_db = get_sqlite_db(db_path=MM2_DB_PATHS[f"temp_{i}"])
+                dest_db = get_sqlite_db(db_path=MM2_DB_PATHS[f"{i}"])
                 self.merge_db_tables(
                     src_db=src_db,
                     dest_db=dest_db,
@@ -152,9 +113,9 @@ class SqliteMerge:
                 for i in [src_db, dest_db]:
                     i.close()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of source data into master databases complete!"
-        return default_result(msg=msg, loglevel="merge")
+        return default.result(msg=msg, loglevel="merge")
 
     @timed
     def update_temp_dbs(self):  # pragma: no cover
@@ -163,22 +124,12 @@ class SqliteMerge:
             source_dbs = list_sqlite_dbs(DB_CLEAN_PATH)
             for fn in source_dbs:
                 if not fn.startswith("temp"):
-                    if is_source_db(fn):
+                    if validate.is_source_db(fn):
                         src_db_path = f"{DB_CLEAN_PATH}/{fn}"
-                        src_db = get_sqlite_db(
-                            db_path=src_db_path,
-                            coins_config=self.coins_config,
-                            gecko_source=self.gecko_source,
-                            last_traded_cache=self.last_traded_cache,
-                        )
-                        netid = get_netid(fn)
+                        src_db = get_sqlite_db(db_path=src_db_path)
+                        netid = helper.get_netid(fn)
                         dest_db_path = f"{DB_CLEAN_PATH}/temp_MM2_{netid}.db"
-                        dest_db = get_sqlite_db(
-                            db_path=dest_db_path,
-                            coins_config=self.coins_config,
-                            gecko_source=self.gecko_source,
-                            last_traded_cache=self.last_traded_cache,
-                        )
+                        dest_db = get_sqlite_db(db_path=dest_db_path)
                         self.merge_db_tables(
                             src_db=src_db,
                             dest_db=dest_db,
@@ -194,18 +145,8 @@ class SqliteMerge:
             for i in NetId:
                 i = i.value
                 if i != "ALL":
-                    dest_db = get_sqlite_db(
-                        db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db",
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    )
-                    src_db = get_sqlite_db(
-                        db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db",
-                        coins_config=self.coins_config,
-                        gecko_source=self.gecko_source,
-                        last_traded_cache=self.last_traded_cache,
-                    )
+                    dest_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_ALL.db")
+                    src_db = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/temp_MM2_{i}.db")
                     self.merge_db_tables(
                         src_db=src_db,
                         dest_db=dest_db,
@@ -216,16 +157,16 @@ class SqliteMerge:
                     src_db.close()
                     dest_db.close()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of source data into temp master databases complete!"
-        return default_result(msg=msg, loglevel="merge")
+        return default.result(msg=msg, loglevel="merge")
 
     @timed
     def merge_db_tables(
         self, src_db, dest_db, table, column, since=None
     ):  # pragma: no cover
         if since is None:
-            since = int(time.time()) - 86400 * 7
+            since = int(cron.now_utc()) - 86400 * 7
         sql = ""
         try:
             src_columns = src_db.query.get_table_columns(table)
@@ -242,12 +183,12 @@ class SqliteMerge:
             dest_db.sql_cursor.executescript(sql)
         except sqlite3.OperationalError as e:
             msg = f"OpErr {src_db.db_path} ==> {dest_db.db_path}"
-            return default_error(e, msg=msg)
-        except Exception as e:
+            return default.error(e, msg=msg)
+        except Exception as e:  # pragma: no cover
             msg = f"{type(e)} {src_db.db_path} ==> {dest_db.db_path} {e}"
-            return default_error(e, msg=msg)
+            return default.error(e, msg=msg)
         msg = f"Importing {src_db.db_path} ==> {dest_db.db_path} complete"
-        return default_result(msg=msg, loglevel="updated", ignore_until=10)
+        return default.result(msg=msg, loglevel="updated", ignore_until=10)
 
     @timed
     def compare_dbs(self):  # pragma: no cover
@@ -258,27 +199,17 @@ class SqliteMerge:
             for fna in clean_dbs:
                 for fnb in clean_dbs:
                     if fna != fnb:
-                        db1 = get_sqlite_db(
-                            db_path=f"{DB_CLEAN_PATH}/{fna}",
-                            coins_config=self.coins_config,
-                            gecko_source=self.gecko_source,
-                            last_traded_cache=self.last_traded_cache,
-                        )
-                        db2 = get_sqlite_db(
-                            db_path=f"{DB_CLEAN_PATH}/{fnb}",
-                            coins_config=self.coins_config,
-                            gecko_source=self.gecko_source,
-                            last_traded_cache=self.last_traded_cache,
-                        )
+                        db1 = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fna}")
+                        db2 = get_sqlite_db(db_path=f"{DB_CLEAN_PATH}/{fnb}")
                         uuids = self.get_mismatched_uuids(db1, db2)
                         self.repair_swaps(uuids, db1, db2)
                         comparisons += 1
                         db1.close()
                         db2.close()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Comparison of {len(clean_dbs)} databases in {comparisons} combinations complete!"
-        return default_result(msg=msg, loglevel="merge", ignore_until=10)
+        return default.result(msg=msg, loglevel="merge", ignore_until=10)
 
     @timed
     def backup_local_dbs(self):  # pragma: no cover
@@ -292,10 +223,10 @@ class SqliteMerge:
                 src_db_path=LOCAL_MM2_DB_PATH_8762,
                 dest_db_path=LOCAL_MM2_DB_BACKUP_8762,
             )
-        except Exception as e:
-            return default_error(e)
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
         msg = "Merge of local source data into backup databases complete!"
-        return default_result(msg=msg, loglevel="merge")
+        return default.result(msg=msg, loglevel="merge")
 
     # @timed
     def get_mismatched_uuids(self, db1: SqliteDB, db2: SqliteDB):  # pragma: no cover
@@ -338,21 +269,16 @@ class SqliteMerge:
                                 db1.update.update_stats_swap_row(uuid, fixed)
                                 db2.update.update_stats_swap_row(uuid, fixed)
                                 logger.updated(f"{uuid} repaired")
-        except Exception as e:
-            return default_error(e)
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
         msg = f"{len(uuids)} repaired in {db1.db_file},  {db2.db_file}"
-        return default_result(msg=msg, loglevel=loglevel)
+        return default.result(msg=msg, loglevel=loglevel)
 
     @timed
     def init_dbs(self):  # pragma: no cover
         try:
             for i in MM2_DB_PATHS:
-                db = get_sqlite_db(
-                    db_path=MM2_DB_PATHS[i],
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
+                db = get_sqlite_db(db_path=MM2_DB_PATHS[i])
                 self.init_stats_swaps_db(db)
                 db.close()
             for i in [
@@ -361,18 +287,13 @@ class SqliteMerge:
                 LOCAL_MM2_DB_BACKUP_8762,
                 LOCAL_MM2_DB_PATH_8762,
             ]:
-                db = get_sqlite_db(
-                    db_path=i,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
+                db = get_sqlite_db(db_path=i)
                 self.init_stats_swaps_db(db)
         except sqlite3.OperationalError as e:
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default_error(e)
-        return default_result(
+            return default.result(msg=e, loglevel="warning")
+        return default.result(
             msg="Database Initialisation complete!", loglevel="merge", ignore_until=10
         )
 
@@ -381,46 +302,31 @@ class SqliteMerge:
         try:
             for netid in NetId:
                 db_path = MM2_DB_PATHS[f"temp_{netid.value}"]
-                db = get_sqlite_db(
-                    db_path=db_path,
-                    coins_config=self.coins_config,
-                    gecko_source=self.gecko_source,
-                    last_traded_cache=self.last_traded_cache,
-                )
+                db = get_sqlite_db(db_path=db_path)
                 db.update.create_swap_stats_table()
                 db.update.clear("stats_swaps")
                 db.close()
-        except sqlite3.OperationalError as e:
-            return default_error(e)
-        except Exception as e:
-            return default_error(e)
+        except sqlite3.OperationalError as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
         msg = "Temp DBs setup complete..."
-        return default_result(msg=msg, loglevel="info")
+        return default.result(msg=msg, loglevel="info")
 
     @timed
     def backup_db(
         self, src_db_path: str, dest_db_path: str
     ) -> None:  # pragma: no cover
         try:
-            src = get_sqlite_db(
-                db_path=src_db_path,
-                coins_config=self.coins_config,
-                gecko_source=self.gecko_source,
-                last_traded_cache=self.last_traded_cache,
-            )
-            dest = get_sqlite_db(
-                db_path=dest_db_path,
-                coins_config=self.coins_config,
-                gecko_source=self.gecko_source,
-                last_traded_cache=self.last_traded_cache,
-            )
+            src = get_sqlite_db(db_path=src_db_path)
+            dest = get_sqlite_db(db_path=dest_db_path)
             src.conn.backup(dest.conn, pages=1, progress=self.progress)
             src.close()
             dest.close()
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Backup of {src.db_path} complete..."
-        return default_result(msg=msg, loglevel="muted")
+        return default.result(msg=msg, loglevel="muted")
 
     def progress(status, remaining, total, show=False):  # pragma: no cover
         if show:
@@ -431,11 +337,11 @@ class SqliteMerge:
         try:
             db.update.create_swap_stats_table()
         except sqlite3.OperationalError as e:
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         except Exception as e:  # pragma: no cover
-            return default_error(e)
+            return default.result(msg=e, loglevel="warning")
         msg = f"Table 'stats_swaps' init for {db.db_file} complete..."
-        return default_result(msg=msg, loglevel="merge", ignore_until=10)
+        return default.result(msg=msg, loglevel="merge", ignore_until=10)
 
     @timed
     def truncate_wal(self):
@@ -451,7 +357,43 @@ class SqliteMerge:
             master_db = get_sqlite_db(db_path=master_db_path)
             master_db.truncate_wal()
         msg = "Database wal truncation complete..."
-        return default_result(msg=msg, loglevel="merge", ignore_until=10)
+        return default.result(msg=msg, loglevel="merge", ignore_until=10)
+
+
+def compare_uuid_fields(swap1, swap2):
+    uuid = swap1["uuid"]
+    # logger.muted(f"Repairing swap {uuid}")
+    try:
+        fixed = {}
+        for k, v in swap1.items():
+            if k in compare_fields:
+                if v != swap2[k]:
+                    # use higher value for below fields
+                    try:
+                        if k in [
+                            "maker_coin_usd_price",
+                            "taker_coin_usd_price",
+                        ]:
+                            if Decimal(v) == Decimal(0):
+                                fixed.update({k: swap2[k]})
+                            else:
+                                fixed.update({k: v})
+                        else:
+                            fixed.update({k: str(max([Decimal(v), Decimal(swap2[k])]))})
+                    except sqlite3.OperationalError as e:  # pragma: no cover
+                        msg = f"{uuid} | {v} vs {swap2[k]} | {type(v)} vs {type(swap2[k])}"
+                        return default.error(e, msg)
+                else:
+                    fixed.update({k: v})
+        return fixed
+    except Exception as e:  # pragma: no cover
+        return default.result(msg=e, loglevel="warning")
+
+
+def list_sqlite_dbs(folder):
+    db_list = [i for i in os.listdir(folder) if i.endswith(".db")]
+    db_list.sort()
+    return db_list
 
 
 if __name__ == "__main__":  # pragma: no cover

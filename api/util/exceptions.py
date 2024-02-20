@@ -29,7 +29,10 @@ class RequiredQueryParamMissing(Exception):
 
 class InvalidParamCombination(Exception):
     "Raised when two or more mutually exclusive params were selected"
-    pass
+    def __init__(self, msg: str, status_code: int = 400):
+        self.status_code = 400
+        self.msg = msg
+        self.name = "InvalidParamCombination"
 
 
 class UuidNotFoundException(Exception):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+from util.cron import cron
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from util.logger import logger
@@ -25,7 +25,7 @@ def get_v1_tickers(expire_at: int = 900):
         cache = Cache(netid="ALL")
         resp = cache.get_item(name="prices_tickers_v1").data
         for i in resp:
-            if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
+            if resp[i]["last_updated_timestamp"] > int(cron.now_utc()) - int(expire_at):
                 data.update({i: resp[i]})
         return data
     except Exception as e:  # pragma: no cover
@@ -47,7 +47,7 @@ def get_v2_tickers(expire_at: int = 900):
         cache = Cache(netid="ALL")
         resp = cache.get_item(name="prices_tickers_v2").data
         for i in resp:
-            if resp[i]["last_updated_timestamp"] > int(time.time()) - int(expire_at):
+            if resp[i]["last_updated_timestamp"] > int(cron.now_utc()) - int(expire_at):
                 data.update({i: resp[i]})
         return data
     except Exception as e:  # pragma: no cover

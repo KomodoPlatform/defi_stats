@@ -1,15 +1,16 @@
 import pytest
 from decimal import Decimal
 from util.exceptions import BadPairFormatError
-from tests.fixtures_validate import (
-    setup_invert_pair_kmd_ltc,
-)
-from tests.fixtures_data import valid_tickers
+from tests.fixtures_data import sampledata
+from tests.fixtures_validate import setup_invert_pair_kmd_ltc
 import util.validate as validate
-import lib
+import util.memcache as memcache
+from lib.cache import CacheItem
 
-coins_config = lib.load_coins_config()
-gecko_source = lib.load_gecko_source()
+
+gecko_source = memcache.get_gecko_source()
+coins_config = memcache.get_coins_config()
+pairs_last_traded_cache = memcache.get_pairs_last_traded()
 
 
 def test_invert_pair(
@@ -24,15 +25,6 @@ def test_validate_pair():
         validate.pair("KMDLTC")
     with pytest.raises(TypeError):
         validate.pair(6521)
-
-
-def test_validate_ticker_id():
-    assert validate.ticker_id("KMD_LTC", valid_tickers) == "standard"
-    assert validate.ticker_id("BTC_KMD", valid_tickers, True) == "reversed"
-    assert validate.ticker_id("BTC_XXX", valid_tickers, True, True) == "failed"
-
-    with pytest.raises(Exception):
-        assert validate.ticker_id("BTC_XXX", valid_tickers)
 
 
 def test_validate_positive_numeric():
@@ -55,22 +47,8 @@ def test_validate_positive_numeric():
         validate.positive_numeric("foo", "var")
 
 
-def test_validate_orderbook_pair():
-    assert not validate.orderbook_pair("KMD", "KMD", coins_config)
-    assert not validate.orderbook_pair("LTC", "LTC-segwit", coins_config)
-    assert not validate.orderbook_pair("KMD", "XXX", coins_config)
-    assert not validate.orderbook_pair("XXX", "KMD", coins_config)
-    assert not validate.orderbook_pair("KMD", "ATOM", coins_config)
-    assert not validate.orderbook_pair("ATOM", "KMD", coins_config)
-    assert validate.orderbook_pair("KMD-BEP20", "KMD", coins_config)
-    assert validate.orderbook_pair("KMD", "LTC-segwit", coins_config)
-    assert validate.orderbook_pair("KMD", "LTC", coins_config)
-    assert validate.orderbook_pair("LTC-segwit", "KMD", coins_config)
-    assert validate.orderbook_pair("LTC", "KMD", coins_config)
-
-
 def test_validate_loop_data():
-    cache_item = lib.CacheItem("test")
+    cache_item = CacheItem("test")
     data = {"error": "foo"}
     assert not validate.loop_data(data, cache_item)
     data = {}
@@ -91,3 +69,29 @@ def test_validate_json():
     assert validate.json_obj(data)
     data = [1, 2, 3, 4, 5]
     assert not validate.json_obj(data)
+    data = sampledata.historical_data
+    assert validate.json_obj(data)
+    data = (5, 8)
+    assert not validate.json_obj(data)
+
+
+def test_is_valid_hex():
+    assert not validate.is_valid_hex("ojqwvu02")
+    assert validate.is_valid_hex("23BEEF")
+
+
+def test_is_bridge_swap():
+    assert validate.is_bridge_swap("KMD_KMD-BEP20")
+    assert not validate.is_bridge_swap("KMD_LTC")
+
+
+def test_is_7777():
+    assert validate.is_7777("seed.file")
+    assert not validate.is_7777("notseed.file")
+
+
+def test_is_pair_priced():
+    assert validate.is_pair_priced("KMD_MATIC", gecko_source)
+    assert not validate.is_pair_priced("KMD_MARTY", gecko_source)
+    assert not validate.is_pair_priced("MARTY_PPP", gecko_source)
+    assert not validate.is_pair_priced("PPP_OOO", gecko_source)

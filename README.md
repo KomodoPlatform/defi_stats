@@ -114,6 +114,7 @@ COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 
 Edit the values for your paths and passwords etc. Some of these are not curently in us in main branch, but will be used later.
 
+
 # Sourcing data
 
 - To ensure data integrity, past swaps are sourced from several long running Seed Nodes. This is periodically sourced via rsync with `./import_dbs.sh` (assuming ssh key access). This script should be added to cron to check for updates every minute. E.g. `* * * * * /home/USERNAME/defi_stats/api/db/source/import_dbs.sh`
@@ -140,6 +141,19 @@ Alternative APIs are hosted at:
 
 These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
 
+## Warning
+Some data is cached with memcache. if the size of this data grows too large, it might fail to enter the cache. It should be split into smaller parts. See https://github.com/memcached/memcached/wiki/ConfiguringServer for configuration.
+
+
+## Known Issues
+To speed up the orderbook request loop, the requests are sent in separate threads which update the memcache. As a result, the first request for an orderbook may return a template rather than actual result. 
+
+To mitigate this there are a few options:
+- send a second request after a 3 second delay (kind of makes the threading speed up pointless, though waiting for one item could also give others later in the loop time to populate)
+- Increase the orderbook loop frequency (this will reduce returned template chance, but can still happen for first request after cache expiry)
+- Use a `no_cache` param for `run_every` functions so that background processing never uses existing cache. Alongside a loop frequency less than expiry time, this should ensure a persistantly populated cache at the expense of additional processing.
+- Use a `no_thread` param for endpoint functions to avoid consumers receving a template where data should exist. This will be slightly less responsive when cache is empty, but will return valid data. This will update the cache along the way, but cant be relied on to keep the cache updated as consumer initiated requests is unpredictable.
+
 
 ## Endpoints
 
@@ -153,3 +167,22 @@ Endpoints previously at https://stats-api.atomicdex.io/ have been migrated to th
 Add `* * * * * /home/USERNAME/defi_stats/update_MM2_db.sh > /home/atomic/logs/db_update.log` to the crontab of the server you are running this api on to collect a variety of MM2.db files on varying netids, and to cover any missing data from swaps completed during server downtime. SSH key access is required.
 
 This will place the external MM2.db copies into the `defi_stats/DB` folder, which is then periodically scanned, with all data merged into `defi_stats/DB/{netid}_MM2.db` for each netid, and `defi_stats/DB/all_MM2.db` for the complete picture.
+
+
+## TODOs:
+
+- Create table for liquidity to track it over time. Should be updated every hour, with any rows older than 1 day reduced into a single row of average values for the day.
+| id | pair | base_amount | quote_amount | base_price_usd | quote_price_usd | base_liquidity_usd | quote_liquidity_usd | combined_liquidity | timestamp | updated_at |
+
+- Equivalent view for volumes can be derived from the `defi_swaps` table
+
+- Migrate gui/version/pubkey related views/queries from kmd.stats.io
+
+- Additional endpoints for use in apps:
+    - Dex Resilience alerts for newsfeed.
+    - "Trending pairs" and similar network context stats
+    - Automated "Latest release" link / hash for all apps.
+
+### On Update:
+- Run `poetry install` in the `api/` folder to update any deps.
+- If changes to DB, edit `.env` to uncomment `# RESET_TABLE=True` then launch. After launch, disable this again and restart. It will clear the db data and reload the table with new schema.
