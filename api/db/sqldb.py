@@ -1356,7 +1356,7 @@ class SqlSource:
             self.import_mm2_swaps(
                 pgdb, pgdb_query, start_time=start_time, end_time=end_time
             )
-            # pgdb_query.describe('defi_swaps')
+            pgdb_query.describe('defi_swaps')
 
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")

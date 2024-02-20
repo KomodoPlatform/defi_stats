@@ -467,34 +467,6 @@ class Derive:
         else:
             return f"{days}d"
 
-    # TODO: cache this
-    @timed
-    def price_status_dict(self, pairs, gecko_source):
-        try:
-            cache_name = "price_status"
-            loglevel = "cached"
-            msg = "Got prices_dict_cache"
-            ignore_until = 3
-            pairs_dict = memcache.get(cache_name)
-            if pairs_dict is None:
-                pairs_dict = {"priced_gecko": [], "unpriced": []}
-                for pair_str in pairs:
-                    base, quote = derive.base_quote(pair_str)
-                    base_price_usd = self.gecko_price(base, gecko_source=gecko_source)
-                    quote_price_usd = self.gecko_price(quote, gecko_source=gecko_source)
-                    if base_price_usd > 0 and quote_price_usd > 0:
-                        pairs_dict["priced_gecko"].append(pair_str)
-                    else:  # pragma: no cover
-                        pairs_dict["unpriced"].append(pair_str)
-                    ignore_until = 0
-                memcache.update(cache_name, pairs_dict, 600)
-        except Exception as e:  # pragma: no cover
-            loglevel = "warning"
-            msg = f"price_status_dict failed! {e}"
-        return default.result(
-            data=pairs_dict, msg=msg, loglevel=loglevel, ignore_until=ignore_until
-        )
-
     def gecko_price(self, ticker, gecko_source) -> float:
         try:
             if ticker in gecko_source:

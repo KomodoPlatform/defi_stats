@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from decimal import Decimal
+from lib.coins import Coins
 from lib.pair import Pair
 from util.cron import cron
 from util.logger import logger, timed
@@ -25,6 +26,8 @@ class CacheCalc:
         pairs_orderbook_extended_cache=None,
         pair_volumes_24hr_cache=None,
     ) -> None:
+        self._priced_coins = None
+        self._coins_obj = None
         self._coins_config = coins_config
         self._gecko_source = gecko_source
         self._pairs_last_traded_cache = pairs_last_traded_cache
@@ -36,6 +39,19 @@ class CacheCalc:
     @property
     def pg_query(self):
         return db.SqlQuery(gecko_source=self.gecko_source)
+
+    @property
+    def coins_obj(self):
+        if self._coins_obj is None:
+            return Coins(coins_config=self.coins_config, gecko_source=self.gecko_source)
+        return self._coins_obj
+
+    @property
+    def priced_coins(self):
+        if self._priced_coins is None:
+            self._priced_coins = self.coins_obj.with_price
+        return self._priced_coins
+
 
     @property
     def coins_config(self):
@@ -92,11 +108,10 @@ class CacheCalc:
     def pairs_last_traded(self, since=0):
         try:
             data = self.pg_query.pair_last_trade(since=since)
-            price_status_dict = derive.price_status_dict(data.keys(), self.gecko_source)
             for i in data:
                 data[i] = clean.decimal_dicts(data[i])
                 data[i].update(
-                    {"priced": helper.get_pair_priced_status(i, price_status_dict)}
+                    {"priced": i in self.coins_obj.with_price}
                 )
             resp = {}
             for variant in data:

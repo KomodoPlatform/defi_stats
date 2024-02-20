@@ -58,9 +58,3 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
     except Exception as e:  # pragma: no cover
         return default.result(msg=e, loglevel="warning")
 
-
-def get_pair_priced_status(pair, price_status_dict):
-    if pair in price_status_dict["priced_gecko"]:
-        return True
-    else:
-        return False
