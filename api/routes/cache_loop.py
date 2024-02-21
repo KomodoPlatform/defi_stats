@@ -108,7 +108,7 @@ def init_missing_cache():  # pragma: no cover
 
 # ORDERBOOKS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def update_pairs_orderbook_extended():
     if memcache.get("testing") is None:
@@ -122,7 +122,7 @@ def update_pairs_orderbook_extended():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 @timed
 def refresh_pairs_orderbook_extended():
     if memcache.get("testing") is None:
@@ -137,7 +137,7 @@ def refresh_pairs_orderbook_extended():
 
 # PRICES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def refresh_prices_24hr():
     if memcache.get("testing") is None:
@@ -151,7 +151,7 @@ def refresh_prices_24hr():
 
 # VOLUMES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def get_pair_volumes_24hr():
     if memcache.get("testing") is None:
@@ -165,7 +165,7 @@ def get_pair_volumes_24hr():
 
 # VOLUMES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def get_pair_volumes_14d():
     if memcache.get("testing") is None:
@@ -178,7 +178,7 @@ def get_pair_volumes_14d():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def get_coin_volumes_24hr():
     if memcache.get("testing") is None:
@@ -192,7 +192,7 @@ def get_coin_volumes_24hr():
 
 # LAST TRADE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def pairs_last_traded():
     if memcache.get("testing") is None:
@@ -205,7 +205,7 @@ def pairs_last_traded():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def pairs_last_traded_24hr():
     if memcache.get("testing") is None:
@@ -219,7 +219,7 @@ def pairs_last_traded_24hr():
 
 # MARKETS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def get_markets_summary():
     if memcache.get("testing") is None:
@@ -232,7 +232,7 @@ def get_markets_summary():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def prices_service():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -275,7 +275,7 @@ def gecko_data():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def gecko_pairs():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -288,7 +288,7 @@ def gecko_pairs():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def stats_api_summary():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -325,7 +325,7 @@ def populate_pgsqldb_loop():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=180)
+@repeat_every(seconds=300)
 @timed
 def import_dbs():
     if memcache.get("testing") is None:
@@ -343,12 +343,11 @@ def import_dbs():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 @timed
 def adex_fortnite():
     if memcache.get("testing") is None:
         try:
-            pass
             CacheItem(name="adex_fortnite").save()
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
@@ -357,12 +356,11 @@ def adex_fortnite():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 @timed
 def adex_24hr():
     if memcache.get("testing") is None:
         try:
-            pass
             CacheItem(name="adex_24hr").save()
         except Exception as e:
             logger.warning(default.result(msg=e, loglevel="warning"))
@@ -372,7 +370,7 @@ def adex_24hr():
 
 # TICKERS
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=300)
 @timed
 def pair_tickers():
     if memcache.get("testing") is None:
@@ -380,13 +378,13 @@ def pair_tickers():
             CacheCalc().tickers(refresh=True)
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
-        msg = "pairs_last_traded loop complete!"
+        msg = "pair_tickers loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
 # REVIEW
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=300)
 @timed
 def refresh_tickers():
     if memcache.get("testing") is None:

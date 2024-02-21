@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from util.logger import logger
 from models.generic import ErrorMessage
 from lib.cache import Cache
+import util.memcache as memcache
 
 router = APIRouter()
 cache = Cache()
@@ -44,7 +45,7 @@ def get_v2_tickers(expire_at: int = 900):
     # r.GET("/api/v2/tickers", TickerAllInfosV2)
     try:
         data = {}
-        cache = Cache(netid="ALL")
+        cache = Cache()
         resp = cache.get_item(name="prices_tickers_v2").data
         for i in resp:
             if resp[i]["last_updated_timestamp"] > int(cron.now_utc()) - int(expire_at):
