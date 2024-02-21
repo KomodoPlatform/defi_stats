@@ -22,7 +22,7 @@ from const import (
     POSTGRES_PORT,
     MM2_DB_PATH_ALL,
 )
-from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
+from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed, SeednodeVersionStats, Mm2StatsNodes
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 from util.transform import merge, sortdata, deplatform, invert, derive, template
@@ -40,7 +40,9 @@ class SqlDB:
         db_type="pgsql",
         db_path=None,
         external=False,
+        table=None        
     ) -> None:
+        self.table = table
         self.db_type = db_type
         self.db_path = db_path
         self.external = external
@@ -49,16 +51,19 @@ class SqlDB:
             self.user = POSTGRES_USERNAME
             self.password = POSTGRES_PASSWORD
             self.port = POSTGRES_PORT
-            if os.getenv("IS_TESTING") == "True" == "True":
-                self.table = DefiSwapTest
-            else:
-                self.table = DefiSwap
+            # TODO: use arg/kwarg
+            if self.table is None:
+                if os.getenv("IS_TESTING") == "True" == "True":
+                    self.table = DefiSwapTest
+                else:
+                    self.table = DefiSwap
             self.db_url = (
                 f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
             )
         elif self.db_type == "sqlite":
             if self.db_path is not None:
-                self.table = StatsSwap
+                if self.table is None:
+                    self.table = StatsSwap
                 self.db_path = db_path
                 self.db_url = f"sqlite:///{self.db_path}"
 
@@ -142,7 +147,9 @@ class SqlFilter:
 
     @timed
     def since(self, q, start_time):
-        if self.table in [CipiSwap, CipiSwapFailed]:
+        if self.table in [Mm2StatsNodes, SeednodeVersionStats]:
+            q = q.filter(self.table.timestamp > start_time)
+        elif self.table in [CipiSwap, CipiSwapFailed]:
             q = q.filter(self.table.started_at > start_time)
         else:
             q = q.filter(self.table.finished_at > start_time)
@@ -150,7 +157,11 @@ class SqlFilter:
 
     @timed
     def timestamps(self, q, start_time, end_time):
-        if self.table in [CipiSwap, CipiSwapFailed]:
+        if self.table in [Mm2StatsNodes, SeednodeVersionStats]:
+            q = q.filter(
+                self.table.timestamp > start_time, self.table.timestamp < end_time
+            )            
+        elif self.table in [CipiSwap, CipiSwapFailed]:
             q = q.filter(
                 self.table.started_at > start_time, self.table.started_at < end_time
             )
@@ -178,8 +189,9 @@ class SqlUpdate(SqlDB):
         db_type="pgsql",
         db_path=None,
         external=False,
+        table=None
     ) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
+        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external, table=table)
 
     @timed
     def drop(self, table):
@@ -199,8 +211,9 @@ class SqlQuery(SqlDB):
         db_path=None,
         external=False,
         gecko_source=None,
+        table=None
     ) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external)
+        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external, table=table)
         self._gecko_source = gecko_source
 
     @property
@@ -880,6 +893,33 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 
+
+
+    @timed
+    def get_seednode_stats(self, start_time=0, end_time=0):
+        try:
+            
+            if start_time == 0:
+                start_time = int(cron.now_utc()) - 86400
+            if end_time == 0:
+                end_time = int(cron.now_utc())
+
+            with Session(self.engine) as session:
+                cols = [
+                    self.table.name.label("notary"),
+                    self.table.version.label("version"),
+                    self.table.timestamp.label("timestamp"),
+                    self.table.error.label("error"),
+                ]
+                q = session.query(*cols)
+                q = self.sqlfilter.timestamps(q, start_time=start_time, end_time=end_time)
+                data = [dict(i) for i in session.exec(q)]
+                return default.result(data=data, msg="Got seednode version stats", loglevel="query")
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
+
+
+
     @timed
     def get_timespan_swaps(self, start_time: int = 0, end_time: int = 0) -> list:
         """
@@ -1364,8 +1404,6 @@ class SqlSource:
             self.import_mm2_swaps(
                 pgdb, pgdb_query, start_time=start_time, end_time=end_time
             )
-            # pgdb_query.describe('defi_swaps')
-
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
         msg = f"Importing swaps from {start_time} - {end_time} complete"
@@ -1732,12 +1770,18 @@ class SqlSource:
 
     @timed
     def import_swaps(
-        self, start_dt: date = date(2019, 1, 15), end_dt: date = date(2024, 2, 3)
+        self, start_dt: date = date(2019, 1, 1), end_dt: date = datetime.today().date()
     ):
         for day in cron.daterange(start_dt, end_dt):
             self.import_swaps_for_day(day)
             time.sleep(1)
 
+    def import_seednode_stats(self, start_time: int, end_time: int):
+        # Get stats from MM2.db
+
+        # Add stats to pgsql
+        return
+        
 
 # Subclass 'utils' under SqlQuery
 @timed

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+from functools import cached_property
 from decimal import Decimal
 from typing import Dict
 import requests
 import threading
-from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH
+from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH, DEXAPI_USERPASS
 from lib.cache_query import cache_query
 from util.cron import cron
 from util.files import Files
@@ -15,12 +16,10 @@ import util.validate as validate
 
 
 class DexAPI:
-    def __init__(self, **kwargs):
+    def __init__(self):
         try:
-            self.kwargs = kwargs
-            self.options = []
-            default.params(self, self.kwargs, self.options)
             self.netid = "8762"
+            self.userpass = DEXAPI_USERPASS
             self.mm2_host = MM2_RPC_HOSTS[self.netid]
             self.mm2_port = MM2_RPC_PORTS[str(self.netid)]
             self.mm2_rpc = f"{self.mm2_host}:{self.mm2_port}"
@@ -30,6 +29,7 @@ class DexAPI:
     @timed
     def api(self, params: dict) -> dict:
         try:
+            params.update({"userpass": self.userpass})
             r = requests.post(self.mm2_rpc, json=params)
             resp = r.json()
             if "error" not in resp:
@@ -39,6 +39,73 @@ class DexAPI:
         except Exception as e:  # pragma: no cover
             logger.warning(params)
             return default.result(msg=e, loglevel="warning")
+
+    @cached_property
+    def version(self):
+        return self.api({"method": "version"})
+
+    def start_seednode_stats(self):
+        params = {
+            "mmrpc": "2.0",
+            "method": "start_version_stat_collection",
+            "params": {
+                "interval": 600
+            }
+        }
+        resp = self.api(params)
+        return default.result(
+            data=resp,
+            msg=f"Started seednode stats collection",
+            loglevel="dexrpc"
+        )
+        
+    @timed
+    def add_seednode_for_stats(self, notary: str, domain: str, peer_id: str):
+        params = {
+        "mmrpc": "2.0",
+        "method": "add_node_to_version_stat",
+        "params": {
+                "name": notary,
+                "address": domain,
+                "peer_id": peer_id
+            }
+        }
+        resp = self.api(params)
+        return default.result(
+            data=resp,
+            msg=f"Registered {notary} seednode for stats collection",
+            loglevel="dexrpc"
+        )
+
+    def remove_seednode_from_stats(self, notary):
+        params = {
+            "mmrpc": "2.0",
+            "method": "remove_node_from_version_stat",
+            "params": {
+                "name": notary
+            }
+        }
+        resp = self.api(params)
+        return default.result(
+            data=resp,
+            msg=f"Removed seednode to stats collection",
+            loglevel="dexrpc"
+        )
+
+    def stop_seednode_stats(self):
+        params = {
+            "mmrpc": "2.0",
+            "method": "stop_version_stat_collection",
+            "params": {
+                "interval": 600
+            }
+        }
+        resp = self.api(params)
+        return default.result(
+            data=resp,
+            msg=f"Stopped seednode stats collection",
+            loglevel="dexrpc"
+        )
 
     # tuple, string, string -> list
     # returning orderbook for given trading pair

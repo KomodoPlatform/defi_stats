@@ -1,17 +1,54 @@
 #!/usr/bin/env python3
+import time
 from datetime import datetime
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE
 import db.sqldb as db
 import db.sqlitedb_merge as old_db_merge
+from lib.seednodes import seednode
 import util.defaults as default
 import util.memcache as memcache
 from lib.cache import Cache, CacheItem, reset_cache_files
 from lib.cache_calc import CacheCalc
+from lib.dex_api import DexAPI
+from util.cron import cron
 from util.logger import logger, timed
 
 router = APIRouter()
+
+
+@router.on_event("startup")
+@timed
+def start_seednode_stats():  # pragma: no cover
+    """Tells mm2 to store seednode stats in MM2.db"""
+    try:
+        dex = DexAPI()
+        for i in range(5):
+            try:
+                logger.calc(dex.version)
+            except Exception as e:
+                time.sleep(1)
+                pass
+            
+        seednode.register_notaries()
+        stats = dex.start_seednode_stats()
+        return default.result(msg=f"Started seednode stats", loglevel="dexrpc")
+    except Exception as e:
+        return default.result(msg=e, loglevel="warning")
+
+
+@router.on_event("startup")
+@timed
+def import_seednode_stats():  # pragma: no cover
+    """Imports seednode stats from MM2.db into PgSQL"""
+    try:
+        start_time = int(cron.now_utc()) - 86400
+        end_time = int(cron.now_utc())
+        seednode.get_seednode_stats(start_time, end_time)
+        return default.result(msg=f"Imported latest seednode stats", loglevel="query")
+    except Exception as e:
+        return default.result(msg=e, loglevel="warning")
 
 
 @router.on_event("startup")
