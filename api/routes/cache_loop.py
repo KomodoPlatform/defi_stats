@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import datetime
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE
@@ -282,7 +283,8 @@ def fixer_rates():  # pragma: no cover
 def populate_pgsqldb_loop():
     if memcache.get("testing") is None:
         # updates last 24 hours swaps
-        db.SqlSource().populate_pgsqldb()
+        day = datetime.today().date()
+        db.SqlSource().import_swaps_for_day(day)
 
 
 @router.on_event("startup")

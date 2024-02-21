@@ -20,7 +20,7 @@ from const import (
     POSTGRES_USERNAME,
     POSTGRES_PASSWORD,
     POSTGRES_PORT,
-    MM2_DB_PATH_ALL
+    MM2_DB_PATH_ALL,
 )
 from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed
 from util.exceptions import InvalidParamCombination
@@ -1185,10 +1185,14 @@ class SqlSource:
         self,
         pgdb: SqlDB,
         pgdb_query: SqlQuery,
-        start_time=int(cron.now_utc() - 86400),
-        end_time=int(cron.now_utc()),
+        start_time=0,
+        end_time=0,
     ):
         try:
+            if start_time == 0:
+                start_time = int(cron.now_utc() - 86400)
+            if end_time == 0:
+                end_time = int(cron.now_utc())
             # import Cipi's swap data
             ext_mysql = SqlQuery(db_type="mysql", gecko_source=self.gecko_source)
             cipi_swaps = ext_mysql.get_swaps(start_time=start_time, end_time=end_time)
@@ -1344,10 +1348,14 @@ class SqlSource:
     @timed
     def populate_pgsqldb(
         self,
-        start_time=int(cron.now_utc() - 86400),
-        end_time=int(cron.now_utc() + 86400),
+        start_time=0,
+        end_time=0,
     ):
         try:
+            if start_time == 0:
+                start_time = int(cron.now_utc() - 86400)
+            if end_time == 0:
+                end_time = int(cron.now_utc())
             pgdb = SqlUpdate(db_type="pgsql")
             pgdb_query = SqlQuery(db_type="pgsql", gecko_source=self.gecko_source)
             self.import_cipi_swaps(
