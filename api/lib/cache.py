@@ -288,7 +288,7 @@ class CacheItem:
             if data is not None:
                 if validate.loop_data(data, self):
                     # Save without extra fields for upstream cache
-                    if self.name in ["prices_tickers_v2"]:
+                    if self.name in ["prices_tickers_v2", "fixer_rates"]:
                         fn = self.filename.replace(".json", "_cache.json")
                         self.files.save_json(fn, data)
                     data = {"last_updated": int(cron.now_utc()), "data": data}
