@@ -114,6 +114,96 @@ For the inverted pair `YYY_XXX`, an inversion of the data above is returned, aft
 - Price becomes 1/price
 
 
+## Diverting heavy use endpoints to upstream cache
+
+A flood of calls to specific endpoints e.g. `api/v3/prices/tickers_v2` can result in server being unresponsive for other endpoints.
+To mitigate this the domain `cache.defi-stats.komodo.earth` was created to offload these requests. To activate it, the following needs to be added to nginx server block on `defi-stats.komodo.earth`:
+
+```
+upstream cache_servers {
+    server cache.defi-stats.komodo.earth;
+}
+
+server {
+    ...
+    location /api/v3/prices/tickers_v2 {
+        proxy_pass http://cache_servers/api/v3/prices/tickers_v2.json;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+The same process can be repeated for any other offending endpoints. In the case of `tickers_v2` it is hardcoded into the api and the legacy desktop codebase, so usage increases in proportion to active users. Additional cache servers can be added to the upstream block as required to scale this to requirements. (e.g. `cache2.defi-stats.komodo.earth` etc.)
+
+To populate these cache servers, add an rsync to crontab like `* * * * * /usr/bin/rsync username@defi-stats.komodo.earth:/home/username/defi_stats/api/cache/prices/tickers_v2_cache.json /var/www/cache.defi-stats.komodo.earth/api/v3/prices/tickers_v2.json`
+
+Then create the following nginx serverblock on the `cache.defi-stats.komodo.earth` server:
+
+```
+server {
+    listen 80;
+    listen [::]:80;
+    server_name cache.defi-stats.komodo.earth;
+    return 301 https://cache.defi-stats.komodo.earth$request_uri;
+}
+
+server {
+    listen [::]:443 ssl; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    root /var/www/cache.defi-stats.komodian.info;
+    index index.html;
+    server_name cache.defi-stats.komodo.earth;
+    ssl_certificate /etc/letsencrypt/live/cache.defi-stats.komodo.earth/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/cache.defi-stats.komodo.earth/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    location /api/v3/prices/tickers_v2/ {
+         alias /var/www/cache.defi-stats.komodo.earth/api/v3/prices/tickers_v2.json;
+    }
+
+    location / {
+        autoindex on;
+
+        alias /var/www/cache.defi-stats.komodo.earth/;
+
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            #
+            # Custom headers and headers various browsers *should* be OK with but aren't
+            #
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+            #
+            # Tell client that this pre-flight info is valid for 20 days
+            #
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        if ($request_method = 'POST') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+        }
+
+        if ($request_method = 'GET') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+        }
+    }
+}
+
+```
+
 # Update db and generalisation progress
 - [] generic pairs => [markets, gecko, xyz]
 
