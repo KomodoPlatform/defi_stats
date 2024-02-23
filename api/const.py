@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import os
 import sys
-
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# https://lightrun.com/solutions/troubleshooting-tiangolo-fastapi/
+# keep the SpooledTemporaryFile in-memory
+StarletteUploadFile.spool_max_size = 0
 
 # [NODE_TYPE]
 # Options:

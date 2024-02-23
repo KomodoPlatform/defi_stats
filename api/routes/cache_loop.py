@@ -375,25 +375,12 @@ def adex_24hr():
 def pair_tickers():
     if memcache.get("testing") is None:
         try:
-            CacheCalc().tickers(refresh=True)
+            CacheItem(name="tickers").save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_tickers loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
-
-# REVIEW
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
-def refresh_tickers():
-    if memcache.get("testing") is None:
-        try:
-            CacheCalc().tickers()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "Tickers refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
 """
