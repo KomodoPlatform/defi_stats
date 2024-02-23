@@ -171,14 +171,6 @@ def get_pairs_last_traded():  # pragma: no cover
     return get("pairs_last_traded")
 
 
-def set_pairs_last_traded_24hr(data):  # pragma: no cover
-    update("pairs_last_traded_24hr", data, 3600)
-
-
-def get_pairs_last_traded_24hr():  # pragma: no cover
-    return get("pairs_last_traded_24hr")
-
-
 def set_pair_prices_24hr(data):  # pragma: no cover
     update("pair_prices_24hr", data, 3600)
 

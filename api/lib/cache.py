@@ -213,11 +213,6 @@ class CacheItem:
                     memcache.set_coin_volumes_24hr(data)
 
                 # PAIR Data
-                if self.name == "pairs_last_traded_24hr":
-                    data = cache_calc.CacheCalc(
-                        coins_config=self.coins_config
-                    ).pairs_last_traded(since=cron.days_ago(1))
-                    memcache.set_pairs_last_traded_24hr(data)
 
                 if self.name == "pairs_last_traded":
                     data = cache_calc.CacheCalc(
@@ -274,16 +269,6 @@ class CacheItem:
                     ).stats_api_summary(refresh=True)
                     memcache.set_stats_api_summary(data)
 
-                # REVIEW
-                """
-                if self.name == "generic_summary":
-                    data = stats_api.StatsAPI().pair_summaries()
-                    memcache.set_summary(data)
-
-                if self.name == "generic_tickers_14d":
-                    data = cache_calc.CacheCalc().tickers(trades_days=14)
-                    memcache.set_tickers_14d(data)
-                """
 
             if data is not None:
                 if validate.loop_data(data, self):

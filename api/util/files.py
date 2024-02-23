@@ -33,7 +33,6 @@ class Files:
         # Foundational cache
         self.coin_volumes_24hr = f"{folder}/coins/volumes_24hr.json"
         self.pairs_last_traded = f"{folder}/pairs/last_traded.json"
-        self.pairs_last_traded_24hr = f"{folder}/pairs/last_traded_24hr.json"
         self.pairs_orderbook_extended = f"{folder}/pairs/orderbook_extended.json"
         self.pair_prices_24hr = f"{folder}/pairs/prices_24hr.json"
         self.pair_volumes_24hr = f"{folder}/pairs/volumes_24hr.json"

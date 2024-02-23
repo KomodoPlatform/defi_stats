@@ -21,7 +21,6 @@ class CacheCalc:
         coins_config=None,
         gecko_source=None,
         pairs_last_traded_cache=None,
-        pairs_last_traded_24hr_cache=None,
         pair_prices_24hr_cache=None,
         pairs_orderbook_extended_cache=None,
         pair_volumes_24hr_cache=None,
@@ -31,7 +30,6 @@ class CacheCalc:
         self._coins_config = coins_config
         self._gecko_source = gecko_source
         self._pairs_last_traded_cache = pairs_last_traded_cache
-        self._pairs_last_traded_24hr_cache = pairs_last_traded_24hr_cache
         self._pairs_orderbook_extended_cache = pairs_orderbook_extended_cache
         self._pair_prices_24hr_cache = pair_prices_24hr_cache
         self._pair_volumes_24hr_cache = pair_volumes_24hr_cache
@@ -97,12 +95,7 @@ class CacheCalc:
             self._pairs_last_traded_cache = memcache.get_pairs_last_traded()
         return self._pairs_last_traded_cache
 
-    @property
-    def pairs_last_traded_24hr_cache(self):
-        if self._pairs_last_traded_24hr_cache is None:
-            # logger.info("Getting pairs_last_traded_24hr_cache")
-            self._pairs_last_traded_24hr_cache = memcache.get_pairs_last_traded_24hr()
-        return self._pairs_last_traded_24hr_cache
+
 
     @timed
     def pairs_last_traded(self, since=0):

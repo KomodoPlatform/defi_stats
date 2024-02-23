@@ -8,7 +8,6 @@ def test_cache():
     for i in [
         "coin_volumes_24hr",
         "pairs_last_traded",
-        "pairs_last_traded_24hr",
         "pair_prices_24hr",
         "pair_volumes_24hr",
         "pair_volumes_14d",

@@ -39,6 +39,7 @@ def start_seednode_stats():  # pragma: no cover
 
 
 @router.on_event("startup")
+@repeat_every(seconds=900)
 @timed
 def import_seednode_stats():  # pragma: no cover
     """Imports seednode stats from MM2.db into PgSQL"""
@@ -62,38 +63,9 @@ def check_cache():  # pragma: no cover
         memcache_stats = memcache.stats()
         for k, v in memcache_stats.items():
             # https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L1270-L1421
-            if (
-                k.decode("UTF-8")
-                in [
-                    "listen_disabled_num",
-                    "uptime",
-                    "curr_items",
-                    "total_items",
-                    "bytes",
-                    "slab_reassign_evictions_nomem",
-                    "get_hits",
-                    "get_misses",
-                    "get_expired",
-                    "rejected_connections",
-                    "connection_structures",
-                    "max_connections",
-                    "curr_connections",
-                    "total_connections",
-                    "limit_maxbytes",
-                    "accepting_conns",
-                    "evictions",
-                    "reclaimed",
-                    "response_obj_oom",
-                    "response_obj_count" "read_buf_count",
-                    "read_buf_bytes",
-                    "read_buf_bytes_free",
-                ]
-                or 1 == 1
-            ):
-                default.memcache_stat(
-                    msg=f"{k.decode('UTF-8'):<30}: {v}", loglevel="cached"
-                )
-        # "listen_disabled_num"
+            default.memcache_stat(
+                msg=f"{k.decode('UTF-8'):<30}: {v}", loglevel="cached"
+            )
     except Exception as e:
         return default.result(msg=e, loglevel="warning")
 
@@ -153,6 +125,19 @@ def refresh_prices_24hr():
 @router.on_event("startup")
 @repeat_every(seconds=300)
 @timed
+def get_coin_volumes_24hr():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="coin_volumes_24hr").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "coin_volumes_24hr refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
 def get_pair_volumes_24hr():
     if memcache.get("testing") is None:
         try:
@@ -163,9 +148,8 @@ def get_pair_volumes_24hr():
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
-# VOLUMES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=900)
 @timed
 def get_pair_volumes_14d():
     if memcache.get("testing") is None:
@@ -174,19 +158,6 @@ def get_pair_volumes_14d():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pair_volumes_14d refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop", ignore_until=0)
-
-
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
-def get_coin_volumes_24hr():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="coin_volumes_24hr").save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "coin_volumes_24hr refresh loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
@@ -201,19 +172,6 @@ def pairs_last_traded():
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
         msg = "pairs_last_traded loop complete!"
-        return default.result(msg=msg, loglevel="loop", ignore_until=0)
-
-
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
-def pairs_last_traded_24hr():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="pairs_last_traded_24hr").save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "pairs_last_traded_24hr loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
@@ -232,7 +190,7 @@ def get_markets_summary():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=90)
 @timed
 def prices_service():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -382,48 +340,3 @@ def pair_tickers():
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
-
-"""
-
-@router.on_event("startup")
-@repeat_every(seconds=300)
-@timed
-def refresh_generic_tickers_14d():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(name="generic_tickers_14d").save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "Generic tickers 14d refresh loop complete!"
-        return default.result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=90)
-@timed
-def get_generic_tickers_cache_14d():
-    if memcache.get("testing") is None:
-        try:
-            CacheItem(
-                name="generic_tickers_14d",
-                from_memcache=True
-            ).save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "Generic tickers 14d loop for memcache complete!"
-        return default.result(msg=msg, loglevel="loop")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=120)
-@timed
-def generic_summary():
-    if memcache.get("testing") is None:
-        try:
-            pass
-            # CacheItem(name="generic_summary").save()
-        except Exception as e:
-            return default.result(msg=e, loglevel="warning")
-        msg = "Summary loop complete!"
-        return default.result(msg=msg, loglevel="loop")
-"""
