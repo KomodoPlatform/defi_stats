@@ -32,7 +32,7 @@ class SeedNode:
 
     def get_seednode_stats(self, start_time=0, end_time=0):
         if start_time == 0:
-            start_time = int(cron.now_utc()) - 86400
+            start_time = int(cron.now_utc()) - 3600
         if end_time == 0:
             end_time = int(cron.now_utc())
         logger.calc(MM2_DB_PATH_SEED)
@@ -42,7 +42,7 @@ class SeedNode:
             table=Mm2StatsNodes,
             gecko_source=self.gecko_source,
         )
-        q = mm2_sqlite.get_seednode_stats(
+        return mm2_sqlite.get_seednode_stats(
             start_time=start_time, end_time=end_time
         )
 

@@ -35,7 +35,9 @@ if __name__ == "__main__":
         pass
     elif args.show:
         # TODO: add function to print to console
-        pass
+        data = seednode.get_seednode_stats()
+        for row in data:
+            logger.info(row)
     elif args.register_all:
         dex = DexAPI()
         for notary in seednode.notary_seednodes:
