@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import List, Dict
-from const import GENERIC_PAIRS_DAYS
+from const import GENERIC_PAIRS_DAYS, MM2_DB_PATH_SEED
 from lib.cache import Cache
 from lib.pair import Pair
 from models.generic import ErrorMessage, CoinTradeVolumes, PairTradeVolumes
@@ -10,6 +10,7 @@ from util.enums import TradeType, GroupBy
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 from util.transform import deplatform
+from db.schema import Mm2StatsNodes
 import db.sqldb as db
 from util.cron import cron
 from util.transform import derive
@@ -434,6 +435,26 @@ def last_traded(category: GroupBy, min_swaps: int = 0):
                 return query.version_last_traded()
             case _:
                 return {"error": "Invalid selection for `group_by`"}
+    except Exception as e:
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+@router.get(
+    "/seednode_status",
+    description="Get the seednode version and status for registered notary nodes.",
+    responses={406: {"model": ErrorMessage}},
+    # response_model=PairTradeVolumes,
+    status_code=200,
+)
+def seednode_status(category: GroupBy, min_swaps: int = 0):
+    try:
+        query = db.SqlQuery(
+            db_type="sqlite",
+            db_path=MM2_DB_PATH_SEED,
+            table=Mm2StatsNodes
+        )
+        return query.get_latest_seednode_data()
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

@@ -35,7 +35,7 @@ if __name__ == "__main__":
         pass
     elif args.show:
         # TODO: add function to print to console
-        data = seednode.get_seednode_stats()
+        data = seednode.latest_data
         for row in data:
             logger.info(row)
     elif args.register_all:

@@ -42,9 +42,17 @@ class SeedNode:
             table=Mm2StatsNodes,
             gecko_source=self.gecko_source,
         )
-        return mm2_sqlite.get_seednode_stats(
-            start_time=start_time, end_time=end_time
+        return mm2_sqlite.get_seednode_stats(start_time=start_time, end_time=end_time)
+
+    @property
+    def latest_data(self):
+        mm2_sqlite = db.SqlQuery(
+            db_type="sqlite",
+            db_path=MM2_DB_PATH_SEED,
+            table=Mm2StatsNodes,
+            gecko_source=self.gecko_source,
         )
+        return mm2_sqlite.get_latest_seednode_data()
 
     def register_notaries(self):
         dex = DexAPI()

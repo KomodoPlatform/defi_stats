@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from itertools import chain
 from sqlalchemy import Numeric, func
 from sqlalchemy.sql.expression import bindparam
-from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_
+from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
 from typing import Dict
 from const import (
     MYSQL_USERNAME,
@@ -22,7 +22,15 @@ from const import (
     POSTGRES_PORT,
     MM2_DB_PATH_ALL,
 )
-from db.schema import DefiSwap, DefiSwapTest, StatsSwap, CipiSwap, CipiSwapFailed, SeednodeVersionStats, Mm2StatsNodes
+from db.schema import (
+    DefiSwap,
+    DefiSwapTest,
+    StatsSwap,
+    CipiSwap,
+    CipiSwapFailed,
+    SeednodeVersionStats,
+    Mm2StatsNodes,
+)
 from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 from util.transform import merge, sortdata, deplatform, invert, derive, template
@@ -36,11 +44,7 @@ load_dotenv()
 
 class SqlDB:
     def __init__(
-        self,
-        db_type="pgsql",
-        db_path=None,
-        external=False,
-        table=None        
+        self, db_type="pgsql", db_path=None, external=False, table=None
     ) -> None:
         self.table = table
         self.db_type = db_type
@@ -160,7 +164,7 @@ class SqlFilter:
         if self.table in [Mm2StatsNodes, SeednodeVersionStats]:
             q = q.filter(
                 self.table.timestamp > start_time, self.table.timestamp < end_time
-            )            
+            )
         elif self.table in [CipiSwap, CipiSwapFailed]:
             q = q.filter(
                 self.table.started_at > start_time, self.table.started_at < end_time
@@ -185,13 +189,11 @@ class SqlFilter:
 
 class SqlUpdate(SqlDB):
     def __init__(
-        self,
-        db_type="pgsql",
-        db_path=None,
-        external=False,
-        table=None
+        self, db_type="pgsql", db_path=None, external=False, table=None
     ) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external, table=table)
+        SqlDB.__init__(
+            self, db_type=db_type, db_path=db_path, external=external, table=table
+        )
 
     @timed
     def drop(self, table):
@@ -211,9 +213,11 @@ class SqlQuery(SqlDB):
         db_path=None,
         external=False,
         gecko_source=None,
-        table=None
+        table=None,
     ) -> None:
-        SqlDB.__init__(self, db_type=db_type, db_path=db_path, external=external, table=table)
+        SqlDB.__init__(
+            self, db_type=db_type, db_path=db_path, external=external, table=table
+        )
         self._gecko_source = gecko_source
 
     @property
@@ -893,12 +897,10 @@ class SqlQuery(SqlDB):
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 
-
-
     @timed
     def get_seednode_stats(self, start_time=0, end_time=0):
         try:
-            
+
             if start_time == 0:
                 start_time = int(cron.now_utc()) - 86400
             if end_time == 0:
@@ -912,13 +914,44 @@ class SqlQuery(SqlDB):
                     self.table.error.label("error"),
                 ]
                 q = session.query(*cols)
-                q = self.sqlfilter.timestamps(q, start_time=start_time, end_time=end_time)
+                q = self.sqlfilter.timestamps(
+                    q, start_time=start_time, end_time=end_time
+                )
                 data = [dict(i) for i in session.exec(q)]
-                return default.result(data=data, msg="Got seednode version stats", loglevel="query")
+                return default.result(
+                    data=data, msg="Got seednode version stats", loglevel="query"
+                )
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 
+    @timed
+    def get_latest_seednode_data(self):
+        try:
+            with Session(self.engine) as session:
+                subquery = session.query(
+                    self.table.name,
+                    func.max(self.table.timestamp).label("max_timestamp"),
+                ).group_by(self.table.name).subquery()
 
+                cols = [
+                    self.table.name.label("notary"),
+                    self.table.version,
+                    self.table.timestamp,
+                    self.table.error,
+                ]
+                result = session.query(*cols).join(
+                    subquery,
+                    and_(
+                        self.table.name == subquery.c.name,
+                        self.table.timestamp == subquery.c.max_timestamp,
+                    )
+                )
+                data = [dict(row) for row in result.all()]
+                return default.result(
+                    data=data, msg="Got latest seednode version stats", loglevel="query"
+                )
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
 
     @timed
     def get_timespan_swaps(self, start_time: int = 0, end_time: int = 0) -> list:
@@ -1781,7 +1814,7 @@ class SqlSource:
 
         # Add stats to pgsql
         return
-        
+
 
 # Subclass 'utils' under SqlQuery
 @timed
