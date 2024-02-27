@@ -60,7 +60,7 @@ class Cache:  # pragma: no cover
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
                 updated.update({i: since_updated})
-            
+            logger.calc(dex.version)
             updated.update({"DeFi SDK Version": dex.version})
             if to_console:
                 for i in updated:
@@ -71,7 +71,7 @@ class Cache:  # pragma: no cover
 
     def print_cache_status(self, k, v):
         if k not in ["DeFi SDK Version"]:
-            v = "last updated {v} min ago"
+            v = f"last updated {v} min ago"
         msg = f"[{k}] {v}"
         return default.result(msg=msg, loglevel="cached")
 
