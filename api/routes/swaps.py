@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from util.cron import cron
+from const import MM2_DB_PATH_SEED
+from db.schema import Mm2StatsNodes
 from models.generic import ErrorMessage
+from util.cron import cron
 from util.exceptions import UuidNotFoundException, BadPairFormatError
 from util.logger import logger
 import db.sqldb as db
-router = APIRouter()
 
+router = APIRouter()
 
 @router.get(
     "/swap/{uuid}",
@@ -77,6 +79,26 @@ def swap_uuids(
     except BadPairFormatError as e:
         err = {"error": e.name, "message": e.msg}
         return JSONResponse(status_code=e.status_code, content=err)
+    except Exception as e:
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+@router.get(
+    "/seednode_status",
+    description="Get the seednode version and status for registered notary nodes.",
+    responses={406: {"model": ErrorMessage}},
+    # response_model=PairTradeVolumes,
+    status_code=200,
+)
+def seednode_status():
+    try:
+        query = db.SqlQuery(
+            db_type="sqlite",
+            db_path=MM2_DB_PATH_SEED,
+            table=Mm2StatsNodes
+        )
+        return query.get_latest_seednode_data()
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
