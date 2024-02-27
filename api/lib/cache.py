@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from lib.dex_api import DexAPI
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
@@ -37,6 +38,7 @@ class Cache:  # pragma: no cover
 
     def healthcheck(self, to_console=False):  # pragma: no cover
         try:
+            dex = DexAPI()
             updated = {}
             for i in [
                 "adex_24hr",
@@ -58,14 +60,19 @@ class Cache:  # pragma: no cover
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
                 updated.update({i: since_updated})
-                if to_console:
-                    self.print_cache_status(i, since_updated)
+            
+            updated.update({"DeFi SDK Version": dex.version})
+            if to_console:
+                for i in updated:
+                    self.print_cache_status(i, updated[i])
             return updated
         except Exception as e:  # pragma: no cover
             logger.warning(e)
 
-    def print_cache_status(self, i, since_updated):
-        msg = f"[{i}] last updated: {since_updated} min"
+    def print_cache_status(self, k, v):
+        if k not in ["DeFi SDK Version"]:
+            v = "last updated {v} min ago"
+        msg = f"[{k}] {v}"
         return default.result(msg=msg, loglevel="cached")
 
 

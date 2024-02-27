@@ -39,14 +39,14 @@ if __name__ == "__main__":
     elif args.register_all:
         dex = DexAPI()
         for notary in seednode.notary_seednodes:
-            domain = seednode.notary_seednodes["domain"]
-            peer_id = seednode.notary_seednodes["peer_id"]
+            domain = seednode.notary_seednodes[notary]["domain"]
+            peer_id = seednode.notary_seednodes[notary]["peer_id"]
             logger.info(dex.add_seednode_for_stats(notary, domain, peer_id))
         
     elif args.deregister_all:
         dex = DexAPI()
         for notary in seednode.notary_seednodes:
-            dex.remove_seednode_from_stats(notary)
+            logger.info(dex.remove_seednode_from_stats(notary))
 
     elif args.register:
         dex = DexAPI()
