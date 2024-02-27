@@ -15,7 +15,9 @@ if __name__ == "__main__":
     desc = "Register/deregister notary seed nodes or migrate stats from MM2.db to pgsql db."
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("--register", action="store_true", help="Register a notary Peer ID")
+    parser.add_argument("--register_all", action="store_true", help="Register all notary Peer IDs")
     parser.add_argument("--deregister", action="store_true", help="Deregister a notary Peer ID")
+    parser.add_argument("--deregister_all", action="store_true", help="Deregister all notary Peer IDs")
     parser.add_argument("--show", action="store_true", help="Display registered notaries")
     parser.add_argument(
         "--migrate_stats",
@@ -34,6 +36,18 @@ if __name__ == "__main__":
     elif args.show:
         # TODO: add function to print to console
         pass
+    elif args.register_all:
+        dex = DexAPI()
+        for notary in seednode.notary_seednodes:
+            domain = seednode.notary_seednodes["domain"]
+            peer_id = seednode.notary_seednodes["peer_id"]
+            logger.info(dex.add_seednode_for_stats(notary, domain, peer_id))
+        
+    elif args.deregister_all:
+        dex = DexAPI()
+        for notary in seednode.notary_seednodes:
+            dex.remove_seednode_from_stats(notary)
+
     elif args.register:
         dex = DexAPI()
         notary = input("Notary: ")
