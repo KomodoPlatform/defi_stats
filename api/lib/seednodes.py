@@ -124,15 +124,15 @@ class SeedNode:
                 "peer_id": "12D3KooWE8Ju9SZyZrfkUgi25gFKv1Yc6zcQZ5GXtEged8rmLW3t",
             },
             "cipi_AR": {
-                "domain": "cipi_ar.cipig.net",
+                "domain": "cipi-ar.cipig.net",
                 "peer_id": "12D3KooWMsfmq3bNNPZTr7HdhTQvxovuR1jo5qvM362VQZorTk3F",
             },
             "cipi_EU": {
-                "domain": "cipi_eu.cipig.net",
+                "domain": "cipi-eu.cipig.net",
                 "peer_id": "12D3KooWBhGrTVfaK9v12eA3Et84Y8Bc6ixfZVVGShsad2GBWzm3",
             },
             "cipi_NA": {
-                "domain": "cipi_na.cipig.net",
+                "domain": "cipi-na.cipig.net",
                 "peer_id": "12D3KooWBoQYTPf4q2bnsw8fUA2LKoknccVLrAcF1caCa48ev8QU",
             },
             "caglarkaya_EU": {
