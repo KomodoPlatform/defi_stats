@@ -147,3 +147,14 @@ class BinanceAPI:  # pragma: no cover
         endpoint = "api/v3/ticker/price"
         r = requests.get(f"{self.base_url}/{endpoint}")
         return r.json()
+
+
+class CmcAPI:  # pragma: no cover
+    def __init__(self):
+        self.base_url = "https://pro-api.coinmarketcap.com/"
+
+    def assets(self):
+        endpoint = "v1/cryptocurrency/map?CMC_PRO_API_KEY=UNIFIED-CRYPTOASSET-INDEX&listing_status=active"
+        r = requests.get(f"{self.base_url}/{endpoint}")
+        data = r.json()['data']
+        return {i['symbol']: i for i in data}

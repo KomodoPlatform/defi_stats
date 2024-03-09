@@ -44,6 +44,19 @@ class SeedNode:
         )
         return mm2_sqlite.get_seednode_stats(start_time=start_time, end_time=end_time)
 
+    def get_seednode_stats_by_hour(self, start_time=0, end_time=0):
+        if start_time == 0:
+            start_time = int(cron.now_utc()) - 3600
+        if end_time == 0:
+            end_time = int(cron.now_utc())
+        mm2_sqlite = db.SqlQuery(
+            db_type="sqlite",
+            db_path=MM2_DB_PATH_SEED,
+            table=Mm2StatsNodes,
+            gecko_source=self.gecko_source,
+        )
+        return mm2_sqlite.get_seednode_stats_by_hour(start_time=start_time, end_time=end_time)
+    
     @property
     def latest_data(self):
         mm2_sqlite = db.SqlQuery(
@@ -234,8 +247,46 @@ class SeedNode:
             "who-biz_NA": {
                 "domain": "adex.blur.cash",
                 "peer_id": "12D3KooWQp97gsRE5LbcUPjZcP7N6qqk2YbxJmPRUDeKVM5tbcQH",
+            },            
+            "viserion": {
+                "domain": "viserion.dragon-seed.com",
+                "peer_id": "12D3KooWHKkHiNhZtKceQehHhPqwU5W1jXpoVBgS1qst899GjvTm",
             },
+            "rhaegal": {
+                "domain": "rhaegal.dragon-seed.com",
+                "peer_id": "12D3KooWAToxtunEBWCoAHjefSv74Nsmxranw8juy3eKEdrQyGRF",
+            },
+            "drogon": {
+                "domain": "drogon.dragon-seed.com",
+                "peer_id": "12D3KooWSmEi8ypaVzFA1AGde2RjxNW5Pvxw3qa2fVe48PjNs63R",
+            },
+            "falkor": {
+                "domain": "falkor.dragon-seed.com",
+                "peer_id": "12D3KooWMrjLmrv8hNgAoVf1RfumfjyPStzd4nv5XL47zN4ZKisb",
+            },
+            "smaug": {
+                "domain": "smaug.dragon-seed.com",
+                "peer_id": "12D3KooWEWzbYcosK2JK9XpFXzumfgsWJW1F7BZS15yLTrhfjX2Z",
+            },
+            "balerion": {
+                "domain": "balerion.dragon-seed.com",
+                "peer_id": "12D3KooWJWBnkVsVNjiqUEPjLyHpiSmQVAJ5t6qt1Txv5ctJi9Xd",
+            },
+            "kalessin": {
+                "domain": "kalessin.dragon-seed.com",
+                "peer_id": "12D3KooWPR2RoPi19vQtLugjCdvVmCcGLP2iXAzbDfP3tp81ZL4d",
+            },
+            "icefyre": {
+                "domain": "icefyre.dragon-seed.com",
+                "peer_id": "12D3KooWJDoV9vJdy6PnzwVETZ3fWGMhV41VhSbocR1h2geFqq9Y",
+            },
+            "fr1.cipig.net": {
+                "domain": "fr1.cipig.net",
+                "peer_id": "12D3KooWEaZpH61H4yuQkaNG5AsyGdpBhKRppaLdAY52a774ab5u",
+            }
         }
 
 
 seednode = SeedNode()
+
+

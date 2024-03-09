@@ -122,6 +122,14 @@ def get_fixer_rates():  # pragma: no cover
     return get("fixer_rates")
 
 
+def set_cmc_assets(data):  # pragma: no cover
+    update("cmc_assets", data, 86400)
+
+
+def get_cmc_assets():  # pragma: no cover
+    return get("cmc_assets")
+
+
 def set_gecko_source(data):  # pragma: no cover
     update("gecko_source", data, 3600)
 

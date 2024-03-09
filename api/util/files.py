@@ -25,6 +25,7 @@ class Files:
         self.coins_config = f"{folder}/coins/coins_config.json"
         self.gecko_source = f"{folder}/gecko/source.json"
         self.fixer_rates = f"{folder}/rates/fixer_rates.json"
+        self.cmc_assests = f"{folder}/cmc/assets.json"
 
         # Top Fives
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"

@@ -190,6 +190,10 @@ class CacheItem:
                     memcache.set_coins(data)
             else:
                 # EXTERNAL SOURCE CACHE
+                if self.name == "cmc_assets":
+                    data = external.CmcAPI().assets()
+                    memcache.set_cmc_assets(data)
+                    
                 if self.name == "fixer_rates":
                     data = external.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
@@ -349,4 +353,7 @@ def reset_cache_files():
     )
     memcache.set_stats_api_summary(
         CacheItem(name="stats_api_summary", coins_config=coins_config).data
+    )
+    memcache.set_cmc_assets(
+        CacheItem(name="cmc_assets", coins_config=coins_config).data
     )
