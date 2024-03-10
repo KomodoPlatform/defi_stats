@@ -1,5 +1,5 @@
-import util.memcache as memcache
 from lib.cache import Cache
+from util.logger import logger
 
 
 def test_cache():
@@ -23,4 +23,5 @@ def test_cache():
     ]:
         cache_item = cache.get_item(i)
         data = cache_item.save()
+        logger.calc(f"Testing {i}")
         assert "error" not in data

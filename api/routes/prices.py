@@ -5,7 +5,6 @@ from fastapi.responses import JSONResponse
 from util.logger import logger
 from models.generic import ErrorMessage
 from lib.cache import Cache
-import util.memcache as memcache
 
 router = APIRouter()
 cache = Cache()

@@ -31,13 +31,16 @@ if __name__ == "__main__":
 
     if args.migrate_stats:
         source_data = seednode.get_seednode_stats()
+        
         # TODO: Write to pgsql
         pass
     elif args.show:
-        # TODO: add function to print to console
         data = seednode.latest_data
         for row in data:
-            logger.info(row)
+            if row['error'] != '':
+                logger.warning(row)
+            else:
+                logger.info(row)
     elif args.register_all:
         dex = DexAPI()
         for notary in seednode.notary_seednodes:

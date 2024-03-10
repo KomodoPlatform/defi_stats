@@ -48,63 +48,47 @@ class DexAPI:
         params = {
             "mmrpc": "2.0",
             "method": "start_version_stat_collection",
-            "params": {
-                "interval": 600
-            }
+            "params": {"interval": 600},
         }
         resp = self.api(params)
         return default.result(
-            data=resp,
-            msg=f"Started seednode stats collection",
-            loglevel="dexrpc"
+            data=resp, msg="Started seednode stats collection", loglevel="dexrpc"
         )
-        
+
     @timed
     def add_seednode_for_stats(self, notary: str, domain: str, peer_id: str):
         params = {
-        "mmrpc": "2.0",
-        "method": "add_node_to_version_stat",
-        "params": {
-                "name": notary,
-                "address": domain,
-                "peer_id": peer_id
-            }
+            "mmrpc": "2.0",
+            "method": "add_node_to_version_stat",
+            "params": {"name": notary, "address": domain, "peer_id": peer_id},
         }
         resp = self.api(params)
         return default.result(
             data=resp,
             msg=f"Registered {notary} seednode for stats collection",
-            loglevel="dexrpc"
+            loglevel="dexrpc",
         )
 
     def remove_seednode_from_stats(self, notary):
         params = {
             "mmrpc": "2.0",
             "method": "remove_node_from_version_stat",
-            "params": {
-                "name": notary
-            }
+            "params": {"name": notary},
         }
         resp = self.api(params)
         return default.result(
-            data=resp,
-            msg=f"Removed seednode to stats collection",
-            loglevel="dexrpc"
+            data=resp, msg=f"Removed {notary} stats collection", loglevel="dexrpc"
         )
 
     def stop_seednode_stats(self):
         params = {
             "mmrpc": "2.0",
             "method": "stop_version_stat_collection",
-            "params": {
-                "interval": 600
-            }
+            "params": {"interval": 600},
         }
         resp = self.api(params)
         return default.result(
-            data=resp,
-            msg=f"Stopped seednode stats collection",
-            loglevel="dexrpc"
+            data=resp, msg="Stopped seednode stats collection", loglevel="dexrpc"
         )
 
     # tuple, string, string -> list
@@ -273,7 +257,9 @@ def get_orderbook_fixture(pair_str, gecko_source, pair_prices_24hr_cache):
         logger.warning(f"fixture for {pair_str} does not exist!")
         base, quote = derive.base_quote(pair_str=pair_str)
         data = template.orderbook_rpc_resp(base=base, quote=quote)
-    is_reversed = pair_str != sortdata.pair_by_market_cap(pair_str, gecko_source=gecko_source)
+    is_reversed = pair_str != sortdata.pair_by_market_cap(
+        pair_str, gecko_source=gecko_source
+    )
     if is_reversed:
         data = invert.orderbook_fixture(data)
     data = orderbook_extras(pair_str, data, gecko_source, pair_prices_24hr_cache)

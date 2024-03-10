@@ -257,6 +257,17 @@ class Convert:
             "type": i["type"],
         }
 
+    def historical_trades_to_cmc(self, i):
+        return {
+            "pair": i["pair"],
+            "trade_id": i["trade_id"],
+            "price": i["price"],
+            "base_volume": i["base_volume"],
+            "quote_volume": i["quote_volume"],
+            "timestamp": i["timestamp"] * 1000,
+            "type": i["type"],
+        }
+
     @timed
     def label_bids_asks(self, orderbook_data):
         try:
@@ -374,12 +385,29 @@ class Deplatform:
 class Derive:
     def __init__(self):
         self._coins_config = None
+        self._cmc_assets_source = None
 
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
+
+    @property
+    def cmc_assets_source(self):
+        if self._cmc_assets_source is None:
+            self._cmc_assets_source = memcache.get_cmc_assets_source()
+        return self._cmc_assets_source
+
+    def cmc_asset_info(self, coin):
+        # This is unreliable. For example, look for 'DOGE'
+        # within the CMC assets from API at
+        # https://pro-api.coinmarketcap.com/v1/cryptocurrency/map
+        # We also need to check the nested 'platform' key
+        ticker = deplatform.coin(coin)
+        if ticker in self.cmc_assets_source:
+            return self.cmc_assets_source[ticker]
+        return {}
 
     @timed
     def base_quote(self, pair_str, reverse=False, deplatform=False):

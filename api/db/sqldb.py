@@ -928,10 +928,14 @@ class SqlQuery(SqlDB):
     def get_latest_seednode_data(self):
         try:
             with Session(self.engine) as session:
-                subquery = session.query(
-                    self.table.name,
-                    func.max(self.table.timestamp).label("max_timestamp"),
-                ).group_by(self.table.name).subquery()
+                subquery = (
+                    session.exec(
+                        self.table.name,
+                        func.max(self.table.timestamp).label("max_timestamp"),
+                    )
+                    .group_by(self.table.name)
+                    .subquery()
+                )
 
                 cols = [
                     self.table.name.label("notary"),
@@ -939,17 +943,60 @@ class SqlQuery(SqlDB):
                     self.table.timestamp,
                     self.table.error,
                 ]
-                result = session.query(*cols).join(
+                result = session.exec(*cols).join(
                     subquery,
                     and_(
                         self.table.name == subquery.c.name,
                         self.table.timestamp == subquery.c.max_timestamp,
-                    )
+                    ),
                 )
                 data = [dict(row) for row in result.all()]
                 return default.result(
                     data=data, msg="Got latest seednode version stats", loglevel="query"
                 )
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
+
+    @timed
+    def get_seednode_stats_by_hour(self, start_time=0, end_time=0):
+        if start_time == 0:
+            start_time = int(cron.now_utc()) - 86400
+        if end_time == 0:
+            end_time = int(cron.now_utc())
+        try:
+            with Session(self.engine) as session:
+                # Subquery to get distinct name and hour
+                subquery = (
+                    session.exec(
+                        self.table.c.name,
+                        func.strftime(
+                            "%Y-%m-%d %H:00:00", self.table.c.timestamp
+                        ).label("hour"),
+                    )
+                    .group_by(
+                        self.table.c.name,
+                        func.strftime("%Y-%m-%d %H:00:00", self.table.c.timestamp),
+                    )
+                    .subquery()
+                )
+
+                # Query to get all columns for each name, grouped by hour
+                query = (
+                    session.exec(self.table)
+                    .join(
+                        subquery,
+                        (self.table.c.name == subquery.c.name)
+                        & (
+                            func.strftime("%Y-%m-%d %H:00:00", self.table.c.timestamp)
+                            == subquery.c.hour
+                        ),
+                    )
+                    .order_by(self.table.c.name, self.table.c.timestamp)
+                )
+
+                # Execute the query
+                results = query.all()
+                return results
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 
