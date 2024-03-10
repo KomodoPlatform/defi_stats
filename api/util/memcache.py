@@ -24,6 +24,7 @@ class JsonSerde(object):  # pragma: no cover
             return json.loads(value.decode("utf-8"))
         raise Exception("Unknown serialization format")
 
+
 try:  # pragma: no cover
     MEMCACHE = PooledClient(
         ("memcached", 11211),
@@ -122,12 +123,20 @@ def get_fixer_rates():  # pragma: no cover
     return get("fixer_rates")
 
 
-def set_cmc_assets(data):  # pragma: no cover
-    update("cmc_assets", data, 86400)
+def set_cmc_assets_source(data):  # pragma: no cover
+    update("cmc_assets_source", data, 86400)
 
 
-def get_cmc_assets():  # pragma: no cover
-    return get("cmc_assets")
+def get_cmc_assets_source():  # pragma: no cover
+    return get("cmc_assets_source")
+
+
+def set_cmc_summary(data):  # pragma: no cover
+    update("cmc_summary", data, 86400)
+
+
+def get_cmc_summary():  # pragma: no cover
+    return get("cmc_summary")
 
 
 def set_gecko_source(data):  # pragma: no cover

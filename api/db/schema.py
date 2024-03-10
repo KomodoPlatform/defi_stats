@@ -1,10 +1,9 @@
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
-from sqlmodel import SQLModel, Field, create_engine
+from sqlmodel import SQLModel, Field
 from util.enums import TradeType
 from sqlalchemy import UniqueConstraint
-
 
 
 class DefiSwap(SQLModel, table=True):
@@ -157,6 +156,7 @@ class SeednodeVersionStats(SQLModel, table=True):
     @classmethod
     def get_constraints(cls):
         return [UniqueConstraint(cls.name, cls.timestamp)]
+
 
 class Mm2StatsNodes(SQLModel, table=True):
     __tablename__ = "stats_nodes"

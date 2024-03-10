@@ -27,13 +27,15 @@ def start_seednode_stats():  # pragma: no cover
         for i in range(5):
             try:
                 logger.calc(dex.version)
-            except Exception as e:
+            except Exception:
                 time.sleep(1)
                 pass
-            
+
         seednode.register_notaries()
         stats = dex.start_seednode_stats()
-        return default.result(msg=f"Started seednode stats", loglevel="dexrpc")
+        return default.result(
+            data=stats, msg="Started seednode stats", loglevel="dexrpc"
+        )
     except Exception as e:
         return default.result(msg=e, loglevel="warning")
 
@@ -47,7 +49,7 @@ def import_seednode_stats():  # pragma: no cover
         start_time = int(cron.now_utc()) - 86400
         end_time = int(cron.now_utc())
         seednode.get_seednode_stats(start_time, end_time)
-        return default.result(msg=f"Imported latest seednode stats", loglevel="query")
+        return default.result(msg="Imported latest seednode stats", loglevel="query")
     except Exception as e:
         return default.result(msg=e, loglevel="warning")
 
@@ -261,6 +263,32 @@ def stats_api_summary():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=300)
 @timed
+def cmc_summary():  # pragma: no cover
+    if memcache.get("testing") is None:
+        try:
+            CacheItem("cmc_summary").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "cmc_summary data update loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=600)
+@timed
+def cmc_assets_source():  # pragma: no cover
+    if memcache.get("cmc_assets_source") is None:
+        try:
+            CacheItem("cmc_assets_source").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "cmc_summary data update loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
 def fixer_rates():  # pragma: no cover
     if memcache.get("testing") is None:
         try:
@@ -338,5 +366,3 @@ def pair_tickers():
             return default.result(msg=e, loglevel="warning")
         msg = "pair_tickers loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
-
-

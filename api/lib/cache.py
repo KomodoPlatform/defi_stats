@@ -56,6 +56,8 @@ class Cache:  # pragma: no cover
                 "prices_tickers_v1",
                 "prices_tickers_v2",
                 "tickers",
+                "cmc_assets_source",
+                "cmc_summary",
             ]:
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
@@ -190,10 +192,10 @@ class CacheItem:
                     memcache.set_coins(data)
             else:
                 # EXTERNAL SOURCE CACHE
-                if self.name == "cmc_assets":
-                    data = external.CmcAPI().assets()
-                    memcache.set_cmc_assets(data)
-                    
+                if self.name == "cmc_assets_source":
+                    data = external.CmcAPI().assets_source()
+                    memcache.set_cmc_assets_source(data)
+
                 if self.name == "fixer_rates":
                     data = external.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
@@ -274,12 +276,17 @@ class CacheItem:
                     ).gecko_pairs(refresh=True)
                     memcache.set_gecko_pairs(data)
 
+                # STATS_API
                 if self.name == "stats_api_summary":
                     data = cache_calc.CacheCalc(
                         coins_config=self.coins_config
                     ).stats_api_summary(refresh=True)
                     memcache.set_stats_api_summary(data)
 
+                # CMC
+                if self.name == "cmc_summary":
+                    data = cache_calc.CMC().summary(refresh=True)
+                    memcache.set_cmc_summary(data)
 
             if data is not None:
                 if validate.loop_data(data, self):
@@ -309,10 +316,10 @@ class CacheItem:
 
 
 def reset_cache_files():
-    if 'IS_TESTING' in os.environ:
+    if "IS_TESTING" in os.environ:
         logger.calc(f"Resetting cache [testing: {os.environ['IS_TESTING']}]")
     else:
-        os.environ['IS_TESTING'] = "False"
+        os.environ["IS_TESTING"] = "False"
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     coins_config = memcache.get_coins_config()
     memcache.set_coins(CacheItem(name="coins", coins_config=coins_config).data)
@@ -354,6 +361,6 @@ def reset_cache_files():
     memcache.set_stats_api_summary(
         CacheItem(name="stats_api_summary", coins_config=coins_config).data
     )
-    memcache.set_cmc_assets(
-        CacheItem(name="cmc_assets", coins_config=coins_config).data
+    memcache.set_cmc_assets_source(
+        CacheItem(name="cmc_assets_source", coins_config=coins_config).data
     )

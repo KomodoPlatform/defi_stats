@@ -11,6 +11,7 @@ import db.sqldb as db
 
 router = APIRouter()
 
+
 @router.get(
     "/swap/{uuid}",
     description="Get swap info from a uuid, e.g. `82df2fc6-df0f-439a-a4d3-efb42a3c1db8`",
@@ -84,6 +85,7 @@ def swap_uuids(
         logger.warning(err)
         return JSONResponse(status_code=400, content=err)
 
+
 @router.get(
     "/seednode_status",
     description="Get the seednode version and status for registered notary nodes.",
@@ -94,9 +96,7 @@ def swap_uuids(
 def seednode_status():
     try:
         query = db.SqlQuery(
-            db_type="sqlite",
-            db_path=MM2_DB_PATH_SEED,
-            table=Mm2StatsNodes
+            db_type="sqlite", db_path=MM2_DB_PATH_SEED, table=Mm2StatsNodes
         )
         return query.get_latest_seednode_data()
     except Exception as e:

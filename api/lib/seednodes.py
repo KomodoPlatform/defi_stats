@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from decimal import Decimal
 from functools import cached_property
 from const import (
     MM2_DB_PATH_SEED,
@@ -55,8 +54,10 @@ class SeedNode:
             table=Mm2StatsNodes,
             gecko_source=self.gecko_source,
         )
-        return mm2_sqlite.get_seednode_stats_by_hour(start_time=start_time, end_time=end_time)
-    
+        return mm2_sqlite.get_seednode_stats_by_hour(
+            start_time=start_time, end_time=end_time
+        )
+
     @property
     def latest_data(self):
         mm2_sqlite = db.SqlQuery(
@@ -247,7 +248,7 @@ class SeedNode:
             "who-biz_NA": {
                 "domain": "adex.blur.cash",
                 "peer_id": "12D3KooWQp97gsRE5LbcUPjZcP7N6qqk2YbxJmPRUDeKVM5tbcQH",
-            },            
+            },
             "viserion": {
                 "domain": "viserion.dragon-seed.com",
                 "peer_id": "12D3KooWHKkHiNhZtKceQehHhPqwU5W1jXpoVBgS1qst899GjvTm",
@@ -283,10 +284,8 @@ class SeedNode:
             "fr1.cipig.net": {
                 "domain": "fr1.cipig.net",
                 "peer_id": "12D3KooWEaZpH61H4yuQkaNG5AsyGdpBhKRppaLdAY52a774ab5u",
-            }
+            },
         }
 
 
 seednode = SeedNode()
-
-
