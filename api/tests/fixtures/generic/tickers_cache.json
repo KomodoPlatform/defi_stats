@@ -1,0 +1,107 @@
+{
+    "last_update": 1710068801,
+    "pairs_count": 6,
+    "swaps_count": 8,
+    "combined_volume_usd": 1100917.91,
+    "combined_liquidity_usd": 969822.0,
+    "data": {
+        "DGB_LTC": {
+            "ticker_id": "DGB_LTC",
+            "pool_id": "DGB_LTC",
+            "base_currency": "DGB",
+            "target_currency": "LTC",
+            "base_volume": "1.0000000000",
+            "target_volume": "1.0000000000",
+            "bid": "0.0000000000",
+            "ask": "0.0000000000",
+            "high": "1.0000000000",
+            "low": "1.0000000000",
+            "trades_24hr": 1,
+            "last_price": "1.0000000000",
+            "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
+            "last_trade": 1710064781,
+            "volume_usd_24hr": "100.0100000000",
+            "liquidity_usd": "0.0000000000",
+            "variants": [
+                "DGB-segwit_LTC",
+                "DGB-segwit_LTC-segwit",
+                "DGB_LTC",
+                "DGB_LTC-segwit"
+            ]
+        },
+        "KMD_BTC": {
+            "ticker_id": "KMD_BTC",
+            "pool_id": "KMD_BTC",
+            "base_currency": "KMD",
+            "target_currency": "BTC",
+            "base_volume": "1000000.0000000000",
+            "target_volume": "1.0000000000",
+            "bid": "0.0000000000",
+            "ask": "0.0000000000",
+            "high": "0.0000010000",
+            "low": "0.0000010000",
+            "trades_24hr": 1,
+            "last_price": "0.0000010000",
+            "last_swap_uuid": "888888888-7622-6334-add8-9b1a4e76ad2e",
+            "last_trade": 1710057584,
+            "volume_usd_24hr": "1100000.0000000000",
+            "liquidity_usd": "0.0000000000",
+            "variants": [
+                "KMD-BEP20_BTC",
+                "KMD-BEP20_BTC-BEP20",
+                "KMD-BEP20_BTC-segwit",
+                "KMD_BTC",
+                "KMD_BTC-BEP20",
+                "KMD_BTC-segwit"
+            ]
+        },
+        "KMD_DGB": {
+            "ticker_id": "KMD_DGB",
+            "pool_id": "KMD_DGB",
+            "base_currency": "KMD",
+            "target_currency": "DGB",
+            "base_volume": "1.9000000000",
+            "target_volume": "1500.0000000000",
+            "bid": "0.0000000000",
+            "ask": "0.0000000000",
+            "high": "1000.0000000000",
+            "low": "555.5555555600",
+            "trades_24hr": 2,
+            "last_price": "555.5555555600",
+            "last_swap_uuid": "",
+            "last_trade": 1710064837,
+            "volume_usd_24hr": "16.9000000000",
+            "liquidity_usd": "0.0000000000",
+            "variants": [
+                "KMD-BEP20_DGB",
+                "KMD-BEP20_DGB-segwit",
+                "KMD_DGB",
+                "KMD_DGB-segwit"
+            ]
+        },
+        "KMD_LTC": {
+            "ticker_id": "KMD_LTC",
+            "pool_id": "KMD_LTC",
+            "base_currency": "KMD",
+            "target_currency": "LTC",
+            "base_volume": "400.0000000000",
+            "target_volume": "4.0000000000",
+            "bid": "24.0000000000",
+            "ask": "26.0000000000",
+            "high": "0.0100000000",
+            "low": "0.0100000000",
+            "trades_24hr": 3,
+            "last_price": "0.0100000000",
+            "last_swap_uuid": "999999999-73a2-d46d-900d-aad5e9b162ef",
+            "last_trade": 1710053985,
+            "volume_usd_24hr": "800.0000000000",
+            "liquidity_usd": "969822.0000000000",
+            "variants": [
+                "KMD-BEP20_LTC",
+                "KMD-BEP20_LTC-segwit",
+                "KMD_LTC",
+                "KMD_LTC-segwit"
+            ]
+        }
+    }
+}

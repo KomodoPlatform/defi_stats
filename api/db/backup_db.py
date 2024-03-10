@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import sqlite3
 import argparse
 
@@ -50,8 +51,17 @@ def create_swap_stats_table(cursor):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--src", type=str, required=True)
-    parser.add_argument("--dest", type=str, required=True)
+    desc = "Backup MM2.db sqlite database"
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument(
+        "--src", type=str, required=True, help="Path to source MM2.db file"
+    )
+    parser.add_argument(
+        "--dest", type=str, required=True, help="Path to destination MM2.db file"
+    )
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     args = parser.parse_args()
     backup_db(args.src, args.dest)

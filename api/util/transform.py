@@ -189,18 +189,18 @@ class Convert:
             "pool_id": book["pair"],
             "base_currency": book["base"],
             "target_currency": book["quote"],
-            "base_volume": vols["base_volume"],
-            "target_volume": vols["quote_volume"],
-            "bid": book["highest_bid"],
-            "ask": book["lowest_ask"],
-            "high": prices["highest_price_24hr"],
-            "low": prices["lowest_price_24hr"],
+            "base_volume": convert.format_10f(vols["base_volume"]),
+            "target_volume": convert.format_10f(vols["quote_volume"]),
+            "bid": convert.format_10f(book["highest_bid"]),
+            "ask": convert.format_10f(book["lowest_ask"]),
+            "high": convert.format_10f(prices["highest_price_24hr"]),
+            "low": convert.format_10f(prices["lowest_price_24hr"]),
             "trades_24hr": vols["trades_24hr"],
-            "last_price": prices["newest_price_24hr"],
+            "last_price": convert.format_10f(prices["newest_price_24hr"]),
             "last_swap_uuid": prices["last_swap_uuid"],
             "last_trade": prices["newest_price_time"],
-            "volume_usd_24hr": vols["trade_volume_usd"],
-            "liquidity_usd": book["liquidity_usd"],
+            "volume_usd_24hr": convert.format_10f(vols["trade_volume_usd"]),
+            "liquidity_usd": convert.format_10f(book["liquidity_usd"]),
             "variants": derive.pair_variants(book["pair"]),
         }
 
@@ -254,6 +254,17 @@ class Convert:
             "base_volume": i["base_volume"],
             "target_volume": i["quote_volume"],
             "timestamp": i["timestamp"],
+            "type": i["type"],
+        }
+
+    def historical_trades_to_cmc(self, i):
+        return {
+            "pair": i["pair"],
+            "trade_id": i["trade_id"],
+            "price": i["price"],
+            "base_volume": i["base_volume"],
+            "quote_volume": i["quote_volume"],
+            "timestamp": i["timestamp"] * 1000,
             "type": i["type"],
         }
 
@@ -374,12 +385,29 @@ class Deplatform:
 class Derive:
     def __init__(self):
         self._coins_config = None
+        self._cmc_assets_source = None
 
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
+
+    @property
+    def cmc_assets_source(self):
+        if self._cmc_assets_source is None:
+            self._cmc_assets_source = memcache.get_cmc_assets_source()
+        return self._cmc_assets_source
+
+    def cmc_asset_info(self, coin):
+        # This is unreliable. For example, look for 'DOGE'
+        # within the CMC assets from API at
+        # https://pro-api.coinmarketcap.com/v1/cryptocurrency/map
+        # We also need to check the nested 'platform' key
+        ticker = deplatform.coin(coin)
+        if ticker in self.cmc_assets_source:
+            return self.cmc_assets_source[ticker]
+        return {}
 
     @timed
     def base_quote(self, pair_str, reverse=False, deplatform=False):

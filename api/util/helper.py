@@ -57,4 +57,3 @@ def get_pair_info_sorted(pair_list: str, priced: bool = False) -> dict:
         )
     except Exception as e:  # pragma: no cover
         return default.result(msg=e, loglevel="warning")
-

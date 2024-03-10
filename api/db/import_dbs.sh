@@ -11,22 +11,26 @@ else
 fi
 
 project_folder="/home/${username}/defi_stats"
+echo $project_folder
 source "${project_folder}/api/.env"
+
+# Move this to be accessible by the api container
+/usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${LOCAL_MM2_DB_PATH_SEED}" --dest "${project_folder}/api/db/local/MM2_8762.db"
 
 echo "Node type is: $NODE_TYPE"
 if [ $NODE_TYPE = 'serve' ]; then
     echo "Sourcing pre-processed master databases"
     # Import cleaned, pre-processed source databases from the processing server (test.defi-stats.komodo.earth)
-    rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_7777.db                     "${project_folder}/api/db/source/MM2_7777.db"
+    #rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_7777.db                     "${project_folder}/api/db/source/MM2_7777.db"
     rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_8762.db                     "${project_folder}/api/db/source/MM2_8762.db"
     rsync -avzP admin@test.defi-stats.komodo.earth:/home/admin/defi_stats/api/db/master/MM2_all.db                      "${project_folder}/api/db/source/MM2_all.db"
     # Backup cleaned, pre-processed source databases into 'master' db folder
-    /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_7777.db" --dest "${project_folder}/api/db/master/MM2_7777.db"
+    #/usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_7777.db" --dest "${project_folder}/api/db/master/MM2_7777.db"
     /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_8762.db" --dest "${project_folder}/api/db/master/MM2_8762.db"
     /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${project_folder}/api/db/source/MM2_all.db" --dest "${project_folder}/api/db/master/MM2_all.db"
     # If we need to process local dbs, they should be exported to test.defi-stats.komodo.earth
-    # /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${HOST_LOCAL_MM2_DB_PATH_7777}"              --dest "${project_folder}/api/db/local/MM2_8762.db"
-    # /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${HOST_LOCAL_MM2_DB_PATH_8762}"              --dest "${project_folder}/api/db/local/MM2_7777.db"
+    # /usr/bin/python3 "${project_folder}/api/db/backup_db.py" --src "${HOST_LOCAL_MM2_DB_PATH_7777}"              --dest "${project_folder}/api/db/local/MM2_7777.db"
+    
 else
     # Import raw source databases from their respective servers for processing on test.defi-stats.komodo.earth
     echo "Sourcing seed node source databases for processing"

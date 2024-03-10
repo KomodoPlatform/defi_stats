@@ -48,7 +48,7 @@ def gecko_pairs():
 )
 def gecko_tickers():
     try:
-        data = CacheCalc().tickers()
+        data = memcache.get_tickers()
         resp = {
             "last_update": int(cron.now_utc()),
             "pairs_count": data["pairs_count"],

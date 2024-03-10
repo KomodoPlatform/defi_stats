@@ -16,6 +16,7 @@ from fastapi.openapi.docs import (
 from const import API_HOST, API_PORT, DEVMODE
 from routes import (
     gecko,
+    cmc,
     cache_loop,
     swaps,
     rates,
@@ -28,7 +29,7 @@ from routes import (
     tickers,
     stats_api,
     new_db,
-    stats_xyz
+    stats_xyz,
 )
 from lib.cache import Cache, CacheItem
 from models.generic import ErrorMessage, HealthCheck
@@ -160,6 +161,14 @@ app.include_router(
 )
 
 if DEVMODE:
+    app.include_router(
+        cmc.router,
+        prefix="/api/v3/cmc",
+        tags=["Coin Market Cap"],
+        dependencies=[],
+        responses={418: {"description": "I'm a teapot"}},
+    )
+
     app.include_router(
         new_db.router,
         prefix="/api/v3/new_db",

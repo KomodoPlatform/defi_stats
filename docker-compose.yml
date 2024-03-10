@@ -26,6 +26,11 @@ services:
         max-file: "10"
     restart: always
     command: ["poetry", "run", "python", "main.py"]
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 
   mm2_8762:
     container_name: mm2_8762
@@ -41,14 +46,19 @@ services:
       - ./mm2_8762:/home/komodian/mm2
     ports:
       - 127.0.0.1:7862:7862
-      - 127.0.0.1:42946:42845
-      - 127.0.0.1:42956:42855
+      - 127.0.0.1:42845:42845
+      - 127.0.0.1:42855:42855
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "10"
     restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 
   memcached:
     container_name: memcached
@@ -59,6 +69,11 @@ services:
     depends_on:
       - pgsqldb
     command: ["memcached", "-I", "40m", "-m", "100m"]
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 
   pgsqldb:
     container_name: pgsqldb
@@ -77,6 +92,11 @@ services:
       options:
         max-size: "20m"
         max-file: "10"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 
 volumes:
   pg_data:
