@@ -17,6 +17,22 @@ router = APIRouter()
 cache = Cache()
 
 
+
+@router.get(
+    "/assets",
+    description="A detailed summary for each currency available on the exchange.",
+    responses={406: {"model": ErrorMessage}},
+    # response_model=List[CmcSummary],
+    status_code=200,
+)
+def summary():
+    try:
+        return CMC().assets()
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v3/stats-api/assets]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats-api/assets]: {e}"}
+
+
 # TODO: Cache this
 @router.get(
     "/summary",

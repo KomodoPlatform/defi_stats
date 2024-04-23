@@ -587,6 +587,22 @@ class CMC:
     @timed
     def summary(self, refresh: bool = False):
         try:
+            resp = memcache.get_cmc_assets()
+            if refresh or resp is None:
+                # Source the key, name, unified_id from cmc/assets_source.json
+                # and source the contractAddress / contractAddressUrl 
+                # from coins_config.json where it matches 
+                
+                resp = []
+            return resp
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
+            return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
+
+                
+    @timed
+    def summary(self, refresh: bool = False):
+        try:
             resp = memcache.get_cmc_summary()
             if refresh or resp is None:
                 resp = []

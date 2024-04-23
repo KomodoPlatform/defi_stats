@@ -43,13 +43,13 @@ class CmcAsset(BaseModel):
     unified_cryptoasset_id: str = "XXX"
     can_withdraw: bool = True
     can_deposit: bool = True
-    min_withdraw: float = 777.777777
-    max_withdraw: float = 777.777777
+    min_withdraw: float = "0"
+    max_withdraw: float = "21000000"
+    maker_fee: str = "0"
     # Fees are not static, so we cant display universal values
-    # maker_fee: str = "XXX"
     # taker_fee: str = "XXX"
     contractAddressUrl: str = ""
-    contractAddresses: dict[str, CmcContractAddresses]
+    contractAddresses: dict[str, CmcContractAddresses] | None = None
 
 
 # cmc/tickers

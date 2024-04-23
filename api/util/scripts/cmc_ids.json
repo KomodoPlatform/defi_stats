@@ -1,0 +1,628 @@
+[
+    {
+        "ARPA": {
+            "name": "ARPA",
+            "unified_cryptoasset_id": 4039,
+            "contractAddressUrl": "https://bscscan.com/token/0x6F769E65c14Ebd1f68817F5f1DcDb61Cfa2D6f7e,https://etherscan.io/token/0xBA50933C268F567BDC86E1aC131BE072C6B0b71a,https://polygonscan.com/token/0xEE800B277A96B0f490a1A732e1D6395FAD960A26",
+            "contractAddress": "0x6F769E65c14Ebd1f68817F5f1DcDb61Cfa2D6f7e,0xBA50933C268F567BDC86E1aC131BE072C6B0b71a,0xEE800B277A96B0f490a1A732e1D6395FAD960A26"
+        }
+    },
+    {
+        "ATOM": {
+            "name": "ATOM (Atomicals)",
+            "unified_cryptoasset_id": 30019,
+            "contractAddressUrl": "https://bscscan.com/token/0x0Eb3a705fc54725037CC9e008bDede697f62F335,https://polygonscan.com/token/0xac51C4c48Dc3116487eD4BC16542e27B5694Da1b,https://irishub.iobscan.io/#/tokens/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2?type=6",
+            "contractAddress": "0x0Eb3a705fc54725037CC9e008bDede697f62F335,0xac51C4c48Dc3116487eD4BC16542e27B5694Da1b,27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+        }
+    },
+    {
+        "AUR": {
+            "name": "Aurix",
+            "unified_cryptoasset_id": 8831
+        }
+    },
+    {
+        "AVN": {
+            "name": "Avian",
+            "unified_cryptoasset_id": 23483,
+            "contractAddressUrl": "https://polygonscan.com/token/0x752DC265EAf6Da2Db0F8e4a32D5596D3f18e8701",
+            "contractAddress": "0x752DC265EAf6Da2Db0F8e4a32D5596D3f18e8701"
+        }
+    },
+    {
+        "AXE": {
+            "name": "Axe",
+            "unified_cryptoasset_id": 3898
+        }
+    },
+    {
+        "BCH": {
+            "name": "Bitcoin Cash",
+            "unified_cryptoasset_id": 1831,
+            "contractAddressUrl": "https://etherscan.io/token/0x85c4EdC43724e954e5849cAAab61A26a9CB65F1B,https://bscscan.com/token/0x8fF795a6F4D97E7887C79beA79aba5cc76444aDf,https://hecoinfo.com/token/0xeF3CEBD77E0C52cb6f60875d9306397B5Caca375",
+            "contractAddress": "0x85c4EdC43724e954e5849cAAab61A26a9CB65F1B,0x8fF795a6F4D97E7887C79beA79aba5cc76444aDf,0xeF3CEBD77E0C52cb6f60875d9306397B5Caca375"
+        }
+    },
+    {
+        "BLK": {
+            "name": "BlackCoin",
+            "unified_cryptoasset_id": 170,
+            "contractAddressUrl": "https://bscscan.com/token/0xd2cDfD5d26dfA1D11116B9ED7DBd7C6B88C6e1D3",
+            "contractAddress": "0xd2cDfD5d26dfA1D11116B9ED7DBd7C6B88C6e1D3"
+        }
+    },
+    {
+        "BLOCX": {
+            "name": "BLOCX.",
+            "unified_cryptoasset_id": 27792
+        }
+    },
+    {
+        "BNB": {
+            "name": "BNB",
+            "unified_cryptoasset_id": 1839
+        }
+    },
+    {
+        "BOLI": {
+            "name": "Bolivarcoin",
+            "unified_cryptoasset_id": 1053
+        }
+    },
+    {
+        "BSTY": {
+            "name": "GlobalBoost",
+            "unified_cryptoasset_id": 644
+        }
+    },
+    {
+        "BTC": {
+            "name": "Bitcoin",
+            "unified_cryptoasset_id": 1,
+            "contractAddressUrl": "https://bscscan.com/token/0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+            "contractAddress": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c"
+        }
+    },
+    {
+        "BTCZ": {
+            "name": "BitcoinZ",
+            "unified_cryptoasset_id": 2041,
+            "contractAddressUrl": "https://bscscan.com/token/0xcBBB3e5099F769F6d4E2b8b92DC0e268f7E099D8",
+            "contractAddress": "0xcBBB3e5099F769F6d4E2b8b92DC0e268f7E099D8"
+        }
+    },
+    {
+        "BTE": {
+            "name": "Betero",
+            "unified_cryptoasset_id": 19675
+        }
+    },
+    {
+        "BTX": {
+            "name": "BitCore",
+            "unified_cryptoasset_id": 1654,
+            "contractAddressUrl": "https://bscscan.com/token/0x000000089fb24237dA101020Ff8e2AfD14624687",
+            "contractAddress": "0x000000089fb24237dA101020Ff8e2AfD14624687"
+        }
+    },
+    {
+        "CADC": {
+            "name": "CAD Coin",
+            "unified_cryptoasset_id": 8690,
+            "contractAddressUrl": "https://etherscan.io/token/0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef,https://polygonscan.com/token/0x9de41aFF9f55219D5bf4359F167d1D0c772A396D",
+            "contractAddress": "0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef,0x9de41aFF9f55219D5bf4359F167d1D0c772A396D"
+        }
+    },
+    {
+        "DAI": {
+            "name": "Dai",
+            "unified_cryptoasset_id": 4943,
+            "contractAddressUrl": "https://snowtrace.io/token/0xd586E7F844cEa2F87f50152665BCbc2C279D8d70,https://etherscan.io/token/0x6B175474E89094C44Da98b954EedeAC495271d0F,https://bscscan.com/token/0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3,https://ftmscan.com/token/0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E,https://hecoinfo.com/token/0x3D760a45D0887DFD89A2F5385a236B29Cb46ED2a,https://moonriver.moonscan.io/token/0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844,https://polygonscan.com/token/0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+            "contractAddress": "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70,0x6B175474E89094C44Da98b954EedeAC495271d0F,0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3,0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E,0x3D760a45D0887DFD89A2F5385a236B29Cb46ED2a,0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844,0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
+        }
+    },
+    {
+        "DASH": {
+            "name": "Dash",
+            "unified_cryptoasset_id": 131
+        }
+    },
+    {
+        "DGB": {
+            "name": "DigiByte",
+            "unified_cryptoasset_id": 109
+        }
+    },
+    {
+        "DGC": {
+            "name": "Digitalcoin",
+            "unified_cryptoasset_id": 18
+        }
+    },
+    {
+        "DOGE": {
+            "name": "WHALES DOGE",
+            "unified_cryptoasset_id": 30852,
+            "contractAddressUrl": "https://bscscan.com/token/0xbA2aE424d960c26247Dd6c32edC70B295c744C43",
+            "contractAddress": "0xbA2aE424d960c26247Dd6c32edC70B295c744C43"
+        }
+    },
+    {
+        "DOGEC": {
+            "name": "DogeCash",
+            "unified_cryptoasset_id": 3672
+        }
+    },
+    {
+        "DP": {
+            "name": "D-SHOP",
+            "unified_cryptoasset_id": 26495
+        }
+    },
+    {
+        "ETC": {
+            "name": "Ethereum Classic",
+            "unified_cryptoasset_id": 1321,
+            "contractAddressUrl": "https://bscscan.com/token/0x3d6545b08693daE087E957cb1180ee38B9e3c25E",
+            "contractAddress": "0x3d6545b08693daE087E957cb1180ee38B9e3c25E"
+        }
+    },
+    {
+        "ETH": {
+            "name": "The Infinite Garden",
+            "unified_cryptoasset_id": 29991,
+            "contractAddressUrl": "https://snowtrace.io/token/0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB,https://bscscan.com/token/0x2170Ed0880ac9A755fd29B2688956BD959F933F8,https://ftmscan.com/token/0x74b23882a30290451A17c44f4F05243b6b58C76d,https://hecoinfo.com/token/0x64FF637fB478863B7468bc97D30a5bF3A428a1fD,https://explorer.kcc.io/en/token/0xf55aF137A98607F7ED2eFEfA4cd2DfE70E4253b1,https://polygonscan.com/token/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "contractAddress": "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB,0x2170Ed0880ac9A755fd29B2688956BD959F933F8,0x74b23882a30290451A17c44f4F05243b6b58C76d,0x64FF637fB478863B7468bc97D30a5bF3A428a1fD,0xf55aF137A98607F7ED2eFEfA4cd2DfE70E4253b1,0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+        }
+    },
+    {
+        "EUROE": {
+            "name": "EUROe Stablecoin",
+            "unified_cryptoasset_id": 23800,
+            "contractAddressUrl": "https://etherscan.io/token/0x820802Fa8a99901F52e39acD21177b0BE6EE2974,https://polygonscan.com/token/0x820802Fa8a99901F52e39acD21177b0BE6EE2974",
+            "contractAddress": "0x820802Fa8a99901F52e39acD21177b0BE6EE2974,0x820802Fa8a99901F52e39acD21177b0BE6EE2974"
+        }
+    },
+    {
+        "EVR": {
+            "name": "Evernode",
+            "unified_cryptoasset_id": 29551
+        }
+    },
+    {
+        "FET": {
+            "name": "Fetch.ai",
+            "unified_cryptoasset_id": 3773,
+            "contractAddressUrl": "https://etherscan.io/token/0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85,https://bscscan.com/token/0x031b41e504677879370e9DBcF937283A8691Fa7f,https://polygonscan.com/token/0x7583FEDDbceFA813dc18259940F76a02710A8905",
+            "contractAddress": "0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85,0x031b41e504677879370e9DBcF937283A8691Fa7f,0x7583FEDDbceFA813dc18259940F76a02710A8905"
+        }
+    },
+    {
+        "FIRO": {
+            "name": "Firo",
+            "unified_cryptoasset_id": 1414,
+            "contractAddressUrl": "https://bscscan.com/token/0xd5d0322b6bAb6a762C79f8c81A0B674778E13aeD",
+            "contractAddress": "0xd5d0322b6bAb6a762C79f8c81A0B674778E13aeD"
+        }
+    },
+    {
+        "FLUX": {
+            "name": "Flux Protocol",
+            "unified_cryptoasset_id": 9837,
+            "contractAddressUrl": "https://etherscan.io/token/0x720CD16b011b987Da3518fbf38c3071d4F0D1495,https://bscscan.com/token/0xaFF9084f2374585879e8B434C399E29E80ccE635",
+            "contractAddress": "0x720CD16b011b987Da3518fbf38c3071d4F0D1495,0xaFF9084f2374585879e8B434C399E29E80ccE635"
+        }
+    },
+    {
+        "FTC": {
+            "name": "Feathercoin",
+            "unified_cryptoasset_id": 8
+        }
+    },
+    {
+        "FTM": {
+            "name": "Fantom",
+            "unified_cryptoasset_id": 3513,
+            "contractAddressUrl": "https://bscscan.com/token/0xAD29AbB318791D579433D831ed122aFeAf29dcfe,https://etherscan.io/token/0x4E15361FD6b4BB609Fa63C81A2be19d873717870",
+            "contractAddress": "0xAD29AbB318791D579433D831ed122aFeAf29dcfe,0x4E15361FD6b4BB609Fa63C81A2be19d873717870"
+        }
+    },
+    {
+        "GAME": {
+            "name": "Gamestarter",
+            "unified_cryptoasset_id": 10861,
+            "contractAddressUrl": "https://etherscan.io/token/0x63f88A2298a5c4AEE3c216Aa6D926B184a4b2437,https://polygonscan.com/token/0x8d1566569d5b695d44a9a234540f68D393cDC40D",
+            "contractAddress": "0x63f88A2298a5c4AEE3c216Aa6D926B184a4b2437,0x8d1566569d5b695d44a9a234540f68D393cDC40D"
+        }
+    },
+    {
+        "GLC": {
+            "name": "GlieseCoin",
+            "unified_cryptoasset_id": 23481
+        }
+    },
+    {
+        "GMT": {
+            "name": "GMT",
+            "unified_cryptoasset_id": 18069,
+            "contractAddressUrl": "https://bscscan.com/token/0x3019BF2a2eF8040C242C9a4c5c4BD4C81678b2A1,https://polygonscan.com/token/0x714DB550b574b3E927af3D93E26127D15721D4C2",
+            "contractAddress": "0x3019BF2a2eF8040C242C9a4c5c4BD4C81678b2A1,0x714DB550b574b3E927af3D93E26127D15721D4C2"
+        }
+    },
+    {
+        "GRLC": {
+            "name": "Garlicoin",
+            "unified_cryptoasset_id": 2475,
+            "contractAddressUrl": "https://etherscan.io/token/0x58f7345b5295E43aA454911571f13be186655BE9,https://bscscan.com/token/0x7283DfA2d8D7e277b148cc263B5d8Ae02f1076D3",
+            "contractAddress": "0x58f7345b5295E43aA454911571f13be186655BE9,0x7283DfA2d8D7e277b148cc263B5d8Ae02f1076D3"
+        }
+    },
+    {
+        "GRS": {
+            "name": "Giresunspor Token",
+            "unified_cryptoasset_id": 18444
+        }
+    },
+    {
+        "GRT": {
+            "name": "The Graph",
+            "unified_cryptoasset_id": 6719,
+            "contractAddressUrl": "https://snowtrace.io/token/0x8a0cAc13c7da965a312f08ea4229c37869e85cB9,https://etherscan.io/token/0xc944E90C64B2c07662A292be6244BDf05Cda44a7,https://explorer.kcc.io/en/token/0xb49dd3eDB98FBe82A01DFcb556Cd016964baf5A3,https://polygonscan.com/token/0x5fe2B58c013d7601147DcdD68C143A77499f5531",
+            "contractAddress": "0x8a0cAc13c7da965a312f08ea4229c37869e85cB9,0xc944E90C64B2c07662A292be6244BDf05Cda44a7,0xb49dd3eDB98FBe82A01DFcb556Cd016964baf5A3,0x5fe2B58c013d7601147DcdD68C143A77499f5531"
+        }
+    },
+    {
+        "JPYC": {
+            "name": "JPY Coin",
+            "unified_cryptoasset_id": 20648,
+            "contractAddressUrl": "https://snowtrace.io/token/0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB,https://polygonscan.com/token/0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB",
+            "contractAddress": "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB,0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB"
+        }
+    },
+    {
+        "KCS": {
+            "name": "KuCoin Token",
+            "unified_cryptoasset_id": 2087
+        }
+    },
+    {
+        "KMD": {
+            "name": "Komodo",
+            "unified_cryptoasset_id": 1521,
+            "contractAddressUrl": "https://bscscan.com/token/0x2003f7ba57Ea956B05B85C60B4B2Ceea9b111256",
+            "contractAddress": "0x2003f7ba57Ea956B05B85C60B4B2Ceea9b111256"
+        }
+    },
+    {
+        "KNC": {
+            "name": "Kyber Network Crystal v2",
+            "unified_cryptoasset_id": 9444,
+            "contractAddressUrl": "https://bscscan.com/token/0xfe56d5892BDffC7BF58f2E84BE1b2C32D21C308b,https://etherscan.io/token/0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202,https://polygonscan.com/token/0x1C954E8fe737F99f68Fa1CCda3e51ebDB291948C,https://snowtrace.io/token/0x39fC9e94Caeacb435842FADeDeCB783589F50f5f",
+            "contractAddress": "0xfe56d5892BDffC7BF58f2E84BE1b2C32D21C308b,0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202,0x1C954E8fe737F99f68Fa1CCda3e51ebDB291948C,0x39fC9e94Caeacb435842FADeDeCB783589F50f5f"
+        }
+    },
+    {
+        "KOIN": {
+            "name": "Fishkoin",
+            "unified_cryptoasset_id": 30422
+        }
+    },
+    {
+        "KSM": {
+            "name": "Kusama",
+            "unified_cryptoasset_id": 5034,
+            "contractAddressUrl": "https://bscscan.com/token/0x2aa69E8D25C045B659787BC1f03ce47a388DB6E8",
+            "contractAddress": "0x2aa69E8D25C045B659787BC1f03ce47a388DB6E8"
+        }
+    },
+    {
+        "LBC": {
+            "name": "LBRY Credits",
+            "unified_cryptoasset_id": 1298
+        }
+    },
+    {
+        "LCC": {
+            "name": "Litecoin Cash",
+            "unified_cryptoasset_id": 2540
+        }
+    },
+    {
+        "LTC": {
+            "name": "Litecoin",
+            "unified_cryptoasset_id": 2
+        }
+    },
+    {
+        "LYNX": {
+            "name": "Lynex",
+            "unified_cryptoasset_id": 29525
+        }
+    },
+    {
+        "MATIC": {
+            "name": "Polygon",
+            "unified_cryptoasset_id": 3890,
+            "contractAddressUrl": "https://bscscan.com/token/0xCC42724C6683B7E57334c4E856f4c9965ED682bD,https://etherscan.io/token/0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0,https://hecoinfo.com/token/0xdB11743fe8B129b49b11236E8a715004BDabe7e5,https://explorer.kcc.io/en/token/0x1B8e27ABA297466fc6765Ce55BD12A8E216759da",
+            "contractAddress": "0xCC42724C6683B7E57334c4E856f4c9965ED682bD,0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0,0xdB11743fe8B129b49b11236E8a715004BDabe7e5,0x1B8e27ABA297466fc6765Ce55BD12A8E216759da"
+        }
+    },
+    {
+        "MCL": {
+            "name": "McLaren F1 Fan Token",
+            "unified_cryptoasset_id": 21873
+        }
+    },
+    {
+        "MEWC": {
+            "name": "Meowcoin",
+            "unified_cryptoasset_id": 22253
+        }
+    },
+    {
+        "MONA": {
+            "name": "Monavale",
+            "unified_cryptoasset_id": 7866
+        }
+    },
+    {
+        "NAV": {
+            "name": "Navcoin",
+            "unified_cryptoasset_id": 377,
+            "contractAddressUrl": "https://bscscan.com/token/0xBFEf6cCFC830D3BaCA4F6766a0d4AaA242Ca9F3D",
+            "contractAddress": "0xBFEf6cCFC830D3BaCA4F6766a0d4AaA242Ca9F3D"
+        }
+    },
+    {
+        "NMC": {
+            "name": "Namecoin",
+            "unified_cryptoasset_id": 3
+        }
+    },
+    {
+        "PAXG": {
+            "name": "PAX Gold",
+            "unified_cryptoasset_id": 4705,
+            "contractAddressUrl": "https://bscscan.com/token/0x7950865a9140cB519342433146Ed5b40c6F210f7,https://etherscan.io/token/0x45804880De22913dAFE09f4980848ECE6EcbAf78,https://polygonscan.com/token/0x553d3D295e0f695B9228246232eDF400ed3560B5",
+            "contractAddress": "0x7950865a9140cB519342433146Ed5b40c6F210f7,0x45804880De22913dAFE09f4980848ECE6EcbAf78,0x553d3D295e0f695B9228246232eDF400ed3560B5"
+        }
+    },
+    {
+        "PIVX": {
+            "name": "PIVX",
+            "unified_cryptoasset_id": 1169
+        }
+    },
+    {
+        "PPC": {
+            "name": "PEPE COIN BSC",
+            "unified_cryptoasset_id": 24776,
+            "contractAddressUrl": "https://etherscan.io/token/0x044d078F1c86508e13328842Cc75AC021B272958,https://polygonscan.com/token/0x91E7E32C710661C44ae44D10Aa86135d91C3Ed65",
+            "contractAddress": "0x044d078F1c86508e13328842Cc75AC021B272958,0x91E7E32C710661C44ae44D10Aa86135d91C3Ed65"
+        }
+    },
+    {
+        "QTUM": {
+            "name": "Qtum",
+            "unified_cryptoasset_id": 1684,
+            "contractAddressUrl": "https://etherscan.io/token/0x3103dF8F05c4D8aF16fD22AE63E406b97FeC6938",
+            "contractAddress": "0x3103dF8F05c4D8aF16fD22AE63E406b97FeC6938"
+        }
+    },
+    {
+        "RNDR": {
+            "name": "Render",
+            "unified_cryptoasset_id": 5690,
+            "contractAddressUrl": "https://etherscan.io/token/0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24,https://polygonscan.com/token/0x61299774020dA444Af134c82fa83E3810b309991",
+            "contractAddress": "0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24,0x61299774020dA444Af134c82fa83E3810b309991"
+        }
+    },
+    {
+        "RTM": {
+            "name": "Raptoreum",
+            "unified_cryptoasset_id": 12306,
+            "contractAddressUrl": "https://bscscan.com/token/0xF7C71cab11E3694638Bb9A106E0F430565BD15F1",
+            "contractAddress": "0xF7C71cab11E3694638Bb9A106E0F430565BD15F1"
+        }
+    },
+    {
+        "RVN": {
+            "name": "Ravencoin",
+            "unified_cryptoasset_id": 2577
+        }
+    },
+    {
+        "SNX": {
+            "name": "SincroniX",
+            "unified_cryptoasset_id": 24157,
+            "contractAddressUrl": "https://snowtrace.io/token/0xBeC243C995409E6520D7C41E404da5dEba4b209B,https://bscscan.com/token/0x9Ac983826058b8a9C7Aa1C9171441191232E8404,https://etherscan.io/token/0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F,https://ftmscan.com/token/0x56ee926bD8c72B2d5fa1aF4d9E4Cbb515a1E3Adc,https://explorer.kcc.io/en/token/0x31965b5c9c55f5579eb49F4b3AcC59aA10a7B98E,https://polygonscan.com/token/0x50B728D8D964fd00C2d0AAD81718b71311feF68a",
+            "contractAddress": "0xBeC243C995409E6520D7C41E404da5dEba4b209B,0x9Ac983826058b8a9C7Aa1C9171441191232E8404,0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F,0x56ee926bD8c72B2d5fa1aF4d9E4Cbb515a1E3Adc,0x31965b5c9c55f5579eb49F4b3AcC59aA10a7B98E,0x50B728D8D964fd00C2d0AAD81718b71311feF68a"
+        }
+    },
+    {
+        "SPACE": {
+            "name": "MicroVisionChain",
+            "unified_cryptoasset_id": 24193,
+            "contractAddressUrl": "https://snowtrace.io/token/0x09211Dc67f9fe98Fb7bBB91Be0ef05f4a12FA2b2,https://bscscan.com/token/0x9E1170c12FDDd3B00FEc42ddF4C942565D9Be577,https://ftmscan.com/token/0x5f7F94a1dd7b15594d17543BEB8B30b111DD464c,https://polygonscan.com/token/0xB53Ec4aCe420a62Cfb75aFdEba600D284777cd65",
+            "contractAddress": "0x09211Dc67f9fe98Fb7bBB91Be0ef05f4a12FA2b2,0x9E1170c12FDDd3B00FEc42ddF4C942565D9Be577,0x5f7F94a1dd7b15594d17543BEB8B30b111DD464c,0xB53Ec4aCe420a62Cfb75aFdEba600D284777cd65"
+        }
+    },
+    {
+        "SUSHI": {
+            "name": "SushiSwap",
+            "unified_cryptoasset_id": 6758,
+            "contractAddressUrl": "https://snowtrace.io/token/0x37B608519F91f70F2EeB0e5Ed9AF4061722e4F76,https://bscscan.com/token/0x947950BcC74888a40Ffa2593C5798F11Fc9124C4,https://etherscan.io/token/0x6B3595068778DD592e39A122f4f5a5cF09C90fE2,https://ftmscan.com/token/0xae75A438b2E0cB8Bb01Ec1E1e376De11D44477CC,https://explorer.kcc.io/en/token/0xE0a60890BB7F9250089455620063fb6fe4DC159a,https://moonriver.moonscan.io/token/0xf390830DF829cf22c53c8840554B98eafC5dCBc2,https://polygonscan.com/token/0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a",
+            "contractAddress": "0x37B608519F91f70F2EeB0e5Ed9AF4061722e4F76,0x947950BcC74888a40Ffa2593C5798F11Fc9124C4,0x6B3595068778DD592e39A122f4f5a5cF09C90fE2,0xae75A438b2E0cB8Bb01Ec1E1e376De11D44477CC,0xE0a60890BB7F9250089455620063fb6fe4DC159a,0xf390830DF829cf22c53c8840554B98eafC5dCBc2,0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a"
+        }
+    },
+    {
+        "SYS": {
+            "name": "Syscoin",
+            "unified_cryptoasset_id": 541
+        }
+    },
+    {
+        "TBTC": {
+            "name": "tBTC",
+            "unified_cryptoasset_id": 26133,
+            "contractAddressUrl": "https://etherscan.io/token/0x18084fbA666a33d37592fA2633fD49a74DD93a88,https://polygonscan.com/token/0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b",
+            "contractAddress": "0x18084fbA666a33d37592fA2633fD49a74DD93a88,0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b"
+        }
+    },
+    {
+        "THC": {
+            "name": "Thetan Coin",
+            "unified_cryptoasset_id": 15250,
+            "contractAddressUrl": "https://bscscan.com/token/0xBD9a8CA934e673b874937761D7CFa7084ecBdd53",
+            "contractAddress": "0xBD9a8CA934e673b874937761D7CFa7084ecBdd53"
+        }
+    },
+    {
+        "TRC": {
+            "name": "MetaTrace",
+            "unified_cryptoasset_id": 27996
+        }
+    },
+    {
+        "TRYB": {
+            "name": "BiLira",
+            "unified_cryptoasset_id": 5181,
+            "contractAddressUrl": "https://snowtrace.io/token/0x564A341Df6C126f90cf3ECB92120FD7190ACb401,https://bscscan.com/token/0xC1fdbed7Dac39caE2CcC0748f7a80dC446F6a594,https://polygonscan.com/token/0x4Fb71290Ac171E1d144F7221D882BECAc7196EB5,https://etherscan.io/token/0x2C537E5624e4af88A7ae4060C022609376C8D0EB",
+            "contractAddress": "0x564A341Df6C126f90cf3ECB92120FD7190ACb401,0xC1fdbed7Dac39caE2CcC0748f7a80dC446F6a594,0x4Fb71290Ac171E1d144F7221D882BECAc7196EB5,0x2C537E5624e4af88A7ae4060C022609376C8D0EB"
+        }
+    },
+    {
+        "UNI": {
+            "name": "Uniswap",
+            "unified_cryptoasset_id": 7083,
+            "contractAddressUrl": "https://snowtrace.io/token/0x8eBAf22B6F053dFFeaf46f4Dd9eFA95D89ba8580,https://etherscan.io/token/0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,https://bscscan.com/token/0xBf5140A22578168FD562DCcF235E5D43A02ce9B1,https://hecoinfo.com/token/0x22C54cE8321A4015740eE1109D9cBc25815C46E6,https://explorer.kcc.io/en/token/0xEe58E4D62b10A92dB1089d4D040B759C28aE16Cd,https://polygonscan.com/token/0xb33EaAd8d922B1083446DC23f610c2567fB5180f",
+            "contractAddress": "0x8eBAf22B6F053dFFeaf46f4Dd9eFA95D89ba8580,0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,0xBf5140A22578168FD562DCcF235E5D43A02ce9B1,0x22C54cE8321A4015740eE1109D9cBc25815C46E6,0xEe58E4D62b10A92dB1089d4D040B759C28aE16Cd,0xb33EaAd8d922B1083446DC23f610c2567fB5180f"
+        }
+    },
+    {
+        "UNO": {
+            "name": "Uno Re",
+            "unified_cryptoasset_id": 8875
+        }
+    },
+    {
+        "USDC": {
+            "name": "Classic USDC",
+            "unified_cryptoasset_id": 30819,
+            "contractAddressUrl": "https://snowtrace.io/token/0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,https://snowtrace.io/token/0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664,https://etherscan.io/token/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,https://bscscan.com/token/0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d,https://ftmscan.com/token/0x04068DA6C83AFCFA0e13ba15A6696662335D5B75,https://hecoinfo.com/token/0x9362Bbef4B8313A8Aa9f0c9808B80577Aa26B73B,https://explorer.kcc.io/en/token/0x980a5AfEf3D17aD98635F6C5aebCBAedEd3c3430,https://moonriver.moonscan.io/token/0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D,https://polygonscan.com/token/0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359,https://polygonscan.com/token/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "contractAddress": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E,0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664,0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d,0x04068DA6C83AFCFA0e13ba15A6696662335D5B75,0x9362Bbef4B8313A8Aa9f0c9808B80577Aa26B73B,0x980a5AfEf3D17aD98635F6C5aebCBAedEd3c3430,0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D,0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359,0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+        }
+    },
+    {
+        "USDT": {
+            "name": "Tether USDt",
+            "unified_cryptoasset_id": 825,
+            "contractAddressUrl": "https://simpleledger.info/token/9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11,https://moonriver.moonscan.io/token/0xB44a9B6905aF7c801311e8F4E76932ee959c663C,https://ftmscan.com/token/0x049d68029688eAbF473097a2fC38ef61633A3C7A,https://hecoinfo.com/token/0xa71EdC38d189767582C38A3145b5873052c3e47a,https://explorer.kcc.io/en/token/0x0039f574eE5cC39bdD162E9A88e3EB1f111bAF48,https://polygonscan.com/token/0xc2132D05D31c914a87C6611C10748AEb04B58e8F,https://arbiscan.io/token/0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,https://snowtrace.io/token/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7,https://snowtrace.io/token/0xc7198437980c041c805A1EDcbA50c1Ce5db95118,https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955,https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7",
+            "contractAddress": "9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11,0xB44a9B6905aF7c801311e8F4E76932ee959c663C,0x049d68029688eAbF473097a2fC38ef61633A3C7A,0xa71EdC38d189767582C38A3145b5873052c3e47a,0x0039f574eE5cC39bdD162E9A88e3EB1f111bAF48,0xc2132D05D31c914a87C6611C10748AEb04B58e8F,0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7,0xc7198437980c041c805A1EDcbA50c1Ce5db95118,0x55d398326f99059fF775485246999027B3197955,0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        }
+    },
+    {
+        "VIA": {
+            "name": "Octavia AI",
+            "unified_cryptoasset_id": 29488
+        }
+    },
+    {
+        "VRSC": {
+            "name": "VerusCoin",
+            "unified_cryptoasset_id": 5049
+        }
+    },
+    {
+        "VTC": {
+            "name": "Vertcoin",
+            "unified_cryptoasset_id": 99
+        }
+    },
+    {
+        "WAVES": {
+            "name": "Waves",
+            "unified_cryptoasset_id": 1274,
+            "contractAddressUrl": "https://bscscan.com/token/0xFC3E14af0f0c2129a84Cc013D48C70D682902874",
+            "contractAddress": "0xFC3E14af0f0c2129a84Cc013D48C70D682902874"
+        }
+    },
+    {
+        "WBTC": {
+            "name": "Wrapped Bitcoin",
+            "unified_cryptoasset_id": 3717,
+            "contractAddressUrl": "https://etherscan.io/token/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,https://polygonscan.com/token/0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "contractAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6"
+        }
+    },
+    {
+        "WOO": {
+            "name": "WOO",
+            "unified_cryptoasset_id": 7501,
+            "contractAddressUrl": "https://etherscan.io/token/0x4691937a7508860F876c9c0a2a617E7d9E945D4B,https://snowtrace.io/token/0xaBC9547B534519fF73921b1FBA6E672b5f58D083,https://bscscan.com/token/0x4691937a7508860F876c9c0a2a617E7d9E945D4B,https://ftmscan.com/token/0x6626c47c00F1D87902fc13EECfaC3ed06D5E8D8a,https://polygonscan.com/token/0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603",
+            "contractAddress": "0x4691937a7508860F876c9c0a2a617E7d9E945D4B,0xaBC9547B534519fF73921b1FBA6E672b5f58D083,0x4691937a7508860F876c9c0a2a617E7d9E945D4B,0x6626c47c00F1D87902fc13EECfaC3ed06D5E8D8a,0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603"
+        }
+    },
+    {
+        "XEC": {
+            "name": "eCash",
+            "unified_cryptoasset_id": 10791
+        }
+    },
+    {
+        "XEP": {
+            "name": "Electra Protocol",
+            "unified_cryptoasset_id": 8216,
+            "contractAddressUrl": "https://bscscan.com/token/0xb897D0a0f68800f8Be7D69ffDD1c24b69f57Bf3e",
+            "contractAddress": "0xb897D0a0f68800f8Be7D69ffDD1c24b69f57Bf3e"
+        }
+    },
+    {
+        "XIDR": {
+            "name": "XIDR",
+            "unified_cryptoasset_id": 15326,
+            "contractAddressUrl": "https://etherscan.io/token/0xebF2096E01455108bAdCbAF86cE30b6e5A72aa52,https://polygonscan.com/token/0x2c826035c1C36986117A0e949bD6ad4baB54afE2",
+            "contractAddress": "0xebF2096E01455108bAdCbAF86cE30b6e5A72aa52,0x2c826035c1C36986117A0e949bD6ad4baB54afE2"
+        }
+    },
+    {
+        "XNA": {
+            "name": "Neurai",
+            "unified_cryptoasset_id": 27195
+        }
+    },
+    {
+        "XVC": {
+            "name": "Xave Coin",
+            "unified_cryptoasset_id": 18730,
+            "contractAddressUrl": "https://bscscan.com/token/0xeBbfB9E5aF3172C7C0e1D4ff7106A8Bbb961F87B,https://explorer.qtum.org/token/0x4cdaa46741af44c68179c54c4fcb02c2bf646d30",
+            "contractAddress": "0xeBbfB9E5aF3172C7C0e1D4ff7106A8Bbb961F87B,0x4cdaa46741af44c68179c54c4fcb02c2bf646d30"
+        }
+    },
+    {
+        "XVG": {
+            "name": "Verge (ETH)",
+            "unified_cryptoasset_id": 28354
+        }
+    },
+    {
+        "ZEC": {
+            "name": "Zcash",
+            "unified_cryptoasset_id": 1437
+        }
+    },
+    {
+        "ZER": {
+            "name": "Zero",
+            "unified_cryptoasset_id": 1578,
+            "contractAddressUrl": "https://bscscan.com/token/0x530e9346870E632A63E8d461bb3c3622e00782DE",
+            "contractAddress": "0x530e9346870E632A63E8d461bb3c3622e00782DE"
+        }
+    },
+    {
+        "ZET": {
+            "name": "Zetacoin",
+            "unified_cryptoasset_id": 56
+        }
+    }
+]
