@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from lib.coins import Coins
+from lib.cmc import CmcAPI
 from lib.pair import Pair
 from util.cron import cron
 from util.logger import logger, timed
-from util.transform import clean, derive, merge, template, convert
+from util.transform import clean, derive, merge, template, convert, deplatform
 import db.sqldb as db
 import lib.prices
 import util.defaults as default
 import util.memcache as memcache
-
-
-from util.transform import deplatform
 
 
 class CacheCalc:
@@ -584,16 +582,20 @@ class CMC:
     def calc(self):
         return CacheCalc()
 
+    @property
+    def api(self):
+        return CmcAPI()
+
     @timed
-    def summary(self, refresh: bool = False):
+    def assets(self, refresh: bool = False):
         try:
             resp = memcache.get_cmc_assets()
             if refresh or resp is None:
-                # Source the key, name, unified_id from cmc/assets_source.json
-                # and source the contractAddress / contractAddressUrl 
-                # from coins_config.json where it matches 
-                
-                resp = []
+                assets_source = memcache.get("cmc_assets_source")
+                if assets_source is None:
+                    assets_source = self.api.assets_source()
+                cmc_by_ticker = self.api.get_cmc_by_ticker(assets_source)
+                resp = self.api.extract_ids(cmc_by_ticker)
             return resp
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
@@ -645,6 +647,7 @@ class CMC:
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
 
+
     @timed
     def tickers(self):
         try:
@@ -670,3 +673,5 @@ class CMC:
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}"}
+
+

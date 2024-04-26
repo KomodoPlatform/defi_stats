@@ -274,7 +274,7 @@ def cmc_summary():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=600)
+@repeat_every(seconds=60)
 @timed
 def cmc_assets_source():  # pragma: no cover
     if memcache.get("cmc_assets_source") is None:
@@ -282,7 +282,7 @@ def cmc_assets_source():  # pragma: no cover
             CacheItem("cmc_assets_source").save()
         except Exception as e:
             return default.result(msg=e, loglevel="warning")
-        msg = "cmc_summary data update loop complete!"
+        msg = "cmc_assets data update loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 

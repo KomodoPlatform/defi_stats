@@ -25,7 +25,7 @@ cache = Cache()
     # response_model=List[CmcSummary],
     status_code=200,
 )
-def summary():
+def assets():
     try:
         return CMC().assets()
     except Exception as e:  # pragma: no cover

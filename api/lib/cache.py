@@ -11,6 +11,7 @@ import util.memcache as memcache
 import util.validate as validate
 import lib.cache_calc as cache_calc
 import lib.external as external
+import lib.cmc as cmc
 
 
 class Cache:  # pragma: no cover
@@ -193,8 +194,12 @@ class CacheItem:
             else:
                 # EXTERNAL SOURCE CACHE
                 if self.name == "cmc_assets_source":
-                    data = external.CmcAPI().assets_source()
+                    data = cmc.CmcAPI().assets_source()
                     memcache.set_cmc_assets_source(data)
+                # CMC
+                if self.name == "cmc_assets":
+                    data = cache_calc.CMC().assets(refresh=True)
+                    memcache.set_cmc_assets(data)
 
                 if self.name == "fixer_rates":
                     data = external.FixerAPI().latest()
@@ -287,6 +292,7 @@ class CacheItem:
                 if self.name == "cmc_summary":
                     data = cache_calc.CMC().summary(refresh=True)
                     memcache.set_cmc_summary(data)
+
 
             if data is not None:
                 if validate.loop_data(data, self):
