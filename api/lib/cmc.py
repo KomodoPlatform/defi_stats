@@ -171,8 +171,10 @@ class CmcAPI:  # pragma: no cover
 
                     except Exception as e:
                         if coin not in ["ARRR", "ATOM", "IRIS", "OSMO"]:
-                            logger.error(f"Error getting link for {coin}: {e}")
-                            logger.merge(src)
+                            pass
+                            # Uncomment here to identify coins which fail to map
+                            # logger.error(f"Error getting link for {coin}: {e}")
+                            # logger.merge(src)
         for coin in data:
             for i in ["contractAddressUrl", "contractAddress"]:
                 if i in data[coin]:

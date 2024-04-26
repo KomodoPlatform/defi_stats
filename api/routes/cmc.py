@@ -20,9 +20,9 @@ cache = Cache()
 
 @router.get(
     "/assets",
-    description="A detailed summary for each currency available on the exchange.",
+    description="A map of compatible DEX tickers to their respective CMC unified_cryptoasset_ids.",
     responses={406: {"model": ErrorMessage}},
-    # response_model=List[CmcSummary],
+    response_model=Dict[str, CmcAsset],
     status_code=200,
 )
 def assets():

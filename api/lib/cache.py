@@ -57,6 +57,7 @@ class Cache:  # pragma: no cover
                 "prices_tickers_v1",
                 "prices_tickers_v2",
                 "tickers",
+                "cmc_assets",
                 "cmc_assets_source",
                 "cmc_summary",
             ]:

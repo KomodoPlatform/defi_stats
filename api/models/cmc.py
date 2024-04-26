@@ -48,8 +48,8 @@ class CmcAsset(BaseModel):
     maker_fee: str = "0"
     # Fees are not static, so we cant display universal values
     # taker_fee: str = "XXX"
-    contractAddressUrl: str = ""
-    contractAddresses: dict[str, CmcContractAddresses] | None = None
+    contractAddressUrl: str | None = None
+    contractAddresses: str | None = None
 
 
 # cmc/tickers
