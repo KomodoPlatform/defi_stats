@@ -25,14 +25,6 @@ class CmcSummary(BaseModel):
 
 
 # cmc/assets
-class CmcContractAddresses(BaseModel):
-    platform: str = "YYY"
-    variant_ticker: str = "XXX-YYY"
-    contract_address: str = "XXX-YYY"
-    contract_url: str = "https://etherscan.io/token/0x"
-
-
-# cmc/assets
 class CmcAsset(BaseModel):
     """
     The assets endpoint is to provide a detailed summary for
@@ -49,7 +41,7 @@ class CmcAsset(BaseModel):
     # Fees are not static, so we cant display universal values
     # taker_fee: str = "XXX"
     contractAddressUrl: str | None = None
-    contractAddresses: str | None = None
+    contractAddress: str | None = None
 
 
 # cmc/tickers

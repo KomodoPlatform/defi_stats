@@ -288,7 +288,7 @@ def cmc_assets_source():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed
-def cmc_assets_source():  # pragma: no cover
+def cmc_assets():  # pragma: no cover
     if memcache.get("cmc_assets") is None:
         try:
             CacheItem("cmc_assets").save()
