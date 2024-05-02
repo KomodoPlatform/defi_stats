@@ -38,8 +38,7 @@ class CmcAsset(BaseModel):
     min_withdraw: float = "0"
     max_withdraw: float = "21000000"
     maker_fee: str = "0"
-    # Fees are not static, so we cant display universal values
-    # taker_fee: str = "XXX"
+    taker_fee: str = "0.001287"
     contractAddressUrl: str | None = None
     contractAddress: str | None = None
 

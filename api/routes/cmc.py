@@ -98,11 +98,11 @@ def orderbook(
                 "asks": [
                     [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in resp["asks"]
-                ][:depth],
+                ][:depth][::-1],
                 "bids": [
                     [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in resp["bids"]
-                ][:depth],
+                ][:depth][::-1],
                 "total_asks_base_vol": resp["base_liquidity_coins"],
                 "total_bids_quote_vol": resp["quote_liquidity_coins"],
             }
