@@ -178,7 +178,6 @@ class CmcAPI:  # pragma: no cover
         for coin in data:
             for i in ["contractAddressUrl", "contractAddress"]:
                 if i in data[coin]:
-                    data[coin][i] = list(set(data[coin][i]))
                     data[coin][i] = ",".join(data[coin][i])
         logger.info(f"{len(data)} coins translated")
 

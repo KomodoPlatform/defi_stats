@@ -30,6 +30,7 @@ BSTY,BSTY,GlobalBoost,GlobalBoost-Y,GlobalBoost-Y
 BTC,BTC,Bitcoin,Bitcoin,Bitcoin
 BTC-segwit,BTC,Bitcoin,Bitcoin,Bitcoin
 BTC-BEP20,BTC,Bitcoin,Bitcoin,Bitcoin
+BTC-BEP20,BTC,Satoshi Pumpomoto,Bitcoin,Bitcoin
 BTCZ,BTCZ,BitcoinZ,BitcoinZ,BitcoinZ
 BTCZ-BEP20,BTCZ,BitcoinZ,BitcoinZ,BitcoinZ
 BTT-BEP20,BTT,BitTorrent (New),BitTorrent (OLD),BitTorrent (OLD)
