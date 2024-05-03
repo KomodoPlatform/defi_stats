@@ -477,26 +477,8 @@ class CacheCalc:
                 base, quote = derive.base_quote(pair_str=depair)
                 if deplatform.coin(coin) in [None, base, quote]:
                     if depaired:
-                        for variant in book["orderbooks"][depair]:
-                            if variant != "ALL":
-                                v = variant.replace("-segwit", "")
-                                v_data = book["orderbooks"][depair][variant]
-                                if v not in data:
-                                    data.update(template.markets_ticker(v, v_data))
-                                else:
-                                    data[v]["quote_volume"] += Decimal(
-                                        v_data["quote_liquidity_coins"]
-                                    )
-                                    data[v]["base_volume"] += Decimal(
-                                        v_data["base_liquidity_coins"]
-                                    )
-                                    if (
-                                        v_data["newest_price_time"]
-                                        > data[v]["last_price_time"]
-                                    ):
-                                        data[v]["last_price"] = Decimal(
-                                            v_data["newest_price_24hr"]
-                                        )
+                        v_data = book["orderbooks"][depair]["ALL"]
+                        data.update(template.markets_ticker(depair, v_data))
                     else:
                         for variant in book["orderbooks"][depair]:
                             if variant != "ALL":
