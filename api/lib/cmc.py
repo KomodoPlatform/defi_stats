@@ -34,12 +34,15 @@ class CmcAPI:  # pragma: no cover
         data = r.json()["data"]
         return data
 
-    def get_cmc_by_ticker(self, assets_source):
+    def get_cmc_by_ticker(self, assets_source, save=False):
         by_ticker = {}
         for i in assets_source:
             if i["symbol"] not in by_ticker.keys():
                 by_ticker.update({i["symbol"]: []})
             by_ticker[i["symbol"]].append(i)
+        if save:
+            with open("cmc_by_ticker.json", "w+") as f:
+                json.dump(by_ticker, f, indent=4)
         return by_ticker
 
     def extract_ids(self, cmc_by_ticker):
@@ -125,6 +128,13 @@ class CmcAPI:  # pragma: no cover
                             # Excluding these, though there may be a CMC ticker for them
                             continue
                         # If same name and symbol, we can be confident it is valid
+                        if (
+                            src["name"].lower() == self.coins_config[coin_full]["name"].lower()
+                            or src["name"].lower()
+                            == self.coins_config[coin_full]["fname"].lower()
+                            or src["name"] in cmc_allow
+                        ):
+                            needs_validation = False
                         if src["platform"] is not None and coin not in ["KCS", "ONE", "BNB"]:
                             C = Coin(coin=coin_full, coins_config=self.coins_config)
                             contract = C.token_contract
@@ -142,17 +152,6 @@ class CmcAPI:  # pragma: no cover
                                 item["contractAddress"].append(contract)
                                 item["contractAddressUrl"].append(contract_link)
                                 needs_validation = False
-                        elif coin not in ignore:
-                            # logger.warning(f"CMC has platform but dex doesnt for {coin}")
-                            pass
-                                        
-                        elif (
-                            src["name"].lower() == self.coins_config[coin_full]["name"].lower()
-                            or src["name"].lower()
-                            == self.coins_config[coin_full]["fname"].lower()
-                            or src["name"] in cmc_allow
-                        ):
-                            needs_validation = False
                         
                         if needs_validation:
                             coin_compare.append(

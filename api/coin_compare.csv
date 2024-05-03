@@ -1,202 +1,26 @@
 Coins Repo Ticker,Base Ticker,CMC Name,Coins Repo Name,Coins Repo Fname
-ACTN,ACTN,Action Coin,Action Coin,Action Coin
-ACTN-BEP20,ACTN,Action Coin,Action Coin,Action Coin
-ADA-BEP20,ADA,Cardano,Cardano,Cardano
-ADA-BEP20,ADA,Ada,Cardano,Cardano
-ARRR,ARRR,Pirate Chain,Pirate,Pirate
-ARRR-BEP20,ARRR,Pirate Chain,Pirate,Pirate
-ATOM-BEP20,ATOM,Cosmos,Cosmos,Cosmos
-ATOM-BEP20,ATOM,ATOM (Atomicals),Cosmos,Cosmos
-ATOM-PLG20,ATOM,Cosmos,Cosmos,Cosmos
-ATOM-PLG20,ATOM,ATOM (Atomicals),Cosmos,Cosmos
-ATOM,ATOM,Cosmos,Cosmos,Cosmos
-ATOM-IBC_IRIS,ATOM,Cosmos,Cosmos IBC-IRIS,Cosmos IBC-IRIS
-ATOM-IBC_IRIS,ATOM,ATOM (Atomicals),Cosmos IBC-IRIS,Cosmos IBC-IRIS
-AVAX,AVAX,Avalanche,Avalanche,Avalanche
-AVAX-BEP20,AVAX,Avalanche,Avalanche,Avalanche
-AXE,AXE,Axe,Axe,Axe
-AYA,AYA,Aryacoin,Aryacoin,Aryacoin
-AYA-BEP20,AYA,Aryacoin,Aryacoin,Aryacoin
-BCH,BCH,Bitcoin Cash,Bitcoin Cash,Bitcoin Cash
-BCH-ERC20,BCH,Bitcoin Cash,Bitcoin Cash,Bitcoin Cash
-BCH-BEP20,BCH,Bitcoin Cash,Bitcoin Cash,Bitcoin Cash
-BCH-HCO20,BCH,Bitcoin Cash,Bitcoin Cash,Bitcoin Cash
-BLK,BLK,BlackCoin,BlackCoin,BlackCoin
-BLK-BEP20,BLK,BlackCoin,BlackCoin,BlackCoin
-BLOCX,BLOCX,BLOCX.,BLOCX.,BLOCX.
-BNB,BNB,BNB,Binance Coin,Binance Coin
-BOLI,BOLI,Bolivarcoin,Bolivarcoin,Bolivarcoin
-BSTY,BSTY,GlobalBoost,GlobalBoost-Y,GlobalBoost-Y
-BTC,BTC,Bitcoin,Bitcoin,Bitcoin
-BTC-segwit,BTC,Bitcoin,Bitcoin,Bitcoin
-BTC-BEP20,BTC,Bitcoin,Bitcoin,Bitcoin
-BTC-BEP20,BTC,Satoshi Pumpomoto,Bitcoin,Bitcoin
-BTCZ,BTCZ,BitcoinZ,BitcoinZ,BitcoinZ
-BTCZ-BEP20,BTCZ,BitcoinZ,BitcoinZ,BitcoinZ
 BTT-BEP20,BTT,BitTorrent (New),BitTorrent (OLD),BitTorrent (OLD)
 BTT-BEP20,BTT,Bitteam token,BitTorrent (OLD),BitTorrent (OLD)
-BTX,BTX,BitCore,BitCore,BitCore
-BTX-segwit,BTX,BitCore,BitCore,BitCore
-BTX-BEP20,BTX,BitCore,BitCore,BitCore
 BUSD-AVX20,BUSD,BUSD,Binance USD,Binance USD
 BUSD-MVR20,BUSD,BUSD,Binance USD,Binance USD
 BUSD-ERC20,BUSD,BUSD,Binance USD,Binance USD
 BUSD-BEP20,BUSD,BUSD,Binance USD,Binance USD
 BUSD-PLG20,BUSD,BUSD,Binance USD,Binance USD
-CAKE-BEP20,CAKE,PancakeSwap,PancakeSwap,PancakeSwap
-CFX-BEP20,CFX,Conflux,Conflux,Conflux
-CLAM,CLAM,Clams,Clams,Clams
 CRO-ERC20,CRO,Cronos,Crypto.com,Crypto.com
 CRO-KRC20,CRO,Cronos,Crypto.com,Crypto.com
 CRO-PLG20,CRO,Cronos,Crypto.com,Crypto.com
 CRT-QRC20,CRT,Carrot,CRT Token,CRT Token
 CRT-QRC20,CRT,Cantina Royale,CRT Token,CRT Token
-DASH,DASH,Dash,Dash,Dash
-DGB,DGB,DigiByte,DigiByte,DigiByte
-DGB-segwit,DGB,DigiByte,Digibyte,Digibyte
-DGC,DGC,Digitalcoin,Digitalcoin,Digitalcoin
-DOGEC,DOGEC,DogeCash,DogeCash,DogeCash
-DOT-BEP20,DOT,Polkadot,Polkadot,Polkadot
-DOT-HCO20,DOT,Polkadot,Polkadot,Polkadot
-EFL,EFL,e-Gulden,e-Gulden,e-Gulden
 EGLD-BEP20,EGLD,MultiversX,Elrond,Elrond
-ENJ-ERC20,ENJ,Enjin Coin,Enjin Coin,Enjin Coin
-ENJ-KRC20,ENJ,Enjin Coin,Enjin Coin,Enjin Coin
-ENJ-PLG20,ENJ,Enjin Coin,Enjin Coin,Enjin Coin
-EOS-BEP20,EOS,EOS,EOS,EOS
-ETC,ETC,Ethereum Classic,Ethereum Classic,Ethereum Classic
-ETC-BEP20,ETC,Ethereum Classic,Ethereum Classic,Ethereum Classic
-EWT,EWT,Energy Web Token,Energy Web,Energy Web
-FET-ERC20,FET,Fetch.ai,Fetch.ai,Fetch.ai
-FET-BEP20,FET,Fetch.ai,Fetch.ai,Fetch.ai
-FET-PLG20,FET,Fetch.ai,Fetch.ai,Fetch.ai
-FIL-BEP20,FIL,Filecoin,Filecoin,Filecoin
-FIL-ERC20,FIL,Filecoin,Filecoin,Filecoin
-FIL-HCO20,FIL,Filecoin,Filecoin,Filecoin
-FIRO,FIRO,Firo,Firo,Firo
-FIRO-BEP20,FIRO,Firo,Firo,Firo
-FLOW-BEP20,FLOW,Flow,Flow,Flow
-FTC,FTC,Feathercoin,Feathercoin,Feathercoin
-FTC-segwit,FTC,Feathercoin,Feathercoin,Feathercoin
-FTM,FTM,Fantom,Fantom,Fantom
-FTM-BEP20,FTM,Fantom,Fantom,Fantom
-FTM-ERC20,FTM,Fantom,Fantom,Fantom
-GALA-ERC20,GALA,Gala,Gala,Gala
-GALA-BEP20,GALA,Gala,Gala,Gala
-GLEEC,GLEEC,Gleec Coin,Gleec,Gleec
-GLMR,GLMR,Moonbeam,Moonbeam,Moonbeam
 GMT-BEP20,GMT,Gomining,STEPN,STEPN
 GMT-BEP20,GMT,GMT,STEPN,STEPN
 GMT-PLG20,GMT,Gomining,STEPN,STEPN
 GMT-PLG20,GMT,GMT,STEPN,STEPN
-GRLC,GRLC,Garlicoin,Garlicoin,Garlicoin
-GRLC-ERC20,GRLC,Garlicoin,Garlicoin,Garlicoin
-GRLC-BEP20,GRLC,Garlicoin,Garlicoin,Garlicoin
-HPY-QRC20,HPY,Hyper Pay,HyperPay,HyperPay
-INK-QRC20,INK,Ink,INK,INK
-IOTA-BEP20,IOTA,IOTA,IOTA,IOTA
-IOTX-BEP20,IOTX,IoTeX,IoTeX,IoTeX
-IOTX-PLG20,IOTX,IoTeX,IoTeX,IoTeX
-IRIS,IRIS,IRISnet,Iris,Iris
-JST-BEP20,JST,JUST,JUST,JUST
-KCS,KCS,KuCoin Token,KuCoin Token,KuCoin Token
-KMD,KMD,Komodo,Komodo,Komodo
-KMD-BEP20,KMD,Komodo,Komodo,Komodo
-KSM-BEP20,KSM,Kusama,Kusama,Kusama
-LBC,LBC,LBRY Credits,LBRY Credits,LBRY Credits
-LBC-segwit,LBC,LBRY Credits,LBRY Credits,LBRY Credits
-LCC,LCC,Litecoin Cash,Litecoin Cash,Litecoin Cash
-LCC-segwit,LCC,Litecoin Cash,Litecoin Cash,Litecoin Cash
-LOOP-BEP20,LOOP,Loop Network,LoopNetwork,LoopNetwork
-LTC,LTC,Litecoin,Litecoin,Litecoin
-LTC-segwit,LTC,Litecoin,Litecoin,Litecoin
-MATIC,MATIC,Polygon,Polygon,Polygon
-MATIC-BEP20,MATIC,Polygon,Polygon,Polygon
-MATIC-ERC20,MATIC,Polygon,Polygon,Polygon
-MATIC-HCO20,MATIC,Polygon,Polygon,Polygon
-MATIC-KRC20,MATIC,Polygon,Polygon,Polygon
-MED-QRC20,MED,MediBloc,Medibloc,Medibloc
-MED-QRC20,MED,Meadow,Medibloc,Medibloc
-MEWC,MEWC,Meowcoin,Meowcoin,Meowcoin
-MOVR,MOVR,Moonriver,Moonriver,Moonriver
-NAV,NAV,Navcoin,Navcoin,Navcoin
-NAV-BEP20,NAV,Navcoin,Navcoin,Navcoin
-NEAR-BEP20,NEAR,NEAR Protocol,NEAR Protocol,NEAR Protocol
-NMC,NMC,Namecoin,Namecoin,Namecoin
-NMC-segwit,NMC,Namecoin,Namecoin,Namecoin
-NVC,NVC,Novacoin,Novacoin,Novacoin
-NVC-BEP20,NVC,Novacoin,Novacoin,Novacoin
-NVC-QRC20,NVC,Novacoin,Novacoin,Novacoin
-NYC-BEP20,NYC,NewYorkCoin,NewYorkCoin,NewYorkCoin
-ONT-BEP20,ONT,Ontology,Ontology,Ontology
-OSMO,OSMO,Osmosis,Osmosis,Osmosis
-PIVX,PIVX,PIVX,PIVX,PIVX
-PRCY-BEP20,PRCY,PRivaCY Coin,PRivaCY Coin,PRivaCY Coin
-PRCY-ERC20,PRCY,PRivaCY Coin,PRivaCY Coin,PRivaCY Coin
-PRCY-PLG20,PRCY,PRivaCY Coin,PRivaCY Coin,PRivaCY Coin
-QBT-QRC20,QBT,Qbao,Qbao,Qbao
-QBT-QRC20,QBT,Qubit,Qbao,Qbao
 QI-QRC20,QI,QiSwap,Qi Swap,Qi Swap
 QI-QRC20,QI,BENQI,Qi Swap,Qi Swap
 QI-QRC20,QI,QiDao,Qi Swap,Qi Swap
-QTUM,QTUM,Qtum,Qtum,Qtum
-QTUM-ERC20,QTUM,Qtum,Qtum,Qtum
-RBTC,RBTC,Rootstock Smart Bitcoin,RSK Smart Bitcoin,RSK Smart Bitcoin
-RDD,RDD,ReddCoin,ReddCoin,ReddCoin
-REP-ERC20,REP,Augur,Augur,Augur
-RTM,RTM,Raptoreum,Raptoreum,Raptoreum
-RTM-BEP20,RTM,Raptoreum,Raptoreum,Raptoreum
-RVN,RVN,Ravencoin,RavenCoin,RavenCoin
-SCRT-BEP20,SCRT,Secret,Secret,Secret
 SHR-ERC20,SHR,ShareToken,Share,Share
 SHR-BEP20,SHR,ShareToken,Share,Share
-SIGNA-BEP20,SIGNA,Signum,Signum,Signum
-SOL-BEP20,SOL,Solana,Solana,Solana
-SOL-BEP20,SOL,Wrapped Solana,Solana,Solana
-SOL-BEP20,SOL,SonicObamaLockheedMartin69Inu,Solana,Solana
-SOL-BEP20,SOL,Solidify,Solana,Solana
-SOL-PLG20,SOL,Solana,Solana,Solana
-SOL-PLG20,SOL,Wrapped Solana,Solana,Solana
-SOL-PLG20,SOL,SonicObamaLockheedMartin69Inu,Solana,Solana
-SOL-PLG20,SOL,Solidify,Solana,Solana
-SRM-ERC20,SRM,Serum,Serum,Serum
-SRM-ERC20,SRM,Solareum,Serum,Serum
-SRM-PLG20,SRM,Serum,Serum,Serum
-SRM-PLG20,SRM,Solareum,Serum,Serum
 SWAP-BEP20,SWAP,TrustSwap,SafeSwap,SafeSwap
-SYS,SYS,Syscoin,Syscoin,Syscoin
-SYS-segwit,SYS,Syscoin,Syscoin,Syscoin
-TON-ERC20,TON,Tokamak Network,Toncoin,Toncoin
-TON-ERC20,TON,TON Token,Toncoin,Toncoin
-TON-ERC20,TON,Toncoin,Toncoin,Toncoin
-TON-BEP20,TON,Tokamak Network,Toncoin,Toncoin
-TON-BEP20,TON,TON Token,Toncoin,Toncoin
-TON-BEP20,TON,Toncoin,Toncoin,Toncoin
-TRX-BEP20,TRX,TRON,TRON,TRON
-TSL-QRC20,TSL,Energo,Energo TSL,Energo TSL
 TTT-SLP,TTT,TabTrader Token,Trinity Trust Token,Trinity Trust Token
-UNO,UNO,Unobtanium,Unobtanium,Unobtanium
-UNO,UNO,Uno Re,Unobtanium,Unobtanium
-VET-BEP20,VET,VeChain,VeChain,VeChain
-VITE-BEP20,VITE,VITE,Vite,Vite
-VRSC,VRSC,VerusCoin,Verus Coin,Verus Coin
-VTC,VTC,Vertcoin,Vertcoin,Vertcoin
-VTC-segwit,VTC,Vertcoin,Vertcoin,Vertcoin
-WAVES-BEP20,WAVES,Waves,Waves,Waves
-XEC,XEC,eCash,eCash,eCash
-XEP-segwit,XEP,Electra Protocol,Electra Protocol,Electra Protocol
-XEP-BEP20,XEP,Electra Protocol,Electra Protocol,Electra Protocol
-XLM-BEP20,XLM,Stellar,Stellar,Stellar
-XNA,XNA,Neurai,Neurai,Neurai
-XPM,XPM,Primecoin,Primecoin,Primecoin
-XRP-BEP20,XRP,XRP,XRP,XRP
-XRP-BEP20,XRP,HarryPotterObamaPacMan8Inu,XRP,XRP
-XRP-ERC20,XRP,XRP,XRP,XRP
-XRP-ERC20,XRP,HarryPotterObamaPacMan8Inu,XRP,XRP
-XTZ-BEP20,XTZ,Tezos,Tezos,Tezos
-ZEC,ZEC,Zcash,Zcash,Zcash
-ZER,ZER,Zero,Zero,Zero
-ZER-BEP20,ZER,Zero,Zero,Zero
-ZET,ZET,Zetacoin,Zetacoin,Zetacoin
-ZIL-BEP20,ZIL,Zilliqa,Zilliqa,Zilliqa
 ZINU-BEP20,ZINU,Zombie Inu(New),Zombie Inu,Zombie Inu
