@@ -121,7 +121,6 @@ class Coin:
             return True
         return False
 
-
     @property
     def platform(self):
         coins_config_info = self.coins_config[self.coin]
@@ -142,14 +141,23 @@ class Coin:
             if explorer.endswith("/"):
                 explorer = explorer[:-1]
             if self.platform in [
-                "AVAX", "MATIC", "BNB", "ETH",
-                "KCS", "FTM", "HT", "MOVR",
-                "ETH-ARB20", "QTUM", "BCH"
+                "AVAX",
+                "MATIC",
+                "BNB",
+                "ETH",
+                "KCS",
+                "FTM",
+                "HT",
+                "MOVR",
+                "ETH-ARB20",
+                "QTUM",
+                "BCH",
             ]:
                 link = f"{explorer}/token/{self.token_contract}"
             elif self.platform in ["IRIS"]:
                 decimals = coins_config_info["protocol"]["protocol_data"]["decimals"]
-                link = f"{explorer}/#/tokens/{self.token_contract.replace('ibc/', '')}?type={decimals}"
+                contract = self.token_contract.replace('ibc/', '')
+                link = f"{explorer}/#/tokens/{contract}?type={decimals}"
             else:
                 logger.warning(f"Platform {self.platform} not covered!")
         except Exception as e:

@@ -17,7 +17,6 @@ router = APIRouter()
 cache = Cache()
 
 
-
 @router.get(
     "/assets",
     description="A map of compatible DEX tickers to their respective CMC unified_cryptoasset_ids.",

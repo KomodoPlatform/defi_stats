@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import csv
-import sys
 import json
 import requests
 from lib.coins import Coin
@@ -26,7 +25,9 @@ class CmcAPI:  # pragma: no cover
     def assets_source(self):
         apikey = "UNIFIED-CRYPTOASSET-INDEX"
         logger.calc(apikey)
-        endpoint = f"v1/cryptocurrency/map?CMC_PRO_API_KEY={apikey}&listing_status=active"
+        endpoint = (
+            f"v1/cryptocurrency/map?CMC_PRO_API_KEY={apikey}&listing_status=active"
+        )
         logger.calc(endpoint)
         url = f"{self.base_url}/{endpoint}"
         logger.calc(url)
@@ -72,7 +73,7 @@ class CmcAPI:  # pragma: no cover
             "Drawshop Kingdom Reverse",
             "Lynex",
             "Pink",
-            "Joystream"
+            "Joystream",
         ]
         # These have been sighted as the same token, though having a slightly different full name value
         cmc_allow = [
@@ -82,8 +83,7 @@ class CmcAPI:  # pragma: no cover
             "Gleec Coin",
             "IRISnet",
             "BNB",
-            "BUSD"
-            "KuCoin Token",
+            "BUSD" "KuCoin Token",
             "Energy Web Token",
             "Injective",
             "VerusCoin",
@@ -97,7 +97,7 @@ class CmcAPI:  # pragma: no cover
             "Rootstock Smart Bitcoin",
             "CAKE",
             "GlobalBoost",
-            "Hyper Pay"
+            "Hyper Pay",
         ]
         # These are for cases where there is a name match, but also mismatches which have been sighted as invalid
         coin_compare = [
@@ -106,11 +106,29 @@ class CmcAPI:  # pragma: no cover
                 "Base Ticker",
                 "CMC Name",
                 "Coins Repo Name",
-                "Coins Repo Fname"
+                "Coins Repo Fname",
             ]
         ]
         # These are false positives in bad match detection
-        ignore = ["DOGE", "AUR", "AVN", "ETH", "FLUX", "GLC", "GRS", "MONA", "ONE", "HT", "KOIN", "THC", "VAL", "VIA", "XVG", "POT", "PPC"]
+        ignore = [
+            "DOGE",
+            "AUR",
+            "AVN",
+            "ETH",
+            "FLUX",
+            "GLC",
+            "GRS",
+            "MONA",
+            "ONE",
+            "HT",
+            "KOIN",
+            "THC",
+            "VAL",
+            "VIA",
+            "XVG",
+            "POT",
+            "PPC",
+        ]
         for coin in common_keys:
             needs_validation = True
             for coin_full in self.coins_config:
@@ -122,24 +140,35 @@ class CmcAPI:  # pragma: no cover
                     if coin in data:
                         item = data[coin]
                     else:
-                        item = {"name": src["name"], "unified_cryptoasset_id": src["id"]}
+                        item = {
+                            "name": src["name"],
+                            "unified_cryptoasset_id": src["id"],
+                        }
                     try:
                         if coin_full.endswith("_OLD"):
                             # Excluding these, though there may be a CMC ticker for them
                             continue
                         # If same name and symbol, we can be confident it is valid
                         if (
-                            src["name"].lower() == self.coins_config[coin_full]["name"].lower()
+                            src["name"].lower()
+                            == self.coins_config[coin_full]["name"].lower()
                             or src["name"].lower()
                             == self.coins_config[coin_full]["fname"].lower()
                             or src["name"] in cmc_allow
                         ):
                             needs_validation = False
-                        if src["platform"] is not None and coin not in ["KCS", "ONE", "BNB"]:
+                        if src["platform"] is not None and coin not in [
+                            "KCS",
+                            "ONE",
+                            "BNB",
+                        ]:
                             C = Coin(coin=coin_full, coins_config=self.coins_config)
                             contract = C.token_contract
                             token_address = src["platform"]["token_address"]
-                            if contract.lower() == token_address.lower() or src["name"] in cmc_allow:
+                            if (
+                                contract.lower() == token_address.lower()
+                                or src["name"] in cmc_allow
+                            ):
                                 contract_link = C.contract_link
                                 if contract_link is not None:
                                     for i in [
@@ -152,7 +181,7 @@ class CmcAPI:  # pragma: no cover
                                 item["contractAddress"].append(contract)
                                 item["contractAddressUrl"].append(contract_link)
                                 needs_validation = False
-                        
+
                         if needs_validation:
                             coin_compare.append(
                                 [
@@ -188,7 +217,6 @@ class CmcAPI:  # pragma: no cover
                     cw.writerow(i)
         return data
 
-
     def get_common_keys(self, cmc_assets):
         coins_config_keys = list(
             set(
@@ -206,4 +234,3 @@ class CmcAPI:  # pragma: no cover
         data.sort()
         logger.info(f"{len(data)} common tickers")
         return data
-

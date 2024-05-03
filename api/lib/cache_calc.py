@@ -601,7 +601,6 @@ class CMC:
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
 
-                
     @timed
     def summary(self, refresh: bool = False):
         try:
@@ -647,7 +646,6 @@ class CMC:
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
 
-
     @timed
     def tickers(self):
         try:
@@ -673,5 +671,3 @@ class CMC:
         except Exception as e:  # pragma: no cover
             logger.warning(f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}")
             return {"error": f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}"}
-
-

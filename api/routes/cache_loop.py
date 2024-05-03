@@ -285,6 +285,7 @@ def cmc_assets_source():  # pragma: no cover
         msg = "cmc_assets_source data update loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
+
 @router.on_event("startup")
 @repeat_every(seconds=60)
 @timed

@@ -294,7 +294,6 @@ class CacheItem:
                     data = cache_calc.CMC().summary(refresh=True)
                     memcache.set_cmc_summary(data)
 
-
             if data is not None:
                 if validate.loop_data(data, self):
                     # Save without extra fields for upstream cache
