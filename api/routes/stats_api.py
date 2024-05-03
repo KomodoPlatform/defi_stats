@@ -34,11 +34,11 @@ def atomicdexio():
     try:
         query = db.SqlQuery()
         data = query.swap_counts()
-        tickers_data = CacheCalc().tickers()
+        extras = memcache.get_adex_24hr()
         data.update(
             {
-                "current_liquidity": tickers_data["combined_liquidity_usd"],
-                "volume_24hr": tickers_data["combined_volume_usd"],
+                "current_liquidity": extras["current_liquidity"],
+                "volume_24hr": extras["swaps_volume"],
             }
         )
         return data

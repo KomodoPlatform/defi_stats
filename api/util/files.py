@@ -25,6 +25,9 @@ class Files:
         self.coins_config = f"{folder}/coins/coins_config.json"
         self.gecko_source = f"{folder}/gecko/source.json"
         self.fixer_rates = f"{folder}/rates/fixer_rates.json"
+        self.cmc_assets_source = f"{folder}/cmc/assets_source.json"
+        self.cmc_summary = f"{folder}/cmc/summary.json"
+        self.cmc_assets = f"{folder}/cmc/assets.json"
 
         # Top Fives
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
@@ -33,7 +36,6 @@ class Files:
         # Foundational cache
         self.coin_volumes_24hr = f"{folder}/coins/volumes_24hr.json"
         self.pairs_last_traded = f"{folder}/pairs/last_traded.json"
-        self.pairs_last_traded_24hr = f"{folder}/pairs/last_traded_24hr.json"
         self.pairs_orderbook_extended = f"{folder}/pairs/orderbook_extended.json"
         self.pair_prices_24hr = f"{folder}/pairs/prices_24hr.json"
         self.pair_volumes_24hr = f"{folder}/pairs/volumes_24hr.json"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from lib.dex_api import DexAPI
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
 from util.logger import logger, timed
@@ -10,6 +11,7 @@ import util.memcache as memcache
 import util.validate as validate
 import lib.cache_calc as cache_calc
 import lib.external as external
+import lib.cmc as cmc
 
 
 class Cache:  # pragma: no cover
@@ -37,6 +39,7 @@ class Cache:  # pragma: no cover
 
     def healthcheck(self, to_console=False):  # pragma: no cover
         try:
+            dex = DexAPI()
             updated = {}
             for i in [
                 "adex_24hr",
@@ -54,18 +57,26 @@ class Cache:  # pragma: no cover
                 "prices_tickers_v1",
                 "prices_tickers_v2",
                 "tickers",
+                "cmc_assets",
+                "cmc_assets_source",
+                "cmc_summary",
             ]:
                 item = self.get_item(i)
                 since_updated = item.since_updated_min()
                 updated.update({i: since_updated})
-                if to_console:
-                    self.print_cache_status(i, since_updated)
+            logger.calc(dex.version)
+            updated.update({"DeFi SDK Version": dex.version})
+            if to_console:
+                for i in updated:
+                    self.print_cache_status(i, updated[i])
             return updated
         except Exception as e:  # pragma: no cover
             logger.warning(e)
 
-    def print_cache_status(self, i, since_updated):
-        msg = f"[{i}] last updated: {since_updated} min"
+    def print_cache_status(self, k, v):
+        if k not in ["DeFi SDK Version"]:
+            v = f"last updated {v} min ago"
+        msg = f"[{k}] {v}"
         return default.result(msg=msg, loglevel="cached")
 
 
@@ -183,6 +194,14 @@ class CacheItem:
                     memcache.set_coins(data)
             else:
                 # EXTERNAL SOURCE CACHE
+                if self.name == "cmc_assets_source":
+                    data = cmc.CmcAPI().assets_source()
+                    memcache.set_cmc_assets_source(data)
+                # CMC
+                if self.name == "cmc_assets":
+                    data = cache_calc.CMC().assets(refresh=True)
+                    memcache.set_cmc_assets(data)
+
                 if self.name == "fixer_rates":
                     data = external.FixerAPI().latest()
                     memcache.set_fixer_rates(data)
@@ -213,11 +232,6 @@ class CacheItem:
                     memcache.set_coin_volumes_24hr(data)
 
                 # PAIR Data
-                if self.name == "pairs_last_traded_24hr":
-                    data = cache_calc.CacheCalc(
-                        coins_config=self.coins_config
-                    ).pairs_last_traded(since=cron.days_ago(1))
-                    memcache.set_pairs_last_traded_24hr(data)
 
                 if self.name == "pairs_last_traded":
                     data = cache_calc.CacheCalc(
@@ -268,25 +282,24 @@ class CacheItem:
                     ).gecko_pairs(refresh=True)
                     memcache.set_gecko_pairs(data)
 
+                # STATS_API
                 if self.name == "stats_api_summary":
                     data = cache_calc.CacheCalc(
                         coins_config=self.coins_config
                     ).stats_api_summary(refresh=True)
                     memcache.set_stats_api_summary(data)
 
-                # REVIEW
-                """
-                if self.name == "generic_summary":
-                    data = stats_api.StatsAPI().pair_summaries()
-                    memcache.set_summary(data)
-
-                if self.name == "generic_tickers_14d":
-                    data = cache_calc.CacheCalc().tickers(trades_days=14)
-                    memcache.set_tickers_14d(data)
-                """
+                # CMC
+                if self.name == "cmc_summary":
+                    data = cache_calc.CMC().summary(refresh=True)
+                    memcache.set_cmc_summary(data)
 
             if data is not None:
                 if validate.loop_data(data, self):
+                    # Save without extra fields for upstream cache
+                    if self.name in ["prices_tickers_v2", "fixer_rates", "tickers"]:
+                        fn = self.filename.replace(".json", "_cache.json")
+                        self.files.save_json(fn, data)
                     data = {"last_updated": int(cron.now_utc()), "data": data}
                     r = self.files.save_json(self.filename, data)
                     msg = f"Saved {self.filename}"
@@ -309,10 +322,10 @@ class CacheItem:
 
 
 def reset_cache_files():
-    if 'IS_TESTING' in os.environ:
+    if "IS_TESTING" in os.environ:
         logger.calc(f"Resetting cache [testing: {os.environ['IS_TESTING']}]")
     else:
-        os.environ['IS_TESTING'] = "False"
+        os.environ["IS_TESTING"] = "False"
     memcache.set_coins_config(CacheItem(name="coins_config").data)
     coins_config = memcache.get_coins_config()
     memcache.set_coins(CacheItem(name="coins", coins_config=coins_config).data)
@@ -353,4 +366,7 @@ def reset_cache_files():
     )
     memcache.set_stats_api_summary(
         CacheItem(name="stats_api_summary", coins_config=coins_config).data
+    )
+    memcache.set_cmc_assets_source(
+        CacheItem(name="cmc_assets_source", coins_config=coins_config).data
     )

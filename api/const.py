@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import os
 import sys
-
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# https://lightrun.com/solutions/troubleshooting-tiangolo-fastapi/
+# keep the SpooledTemporaryFile in-memory
+StarletteUploadFile.spool_max_size = 0
 
 # [NODE_TYPE]
 # Options:
@@ -84,6 +88,7 @@ if LOCAL_MM2_DB_PATH_8762 is None and NODE_TYPE != "process":
 DB_SOURCE_PATH = f"{PROJECT_ROOT_PATH}/api/db/source"
 DB_CLEAN_PATH = f"{PROJECT_ROOT_PATH}/api/db/cleaned"
 DB_MASTER_PATH = f"{PROJECT_ROOT_PATH}/api/db/master"
+DB_LOCAL_PATH = f"{PROJECT_ROOT_PATH}/api/db/local"
 LOCAL_MM2_DB_BACKUP_7777 = f"{DB_SOURCE_PATH}/local_MM2_7777.db"
 LOCAL_MM2_DB_BACKUP_8762 = f"{DB_SOURCE_PATH}/local_MM2_8762.db"
 
@@ -91,6 +96,9 @@ LOCAL_MM2_DB_BACKUP_8762 = f"{DB_SOURCE_PATH}/local_MM2_8762.db"
 MM2_DB_PATH_ALL = f"{DB_MASTER_PATH}/MM2_all.db"
 MM2_DB_PATH_7777 = f"{DB_MASTER_PATH}/MM2_7777.db"
 MM2_DB_PATH_8762 = f"{DB_MASTER_PATH}/MM2_8762.db"
+MM2_DB_PATH_SEED = f"{DB_LOCAL_PATH}/MM2_8762.db"
+LOCAL_MM2_DB_PATH_SEED = os.getenv("LOCAL_MM2_DB_PATH_SEED")
+
 
 # Database paths as a dict, for convenience
 MM2_DB_PATHS = {
@@ -134,3 +142,4 @@ MARKETS_PAIRS_DAYS = 30
 GENERIC_PAIRS_DAYS = 30
 
 MEMCACHE_LIMIT = 250 * 1024 * 1024  # 250 MB
+DEXAPI_USERPASS = os.getenv("DEXAPI_USERPASS")

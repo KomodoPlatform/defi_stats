@@ -189,18 +189,18 @@ class Convert:
             "pool_id": book["pair"],
             "base_currency": book["base"],
             "target_currency": book["quote"],
-            "base_volume": vols["base_volume"],
-            "target_volume": vols["quote_volume"],
-            "bid": book["highest_bid"],
-            "ask": book["lowest_ask"],
-            "high": prices["highest_price_24hr"],
-            "low": prices["lowest_price_24hr"],
+            "base_volume": convert.format_10f(vols["base_volume"]),
+            "target_volume": convert.format_10f(vols["quote_volume"]),
+            "bid": convert.format_10f(book["highest_bid"]),
+            "ask": convert.format_10f(book["lowest_ask"]),
+            "high": convert.format_10f(prices["highest_price_24hr"]),
+            "low": convert.format_10f(prices["lowest_price_24hr"]),
             "trades_24hr": vols["trades_24hr"],
-            "last_price": prices["newest_price_24hr"],
+            "last_price": convert.format_10f(prices["newest_price_24hr"]),
             "last_swap_uuid": prices["last_swap_uuid"],
             "last_trade": prices["newest_price_time"],
-            "volume_usd_24hr": vols["trade_volume_usd"],
-            "liquidity_usd": book["liquidity_usd"],
+            "volume_usd_24hr": convert.format_10f(vols["trade_volume_usd"]),
+            "liquidity_usd": convert.format_10f(book["liquidity_usd"]),
             "variants": derive.pair_variants(book["pair"]),
         }
 
@@ -254,6 +254,17 @@ class Convert:
             "base_volume": i["base_volume"],
             "target_volume": i["quote_volume"],
             "timestamp": i["timestamp"],
+            "type": i["type"],
+        }
+
+    def historical_trades_to_cmc(self, i):
+        return {
+            "pair": i["pair"],
+            "trade_id": i["trade_id"],
+            "price": i["price"],
+            "base_volume": i["base_volume"],
+            "quote_volume": i["quote_volume"],
+            "timestamp": i["timestamp"] * 1000,
             "type": i["type"],
         }
 
@@ -374,12 +385,29 @@ class Deplatform:
 class Derive:
     def __init__(self):
         self._coins_config = None
+        self._cmc_assets_source = None
 
     @property
     def coins_config(self):
         if self._coins_config is None:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
+
+    @property
+    def cmc_assets_source(self):
+        if self._cmc_assets_source is None:
+            self._cmc_assets_source = memcache.get_cmc_assets_source()
+        return self._cmc_assets_source
+    
+    @property
+    def cmc_assets_dict(self):
+        return {i['symbol']: i for i in self.cmc_assets_source}
+
+    def cmc_asset_info(self, coin):
+        ticker = deplatform.coin(coin)
+        if ticker in self.cmc_assets_dict:
+            return self.cmc_assets_dict[ticker]
+        return {}
 
     @timed
     def base_quote(self, pair_str, reverse=False, deplatform=False):
@@ -395,6 +423,13 @@ class Derive:
             if len(split_pair_str) == 2:
                 base = split_pair_str[0]
                 quote = split_pair_str[1]
+            elif pair_str.find("IBC_") > -1:
+                if split_pair_str[0].endswith("IBC"):
+                    base = f"{split_pair_str[0]}_{split_pair_str[1]}"
+                    quote = split_pair_str[2]
+                elif split_pair_str[1].endswith("IBC"):
+                    base = split_pair_str[0]
+                    quote = f"{split_pair_str[1]}_{split_pair_str[2]}"
             elif pair_str.startswith("IRIS_ATOM-IBC"):
                 base = "IRIS_ATOM-IBC"
                 quote = pair_str.replace(f"{base}_", "")
@@ -428,7 +463,11 @@ class Derive:
                 elif split_pair_str[1] == "OLD":
                     base = f"{split_pair_str[0]}_{split_pair_str[1]}"
                     quote = split_pair_str[2]
-            # failed to parse ATOM-IBC_IRIS_LTC into base/quote!
+            else:
+                logger.warning(f"Failed to parse {pair_str}, needs a special case")
+                base = "PARSE"
+                quote = "FAIL"
+                
             if reverse:
                 return quote, base
             return base, quote

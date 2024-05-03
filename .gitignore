@@ -1,5 +1,11 @@
 # Custom
 username
+*.gz
+*.zip
+core
+mm2
+userpass
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

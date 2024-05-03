@@ -1,8 +1,9 @@
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
-from sqlmodel import Field, SQLModel
+from sqlmodel import SQLModel, Field
 from util.enums import TradeType
+from sqlalchemy import UniqueConstraint
 
 
 class DefiSwap(SQLModel, table=True):
@@ -140,3 +141,31 @@ class StatsSwap(SQLModel, table=True):
     taker_coin_usd_price: Decimal = 0.00
     taker_pubkey: str = "unknown"
     maker_pubkey: str = "unknown"
+
+
+class SeednodeVersionStats(SQLModel, table=True):
+    __tablename__ = "seednode_version_stats"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = ""
+    error: str = ""
+    season: str = ""
+    version: str = ""
+    score: Decimal = 777.777777
+    timestamp: int = 1777777777
+
+    @classmethod
+    def get_constraints(cls):
+        return [UniqueConstraint(cls.name, cls.timestamp)]
+
+
+class Mm2StatsNodes(SQLModel, table=True):
+    __tablename__ = "stats_nodes"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = ""
+    version: str = ""
+    timestamp: int = 1777777777
+    error: str = ""
+
+    @classmethod
+    def get_constraints(cls):
+        return [UniqueConstraint(cls.name, cls.timestamp)]

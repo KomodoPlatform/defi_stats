@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 from decimal import Decimal
 from lib.coins import Coins
+from lib.cmc import CmcAPI
 from lib.pair import Pair
 from util.cron import cron
 from util.logger import logger, timed
-from util.transform import clean, derive, merge, template, convert
+from util.transform import clean, derive, merge, template, convert, deplatform
 import db.sqldb as db
 import lib.prices
 import util.defaults as default
-import util.helper as helper
 import util.memcache as memcache
-
-
-from util.transform import deplatform
 
 
 class CacheCalc:
@@ -21,7 +18,6 @@ class CacheCalc:
         coins_config=None,
         gecko_source=None,
         pairs_last_traded_cache=None,
-        pairs_last_traded_24hr_cache=None,
         pair_prices_24hr_cache=None,
         pairs_orderbook_extended_cache=None,
         pair_volumes_24hr_cache=None,
@@ -31,7 +27,6 @@ class CacheCalc:
         self._coins_config = coins_config
         self._gecko_source = gecko_source
         self._pairs_last_traded_cache = pairs_last_traded_cache
-        self._pairs_last_traded_24hr_cache = pairs_last_traded_24hr_cache
         self._pairs_orderbook_extended_cache = pairs_orderbook_extended_cache
         self._pair_prices_24hr_cache = pair_prices_24hr_cache
         self._pair_volumes_24hr_cache = pair_volumes_24hr_cache
@@ -51,7 +46,6 @@ class CacheCalc:
         if self._priced_coins is None:
             self._priced_coins = self.coins_obj.with_price
         return self._priced_coins
-
 
     @property
     def coins_config(self):
@@ -97,22 +91,13 @@ class CacheCalc:
             self._pairs_last_traded_cache = memcache.get_pairs_last_traded()
         return self._pairs_last_traded_cache
 
-    @property
-    def pairs_last_traded_24hr_cache(self):
-        if self._pairs_last_traded_24hr_cache is None:
-            # logger.info("Getting pairs_last_traded_24hr_cache")
-            self._pairs_last_traded_24hr_cache = memcache.get_pairs_last_traded_24hr()
-        return self._pairs_last_traded_24hr_cache
-
     @timed
     def pairs_last_traded(self, since=0):
         try:
             data = self.pg_query.pair_last_trade(since=since)
             for i in data:
                 data[i] = clean.decimal_dicts(data[i])
-                data[i].update(
-                    {"priced": i in self.coins_obj.with_price}
-                )
+                data[i].update({"priced": i in self.coins_obj.with_price})
             resp = {}
             for variant in data:
                 depair = deplatform.pair(variant)
@@ -587,3 +572,102 @@ class CacheCalc:
         return default.result(
             data=resp, msg=msg, loglevel=loglevel, ignore_until=ignore_until
         )
+
+
+class CMC:
+    def init(self):
+        pass
+
+    @property
+    def calc(self):
+        return CacheCalc()
+
+    @property
+    def api(self):
+        return CmcAPI()
+
+    @timed
+    def assets(self, refresh: bool = False):
+        try:
+            resp = memcache.get_cmc_assets()
+            if refresh or resp is None:
+                assets_source = memcache.get("cmc_assets_source")
+                if assets_source is None:
+                    assets_source = self.api.assets_source()
+                cmc_by_ticker = self.api.get_cmc_by_ticker(assets_source)
+                resp = self.api.extract_ids(cmc_by_ticker)
+            return resp
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
+            return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
+
+    @timed
+    def summary(self, refresh: bool = False):
+        try:
+            resp = memcache.get_cmc_summary()
+            if refresh or resp is None:
+                resp = []
+                book = self.calc.pairs_orderbook_extended_cache
+                vols = self.calc.pair_volumes_24hr_cache
+                last = self.calc.pairs_last_traded_cache
+                if None not in [book, vols, last]:
+                    for depair in book["orderbooks"]:
+                        o = book["orderbooks"][depair]["ALL"]
+                        lt = template.first_last_traded()
+                        v = template.pair_volume_item(suffix="24hr")
+                        if depair in vols["volumes"]:
+                            if "ALL" in vols["volumes"][depair]:
+                                v = vols["volumes"][depair]["ALL"]
+                        if depair in last:
+                            if "ALL" in last[depair]:
+                                lt = last[depair]["ALL"]
+                        data = clean.decimal_dicts(
+                            {
+                                "trading_pair": depair,
+                                "base_currency": o["base"],
+                                "quote_currency": o["quote"],
+                                "last_price": lt["last_swap_price"],
+                                "lowest_ask": o["lowest_ask"],
+                                "highest_bid": o["highest_bid"],
+                                "base_volume": v["base_volume"],
+                                "quote_volume": v["quote_volume"],
+                                "price_change_percent_24h": o["price_change_pct_24hr"],
+                                "highest_price_24h": o["highest_price_24hr"],
+                                "lowest_price_24h": o["lowest_price_24hr"],
+                                # Only here for the filter
+                                "last_swap_uuid": lt["last_swap_uuid"],
+                            }
+                        )
+                        # remove where no past trades detected
+                        if lt["last_swap_uuid"] != "":
+                            resp.append(data)
+            return resp
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [/api/v3/cmc/summary]: {e}")
+            return {"error": f"{type(e)} Error in [/api/v3/cmc/summary]: {e}"}
+
+    @timed
+    def tickers(self):
+        try:
+            tickers_lite = self.calc.tickers_lite(depaired=True)
+            # TODO: Derive cmc base/quote ids
+            resp = []
+            for i in tickers_lite:
+                for k, v in i.items():
+                    base, quote = derive.base_quote(k)
+                    cmc_base_info = derive.cmc_asset_info(base)
+                    logger.merge(cmc_base_info)
+                    cmc_quote_info = derive.cmc_asset_info(quote)
+                    logger.calc(cmc_base_info)
+                    if "id" in cmc_base_info and "id" in cmc_quote_info:
+                        v.update(
+                            {
+                                "base_id": cmc_base_info["id"],
+                                "quote_id": cmc_quote_info["id"],
+                            }
+                        )
+                        resp.append({k: v})
+            return resp
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}")
+            return {"error": f"{type(e)} Error in [/api/v3/cmc/tickers]: {e}"}
