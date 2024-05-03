@@ -160,14 +160,15 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
+app.include_router(
+    cmc.router,
+    prefix="/api/v3/cmc",
+    tags=["Coin Market Cap"],
+    dependencies=[],
+    responses={418: {"description": "I'm a teapot"}},
+)
+
 if DEVMODE:
-    app.include_router(
-        cmc.router,
-        prefix="/api/v3/cmc",
-        tags=["Coin Market Cap"],
-        dependencies=[],
-        responses={418: {"description": "I'm a teapot"}},
-    )
 
     app.include_router(
         new_db.router,
