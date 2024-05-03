@@ -17,6 +17,21 @@ router = APIRouter()
 cache = Cache()
 
 
+@router.get(
+    "/assets",
+    description="A map of compatible DEX tickers to their respective CMC unified_cryptoasset_ids.",
+    responses={406: {"model": ErrorMessage}},
+    response_model=Dict[str, CmcAsset],
+    status_code=200,
+)
+def assets():
+    try:
+        return CMC().assets()
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v3/stats-api/assets]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/stats-api/assets]: {e}"}
+
+
 # TODO: Cache this
 @router.get(
     "/summary",
@@ -82,11 +97,11 @@ def orderbook(
                 "asks": [
                     [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in resp["asks"]
-                ][:depth],
+                ][:depth][::-1],
                 "bids": [
                     [convert.format_10f(i["price"]), convert.format_10f(i["volume"])]
                     for i in resp["bids"]
-                ][:depth],
+                ][:depth][::-1],
                 "total_asks_base_vol": resp["base_liquidity_coins"],
                 "total_bids_quote_vol": resp["quote_liquidity_coins"],
             }

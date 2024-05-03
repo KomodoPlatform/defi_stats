@@ -1,5 +1,5 @@
 {
-    "last_updated": 1710068792,
+    "last_updated": 1714705928,
     "data": [
         {
             "pair": "DGB_LTC",
@@ -15,9 +15,9 @@
             "oldest_price_24hr": 0,
             "oldest_price_time": 0,
             "newest_price_24hr": 1.0,
-            "newest_price_time": 1710064781,
+            "newest_price_time": 1714701774,
             "last_price": 1.0,
-            "last_swap": 1710064781,
+            "last_swap": 1714701774,
             "last_swap_uuid": "55555555-ee4b-494f-a2fb-48467614b613",
             "variants": [
                 "DGB-segwit_LTC",
@@ -44,11 +44,11 @@
             "highest_price_24hr": 1000.0,
             "price_change_pct_24hr": "-0.4444444444",
             "oldest_price_24hr": 1000.0,
-            "oldest_price_time": 1710064779,
+            "oldest_price_time": 1714701772,
             "newest_price_24hr": 555.55555556,
-            "newest_price_time": 1710064837,
+            "newest_price_time": 1714701830,
             "last_price": 555.55555556,
-            "last_swap": 1710064837,
+            "last_swap": 1714701830,
             "last_swap_uuid": "33333333-fd33-4dc4-2a7f-f6320b1d3b64",
             "variants": [
                 "KMD-BEP20_DGB",
@@ -73,11 +73,11 @@
             "highest_price_24hr": 0.01,
             "price_change_pct_24hr": "0.0000000000",
             "oldest_price_24hr": 0.01,
-            "oldest_price_time": 1710053985,
+            "oldest_price_time": 1714690978,
             "newest_price_24hr": 0.01,
-            "newest_price_time": 1710061183,
+            "newest_price_time": 1714698176,
             "last_price": 0.01,
-            "last_swap": 1710064787,
+            "last_swap": 1714701780,
             "last_swap_uuid": "666666666-75a2-d4ef-009d-5e9baad162ef",
             "variants": [
                 "KMD_LTC",

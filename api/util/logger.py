@@ -341,7 +341,7 @@ def show_pallete():
     logger.cached("cached")
 
 
-# A decorator for returning runtime of functions:def timed(func):
+# A decorator for returning runtime of functions
 def timed(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

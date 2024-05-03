@@ -27,6 +27,7 @@ class Files:
         self.fixer_rates = f"{folder}/rates/fixer_rates.json"
         self.cmc_assets_source = f"{folder}/cmc/assets_source.json"
         self.cmc_summary = f"{folder}/cmc/summary.json"
+        self.cmc_assets = f"{folder}/cmc/assets.json"
 
         # Top Fives
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"

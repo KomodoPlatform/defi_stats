@@ -120,3 +120,60 @@ class Coin:
         if f"{self.coin}-segwit" in self.coins_config:
             return True
         return False
+
+    @property
+    def platform(self):
+        coins_config_info = self.coins_config[self.coin]
+        if "protocol" in coins_config_info:
+            if "protocol_data" in coins_config_info["protocol"]:
+                protocol_data = coins_config_info["protocol"]["protocol_data"]
+                return protocol_data["platform"]
+
+    @property
+    def contract_link(self):
+        link = None
+        coins_config_info = self.coins_config[self.coin]
+        try:
+            if "explorer_url" in coins_config_info:
+                explorer = coins_config_info["explorer_url"]
+            else:
+                print(f"No explorer defined for {self.platform}!")
+            if explorer.endswith("/"):
+                explorer = explorer[:-1]
+            if self.platform in [
+                "AVAX",
+                "MATIC",
+                "BNB",
+                "ETH",
+                "KCS",
+                "FTM",
+                "HT",
+                "MOVR",
+                "ETH-ARB20",
+                "QTUM",
+                "BCH",
+            ]:
+                link = f"{explorer}/token/{self.token_contract}"
+            elif self.platform in ["IRIS"]:
+                decimals = coins_config_info["protocol"]["protocol_data"]["decimals"]
+                contract = self.token_contract.replace('ibc/', '')
+                link = f"{explorer}/#/tokens/{contract}?type={decimals}"
+            else:
+                logger.warning(f"Platform {self.platform} not covered!")
+        except Exception as e:
+            logger.error(e)
+        return link
+
+    @property
+    def token_contract(self):
+        coins_config_info = self.coins_config[self.coin]
+        if "protocol" in coins_config_info:
+            if "protocol_data" in coins_config_info["protocol"]:
+                protocol_data = coins_config_info["protocol"]["protocol_data"]
+                if self.platform == "BCH":
+                    contract = protocol_data["token_id"]
+                elif self.platform in ["IRIS"]:
+                    contract = protocol_data["denom"]
+                else:
+                    contract = protocol_data["contract_address"]
+                return contract

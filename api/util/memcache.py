@@ -131,6 +131,14 @@ def get_cmc_assets_source():  # pragma: no cover
     return get("cmc_assets_source")
 
 
+def set_cmc_assets(data):  # pragma: no cover
+    update("cmc_assets", data, 86400)
+
+
+def get_cmc_assets():  # pragma: no cover
+    return get("cmc_assets")
+
+
 def set_cmc_summary(data):  # pragma: no cover
     update("cmc_summary", data, 86400)
 

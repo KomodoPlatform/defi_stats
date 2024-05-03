@@ -25,14 +25,6 @@ class CmcSummary(BaseModel):
 
 
 # cmc/assets
-class CmcContractAddresses(BaseModel):
-    platform: str = "YYY"
-    variant_ticker: str = "XXX-YYY"
-    contract_address: str = "XXX-YYY"
-    contract_url: str = "https://etherscan.io/token/0x"
-
-
-# cmc/assets
 class CmcAsset(BaseModel):
     """
     The assets endpoint is to provide a detailed summary for
@@ -43,13 +35,12 @@ class CmcAsset(BaseModel):
     unified_cryptoasset_id: str = "XXX"
     can_withdraw: bool = True
     can_deposit: bool = True
-    min_withdraw: float = 777.777777
-    max_withdraw: float = 777.777777
-    # Fees are not static, so we cant display universal values
-    # maker_fee: str = "XXX"
-    # taker_fee: str = "XXX"
-    contractAddressUrl: str = ""
-    contractAddresses: dict[str, CmcContractAddresses]
+    min_withdraw: float = "0"
+    max_withdraw: float = "21000000"
+    maker_fee: str = "0"
+    taker_fee: str = "0.001287"
+    contractAddressUrl: str | None = None
+    contractAddress: str | None = None
 
 
 # cmc/tickers

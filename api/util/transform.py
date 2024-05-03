@@ -398,15 +398,15 @@ class Derive:
         if self._cmc_assets_source is None:
             self._cmc_assets_source = memcache.get_cmc_assets_source()
         return self._cmc_assets_source
+    
+    @property
+    def cmc_assets_dict(self):
+        return {i['symbol']: i for i in self.cmc_assets_source}
 
     def cmc_asset_info(self, coin):
-        # This is unreliable. For example, look for 'DOGE'
-        # within the CMC assets from API at
-        # https://pro-api.coinmarketcap.com/v1/cryptocurrency/map
-        # We also need to check the nested 'platform' key
         ticker = deplatform.coin(coin)
-        if ticker in self.cmc_assets_source:
-            return self.cmc_assets_source[ticker]
+        if ticker in self.cmc_assets_dict:
+            return self.cmc_assets_dict[ticker]
         return {}
 
     @timed
@@ -423,6 +423,13 @@ class Derive:
             if len(split_pair_str) == 2:
                 base = split_pair_str[0]
                 quote = split_pair_str[1]
+            elif pair_str.find("IBC_") > -1:
+                if split_pair_str[0].endswith("IBC"):
+                    base = f"{split_pair_str[0]}_{split_pair_str[1]}"
+                    quote = split_pair_str[2]
+                elif split_pair_str[1].endswith("IBC"):
+                    base = split_pair_str[0]
+                    quote = f"{split_pair_str[1]}_{split_pair_str[2]}"
             elif pair_str.startswith("IRIS_ATOM-IBC"):
                 base = "IRIS_ATOM-IBC"
                 quote = pair_str.replace(f"{base}_", "")
@@ -456,7 +463,11 @@ class Derive:
                 elif split_pair_str[1] == "OLD":
                     base = f"{split_pair_str[0]}_{split_pair_str[1]}"
                     quote = split_pair_str[2]
-            # failed to parse ATOM-IBC_IRIS_LTC into base/quote!
+            else:
+                logger.warning(f"Failed to parse {pair_str}, needs a special case")
+                base = "PARSE"
+                quote = "FAIL"
+                
             if reverse:
                 return quote, base
             return base, quote
