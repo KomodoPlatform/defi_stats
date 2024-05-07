@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "Installing apt deps..."
+sudo apt update
+sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config
+
 echo "Setup Python 3.10..."
 sudo apt update && sudo apt upgrade -y
 sudo apt install software-properties-common python3-apt jq -y
@@ -9,11 +13,12 @@ sudo apt install python3.10 python3.10-distutils -y
 sudo ln -sf /usr/bin/python3.10 /usr/bin/python3
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
+echo "Getting coins..."
 wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins
 cp coins $(pwd)/mm2/coins
 cp coins $(pwd)/mm2_8762/coins
 
-
+echo "Setup mm2..."
 rpc_password="$(openssl rand -hex 20)-E"
 passphrase=$(openssl rand -hex 128)
 contents=$(jq '.rpc_password = "'${rpc_password}'"' $(pwd)/mm2_8762/MM2.template.json) && echo -E "${contents}" > $(pwd)/mm2_8762/MM2.json
