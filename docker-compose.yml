@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   defi_stats:
     container_name: api
