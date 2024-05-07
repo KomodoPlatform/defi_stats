@@ -15,7 +15,7 @@ services:
       - 127.0.0.1:7068:7068
     depends_on:
       - pgsqldb
-      - mm2_8762
+      - komodefi_8762
       - memcached
     logging:
       driver: "json-file"
@@ -82,7 +82,7 @@ services:
     env_file:
       - ./api/.env
     depends_on:
-      - mm2_8762
+      - komodefi_8762
     ports:
       - "127.0.0.1:5432:5432"
     logging:
