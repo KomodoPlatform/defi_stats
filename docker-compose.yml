@@ -30,8 +30,8 @@ services:
         soft: 65535
         hard: 65535
 
-  mm2_8762:
-    container_name: mm2_8762
+  komodefi_8762:
+    container_name: komodefi_8762
     env_file:
       - ./mm2_8762/.env
     build:
