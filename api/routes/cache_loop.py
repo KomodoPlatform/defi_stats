@@ -43,7 +43,7 @@ def start_seednode_stats():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=900)
 @timed
-def import_seednode_stats():  # pragma: no cover
+def import_seed_stats():  # pragma: no cover
     """Imports seednode stats from MM2.db into PgSQL"""
     try:
         start_time = int(cron.now_utc()) - 86400

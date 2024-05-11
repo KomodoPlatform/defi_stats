@@ -174,14 +174,14 @@ def test_get_swaps_for_coin(setup_swaps_db_data):
     assert len(r) == 4
 
 
-def test_coin_trade_volumes_usd(setup_swaps_db_data):
+def test_coin_trade_vols_usd(setup_swaps_db_data):
     DB = setup_swaps_db_data
     volumes = DB.coin_trade_volumes(
         start_time=int(cron.now_utc()) - 86400,
         end_time=int(cron.now_utc()),
     )
 
-    r = DB.coin_trade_volumes_usd(volumes)
+    r = DB.coin_trade_vols_usd(volumes)
     logger.info(r)
     logger.info(r.keys())
     logger.info(r["volumes"].keys())

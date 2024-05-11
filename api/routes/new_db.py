@@ -338,13 +338,13 @@ def swap_uuids(
 
 
 @router.get(
-    "/coin_trade_volumes_usd",
+    "/coin_trade_vols_usd",
     description="Trade volumes for each coin over the selected time period.",
     responses={406: {"model": ErrorMessage}},
     response_model=CoinTradeVolumes,
     status_code=200,
 )
-def coin_trade_volumes_usd(
+def coin_trade_vols_usd(
     start_time: int = 0,
     end_time: int = 0,
     pubkey: str | None = None,
@@ -361,7 +361,7 @@ def coin_trade_volumes_usd(
             start_time=start_time,
             end_time=end_time,
         )
-        return query.coin_trade_volumes_usd(volumes=volumes)
+        return query.coin_trade_vols_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

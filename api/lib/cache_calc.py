@@ -71,7 +71,7 @@ class CacheCalc:
     def coin_volumes_24hr(self):
         try:
             vols = self.pg_query.coin_trade_volumes()
-            vols_usd = self.pg_query.coin_trade_volumes_usd(vols)
+            vols_usd = self.pg_query.coin_trade_vols_usd(vols)
             for coin in vols_usd["volumes"]:
                 for variant in vols_usd["volumes"][coin]:
                     vols_usd["volumes"][coin][variant] = clean.decimal_dicts(
@@ -474,17 +474,30 @@ class CacheCalc:
                 return
             resp = []
             data = {}
-            for depair in book["orderbooks"]:
+            sorted_pairs = list(
+                set(
+                    [
+                        sortdata.pair_by_market_cap(i, gecko_source=self.gecko_source)
+                        for i in book["orderbooks"].keys()
+                    ]
+                )
+            )
+            for depair in sorted_pairs:
                 base, quote = derive.base_quote(pair_str=depair)
                 if deplatform.coin(coin) in [None, base, quote]:
+                    if depair not in book["orderbooks"]:
+                        logger.warning(f"Inverting non standard pair {depair}")
+                        depair = invert.pair(depair)
+                    depair_orderbook = book["orderbooks"][depair]
+                    
                     if depaired:
-                        v_data = book["orderbooks"][depair]["ALL"]
+                        v_data = depair_orderbook["ALL"]
                         data.update(template.markets_ticker(depair, v_data))
                     else:
-                        for variant in book["orderbooks"][depair]:
+                        for variant in depair_orderbook:
                             if variant != "ALL":
                                 v = variant.replace("-segwit", "")
-                                v_data = book["orderbooks"][depair][variant]
+                                v_data = depair_orderbook[variant]
                                 if v not in data:
                                     data.update(template.markets_ticker(v, v_data))
                                 else:
@@ -557,10 +570,12 @@ class CacheCalc:
                                         )
                                     }
                                 )
+                                '''
                                 if depair != sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source):
                                     logger.info(f"Ticker for {depair} updated (non-standard)")
                                 else:
                                     logger.info(f"Ticker for {depair} updated")
+                                '''
                                 ok += 1
                         else:
                             logger.warning(f"Ticker failed [not in extended orderbook] for {depair} and {invert.pair(depair)} (standard is {sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)})")
