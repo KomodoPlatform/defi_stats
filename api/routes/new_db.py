@@ -375,7 +375,7 @@ def coin_trade_volumes_usd(
     response_model=PairTradeVolumes,
     status_code=200,
 )
-def pair_trade_volumes_usd(
+def pair_trade_vols_usd(
     start_time: int = 0,
     end_time: int = 0,
     pubkey: str | None = None,
@@ -397,7 +397,7 @@ def pair_trade_volumes_usd(
             coin=coin,
             gui=gui,
         )
-        return query.pair_trade_volumes_usd(volumes=volumes)
+        return query.pair_trade_vols_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

@@ -369,7 +369,7 @@ def adex_24hr():
 
 # TICKERS
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 @timed
 def pair_tickers():
     if memcache.get("testing") is None:

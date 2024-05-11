@@ -500,7 +500,7 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def pair_trade_volumes_usd(self, volumes: Dict) -> list:
+    def pair_trade_vols_usd(self, volumes: Dict) -> list:
         """
         Returns volume traded of a pair between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -546,7 +546,7 @@ class SqlQuery(SqlDB):
             )
             return default.result(
                 data=volumes,
-                msg=f"pair_trade_volumes_usd complete [US${total_trade_vol_usd}]",
+                msg=f"pair_trade_vols_usd complete [US${total_trade_vol_usd}]",
                 loglevel="query",
                 ignore_until=0,
             )

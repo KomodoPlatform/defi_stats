@@ -5,7 +5,7 @@ from lib.cmc import CmcAPI
 from lib.pair import Pair
 from util.cron import cron
 from util.logger import logger, timed
-from util.transform import clean, derive, merge, template, convert, deplatform
+from util.transform import clean, derive, merge, template, convert, deplatform, sortdata, invert
 import db.sqldb as db
 import lib.prices
 import util.defaults as default
@@ -212,7 +212,7 @@ class CacheCalc:
     def pair_volumes_24hr(self):
         try:
             vols = self.pg_query.pair_trade_volumes()
-            vols_usd = self.pg_query.pair_trade_volumes_usd(vols)
+            vols_usd = self.pg_query.pair_trade_vols_usd(vols)
             for pair_str in vols_usd["volumes"]:
                 for variant in vols_usd["volumes"][pair_str]:
                     vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
@@ -233,7 +233,7 @@ class CacheCalc:
             vols = self.pg_query.pair_trade_volumes(
                 start_time=start_time, end_time=end_time
             )
-            vols_usd = self.pg_query.pair_trade_volumes_usd(vols)
+            vols_usd = self.pg_query.pair_trade_vols_usd(vols)
             for pair_str in vols_usd["volumes"]:
                 for variant in vols_usd["volumes"][pair_str]:
                     vols_usd["volumes"][pair_str][variant] = clean.decimal_dicts(
@@ -467,6 +467,7 @@ class CacheCalc:
 
     @timed
     def tickers_lite(self, coin=None, depaired=False):
+        # TODO: confirm no reverse duplicates
         try:
             book = self.pairs_orderbook_extended_cache
             if book is None:
@@ -517,6 +518,14 @@ class CacheCalc:
                 volumes = self.pair_volumes_24hr_cache
                 prices = self.pair_prices_24hr_cache
                 if None not in [self.coins_config, book, volumes, prices]:
+                    sorted_pairs = list(
+                        set(
+                            [
+                                sortdata.pair_by_market_cap(i, gecko_source=self.gecko_source)
+                                for i in book["orderbooks"].keys()
+                            ]
+                        )
+                    )
                     resp = {
                         "last_update": int(cron.now_utc()),
                         "pairs_count": book["pairs_count"],
@@ -525,24 +534,38 @@ class CacheCalc:
                         "combined_liquidity_usd": book["combined_liquidity_usd"],
                         "data": {},
                     }
-                    for depair in book["orderbooks"]:
-                        if "ALL" in book["orderbooks"][depair]:
-                            v = template.pair_volume_item(suffix="24hr")
-                            p = template.pair_prices_info(suffix="24hr")
-                            b = book["orderbooks"][depair]["ALL"]
-                            if depair in volumes["volumes"]:
-                                if "ALL" in volumes["volumes"][depair]:
-                                    v = volumes["volumes"][depair]["ALL"]
-                            if depair in prices:
-                                if "ALL" in prices[depair]:
-                                    p = prices[depair]["ALL"]
-                            resp["data"].update(
-                                {
-                                    depair: convert.pair_orderbook_extras_to_gecko_tickers(
-                                        b, v, p
-                                    )
-                                }
-                            )
+                    ok = 0
+                    not_ok = 0
+                    for depair in sorted_pairs:
+                        if depair not in book["orderbooks"]:
+                            depair = invert.pair(depair)
+                        if depair in book["orderbooks"]:
+                            if "ALL" in book["orderbooks"][depair]:
+                                v = template.pair_volume_item(suffix="24hr")
+                                p = template.pair_prices_info(suffix="24hr")
+                                b = book["orderbooks"][depair]["ALL"]
+                                if depair in volumes["volumes"]:
+                                    if "ALL" in volumes["volumes"][depair]:
+                                        v = volumes["volumes"][depair]["ALL"]
+                                if depair in prices:
+                                    if "ALL" in prices[depair]:
+                                        p = prices[depair]["ALL"]
+                                resp["data"].update(
+                                    {
+                                        depair: convert.pair_orderbook_extras_to_gecko_tickers(
+                                            b, v, p
+                                        )
+                                    }
+                                )
+                                if depair != sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source):
+                                    logger.info(f"Ticker for {depair} updated (non-standard)")
+                                else:
+                                    logger.info(f"Ticker for {depair} updated")
+                                ok += 1
+                        else:
+                            logger.warning(f"Ticker failed [not in extended orderbook] for {depair} and {invert.pair(depair)} (standard is {sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)})")
+                            not_ok += 1
+                    logger.calc(f"{ok}/{ok + not_ok} pairs added to tickers cache")
                 memcache.set_tickers(resp)
                 msg = "Tickers cache updated"
             ignore_until = 0
