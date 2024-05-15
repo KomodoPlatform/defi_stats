@@ -43,7 +43,7 @@ def start_seednode_stats():  # pragma: no cover
 @router.on_event("startup")
 @repeat_every(seconds=900)
 @timed
-def import_seednode_stats():  # pragma: no cover
+def import_seed_stats():  # pragma: no cover
     """Imports seednode stats from MM2.db into PgSQL"""
     try:
         start_time = int(cron.now_utc()) - 86400
@@ -317,10 +317,13 @@ def fixer_rates():  # pragma: no cover
 @repeat_every(seconds=300)
 @timed
 def populate_pgsqldb_loop():
-    if memcache.get("testing") is None:
-        # updates last 24 hours swaps
-        day = datetime.today().date()
-        db.SqlSource().import_swaps_for_day(day)
+    try:
+        if memcache.get("testing") is None:
+            # updates last 24 hours swaps
+            day = datetime.today().date()
+            db.SqlSource().import_swaps_for_day(day)
+    except Exception as e:
+        return default.result(msg=e, loglevel="warning")
 
 
 @router.on_event("startup")
@@ -369,7 +372,7 @@ def adex_24hr():
 
 # TICKERS
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=120)
 @timed
 def pair_tickers():
     if memcache.get("testing") is None:
@@ -379,3 +382,12 @@ def pair_tickers():
             return default.result(msg=e, loglevel="warning")
         msg = "pair_tickers loop complete!"
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+
+# fix_swap_pairs
+@router.on_event("startup")
+@repeat_every(seconds=86400)
+@timed
+def fix_swap_pairs():
+    reset_cache_files()
+    db.SqlSource().fix_swap_pairs()

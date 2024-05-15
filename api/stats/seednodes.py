@@ -444,7 +444,7 @@ def migrate_sqlite_to_pgsql(ts):
             update_seednode_version_stats_row(row_data)
 
 
-def import_seednode_stats():
+def import_seed_stats():
     resp = requests.get("http://stats.kmd.io/api/source/seednode_version_stats/").json()
 
     for i in resp["results"]:
@@ -533,7 +533,7 @@ if __name__ == "__main__":
 
         # import data from other server
         elif sys.argv[1] == "import":
-            import_seednode_stats()
+            import_seed_stats()
 
         else:
             print(

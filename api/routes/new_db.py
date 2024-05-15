@@ -26,6 +26,16 @@ cache = Cache()
 
 
 @router.get(
+    "/fix_swap_pairs",
+    description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Ordered by mcap.",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def fix_swap_pairs():
+    db.SqlSource().fix_swap_pairs()
+
+
+@router.get(
     "/get_pairs",
     description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Ordered by mcap.",
     responses={406: {"model": ErrorMessage}},
@@ -338,13 +348,13 @@ def swap_uuids(
 
 
 @router.get(
-    "/coin_trade_volumes_usd",
+    "/coin_trade_vols_usd",
     description="Trade volumes for each coin over the selected time period.",
     responses={406: {"model": ErrorMessage}},
     response_model=CoinTradeVolumes,
     status_code=200,
 )
-def coin_trade_volumes_usd(
+def coin_trade_vols_usd(
     start_time: int = 0,
     end_time: int = 0,
     pubkey: str | None = None,
@@ -361,7 +371,7 @@ def coin_trade_volumes_usd(
             start_time=start_time,
             end_time=end_time,
         )
-        return query.coin_trade_volumes_usd(volumes=volumes)
+        return query.coin_trade_vols_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)
@@ -375,7 +385,7 @@ def coin_trade_volumes_usd(
     response_model=PairTradeVolumes,
     status_code=200,
 )
-def pair_trade_volumes_usd(
+def pair_trade_vols_usd(
     start_time: int = 0,
     end_time: int = 0,
     pubkey: str | None = None,
@@ -397,7 +407,7 @@ def pair_trade_volumes_usd(
             coin=coin,
             gui=gui,
         )
-        return query.pair_trade_volumes_usd(volumes=volumes)
+        return query.pair_trade_vols_usd(volumes=volumes)
     except Exception as e:
         err = {"error": f"{e}"}
         logger.warning(err)

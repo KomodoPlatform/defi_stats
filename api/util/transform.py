@@ -4,6 +4,7 @@ from typing import Any, List, Dict
 from util.logger import logger, timed
 from util.cron import cron
 import util.defaults as default
+
 import util.memcache as memcache
 
 
@@ -398,10 +399,10 @@ class Derive:
         if self._cmc_assets_source is None:
             self._cmc_assets_source = memcache.get_cmc_assets_source()
         return self._cmc_assets_source
-    
+
     @property
     def cmc_assets_dict(self):
-        return {i['symbol']: i for i in self.cmc_assets_source}
+        return {i["symbol"]: i for i in self.cmc_assets_source}
 
     def cmc_asset_info(self, coin):
         ticker = deplatform.coin(coin)
@@ -467,7 +468,7 @@ class Derive:
                 logger.warning(f"Failed to parse {pair_str}, needs a special case")
                 base = "PARSE"
                 quote = "FAIL"
-                
+
             if reverse:
                 return quote, base
             return base, quote
@@ -1228,19 +1229,47 @@ class SortData:
     def pair_by_market_cap(self, pair_str: str, gecko_source) -> str:
         try:
             # TODO: If gecko source is none, compare with db pairs.
+            base, quote = derive.base_quote(pair_str)
+            if gecko_source is None:
+                gecko_source = memcache.get_gecko_source()
+            if gecko_source is None:
+                logger.warning(f"Unable to get mcap for {pair_str}")
+                return None
             if gecko_source is not None:
-                base, quote = derive.base_quote(pair_str)
-                base_mc = 0
-                quote_mc = 0
-                if base.replace("-segwit", "") in gecko_source:
+                if (
+                    base.replace("-segwit", "").replace("-lightning", "")
+                    in gecko_source
+                ):
+                    # logger.info(f'{base}: {gecko_source[base.replace("-segwit", "").replace("-lightning", "")]}')
                     base_mc = Decimal(
-                        gecko_source[base.replace("-segwit", "")]["usd_market_cap"]
+                        gecko_source[
+                            base.replace("-segwit", "").replace("-lightning", "")
+                        ]["usd_market_cap"]
                     )
-                if quote.replace("-segwit", "") in gecko_source:
+                else:
+                    # logger.warning(f"{base}: not in gecko_source")
+                    base_mc = 0
+                if (
+                    quote.replace("-segwit", "").replace("-lightning", "")
+                    in gecko_source
+                ):
+                    # logger.info(f'{quote}: {gecko_source[quote.replace("-segwit", "").replace("-lightning", "")]}')
                     quote_mc = Decimal(
-                        gecko_source[quote.replace("-segwit", "")]["usd_market_cap"]
+                        gecko_source[
+                            quote.replace("-segwit", "").replace("-lightning", "")
+                        ]["usd_market_cap"]
                     )
-                if quote_mc < base_mc:
+                else:
+                    # logger.warning(f"{quote} not in gecko_source")
+                    quote_mc = 0
+                div = max([len(str(int(base_mc))), len(str(int(quote_mc)))])
+                # logger.loop(f"{base} {base_mc}")
+                # logger.loop(f"{quote} {quote_mc}")
+                base_mc = int(base_mc / Decimal(10 ** (div - 2)))
+                quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
+                # logger.calc(f"{base} {base_mc}")
+                # logger.calc(f"{quote} {quote_mc}")
+                if len(str(quote_mc)) < len(str(base_mc)):
                     pair_str = invert.pair(pair_str)
                 elif quote_mc == base_mc:
                     pair_str = "_".join(sorted([base, quote]))

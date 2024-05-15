@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   defi_stats:
     container_name: api
@@ -17,7 +15,7 @@ services:
       - 127.0.0.1:7068:7068
     depends_on:
       - pgsqldb
-      - mm2_8762
+      - komodefi_8762
       - memcached
     logging:
       driver: "json-file"
@@ -32,8 +30,8 @@ services:
         soft: 65535
         hard: 65535
 
-  mm2_8762:
-    container_name: mm2_8762
+  komodefi_8762:
+    container_name: komodefi_8762
     env_file:
       - ./mm2_8762/.env
     build:
@@ -84,7 +82,7 @@ services:
     env_file:
       - ./api/.env
     depends_on:
-      - mm2_8762
+      - komodefi_8762
     ports:
       - "127.0.0.1:5432:5432"
     logging:

@@ -338,7 +338,7 @@ def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType
             start_time = int(day_ts)
             end_time = int(day_ts) + 86400
             volumes = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
-            data = query.coin_trade_volumes_usd(volumes)
+            data = query.coin_trade_vols_usd(volumes)
             volumes_dict[d_str] = template.volumes_ticker()
             for variant in variants:
                 if decoin in data["volumes"]:

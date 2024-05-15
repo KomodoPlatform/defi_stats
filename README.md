@@ -14,35 +14,35 @@ Data is sourced from the [Komodo DeFi API's SQLite database](https://developers.
 Data is also imported into more robust databases (mySQL, postgresSQL/Timescale & dGraph) for future reference and to alow more complex queries over a longer timeframe.
 
 
-### Setup and requirements
+### Install requirements
 
-#### Database setup
+Run the `setup.sh` script to install python3.10, docker, docker-compose, and poetry. The steps to do thsi manually are below for reference, but if the script returns no errors, you can skip ahead to the `Database setup` section.
+
+
+#### Apt dependencies
 
     sudo apt update
-    sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2
+    sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config
 
-    sudo systemctl start postgresql.service
-    # https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-18-04
-    # sudo -u postgres createuser --interactive
-    # sudo -u postgres createdb stats_swaps
-    # sudo -u postgres psql
-    # ALTER USER postgres PASSWORD 'myPassword';
-    # Update .env with creds (see readme after TODO: update)
+#### Install python3.10
+
+    If not already available https://rayflare.readthedocs.io/en/stable/Installation/python_install.html
+    `sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1`
+    `sudo update-alternatives --config python3`
+    Confirm with `which python3` or `python3 -V`
+    Install pip `curl -sS https://bootstrap.pypa.io/get-pip.py | python3`
+    Install pipx with `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
+    Install [poetry](https://python-poetry.org/docs/) with `pipx install poetry`
 
 
-    cd ~/defi_stats/api
-    git stash
-    git pull
-    poetry install
-    docker compose build
+#### Install Docker
 
-    # If not previously running wiuth systemd, skip this bit
-    sudo systemctl stop defi_stats.service 
-    sudo systemctl disable defi_stats.service 
+Refer to https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04 to install docker
+Refer to https://docs.docker.com/compose/install/linux/#install-using-the-repository to install docker compose
 
-    docker compose up
 
-- Run `./setup.sh` to install poetry dependencies
+#### Setup mm2
+
 - Create `mm2/.env`, and `mm2_8762/.env` with the following inside (change the userpass)
 ```
 MM_CONF_PATH=/home/komodian/mm2/MM2.json
@@ -55,6 +55,24 @@ GROUP_ID=1000
 - Next, create `mm2/MM2.json` and `mm2_8762/MM2.json`. Use the templates in each folder - `cp mm2/MM2.template.json mm2/MM2.json`. Change the passphrases.
 
 - Get the latest coins file for each mm2 folder with `wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins`
+
+
+
+#### Database setup
+
+    sudo systemctl stop postgresql.service  # this will run in docker, so we disable on host to avoid port conflicts
+    # https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-18-04
+    # sudo -u postgres createuser --interactive
+    # sudo -u postgres createdb stats_swaps
+    # sudo -u postgres psql
+    # ALTER USER postgres PASSWORD 'myPassword';
+    # Update .env with creds (see readme after TODO: update)
+
+
+    cd ~/defi_stats/api
+    git stash
+    git pull
+    poetry install
 
 - Then execute `./run_mm2.sh` to initialise the mm2 databases. You will need to find the path to the MM2.db file in each folder to input below. This script will tail the logs, but you can `ctl-c` to exit without stopping the service.
 
@@ -113,6 +131,11 @@ COINS_URL='https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins'
 ```
 
 Edit the values for your paths and passwords etc. Some of these are not curently in us in main branch, but will be used later.
+
+Finally, we can build the containers.
+
+    docker compose build
+    docker compose up
 
 
 # Sourcing data
@@ -186,3 +209,12 @@ This will place the external MM2.db copies into the `defi_stats/DB` folder, whic
 ### On Update:
 - Run `poetry install` in the `api/` folder to update any deps.
 - If changes to DB, edit `.env` to uncomment `# RESET_TABLE=True` then launch. After launch, disable this again and restart. It will clear the db data and reload the table with new schema.
+
+
+
+### TODOs:
+
+#### Supplemental data sources:
+ - https://data.chain.link/feed
+ - this is how the eth_call looks like: https://github.com/cipig/mmtools/blob/master/mpm/mpm#L337 
+ - the price is in sats and is a hex, so need to be "converted" before use: https://github.com/cipig/mmtools/blob/master/mpm/mpm#L2372-L2374

@@ -186,6 +186,12 @@ class SqlFilter:
             )
         return q
 
+    @timed
+    def uuid(self, q, uuid):
+        if uuid is not None:
+            q = q.filter(self.table.uuid == uuid)
+        return q
+
 
 class SqlUpdate(SqlDB):
     def __init__(
@@ -370,7 +376,7 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def coin_trade_volumes_usd(self, volumes: Dict) -> list:
+    def coin_trade_vols_usd(self, volumes: Dict) -> list:
         """
         Returns volume traded of coin between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -400,7 +406,7 @@ class SqlQuery(SqlDB):
 
             return default.result(
                 data=volumes,
-                msg=f"coin_trade_volumes_usd complete [US${volumes['trade_volume_usd']}]",
+                msg=f"coin_trade_vols_usd complete [US${volumes['trade_volume_usd']}]",
                 loglevel="query",
                 ignore_until=0,
             )
@@ -500,7 +506,7 @@ class SqlQuery(SqlDB):
             return default.result(msg=e, loglevel="warning")
 
     @timed
-    def pair_trade_volumes_usd(self, volumes: Dict) -> list:
+    def pair_trade_vols_usd(self, volumes: Dict) -> list:
         """
         Returns volume traded of a pair between two timestamps.
         If no timestamp is given, returns volume for last 24hrs.
@@ -546,7 +552,7 @@ class SqlQuery(SqlDB):
             )
             return default.result(
                 data=volumes,
-                msg=f"pair_trade_volumes_usd complete [US${total_trade_vol_usd}]",
+                msg=f"pair_trade_vols_usd complete [US${total_trade_vol_usd}]",
                 loglevel="query",
                 ignore_until=0,
             )
@@ -582,11 +588,16 @@ class SqlQuery(SqlDB):
                 q = q.order_by(*category, self.table.finished_at.desc())
                 last_data = [dict(i) for i in q.all()]
 
-                last_data = {i["category"]: i for i in last_data}
-                for cat in last_data:
+                last_data_dict = {}
+                for i in last_data:
+                    if i["category"] not in last_data_dict:
+                        last_data_dict.update({i["category"]: i})
+                    else:
+                        logger.query("INVERSE DATA EXISTS!")
+                for cat in last_data_dict:
                     if cat not in resp:
                         resp.update({cat: {}})
-                    for k, v in last_data[cat].items():
+                    for k, v in last_data_dict[cat].items():
                         if k != "category":
                             resp[cat].update({k: v})
 
@@ -609,11 +620,16 @@ class SqlQuery(SqlDB):
                 q = q.order_by(*group_by_cols, self.table.finished_at.asc())
                 first_data = [dict(i) for i in q.all()]
 
-                first_data = {i["category"]: i for i in first_data}
-                for cat in first_data:
+                first_data_dict = {}
+                for i in first_data:
+                    if i["category"] not in first_data_dict:
+                        first_data_dict.update({i["category"]: i})
+                    else:
+                        logger.warning("INVERSE DATA EXISTS!")
+                for cat in first_data_dict:
                     if cat not in resp:
                         resp.update({cat: {}})
-                    for k, v in first_data[cat].items():
+                    for k, v in first_data_dict[cat].items():
                         if k != "category":
                             resp[cat].update({k: v})
 
@@ -805,6 +821,7 @@ class SqlQuery(SqlDB):
         failed_only: bool = False,
         limit: int = 100,
         trade_type: int | None = None,
+        uuid: str | None = None,
     ):
         """
         Returns swaps matching filter from any of the SQL databases.
@@ -819,9 +836,13 @@ class SqlQuery(SqlDB):
         """
         try:
             # TODO: Implement limit and trade_type
-            if start_time == 0:
-                start_time = int(cron.now_utc()) - 86400
-            if end_time == 0:
+            if uuid is None:
+                if start_time == 0:
+                    start_time = int(cron.now_utc()) - 86400
+                if end_time == 0:
+                    end_time = int(cron.now_utc())
+            else:
+                start_time = 1
                 end_time = int(cron.now_utc())
 
             if self.table.__tablename__ in ["swaps", "swaps_failed"]:
@@ -831,6 +852,7 @@ class SqlQuery(SqlDB):
                 q = select(self.table)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.uuid(q, uuid)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
                 q = self.sqlfilter.success(q, success_only, failed_only)
@@ -1301,6 +1323,82 @@ class SqlSource:
         return self._gecko_source
 
     @timed
+    def fix_swap_pairs(self, start_time=1, end_time=0):
+        pgdb = SqlUpdate(db_type="pgsql")
+        pgdb_query = SqlQuery(db_type="pgsql", gecko_source=self.gecko_source)
+        if end_time == 0:
+            end_time = cron.now_utc()
+        if start_time == 0:
+            start_time = cron.now_utc() - 86400
+        pairs = pgdb_query.get_distinct(column="pair", start_time=1, end_time=end_time)
+        x = 0
+        pairs = list(set(pairs))
+        pairs.sort()
+        with Session(pgdb.engine) as session:
+            for pair in pairs:
+                x += 1
+                sorted_pair = sortdata.pair_by_market_cap(
+                    pair, gecko_source=self.gecko_source
+                )
+                if pair != sorted_pair:
+                    logger.warning(
+                        f"{pair} in DB is non standard! Should be {sorted_pair}!"
+                    )
+                    uuids = [
+                        i
+                        for i in pgdb_query.swap_uuids(
+                            start_time=1,
+                            end_time=end_time,
+                            pair=pair,
+                            success_only=False,
+                            failed_only=False,
+                        )["ALL"]
+                    ]
+                    if len(uuids) > 0:
+                        logger.warning(
+                            f"need to fix {len(uuids)} swaps with non standard pair {pair} {x}/{len(pairs)}"
+                        )
+                        updates = []
+                        for uuid in uuids:
+                            swap = pgdb_query.get_swap(uuid=uuid)
+                            _pair = sortdata.pair_by_market_cap(
+                                swap["pair"], gecko_source=self.gecko_source
+                            )
+                            if swap["pair"] == _pair:
+                                continue
+                            else:
+                                logger.calc(f"{uuid} needs update...")
+                                clean_swap = self.ensure_valid_pair(swap)
+                                stmt = (
+                                    update(DefiSwap)
+                                    .where(DefiSwap.uuid == clean_swap["uuid"])
+                                    .values(
+                                        pair=clean_swap["pair"],
+                                        pair_std=clean_swap["pair_std"],
+                                        pair_reverse=clean_swap["pair_reverse"],
+                                        pair_std_reverse=clean_swap["pair_std_reverse"],
+                                        maker_coin_ticker=clean_swap[
+                                            "maker_coin_ticker"
+                                        ],
+                                        maker_coin_platform=clean_swap[
+                                            "maker_coin_platform"
+                                        ],
+                                        taker_coin_ticker=clean_swap[
+                                            "taker_coin_ticker"
+                                        ],
+                                        taker_coin_platform=clean_swap[
+                                            "taker_coin_platform"
+                                        ],
+                                        trade_type=clean_swap["trade_type"],
+                                        price=clean_swap["price"],
+                                        reverse_price=clean_swap["reverse_price"],
+                                    )
+                                )
+                                session.exec(stmt)
+                                session.commit()
+                                logger.info(f"{uuid} FIXED!")
+
+    @timed
     def import_cipi_swaps(
         self,
         pgdb: SqlDB,
@@ -1551,6 +1649,12 @@ class SqlSource:
                     if i not in cipi_data:
                         cipi_data.update({i: ""})
                 cipi_data = self.ensure_valid_pair(cipi_data)
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_amount=cipi_data["taker_amount"],
@@ -1585,6 +1689,18 @@ class SqlSource:
             else:
                 cipi_data = self.ensure_valid_pair(cipi_data)
                 defi_data = self.ensure_valid_pair(defi_data)
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
+                if defi_data["pair"] != sortdata.pair_by_market_cap(
+                    defi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"defi_data Pair is non standard! {defi_data['pair']}"
+                    )
                 for i in [
                     "taker_coin",
                     "maker_coin",
@@ -1615,7 +1731,12 @@ class SqlSource:
                             )
                             logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
 
-                # cipi_data = self.ensure_valid_pair(cipi_data)
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_coin=cipi_data["taker_coin"],
@@ -1712,9 +1833,9 @@ class SqlSource:
                     "reverse_price": reverse_price,
                 }
             )
-            return data
         except Exception as e:
             logger.warning(e)
+        return data
 
     @timed
     def mm2_to_defi_swap(self, mm2_data, defi_data=None):  # pragma: no cover
@@ -1727,6 +1848,10 @@ class SqlSource:
                     if i not in mm2_data:
                         mm2_data.update({i: ""})
                 mm2_data = self.ensure_valid_pair(mm2_data)
+                if mm2_data["pair"] != sortdata.pair_by_market_cap(
+                    mm2_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(f"mm2_data Pair is non standard! {mm2_data['pair']}")
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_amount=mm2_data["taker_amount"],
@@ -1760,7 +1885,20 @@ class SqlSource:
                 )
             else:
                 mm2_data = self.ensure_valid_pair(mm2_data)
-                defi_data = self.ensure_valid_pair(defi_data)
+                if self.gecko_source is not None:
+                    if mm2_data["pair"] != sortdata.pair_by_market_cap(
+                        mm2_data["pair"], gecko_source=self.gecko_source
+                    ):
+                        logger.warning(
+                            f"mm2_data Pair is non standard! {mm2_data['pair']}"
+                        )
+                    defi_data = self.ensure_valid_pair(defi_data)
+                    if defi_data["pair"] != sortdata.pair_by_market_cap(
+                        defi_data["pair"], gecko_source=self.gecko_source
+                    ):
+                        logger.warning(
+                            f"defi_data Pair is non standard! {defi_data['pair']}"
+                        )
                 for i in [
                     "taker_coin",
                     "maker_coin",
@@ -1856,7 +1994,7 @@ class SqlSource:
             self.import_swaps_for_day(day)
             time.sleep(1)
 
-    def import_seednode_stats(self, start_time: int, end_time: int):
+    def import_seed_stats(self, start_time: int, end_time: int):
         # Get stats from MM2.db
 
         # Add stats to pgsql

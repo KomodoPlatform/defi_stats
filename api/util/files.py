@@ -9,10 +9,7 @@ import util.validate as validate
 
 
 class Files:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.options = []
-        default.params(self, self.kwargs, self.options)
+    def __init__(self):
         if os.getenv("IS_TESTING") == "True" == "True":
             folder = f"{API_ROOT_PATH}/tests/fixtures"
             self.foo = f"{folder}/foo.json"
