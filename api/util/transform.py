@@ -1262,11 +1262,11 @@ class SortData:
                 else:
                     # logger.warning(f"{quote} not in gecko_source")
                     quote_mc = 0
-                div = max([len(str(int(base_mc))), len(str(int(quote_mc)))])
-                # logger.loop(f"{base} {base_mc}")
-                # logger.loop(f"{quote} {quote_mc}")
-                base_mc = int(base_mc / Decimal(10 ** (div - 2)))
-                quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
+                
+                if len(str(int(base_mc))) == len(str(int(quote_mc))):
+                    div = len(str(int(quote_mc)))
+                    base_mc = int(base_mc / Decimal(10 ** (div - 2)))
+                    quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
                 # logger.calc(f"{base} {base_mc}")
                 # logger.calc(f"{quote} {quote_mc}")
                 if len(str(quote_mc)) < len(str(base_mc)):
