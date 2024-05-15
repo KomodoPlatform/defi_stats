@@ -5,7 +5,16 @@ from lib.cmc import CmcAPI
 from lib.pair import Pair
 from util.cron import cron
 from util.logger import logger, timed
-from util.transform import clean, derive, merge, template, convert, deplatform, sortdata, invert
+from util.transform import (
+    clean,
+    derive,
+    merge,
+    template,
+    convert,
+    deplatform,
+    sortdata,
+    invert,
+)
 import db.sqldb as db
 import lib.prices
 import util.defaults as default
@@ -489,7 +498,7 @@ class CacheCalc:
                         logger.warning(f"Inverting non standard pair {depair}")
                         depair = invert.pair(depair)
                     depair_orderbook = book["orderbooks"][depair]
-                    
+
                     if depaired:
                         v_data = depair_orderbook["ALL"]
                         data.update(template.markets_ticker(depair, v_data))
@@ -534,7 +543,9 @@ class CacheCalc:
                     sorted_pairs = list(
                         set(
                             [
-                                sortdata.pair_by_market_cap(i, gecko_source=self.gecko_source)
+                                sortdata.pair_by_market_cap(
+                                    i, gecko_source=self.gecko_source
+                                )
                                 for i in book["orderbooks"].keys()
                             ]
                         )
@@ -570,15 +581,17 @@ class CacheCalc:
                                         )
                                     }
                                 )
-                                '''
+                                """
                                 if depair != sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source):
                                     logger.info(f"Ticker for {depair} updated (non-standard)")
                                 else:
                                     logger.info(f"Ticker for {depair} updated")
-                                '''
+                                """
                                 ok += 1
                         else:
-                            logger.warning(f"Ticker failed [not in extended orderbook] for {depair} and {invert.pair(depair)} (standard is {sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)})")
+                            logger.warning(
+                                f"Ticker failed [not in extended orderbook] for {depair} and {invert.pair(depair)} (standard is {sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)})"
+                            )
                             not_ok += 1
                     logger.calc(f"{ok}/{ok + not_ok} pairs added to tickers cache")
                 memcache.set_tickers(resp)

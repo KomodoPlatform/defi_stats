@@ -26,6 +26,16 @@ cache = Cache()
 
 
 @router.get(
+    "/fix_swap_pairs",
+    description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Ordered by mcap.",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def fix_swap_pairs():
+    db.SqlSource().fix_swap_pairs()
+
+
+@router.get(
     "/get_pairs",
     description=f"Pairs traded last {GENERIC_PAIRS_DAYS} days. Ordered by mcap.",
     responses={406: {"model": ErrorMessage}},

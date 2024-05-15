@@ -186,6 +186,12 @@ class SqlFilter:
             )
         return q
 
+    @timed
+    def uuid(self, q, uuid):
+        if uuid is not None:
+            q = q.filter(self.table.uuid == uuid)
+        return q
+
 
 class SqlUpdate(SqlDB):
     def __init__(
@@ -566,7 +572,6 @@ class SqlQuery(SqlDB):
                 category = list(
                     chain.from_iterable((text(obj), "-") for obj in group_by_cols[:-1])
                 ) + [group_by_cols[-1]]
-                logger.info(category)
                 cols = [
                     self.table.uuid.label("last_swap_uuid"),
                     self.table.finished_at.label("last_swap_time"),
@@ -627,7 +632,6 @@ class SqlQuery(SqlDB):
                     for k, v in first_data_dict[cat].items():
                         if k != "category":
                             resp[cat].update({k: v})
-                            
 
                 return default.result(
                     data=resp,
@@ -817,6 +821,7 @@ class SqlQuery(SqlDB):
         failed_only: bool = False,
         limit: int = 100,
         trade_type: int | None = None,
+        uuid: str | None = None,
     ):
         """
         Returns swaps matching filter from any of the SQL databases.
@@ -831,9 +836,13 @@ class SqlQuery(SqlDB):
         """
         try:
             # TODO: Implement limit and trade_type
-            if start_time == 0:
-                start_time = int(cron.now_utc()) - 86400
-            if end_time == 0:
+            if uuid is None:
+                if start_time == 0:
+                    start_time = int(cron.now_utc()) - 86400
+                if end_time == 0:
+                    end_time = int(cron.now_utc())
+            else:
+                start_time = 1
                 end_time = int(cron.now_utc())
 
             if self.table.__tablename__ in ["swaps", "swaps_failed"]:
@@ -843,6 +852,7 @@ class SqlQuery(SqlDB):
                 q = select(self.table)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
                 q = self.sqlfilter.gui(q, gui)
+                q = self.sqlfilter.uuid(q, uuid)
                 q = self.sqlfilter.version(q, version)
                 q = self.sqlfilter.pubkey(q, pubkey)
                 q = self.sqlfilter.success(q, success_only, failed_only)
@@ -1313,35 +1323,81 @@ class SqlSource:
         return self._gecko_source
 
     @timed
-    def fix_swap_pairs(
-        self,
-        pgdb: SqlDB,
-        pgdb_query: SqlQuery,
-        start_time=0,
-        end_time=0        
-    ):
-        end_time = cron.now_utc()
-        pairs = pgdb_query.get_distinct(
-            column="pair", start_time=start_time, end_time=end_time
-        )
+    def fix_swap_pairs(self, start_time=1, end_time=0):
+        pgdb = SqlUpdate(db_type="pgsql")
+        pgdb_query = SqlQuery(db_type="pgsql", gecko_source=self.gecko_source)
+        if end_time == 0:
+            end_time = cron.now_utc()
+        if start_time == 0:
+            start_time = cron.now_utc() - 86400
+        pairs = pgdb_query.get_distinct(column="pair", start_time=1, end_time=end_time)
+        x = 0
         pairs = list(set(pairs))
-        for pair in pairs:
-            if pair != sortdata.pair_by_market_cap(pair, gecko_source=self.gecko_source):
-                uuids = [
-                    i for i in pgdb_query.swap_uuids(
-                        start_time=1,
-                        end_time=end_time,
-                        pair=pair,
-                        success_only=False,
-                        failed_only= False
+        pairs.sort()
+        with Session(pgdb.engine) as session:
+            for pair in pairs:
+                x += 1
+                sorted_pair = sortdata.pair_by_market_cap(
+                    pair, gecko_source=self.gecko_source
+                )
+                if pair != sorted_pair:
+                    logger.warning(
+                        f"{pair} in DB is non standard! Should be {sorted_pair}!"
                     )
-                ]
-                logger.warning(f"need to fix {len(uuids)} swaps with non standard pair {pair}")
-                for uuid in uuids:
-                    logger.info(f"Fixing {uuid}")
-                    
-                    
-        
+                    uuids = [
+                        i
+                        for i in pgdb_query.swap_uuids(
+                            start_time=1,
+                            end_time=end_time,
+                            pair=pair,
+                            success_only=False,
+                            failed_only=False,
+                        )["ALL"]
+                    ]
+                    if len(uuids) > 0:
+                        logger.warning(
+                            f"need to fix {len(uuids)} swaps with non standard pair {pair} {x}/{len(pairs)}"
+                        )
+                        updates = []
+                        for uuid in uuids:
+                            swap = pgdb_query.get_swap(uuid=uuid)
+                            _pair = sortdata.pair_by_market_cap(
+                                swap["pair"], gecko_source=self.gecko_source
+                            )
+                            if swap["pair"] == _pair:
+                                continue
+                            else:
+                                logger.calc(f"{uuid} needs update...")
+                                clean_swap = self.ensure_valid_pair(swap)
+                                stmt = (
+                                    update(DefiSwap)
+                                    .where(DefiSwap.uuid == clean_swap["uuid"])
+                                    .values(
+                                        pair=clean_swap["pair"],
+                                        pair_std=clean_swap["pair_std"],
+                                        pair_reverse=clean_swap["pair_reverse"],
+                                        pair_std_reverse=clean_swap["pair_std_reverse"],
+                                        maker_coin_ticker=clean_swap[
+                                            "maker_coin_ticker"
+                                        ],
+                                        maker_coin_platform=clean_swap[
+                                            "maker_coin_platform"
+                                        ],
+                                        taker_coin_ticker=clean_swap[
+                                            "taker_coin_ticker"
+                                        ],
+                                        taker_coin_platform=clean_swap[
+                                            "taker_coin_platform"
+                                        ],
+                                        trade_type=clean_swap["trade_type"],
+                                        price=clean_swap["price"],
+                                        reverse_price=clean_swap["reverse_price"],
+                                    )
+                                )
+                                session.exec(stmt)
+                                session.commit()
+                                logger.info(f"{uuid} FIXED!")
+
     @timed
     def import_cipi_swaps(
         self,
@@ -1350,10 +1406,6 @@ class SqlSource:
         start_time=0,
         end_time=0,
     ):
-        self.fix_swap_pairs(
-            pgdb,
-            pgdb_query
-        )
         try:
             if start_time == 0:
                 start_time = int(cron.now_utc() - 86400)
@@ -1597,8 +1649,12 @@ class SqlSource:
                     if i not in cipi_data:
                         cipi_data.update({i: ""})
                 cipi_data = self.ensure_valid_pair(cipi_data)
-                if cipi_data["pair"] != sortdata.pair_by_market_cap(cipi_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"cipi_data Pair is non standard! {cipi_data['pair']}")
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_amount=cipi_data["taker_amount"],
@@ -1633,10 +1689,18 @@ class SqlSource:
             else:
                 cipi_data = self.ensure_valid_pair(cipi_data)
                 defi_data = self.ensure_valid_pair(defi_data)
-                if cipi_data["pair"] != sortdata.pair_by_market_cap(cipi_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"cipi_data Pair is non standard! {cipi_data['pair']}")
-                if defi_data["pair"] != sortdata.pair_by_market_cap(defi_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"defi_data Pair is non standard! {defi_data['pair']}")
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
+                if defi_data["pair"] != sortdata.pair_by_market_cap(
+                    defi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"defi_data Pair is non standard! {defi_data['pair']}"
+                    )
                 for i in [
                     "taker_coin",
                     "maker_coin",
@@ -1667,9 +1731,12 @@ class SqlSource:
                             )
                             logger.warning(f"{cipi_data[i]} vs {defi_data[i]}")
 
-                cipi_data = self.ensure_valid_pair(cipi_data)
-                if cipi_data["pair"] != sortdata.pair_by_market_cap(cipi_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"cipi_data Pair is non standard! {cipi_data['pair']}")
+                if cipi_data["pair"] != sortdata.pair_by_market_cap(
+                    cipi_data["pair"], gecko_source=self.gecko_source
+                ):
+                    logger.warning(
+                        f"cipi_data Pair is non standard! {cipi_data['pair']}"
+                    )
                 data = DefiSwap(
                     uuid=cipi_data["uuid"],
                     taker_coin=cipi_data["taker_coin"],
@@ -1766,9 +1833,9 @@ class SqlSource:
                     "reverse_price": reverse_price,
                 }
             )
-            return data
         except Exception as e:
             logger.warning(e)
+        return data
 
     @timed
     def mm2_to_defi_swap(self, mm2_data, defi_data=None):  # pragma: no cover
@@ -1781,7 +1848,9 @@ class SqlSource:
                     if i not in mm2_data:
                         mm2_data.update({i: ""})
                 mm2_data = self.ensure_valid_pair(mm2_data)
-                if mm2_data["pair"] != sortdata.pair_by_market_cap(mm2_data["pair"], gecko_source=self.gecko_source):
+                if mm2_data["pair"] != sortdata.pair_by_market_cap(
+                    mm2_data["pair"], gecko_source=self.gecko_source
+                ):
                     logger.warning(f"mm2_data Pair is non standard! {mm2_data['pair']}")
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
@@ -1816,11 +1885,20 @@ class SqlSource:
                 )
             else:
                 mm2_data = self.ensure_valid_pair(mm2_data)
-                if mm2_data["pair"] != sortdata.pair_by_market_cap(mm2_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"mm2_data Pair is non standard! {mm2_data['pair']}")
-                defi_data = self.ensure_valid_pair(defi_data)
-                if defi_data["pair"] != sortdata.pair_by_market_cap(defi_data["pair"], gecko_source=self.gecko_source):
-                    logger.warning(f"defi_data Pair is non standard! {defi_data['pair']}")
+                if self.gecko_source is not None:
+                    if mm2_data["pair"] != sortdata.pair_by_market_cap(
+                        mm2_data["pair"], gecko_source=self.gecko_source
+                    ):
+                        logger.warning(
+                            f"mm2_data Pair is non standard! {mm2_data['pair']}"
+                        )
+                    defi_data = self.ensure_valid_pair(defi_data)
+                    if defi_data["pair"] != sortdata.pair_by_market_cap(
+                        defi_data["pair"], gecko_source=self.gecko_source
+                    ):
+                        logger.warning(
+                            f"defi_data Pair is non standard! {defi_data['pair']}"
+                        )
                 for i in [
                     "taker_coin",
                     "maker_coin",
