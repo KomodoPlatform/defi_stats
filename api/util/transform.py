@@ -1261,25 +1261,32 @@ class SortData:
                 logger.warning(f"Unable to get mcap for {pair_str}, gecko source is None!")
                 return None
             base_mc = derive.gecko_mcap(base, gecko_source)
-            quote_mc = derive.gecko_mcap(base, gecko_source)
+            quote_mc = derive.gecko_mcap(quote, gecko_source)
             # Generalise the MCAP so coins very close in value
             # dont flip ticker order too often. 
             if len(str(int(base_mc))) == len(str(int(quote_mc))):
                 div = len(str(int(quote_mc)))
+                logger.loop(base_mc)
                 base_mc = int(base_mc / Decimal(10 ** (div - 2)))
+                logger.loop(base_mc)
+                logger.loop(quote_mc)
                 quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
+                logger.loop(quote_mc)
 
             # Sort by mcap
             if int(quote_mc) < int(base_mc):
                 logger.calc(f"{quote} {int(quote_mc)} < {base} {int(base_mc)}, inverting")
-                pair_str = invert.pair(pair_str)
+                return invert.pair(pair_str)
 
             # Sort alphabetically
             elif quote_mc == base_mc:
-                pair_str = "_".join(sorted([base, quote]))                
-
-            # implied 'else'; input pair order was already valid            
-            return pair_str
+                logger.calc(f"{quote} {int(quote_mc)} == {base} {int(base_mc)}, using alpha")
+                return "_".join(sorted([base, quote]))
+            # sort by mcap
+            else:
+                logger.calc(f"{quote} {int(quote_mc)} > {base} {int(base_mc)}, no inversion req")
+                return pair_str    
+            
         except Exception as e:  # pragma: no cover
             msg = f"pair_by_market_cap failed: {e}"
             logger.warning(msg)

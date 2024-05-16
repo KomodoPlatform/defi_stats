@@ -3,9 +3,10 @@ from util.cron import cron
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from typing import List
+import db.sqldb as db
+import lib.dex_api as dex
 from lib.pair import Pair
 from lib.cache_calc import CacheCalc
-import lib.dex_api as dex
 from models.generic import ErrorMessage
 from models.gecko import (
     GeckoPairsItem,
@@ -58,14 +59,17 @@ def gecko_tickers():
             "data": [],
         }
         gecko_source = memcache.get_gecko_source()
+        db_update = db.SqlUpdate()
+        pgdb_query = db.SqlQuery()
         for depair in data["data"]:
-            if depair == sortdata.pair_by_market_cap(
+            std_pair = sortdata.pair_by_market_cap(
                     depair, gecko_source=gecko_source
-                ):
+                )
+            if depair == std_pair:
                     resp["data"].append(data["data"][depair])
             else:
-                logger.warning(f"non standard {depair} exists in memcache.get_tickers()")
-                # TODO: Fix rows here with `fix_swap_pair` func
+                logger.warning(f"Non standard {depair} exists in memcache.get_tickers(), should be {std_pair}")
+                db_update.fix_swap_pair(depair, pgdb_query)
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
