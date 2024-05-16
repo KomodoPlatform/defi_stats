@@ -62,8 +62,8 @@ class CoinGeckoAPI:
             gecko_coins[coin_id].append(coin)
         return gecko_coins
 
-    def get_gecko_source(self):  # pragma: no cover
-        if memcache.get("testing") is not None:
+    def get_gecko_source(self, from_file=False):  # pragma: no cover
+        if memcache.get("testing") is not None or from_file:
             return self.files.load_jsonfile(self.gecko_source)
         param_limit = 200
         # TODO: we should cache the api ids
@@ -147,3 +147,5 @@ class BinanceAPI:  # pragma: no cover
         endpoint = "api/v3/ticker/price"
         r = requests.get(f"{self.base_url}/{endpoint}")
         return r.json()
+
+gecko_api = CoinGeckoAPI(coins_config=memcache.get_coins_config())

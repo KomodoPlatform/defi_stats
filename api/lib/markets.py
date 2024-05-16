@@ -6,6 +6,7 @@ from util.transform import sortdata, derive, invert, merge
 from util.cron import cron
 import util.defaults as default
 import util.memcache as memcache
+from lib.external import gecko_api
 
 
 class Markets:
@@ -22,7 +23,10 @@ class Markets:
     @property
     def gecko_source(self):
         if self._gecko_source is None:
+            logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
+        if self._gecko_source is None:
+            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
 
     @property

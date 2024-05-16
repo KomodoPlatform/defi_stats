@@ -12,6 +12,7 @@ import util.validate as validate
 import lib.cache_calc as cache_calc
 import lib.external as external
 import lib.cmc as cmc
+from lib.external import gecko_api
 
 
 class Cache:  # pragma: no cover
@@ -121,6 +122,8 @@ class CacheItem:
         if self._gecko_source is None:
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
+        if self._gecko_source is None:
+            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
 
     @property
