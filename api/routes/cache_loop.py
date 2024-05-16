@@ -390,4 +390,4 @@ def pair_tickers():
 @timed
 def fix_swap_pairs():
     reset_cache_files()
-    db.SqlSource().fix_swap_pairs()
+    db.SqlUpdate().fix_swap_pairs()

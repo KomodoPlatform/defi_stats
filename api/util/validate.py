@@ -2,7 +2,7 @@ from decimal import Decimal
 from util.logger import logger, timed
 from util.exceptions import DataStructureError, BadPairFormatError
 from util.transform import deplatform
-from util.transform import derive
+from util.transform import derive, sortdata, invert
 import util.defaults as default
 
 
@@ -72,9 +72,18 @@ def loop_data(data, cache_item):
         return False
 
 
-def is_bridge_swap(pair):
-    root_pairing = deplatform.pair(pair)
+def is_bridge_swap(pair_str):
+    root_pairing = deplatform.pair(pair_str)
     if len(set(root_pairing.split("_"))) == 1:
+        return True
+    return False
+
+def is_bridge_swap_duplicate(pair_str, gecko_source):
+    if is_bridge_swap(pair_str) is False:
+        return False
+    if pair_str != sortdata.pair_by_market_cap(
+        pair_str, gecko_source=gecko_source
+    ):
         return True
     return False
 
@@ -134,3 +143,48 @@ def is_pair_priced(pair_str, gecko_source):
             if x > 0 and y > 0:  # pragma: no cover
                 return True
     return False
+
+def ensure_valid_pair(data, gecko_source):
+    try:
+        data["maker_coin_ticker"] = deplatform.coin(data["maker_coin"])
+        data["maker_coin_platform"] = derive.coin_platform(data["maker_coin"])
+        data["taker_coin_ticker"] = deplatform.coin(data["taker_coin"])
+        data["taker_coin_platform"] = derive.coin_platform(data["taker_coin"])
+        if data["taker_coin_platform"] != "":
+            _base = f"{data['taker_coin_ticker']}-{data['taker_coin_platform']}"
+        else:
+            _base = f"{data['taker_coin_ticker']}"
+        if data["maker_coin_platform"] != "":
+            _quote = f"{data['maker_coin_ticker']}-{data['maker_coin_platform']}"
+        else:
+            _quote = f"{data['maker_coin_ticker']}"
+        _pair = f"{_base}_{_quote}"
+        data["pair"] = sortdata.pair_by_market_cap(
+            _pair, gecko_source=gecko_source
+        )
+        data["pair_std"] = deplatform.pair(data["pair"])
+        data["pair_reverse"] = invert.pair(data["pair"])
+        data["pair_std_reverse"] = invert.pair(data["pair_std"])
+        # Assign price and trade_type
+        if deplatform.pair(_pair) == data["pair_std"]:
+            trade_type = "sell"
+            price = Decimal(data["maker_amount"]) / Decimal(data["taker_amount"])
+            reverse_price = Decimal(data["taker_amount"]) / Decimal(
+                data["maker_amount"]
+            )
+        elif deplatform.pair(_pair) == data["pair_std_reverse"]:
+            trade_type = "buy"
+            price = Decimal(data["taker_amount"]) / Decimal(data["maker_amount"])
+            reverse_price = Decimal(data["maker_amount"]) / Decimal(
+                data["taker_amount"]
+            )
+        data.update(
+            {
+                "trade_type": trade_type,
+                "price": price,
+                "reverse_price": reverse_price,
+            }
+        )
+    except Exception as e:
+        logger.warning(e)
+    return data

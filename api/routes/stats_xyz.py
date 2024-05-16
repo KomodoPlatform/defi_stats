@@ -84,6 +84,8 @@ def fiat_rates():
 def orderbook(pair_str: str = "KMD_LTC", depth: int = 100):
     try:
         gecko_source = memcache.get_gecko_source()
+        # Where a non standard pair is requested
+        # we need to invert some values.
         is_reversed = pair_str != sortdata.pair_by_market_cap(
             pair_str, gecko_source=gecko_source
         )
