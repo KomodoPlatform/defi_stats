@@ -98,6 +98,7 @@ class Coin:
     @property
     def gecko_source(self):
         if self._gecko_source is None:
+            logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         return self._gecko_source
 

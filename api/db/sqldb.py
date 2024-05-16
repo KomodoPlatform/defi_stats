@@ -35,6 +35,7 @@ from util.exceptions import InvalidParamCombination
 from util.logger import logger, timed
 from util.transform import merge, sortdata, deplatform, invert, derive, template
 from util.cron import cron
+from lib.external import gecko_api
 import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
@@ -207,6 +208,8 @@ class SqlUpdate(SqlDB):
         if self._gecko_source is None:
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
+        if self._gecko_source is None:
+            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
     
     @timed
@@ -308,6 +311,8 @@ class SqlQuery(SqlDB):
         if self._gecko_source is None:
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
+        if self._gecko_source is None:
+            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
 
     # TODO: Subclass 'volumes'
@@ -1398,8 +1403,10 @@ class SqlSource:
     @property
     def gecko_source(self):
         if self._gecko_source is None:
-            # logger.calc("sourcing gecko")
+            logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
+        if self._gecko_source is None:
+            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
 
     @timed
