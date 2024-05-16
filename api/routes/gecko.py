@@ -15,7 +15,7 @@ from models.gecko import (
 )
 from util.enums import TradeType
 from util.logger import logger
-from util.transform import convert, deplatform, derive, invert
+from util.transform import convert, deplatform, derive, invert, sortdata
 import util.memcache as memcache
 import util.validate as validate
 
@@ -57,8 +57,15 @@ def gecko_tickers():
             "combined_liquidity_usd": data["combined_liquidity_usd"],
             "data": [],
         }
+        gecko_source = memcache.get_gecko_source()
         for depair in data["data"]:
-            resp["data"].append(data["data"][depair])
+            if depair == sortdata.pair_by_market_cap(
+                    depair, gecko_source=gecko_source
+                ):
+                    resp["data"].append(data["data"][depair])
+            else:
+                logger.warning(f"non standard {depair} exists in memcache.get_tickers()")
+                # TODO: Fix rows here with `fix_swap_pair` func
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")

@@ -387,6 +387,7 @@ class Derive:
     def __init__(self):
         self._coins_config = None
         self._cmc_assets_source = None
+        self._gecko_source = None
 
     @property
     def coins_config(self):
@@ -410,11 +411,31 @@ class Derive:
             return self.cmc_assets_dict[ticker]
         return {}
 
+    @property
+    def gecko_source(self):
+        if self._gecko_source is None:
+            logger.calc("sourcing gecko")
+            self._gecko_source = memcache.get_gecko_source()
+        return self._gecko_source
+
+    @timed
+    def variant_trades(self, variant, data):
+        base, quote = derive.base_quote(variant)
+        return [
+            k
+            for k in data
+            if base in [k["taker_coin"], k["maker_coin"]]
+            and quote in [k["taker_coin"], k["maker_coin"]]
+        ]
+
+
     @timed
     def base_quote(self, pair_str, reverse=False, deplatform=False):
         # TODO: This workaround fixes the issue
         # but need to find root cause to avoid
-        # unexpected related issues
+        # unexpected related issues.
+        # Might be simplest to just repair the pre-standard 
+        # pair tickers in the DB.
         try:
             if deplatform:
                 pair_str = deplatform.pair(pair_str)
@@ -520,16 +541,13 @@ class Derive:
         return Decimal(0)  # pragma: no cover
 
     def gecko_mcap(self, ticker, gecko_source) -> float:
-        try:
-            if ticker in gecko_source:
-                return Decimal(gecko_source[ticker]["usd_market_cap"])
-        except KeyError as e:  # pragma: no cover
-            logger.warning(
-                f"Failed to get usd_price and mcap for {ticker}: [KeyError] {e}"
-            )
-        except Exception as e:  # pragma: no cover
-            logger.warning(f"Failed to get usd_price and mcap for {ticker}: {e}")
-        return Decimal(0)  # pragma: no cover
+        # TODO: Special case, different to '-segwit'.
+        # This should be handled genericaly
+        # there may be other places where this is an issue
+        ticker = ticker.replace("-lightning", "")
+        if ticker in gecko_source:
+            return Decimal(gecko_source[ticker]["usd_market_cap"])
+        return Decimal(0)
 
     @timed
     def last_trade_info(self, pair_str: str, pairs_last_traded_cache: Dict):
@@ -629,9 +647,9 @@ class Derive:
                     if pairs_last_traded_cache[i][j]["last_swap_time"] > ts:
                         if j != "ALL":
                             pairs.append(j)
-            return sorted(list(set(pairs)))
-        return sorted(
-            list(
+            data = sorted(list(set(pairs)))
+        else:
+            data = sorted(list(
                 set(
                     [
                         i
@@ -639,8 +657,12 @@ class Derive:
                         if pairs_last_traded_cache[i]["ALL"]["last_swap_time"] > ts
                     ]
                 )
-            )
-        )
+            ))
+        return [
+            sortdata.pair_by_market_cap(
+                i, gecko_source=self.gecko_source
+            ) for i in data
+        ]
 
     @timed
     def price_at_finish(self, swap, is_reverse=False):
@@ -1233,50 +1255,36 @@ class SortData:
             if gecko_source is None:
                 gecko_source = memcache.get_gecko_source()
             if gecko_source is None:
-                logger.warning(f"Unable to get mcap for {pair_str}")
+                # We want this to error out rather than return the alphabetic
+                # ticker otherwise it may enter the DB incorrectly if the
+                # gecko data is not yet available
+                logger.warning(f"Unable to get mcap for {pair_str}, gecko source is None!")
                 return None
-            if gecko_source is not None:
-                if (
-                    base.replace("-segwit", "").replace("-lightning", "")
-                    in gecko_source
-                ):
-                    # logger.info(f'{base}: {gecko_source[base.replace("-segwit", "").replace("-lightning", "")]}')
-                    base_mc = Decimal(
-                        gecko_source[
-                            base.replace("-segwit", "").replace("-lightning", "")
-                        ]["usd_market_cap"]
-                    )
-                else:
-                    # logger.warning(f"{base}: not in gecko_source")
-                    base_mc = 0
-                if (
-                    quote.replace("-segwit", "").replace("-lightning", "")
-                    in gecko_source
-                ):
-                    # logger.info(f'{quote}: {gecko_source[quote.replace("-segwit", "").replace("-lightning", "")]}')
-                    quote_mc = Decimal(
-                        gecko_source[
-                            quote.replace("-segwit", "").replace("-lightning", "")
-                        ]["usd_market_cap"]
-                    )
-                else:
-                    # logger.warning(f"{quote} not in gecko_source")
-                    quote_mc = 0
-                
-                if len(str(int(base_mc))) == len(str(int(quote_mc))):
-                    div = len(str(int(quote_mc)))
-                    base_mc = int(base_mc / Decimal(10 ** (div - 2)))
-                    quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
-                # logger.calc(f"{base} {base_mc}")
-                # logger.calc(f"{quote} {quote_mc}")
-                if len(str(quote_mc)) < len(str(base_mc)):
-                    pair_str = invert.pair(pair_str)
-                elif quote_mc == base_mc:
-                    pair_str = "_".join(sorted([base, quote]))
+            base_mc = derive.gecko_mcap(base, gecko_source)
+            quote_mc = derive.gecko_mcap(base, gecko_source)
+            # Generalise the MCAP so coins very close in value
+            # dont flip ticker order too often. 
+            if len(str(int(base_mc))) == len(str(int(quote_mc))):
+                div = len(str(int(quote_mc)))
+                base_mc = int(base_mc / Decimal(10 ** (div - 2)))
+                quote_mc = int(quote_mc / Decimal(10 ** (div - 2)))
+
+            # Sort by mcap
+            if int(quote_mc) < int(base_mc):
+                logger.calc(f"{quote} {int(quote_mc)} < {base} {int(base_mc)}, inverting")
+                pair_str = invert.pair(pair_str)
+
+            # Sort alphabetically
+            elif quote_mc == base_mc:
+                pair_str = "_".join(sorted([base, quote]))                
+
+            # implied 'else'; input pair order was already valid            
+            return pair_str
         except Exception as e:  # pragma: no cover
             msg = f"pair_by_market_cap failed: {e}"
             logger.warning(msg)
-        return pair_str
+            return None
+        
 
 
 class SumData:
