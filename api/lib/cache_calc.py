@@ -155,6 +155,7 @@ class CacheCalc:
             traded_pairs = derive.pairs_traded_since(
                 ts, self.pairs_last_traded_cache, deplatformed=False
             )
+            
             data = []
             for depair in depairs:
                 x = Pair(
@@ -534,14 +535,11 @@ class CacheCalc:
     @timed
     def tickers(self, refresh: bool = False):
         try:
-            resp = memcache.get_tickers()
-            msg = "Got tickers from cache"
-            loglevel = "cached"
-            ignore_until = 5
             if refresh:
                 book = self.pairs_orderbook_extended_cache
                 volumes = self.pair_volumes_24hr_cache
                 prices = self.pair_prices_24hr_cache
+                logger.warning(book["orderbooks"].keys())
                 if None not in [self.coins_config, book, volumes, prices]:
                     sorted_pairs = list(
                         set(
@@ -597,16 +595,22 @@ class CacheCalc:
                             )
                             not_ok += 1
                     logger.calc(f"{ok}/{ok + not_ok} pairs added to tickers cache")
-                memcache.set_tickers(resp)
+                # Not needed, done in cache.py
+                # memcache.set_tickers(resp)
                 msg = "Tickers cache updated"
-            ignore_until = 0
+                ignore_until = 0
+            else:
+                resp = memcache.get_tickers()
+                msg = "Got tickers from cache"
+                ignore_until = 5
+                
         except Exception as e:  # pragma: no cover
             msg = f"tickers failed! {e}"
             ignore_until = 0
             loglevel = "warning"
             return default.error(e, msg)
         return default.result(
-            data=resp, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+            data=resp, msg=msg, loglevel="cached", ignore_until=ignore_until
         )
 
 

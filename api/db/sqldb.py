@@ -236,7 +236,7 @@ class SqlUpdate(SqlDB):
         for pair in pairs:
             x += 1
             self.fix_swap_pair(pair, pgdb_query)
-            logger.info(f"Fixing pair standard for {pair} {x}/{len(pairs)}")
+            # logger.info(f"Fixing pair standard for {pair} {x}/{len(pairs)}")
             
 
     @timed
@@ -1222,6 +1222,7 @@ class SqlQuery(SqlDB):
         with at least one successful swap in the last 'x' days.
         Results sorted by market cap to conform to CEX standards.
         """
+        # TODO: Function underutilised. Refactor.
         try:
             
             start_time = int(cron.now_utc() - 86400 * days)
@@ -1244,6 +1245,7 @@ class SqlQuery(SqlDB):
                 bad_pairs = pairs - sorted_pairs
                 logger.warning(bad_pairs)
                 pgdb = SqlUpdate(db_type="pgsql")    
+                # TODO: Thread this
                 for pair in bad_pairs:
                     pgdb.fix_swap_pair(pair, self)
             return default.result(

@@ -70,7 +70,7 @@ def gecko_tickers():
             else:
                 logger.warning(f"Non standard {depair} exists in memcache.get_tickers(), should be {std_pair}")
                 # TODO: This should be threaded to avoid blocking
-                db_update.fix_swap_pair(depair, pgdb_query)
+                # db_update.fix_swap_pair(depair, pgdb_query)
         return resp
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/gecko/tickers]: {e}")
