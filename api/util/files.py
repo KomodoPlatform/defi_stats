@@ -55,12 +55,15 @@ class Files:
     def get_cache_fn(self, name):
         return getattr(self, name, None)
 
-    def save_json(self, fn, data):
+    def save_json(self, fn, data, indent=4):
         try:
             if len(data) > 0:
                 if validate.json_obj(data):
                     with open(fn, "w+") as f:
-                        json.dump(data, f, indent=4)
+                        if indent == 0:
+                            json.dump(data, f, separators=(',', ':'))
+                        else:
+                            json.dump(data, f, indent=indent)
                         return {
                             "result": "success",
                             "msg": f"Saved {fn}",
