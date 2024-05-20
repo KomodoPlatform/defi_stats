@@ -251,6 +251,7 @@ class SqlUpdate(SqlDB):
         # XEP-BEP20_XEP-segwit seems to keep being updated
         # TODO: investigate
         try:
+            fixed = False
             sorted_pair = sortdata.pair_by_market_cap(pair, gecko_source=self.gecko_source)
             if pair != sorted_pair:
                 logger.warning(f"{pair} in DB is non standard! Should be {sorted_pair}! Trigger: {trigger}")
@@ -293,9 +294,11 @@ class SqlUpdate(SqlDB):
                             session.exec(stmt)
                             session.commit()
                             logger.info(f"{uuid} FIXED!")
-                            return True
+                            fixed = True
         except Exception as e:
             logger.warning(f"error fixing swap for {pair}: {e}")
+        return fixed
+        
 
 
 class SqlQuery(SqlDB):
