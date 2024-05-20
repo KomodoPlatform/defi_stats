@@ -1271,19 +1271,13 @@ class SortData:
 
             # Sort by mcap
             if int(quote_mc) < int(base_mc):
-                if "KMD" in pair_str and "BTC" in pair_str:
-                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} < {base} {int(base_mc)}, inverting")
                 return invert.pair(pair_str)
 
             # Sort alphabetically
             elif quote_mc == base_mc:
-                if "KMD" in pair_str and "BTC" in pair_str:
-                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} == {base} {int(base_mc)}, using alpha")
                 return "_".join(sorted([base, quote]))
             # sort by mcap
             else:
-                if "KMD" in pair_str and "BTC" in pair_str:
-                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} > {base} {int(base_mc)}, no inversion req")
                 return pair_str    
             
         except Exception as e:  # pragma: no cover

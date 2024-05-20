@@ -99,7 +99,7 @@ class Pair:  # pragma: no cover
     @property
     def gecko_source(self):
         if self._gecko_source is None:
-            logger.calc("sourcing gecko")
+            # logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
             self._gecko_source = gecko_api.get_gecko_source(from_file=True)
