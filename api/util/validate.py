@@ -78,12 +78,11 @@ def is_bridge_swap(pair_str):
         return True
     return False
 
+
 def is_bridge_swap_duplicate(pair_str, gecko_source):
     if is_bridge_swap(pair_str) is False:
         return False
-    if pair_str != sortdata.pair_by_market_cap(
-        pair_str, gecko_source=gecko_source
-    ):
+    if pair_str != sortdata.pair_by_market_cap(pair_str, gecko_source=gecko_source):
         return True
     return False
 
@@ -144,6 +143,7 @@ def is_pair_priced(pair_str, gecko_source):
                 return True
     return False
 
+
 def ensure_valid_pair(data, gecko_source):
     try:
         data["maker_coin_ticker"] = deplatform.coin(data["maker_coin"])
@@ -159,9 +159,7 @@ def ensure_valid_pair(data, gecko_source):
         else:
             _quote = f"{data['maker_coin_ticker']}"
         _pair = f"{_base}_{_quote}"
-        data["pair"] = sortdata.pair_by_market_cap(
-            _pair, gecko_source=gecko_source
-        )
+        data["pair"] = sortdata.pair_by_market_cap(_pair, gecko_source=gecko_source)
         data["pair_std"] = deplatform.pair(data["pair"])
         data["pair_reverse"] = invert.pair(data["pair"])
         data["pair_std_reverse"] = invert.pair(data["pair_std"])

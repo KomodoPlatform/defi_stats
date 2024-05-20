@@ -114,9 +114,10 @@ class SqlFilter:
         return q
 
     @timed
-    def pair(self, q, pair):
+    def pair(self, q, pair, deplatform=True):
         if pair is not None:
-            pair = deplatform.pair(pair)
+            if deplatform:
+                pair = deplatform.pair(pair)
             q = q.filter(
                 or_(
                     pair == self.table.pair_std,
@@ -223,50 +224,52 @@ class SqlUpdate(SqlDB):
             logger.warning(e)
 
     @timed
-    def fix_swap_pairs(self, start_time=1, end_time=0):
+    def fix_swap_pairs(self, start_time=1, end_time=0, trigger=None):
         pgdb_query = SqlQuery(db_type="pgsql", gecko_source=self.gecko_source)
         if end_time == 0:
             end_time = cron.now_utc()
         if start_time == 0:
             start_time = cron.now_utc() - 86400
-        pairs = pgdb_query.get_distinct(column="pair", start_time=1, end_time=end_time)
+        pairs = pgdb_query.get_distinct(
+            column="pair",
+            start_time=1,
+            end_time=end_time,
+            success_only=False,
+            failed_only=False
+        )
         x = 0
         pairs = list(set(pairs))
         pairs.sort()
         for pair in pairs:
             x += 1
-            self.fix_swap_pair(pair, pgdb_query)
-            # logger.info(f"Fixing pair standard for {pair} {x}/{len(pairs)}")
+            if self.fix_swap_pair(pair, pgdb_query, trigger) or x%100 == 0:
+                logger.info(f"Fixing pair standard for {pair} {x}/{len(pairs)}")
             
 
     @timed
-    def fix_swap_pair(self, pair, pgdb_query):
-        sorted_pair = sortdata.pair_by_market_cap(pair, gecko_source=self.gecko_source)
-        if pair != sorted_pair:
-            logger.warning(f"{pair} in DB is non standard! Should be {sorted_pair}!")
-            uuids = [
-                i
-                for i in pgdb_query.swap_uuids(
-                    start_time=1,
-                    end_time=cron.now_utc(),
+    def fix_swap_pair(self, pair, pgdb_query, trigger=None):
+        # XEP-BEP20_XEP-segwit seems to keep being updated
+        # TODO: investigate
+        try:
+            sorted_pair = sortdata.pair_by_market_cap(pair, gecko_source=self.gecko_source)
+            if pair != sorted_pair:
+                logger.warning(f"{pair} in DB is non standard! Should be {sorted_pair}! Trigger: {trigger}")
+                swaps = pgdb_query.swap_uuids(
                     pair=pair,
-                    success_only=False,
-                    failed_only=False,
-                )["ALL"]
-            ]
-            if len(uuids) > 0:
-                logger.warning(
-                    f"need to fix {len(uuids)} swaps with non standard pair {pair}"
+                    full_scan_pair=True
                 )
-                updates = []
-                for uuid in uuids:
-                    swap = pgdb_query.get_swap(uuid=uuid)
-                    _pair = sortdata.pair_by_market_cap(
-                        swap["pair"], gecko_source=self.gecko_source
+                if "ALL" in swaps:
+                    uuids = [i for i in swaps["ALL"]]
+                else:
+                    uuids = [i for i in swaps]
+                
+                if len(uuids) > 0:
+                    logger.warning(
+                        f"need to fix {len(uuids)} swaps with non standard pair {pair}"
                     )
-                    if swap["pair"] == _pair:
-                        continue
-                    else:
+                    updates = []
+                    for uuid in uuids:
+                        swap = pgdb_query.get_swap(uuid=uuid)
                         logger.calc(f"{uuid} needs update...")
                         clean_swap = validate.ensure_valid_pair(swap, gecko_source=self.gecko_source) 
                         stmt = (
@@ -290,6 +293,9 @@ class SqlUpdate(SqlDB):
                             session.exec(stmt)
                             session.commit()
                             logger.info(f"{uuid} FIXED!")
+                            return True
+        except Exception as e:
+            logger.warning(f"error fixing swap for {pair}: {e}")
 
 
 class SqlQuery(SqlDB):
@@ -965,6 +971,7 @@ class SqlQuery(SqlDB):
                     variants = derive.pair_variants(pair_str)
                     for variant in variants:
                         if validate.is_bridge_swap_duplicate(pair_str, self.gecko_source):
+                            logger.warning(f"Skipping bridge_swap_duplicate {pair_str}")
                             continue
                         resp.update({
                             variant: derive.variant_trades(variant, data)
@@ -1145,38 +1152,58 @@ class SqlQuery(SqlDB):
         success_only: bool = True,
         failed_only: bool = False,
         all_variants: bool = False,
+        full_scan: bool = False,
     ):
         """
         Returns swaps for a variant of a pair only.
         Optionally, pairs with segwit coins can be merged
         """
-        pair_str = f"{base}_{quote}"
-        swaps = self.get_swaps(
-            pair_str=pair_str,
-            start_time=start_time,
-            end_time=end_time,
-            limit=limit,
-            trade_type=trade_type,
-            pubkey=pubkey,
-            gui=gui,
-            version=version,
-            success_only=success_only,
-            failed_only=failed_only,
-        )
-        # TODO: This should return all variants and be merged as req later
-        if all_variants:
-            resp = swaps["ALL"]
-        elif merge_segwit:
-            segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
-            resp = merge.swaps(segwit_variants, swaps)
-        elif pair_str in swaps:
-            resp = swaps[pair_str]
-        elif invert.pair(pair_str) in swaps:
-            resp = swaps[invert.pair(pair_str)]
-        else:
-            return []
-        resp = sortdata.dict_lists(data=resp, key="finished_at", reverse=True)
-        return resp
+        try:
+            pair_str = f"{base}_{quote}"
+            if full_scan:
+                swaps = []
+                with Session(self.engine) as session:
+                    q = select(self.table).filter(
+                        or_(
+                            pair_str == self.table.pair,
+                            pair_str == self.table.pair_reverse,
+                        )
+                    ).order_by(self.table.finished_at)
+                r = session.exec(q)
+                resp = [dict(i) for i in r]
+            else:
+                swaps = self.get_swaps(
+                    pair_str=pair_str,
+                    start_time=start_time,
+                    end_time=end_time,
+                    limit=limit,
+                    trade_type=trade_type,
+                    pubkey=pubkey,
+                    gui=gui,
+                    version=version,
+                    success_only=success_only,
+                    failed_only=failed_only,
+                )
+                # TODO: This should return all variants
+                # and be merged as req later
+                if all_variants:
+                    resp = swaps["ALL"]
+                elif merge_segwit:
+                    segwit_variants = derive.pair_variants(pair_str, segwit_only=True)
+                    resp = merge.swaps(segwit_variants, swaps)
+                elif pair_str in swaps:
+                    resp = swaps[pair_str]
+                elif invert.pair(pair_str) in swaps:
+                    resp = swaps[invert.pair(pair_str)]
+                else:
+                    return []
+            if len(resp) > 0:
+                resp = sortdata.dict_lists(data=resp, key="finished_at", reverse=True)
+        except Exception as e:  # pragma: no cover
+            return default.result(msg=e, loglevel="warning")
+        msg = f"Got {len(resp)} swaps from {self.table.__tablename__}"
+        msg += f" between {start_time} and {end_time}"
+        return default.result(data=resp, msg=msg, loglevel="muted")
 
     @timed
     def swap_uuids(
@@ -1190,30 +1217,42 @@ class SqlQuery(SqlDB):
         version: str | None = None,
         success_only: bool = True,
         failed_only: bool = False,
+        full_scan_pair: bool = False,
     ):
-        if start_time == 0:
-            start_time = int(cron.now_utc()) - 86400
-        if end_time == 0:
-            end_time = int(cron.now_utc())
-        swaps = self.get_swaps(
-            start_time=start_time,
-            end_time=end_time,
-            coin=coin,
-            pair_str=pair,
-            pubkey=pubkey,
-            gui=gui,
-            version=version,
-            success_only=success_only,
-            failed_only=failed_only,
-        )
-
-        if coin is not None or pair is not None:
-            resp = {}
-            for variant in swaps:
-                resp.update({variant: [i["uuid"] for i in swaps[variant]]})
-            return resp
-        else:
-            return [i["uuid"] for i in swaps]
+        try:
+            if full_scan_pair:
+                base, quote = derive.base_quote(pair)
+                swaps = self.get_swaps_for_pair(full_scan=True, base=base, quote=quote)
+            else:
+                if start_time == 0:
+                    start_time = int(cron.now_utc()) - 86400
+                if end_time == 0:
+                    end_time = int(cron.now_utc())
+                swaps = self.get_swaps(
+                    start_time=start_time,
+                    end_time=end_time,
+                    coin=coin,
+                    pair_str=pair,
+                    pubkey=pubkey,
+                    gui=gui,
+                    version=version,
+                    success_only=success_only,
+                    failed_only=failed_only,
+                )
+            if len(swaps) > 0:
+                if "uuid" in swaps[0]:
+                    return [i["uuid"] for i in swaps]
+                elif "ALL" in swaps[0]:
+                    resp = {}
+                    for variant in swaps:
+                        resp.update({variant: [i["uuid"] for i in swaps[variant]]})
+                    return resp
+                else:
+                    logger.warning(swaps[0])
+            
+        except Exception as e:
+            logger.loop(e)
+        return []
 
     @timed
     def get_pairs(self, days: int = 7) -> list:
@@ -1246,8 +1285,8 @@ class SqlQuery(SqlDB):
                 logger.warning(bad_pairs)
                 pgdb = SqlUpdate(db_type="pgsql")    
                 # TODO: Thread this
-                for pair in bad_pairs:
-                    pgdb.fix_swap_pair(pair, self)
+                # for pair in bad_pairs:
+                    # pgdb.fix_swap_pair(pair, self)
             return default.result(
                 data=sorted_pairs,
                 msg="Got generic pairs from db",
@@ -1277,7 +1316,7 @@ class SqlQuery(SqlDB):
             if coin is not None:
                 q = session.query(self.table.maker_coin, self.table.taker_coin)
             elif pair is not None:
-                q = session.query(self.table.pair_std)
+                q = session.query(self.table.pair)
             elif column is not None:
                 try:
                     col = getattr(self.table, column)

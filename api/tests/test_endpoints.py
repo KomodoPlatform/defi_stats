@@ -29,6 +29,7 @@ def test_swagger_endpoints():
         if i.endswith("distinct"):
             i = f"{i}/?coin=KMD"
         logger.calc(f"Testing {i}  [{x}/{num_endpoints}]...")
+        logger.info(i)
         r = client.get(i)
         if '"error"' in r.text:
             logger.warning(f"{r.text}")

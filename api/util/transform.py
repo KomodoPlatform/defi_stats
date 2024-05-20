@@ -544,7 +544,7 @@ class Derive:
         # TODO: Special case, different to '-segwit'.
         # This should be handled genericaly
         # there may be other places where this is an issue
-        ticker = ticker.replace("-lightning", "")
+        ticker = ticker.replace("-lightning", "").replace("-segwit", "")
         if ticker in gecko_source:
             return Decimal(gecko_source[ticker]["usd_market_cap"])
         return Decimal(0)
@@ -554,7 +554,7 @@ class Derive:
         try:
             if pair_str in pairs_last_traded_cache:
                 return pairs_last_traded_cache[pair_str]
-            reverse_pair = invert.pair(pair_str, True)
+            reverse_pair = invert.pair(pair_str, deplatform=True)
             if reverse_pair in pairs_last_traded_cache:
                 return pairs_last_traded_cache[reverse_pair]
         except Exception as e:  # pragma: no cover
@@ -872,8 +872,8 @@ class Invert:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
 
-    def pair(self, pair_str):
-        base, quote = derive.base_quote(pair_str, True)
+    def pair(self, pair_str, deplatform=False):
+        base, quote = derive.base_quote(pair_str, reverse=True, deplatform=deplatform)
         return f"{base}_{quote}"
 
     def trade_type(self, trade_type):
@@ -1271,16 +1271,19 @@ class SortData:
 
             # Sort by mcap
             if int(quote_mc) < int(base_mc):
-                # logger.calc(f"{quote} {int(quote_mc)} < {base} {int(base_mc)}, inverting")
+                if "KMD" in pair_str and "BTC" in pair_str:
+                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} < {base} {int(base_mc)}, inverting")
                 return invert.pair(pair_str)
 
             # Sort alphabetically
             elif quote_mc == base_mc:
-                # logger.calc(f"{quote} {int(quote_mc)} == {base} {int(base_mc)}, using alpha")
+                if "KMD" in pair_str and "BTC" in pair_str:
+                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} == {base} {int(base_mc)}, using alpha")
                 return "_".join(sorted([base, quote]))
             # sort by mcap
             else:
-                # logger.calc(f"{quote} {int(quote_mc)} > {base} {int(base_mc)}, no inversion req")
+                if "KMD" in pair_str and "BTC" in pair_str:
+                    logger.calc(f"{pair_str}: {quote} {int(quote_mc)} > {base} {int(base_mc)}, no inversion req")
                 return pair_str    
             
         except Exception as e:  # pragma: no cover

@@ -32,7 +32,7 @@ cache = Cache()
     status_code=200,
 )
 def fix_swap_pairs():
-    db.SqlUpdate().fix_swap_pairs()
+    db.SqlUpdate().fix_swap_pairs(trigger="routed query")
 
 
 @router.get(

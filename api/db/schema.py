@@ -8,7 +8,38 @@ from sqlalchemy import UniqueConstraint
 
 class DefiSwap(SQLModel, table=True):
     __tablename__ = "defi_swaps"
-
+    __slots__ = [
+        "pair",
+        "pair_std",
+        "pair_reverse",
+        "pair_std_reverse",
+        "pair",
+        "trade_type",
+        "is_success",
+        'taker_amount',
+        "taker_coin",
+        "taker_coin_ticker",
+        "taker_coin_platform",
+        "taker_gui",
+        "taker_pubkey",
+        'taker_version',
+        "taker_coin_usd_price",
+        "maker_amount",
+        "maker_coin",
+        "maker_coin_ticker",
+        'maker_coin_platform',
+        "maker_gui",
+        "maker_pubkey",
+        "maker_version",
+        "maker_coin_usd_price",
+        "price",
+        "reverse_price",
+        "started_at",
+        "finished_at",
+        "duration",
+        "validated",
+        "last_updated",
+    ]
     id: Optional[int] = Field(default=None, primary_key=True)
     uuid: str = Field(
         default="77777777-7777-7777-7777-777777777777", unique=True, nullable=False

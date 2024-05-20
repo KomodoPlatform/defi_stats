@@ -59,16 +59,14 @@ def gecko_tickers():
             "data": [],
         }
         gecko_source = memcache.get_gecko_source()
-        db_update = db.SqlUpdate()
-        pgdb_query = db.SqlQuery()
         for depair in data["data"]:
-            std_pair = sortdata.pair_by_market_cap(
-                    depair, gecko_source=gecko_source
-                )
+            std_pair = sortdata.pair_by_market_cap(depair, gecko_source=gecko_source)
             if depair == std_pair:
-                    resp["data"].append(data["data"][depair])
+                resp["data"].append(data["data"][depair])
             else:
-                logger.warning(f"Non standard {depair} exists in memcache.get_tickers(), should be {std_pair}")
+                logger.warning(
+                    f"Non standard {depair} exists in memcache.get_tickers(), should be {std_pair}"
+                )
                 # TODO: This should be threaded to avoid blocking
                 # db_update.fix_swap_pair(depair, pgdb_query)
         return resp
@@ -110,7 +108,7 @@ def gecko_orderbook(
             coins_config=coins_config,
             gecko_source=gecko_source,
             variant_cache_name=variant_cache_name,
-            depth=depth
+            depth=depth,
         )
         resp = {
             "ticker_id": pair_str,
