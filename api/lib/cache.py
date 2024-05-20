@@ -316,6 +316,7 @@ class CacheItem:
                     logger.warning(
                         f"failed to save {self.name}, data failed validation: {data}"
                     )
+                return data
             else:
                 logger.warning(f"failed to save {self.name}, data is 'None'")
 

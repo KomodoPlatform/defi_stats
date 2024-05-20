@@ -386,8 +386,9 @@ def pair_tickers():
 
 # fix_swap_pairs
 @router.on_event("startup")
-@repeat_every(seconds=86400)
+@repeat_every(seconds=60)
 @timed
 def fix_swap_pairs():
     reset_cache_files()
-    db.SqlUpdate().fix_swap_pairs()
+    time.sleep(10)
+    db.SqlUpdate().fix_swap_pairs(trigger="cache_loop")

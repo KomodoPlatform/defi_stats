@@ -148,4 +148,5 @@ class BinanceAPI:  # pragma: no cover
         r = requests.get(f"{self.base_url}/{endpoint}")
         return r.json()
 
+
 gecko_api = CoinGeckoAPI(coins_config=memcache.get_coins_config())

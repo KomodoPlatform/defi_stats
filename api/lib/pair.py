@@ -356,12 +356,12 @@ class Pair:  # pragma: no cover
         refresh: bool = False,
     ):
         try:
+            depair = deplatform.pair(pair_str)
             if len(traded_pairs) == 0:
                 ts = cron.now_utc() - 30 * 86400
                 traded_pairs = derive.pairs_traded_since(
                     ts, self.pairs_last_traded_cache, deplatformed=False
                 )
-            depair = deplatform.pair(pair_str)
             pair_tpl = derive.base_quote(pair_str)
             if len(pair_tpl) != 2 or "error" in pair_tpl:
                 msg = {"error": "Market pair should be in `KMD_BTC` format"}
@@ -374,13 +374,13 @@ class Pair:  # pragma: no cover
             combo_orderbook = {"ALL": template.orderbook_extended(depair)}
             variants = derive.pair_variants(depair)
             for variant in variants:
-                if variant in traded_pairs:
+                if depair in traded_pairs:
                     combo_orderbook.update(
                         {variant: template.orderbook_extended(variant)}
                     )
                     variant_cache_name = f"orderbook_{variant}"
                     base, quote = derive.base_quote(variant)
-                    combo_orderbook[variant] = dex.get_orderbook(
+                    variant_orderbook = dex.get_orderbook(
                         base=base,
                         quote=quote,
                         coins_config=self.coins_config,
@@ -390,24 +390,25 @@ class Pair:  # pragma: no cover
                         depth=depth,
                         refresh=refresh,
                     )
-                    msg = f"Threading {variant} orderbook for cache"
-                    ignore_until = 3
-                    if not refresh:
-                        combo_orderbook[variant]["bids"] = combo_orderbook[variant][
-                            "bids"
-                        ][: int(depth)][::-1]
-                        combo_orderbook[variant]["asks"] = combo_orderbook[variant][
-                            "asks"
-                        ][::-1][: int(depth)]
-                        combo_orderbook["ALL"] = merge.orderbooks(
-                            existing=combo_orderbook["ALL"],
-                            new=combo_orderbook[variant],
-                            gecko_source=self.gecko_source,
-                            trigger=variant_cache_name,
-                        )
-                        combo_orderbook[variant] = clean.orderbook_data(
-                            combo_orderbook[variant]
-                        )
+                    if variant_orderbook is not None:
+                        combo_orderbook[variant] = variant_orderbook
+                        ignore_until = 3
+                        if not refresh:
+                            combo_orderbook[variant]["bids"] = combo_orderbook[variant][
+                                "bids"
+                            ][: int(depth)][::-1]
+                            combo_orderbook[variant]["asks"] = combo_orderbook[variant][
+                                "asks"
+                            ][::-1][: int(depth)]
+                            combo_orderbook["ALL"] = merge.orderbooks(
+                                existing=combo_orderbook["ALL"],
+                                new=combo_orderbook[variant],
+                                gecko_source=self.gecko_source,
+                                trigger=variant_cache_name,
+                            )
+                            combo_orderbook[variant] = clean.orderbook_data(
+                                combo_orderbook[variant]
+                            )
             # Apply depth limit after caching so cache is complete
             # TODO: Recalc liquidity if depth is less than data.
             if not refresh:

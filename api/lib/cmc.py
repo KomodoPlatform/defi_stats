@@ -75,7 +75,8 @@ class CmcAPI:  # pragma: no cover
             "Pink",
             "Joystream",
         ]
-        # These have been sighted as the same token, though having a slightly different full name value
+        # These have been sighted as the same token,
+        # though having a slightly different full name value
         cmc_allow = [
             "Pirate Chain",
             "KuCoin Token",
@@ -99,7 +100,8 @@ class CmcAPI:  # pragma: no cover
             "GlobalBoost",
             "Hyper Pay",
         ]
-        # These are for cases where there is a name match, but also mismatches which have been sighted as invalid
+        # These are for cases where there is a name match,
+        # but also mismatches which have been sighted as invalid
         coin_compare = [
             [
                 "Coins Repo Ticker",

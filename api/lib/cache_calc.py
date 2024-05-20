@@ -66,9 +66,9 @@ class CacheCalc:
     @property
     def gecko_source(self):
         if self._gecko_source is None:
-            logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
+            logger.calc("sourcing gecko from upstream API")
             self._gecko_source = gecko_api.get_gecko_source(from_file=True)
         return self._gecko_source
 
@@ -155,6 +155,7 @@ class CacheCalc:
             traded_pairs = derive.pairs_traded_since(
                 ts, self.pairs_last_traded_cache, deplatformed=False
             )
+
             data = []
             for depair in depairs:
                 x = Pair(
@@ -534,10 +535,6 @@ class CacheCalc:
     @timed
     def tickers(self, refresh: bool = False):
         try:
-            resp = memcache.get_tickers()
-            msg = "Got tickers from cache"
-            loglevel = "cached"
-            ignore_until = 5
             if refresh:
                 book = self.pairs_orderbook_extended_cache
                 volumes = self.pair_volumes_24hr_cache
@@ -584,29 +581,31 @@ class CacheCalc:
                                         )
                                     }
                                 )
-                                """
-                                if depair != sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source):
-                                    logger.info(f"Ticker for {depair} updated (non-standard)")
-                                else:
-                                    logger.info(f"Ticker for {depair} updated")
-                                """
                                 ok += 1
                         else:
+                            std = sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)
                             logger.warning(
-                                f"Ticker failed [not in extended orderbook] for {depair} and {invert.pair(depair)} (standard is {sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)})"
+                                f"Ticker failed for {depair} and {invert.pair(depair)} \
+                                (standard is {std})"
                             )
                             not_ok += 1
                     logger.calc(f"{ok}/{ok + not_ok} pairs added to tickers cache")
-                memcache.set_tickers(resp)
+                # Not needed, done in cache.py
+                # memcache.set_tickers(resp)
                 msg = "Tickers cache updated"
-            ignore_until = 0
+                ignore_until = 0
+            else:
+                resp = memcache.get_tickers()
+                msg = "Got tickers from cache"
+                ignore_until = 5
+
         except Exception as e:  # pragma: no cover
             msg = f"tickers failed! {e}"
             ignore_until = 0
             loglevel = "warning"
             return default.error(e, msg)
         return default.result(
-            data=resp, msg=msg, loglevel=loglevel, ignore_until=ignore_until
+            data=resp, msg=msg, loglevel="cached", ignore_until=ignore_until
         )
 
 
@@ -692,9 +691,7 @@ class CMC:
                 for k, v in i.items():
                     base, quote = derive.base_quote(k)
                     cmc_base_info = derive.cmc_asset_info(base)
-                    logger.merge(cmc_base_info)
                     cmc_quote_info = derive.cmc_asset_info(quote)
-                    logger.calc(cmc_base_info)
                     if "id" in cmc_base_info and "id" in cmc_quote_info:
                         v.update(
                             {
