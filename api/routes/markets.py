@@ -161,6 +161,54 @@ def summary_for_ticker(coin: str = "KMD"):
         return {"error": f"{type(e)} Error in [/api/v3/market/summary_for_ticker]: {e}"}
 
 
+
+@router.get(
+    "/summary_for_all_tickers",
+    description="List of 24h price & volume for market pairs of a specific coin traded in last 7 days",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def summary_for_all_tickers():
+    # TODO: Segwit not merged in this endpoint yet
+    try:
+        summary = memcache.get_markets_summary()
+        # Get coins list
+        coins = []
+        for i in summary:
+            if i["last_swap"] > 0:
+                coins.append(i["base_currency"])
+                coins.append(i["quote_currency"])
+        coins = sorted(list(set(coins)))
+        resp = {}
+        for coin in coins:
+            data = []
+            swaps_count = 0
+            liquidity = 0
+            volume = 0
+            for i in summary:
+                if coin in [i["base_currency"], i["quote_currency"]]:
+                    if i["last_swap"] > 0:
+                        swaps_count += int(i["trades_24hr"])
+                        liquidity += Decimal(i["liquidity_usd"])
+                        volume += Decimal(i["volume_usd_24hr"])
+                        i["last_trade"] = i["last_swap"]
+                        i["price_change_percent_24hr"] = i["price_change_pct_24hr"]
+                        i["quote_usd_price"] = i["quote_price_usd"]
+                        i["base_usd_price"] = i["base_price_usd"]
+                        i["base"] = i["base_currency"]
+                        i["quote"] = i["quote_currency"]
+                        data.append(i)
+            resp.update({coin: data})
+        resp.update({"DEFAULT": []})
+            
+
+        return resp
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v3/market/summary_for_all_tickers]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/market/summary_for_all_tickers]: {e}"}
+
+
+
 @router.get(
     "/swaps24/{coin}",
     description=markets_desc.swaps24,
@@ -206,6 +254,41 @@ def swaps24(coin: str = "KMD") -> dict:
     except Exception as e:  # pragma: no cover
         logger.warning(f"{type(e)} Error in [/api/v3/market/swaps24]: {e}")
         return {"error": f"{type(e)} Error in [/api/v3/market/swaps24]: {e}"}
+
+
+@router.get(
+    "/all_swaps24",
+    description=markets_desc.swaps24,
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def all_swaps24() -> dict:
+    try:
+        data = memcache.get_coin_volumes_24hr()
+        resp = {}
+        for decoin in data["volumes"]:
+            for ticker in data["volumes"][decoin]:
+                if ticker != "ALL":
+                    resp.update({
+                        ticker.replace("-segwit", ""): {
+                            "ticker": ticker.replace("-segwit", ""),
+                            "volume": data["volumes"][decoin][ticker]["total_volume"],
+                            "volume_usd": data["volumes"][decoin][ticker]["trade_volume_usd"],
+                            "swaps_amount_24hr": data["volumes"][decoin][ticker]["total_swaps"]
+                        }
+                    })
+        resp.update({
+            "DEFAULT": {
+                "ticker": "DEFAULT",
+                "volume": 0,
+                "volume_usd": 0,
+                "swaps_amount_24hr": 0
+            }
+        })
+        return resp
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"{type(e)} Error in [/api/v3/market/all_swaps24]: {e}")
+        return {"error": f"{type(e)} Error in [/api/v3/market/all_swaps24]: {e}"}
 
 
 @router.get(
@@ -350,5 +433,113 @@ def volumes_ticker(coin="KMD", days_in_past=1, trade_type: TradeType = TradeType
                 d_str: volumes_dict[d_str]["total_volume"] for d_str in volumes_dict
             }
         return data
+    except Exception as e:
+        logger.warning(e)
+
+
+@router.get(
+    "/volumes_ticker_all_day",
+    description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
+)
+def volumes_ticker_all_day():
+    try:
+        # To avoid excessive queries, structure will be like
+        # {
+        #    date_string: {
+        #        coin: data,
+        #        coin: data,
+        #        coin: data,
+        #        coin: data,
+        #    }
+        # }
+        data_by_date = {}
+        for i in range(0, int(1)):
+            
+            d = datetime.today() - timedelta(days=i)
+            d_str = d.strftime("%Y-%m-%d")
+            data_by_date.update({d_str: {}})
+            day_ts = int(int(d.strftime("%s")) / 86400) * 86400
+            start_time = int(day_ts)
+            end_time = int(day_ts) + 86400
+            # Gets volumes for all coins 
+            query = db.SqlQuery()
+            data = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
+            for decoin in data["volumes"]:
+                for variant in data["volumes"][decoin]:
+                    if variant != "ALL":
+                        data_by_date[d_str].update({variant: data["volumes"][decoin][variant]["total_volume"]})
+
+        # Translate to by coin            
+        data_by_coin = {"DEFAULT": {}}
+        for d_str in data_by_date:
+            for variant in data_by_date[d_str]:
+                if variant not in data_by_coin:
+                    data_by_coin.update({variant: {}})
+                data_by_coin[variant].update({
+                    d_str: data_by_date[d_str][variant]
+                })
+            data_by_coin["DEFAULT"].update({d_str: 0})
+            
+        # Fill in any blanks
+        for variant in data_by_coin:
+            for d_str in data_by_date:
+                if d_str not in data_by_coin[variant]:
+                    data_by_coin[variant].update({d_str: 0})
+
+        return data_by_coin
+    except Exception as e:
+        logger.warning(e)
+
+
+@router.get(
+    "/volumes_ticker_all_month",
+    description="Daily coin volume (e.g. `KMD, KMD-BEP20, KMD-ALL`) traded last 'x' days.",
+)
+def volumes_ticker_all_month():
+    try:
+        # To avoid excessive queries, structure will be like
+        # {
+        #    date_string: {
+        #        coin: data,
+        #        coin: data,
+        #        coin: data,
+        #        coin: data,
+        #    }
+        # }
+        data_by_date = {}
+        for i in range(0, int(30)):
+            
+            d = datetime.today() - timedelta(days=i)
+            d_str = d.strftime("%Y-%m-%d")
+            data_by_date.update({d_str: {}})
+            day_ts = int(int(d.strftime("%s")) / 86400) * 86400
+            start_time = int(day_ts)
+            end_time = int(day_ts) + 86400
+            # Gets volumes for all coins 
+            query = db.SqlQuery()
+            data = query.coin_trade_volumes(start_time=start_time, end_time=end_time)
+            for decoin in data["volumes"]:
+                for variant in data["volumes"][decoin]:
+                    if variant != "ALL":
+                        data_by_date[d_str].update({variant: data["volumes"][decoin][variant]["total_volume"]})
+
+        # Translate to by coin            
+        data_by_coin = {"DEFAULT": {}}
+        for d_str in data_by_date:
+            for variant in data_by_date[d_str]:
+                if variant not in data_by_coin:
+                    data_by_coin.update({variant: {}})
+                data_by_coin[variant].update({
+                    d_str: data_by_date[d_str][variant]
+                })
+            data_by_coin["DEFAULT"].update({d_str: 0})
+            
+        # Fill in any blanks
+        for variant in data_by_coin:
+            for d_str in data_by_date:
+                if d_str not in data_by_coin[variant]:
+                    data_by_coin[variant].update({d_str: 0})
+
+        return data_by_coin
     except Exception as e:
         logger.warning(e)

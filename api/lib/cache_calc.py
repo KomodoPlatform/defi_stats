@@ -132,7 +132,6 @@ class CacheCalc:
     @property
     def pairs_last_traded_cache(self):
         if self._pairs_last_traded_cache is None:
-            # logger.info("Getting pairs_last_traded_cache")
             self._pairs_last_traded_cache = memcache.get_pairs_last_traded()
         return self._pairs_last_traded_cache
 
