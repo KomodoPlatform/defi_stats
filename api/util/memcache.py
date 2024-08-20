@@ -172,6 +172,14 @@ def get_coin_volumes_24hr():  # pragma: no cover
     return get("coin_volumes_24hr")
 
 
+def get_coin_volumes_alltime():  # pragma: no cover
+    return get("coin_volumes_alltime")
+
+
+def set_coin_volumes_alltime(data):  # pragma: no cover
+    update("coin_volumes_alltime", data, 86400)
+
+
 def set_pair_volumes_24hr(data):  # pragma: no cover
     update("pair_volumes_24hr", data, 3600)
 
@@ -186,6 +194,14 @@ def set_pair_volumes_14d(data):  # pragma: no cover
 
 def get_pair_volumes_14d():  # pragma: no cover
     return get("pair_volumes_14d")
+
+
+def set_pair_volumes_alltime(data):  # pragma: no cover
+    update("pair_volumes_alltime", data, 3600)
+
+
+def get_pair_volumes_alltime():  # pragma: no cover
+    return get("pair_volumes_alltime")
 
 
 def set_pairs_last_traded(data):  # pragma: no cover
@@ -251,6 +267,14 @@ def set_adex_fortnite(data):  # pragma: no cover
 
 def get_adex_fortnite():  # pragma: no cover
     return get("adex_fortnite")
+
+
+def set_adex_alltime(data):  # pragma: no cover
+    update("adex_alltime", data, 3600)
+
+
+def get_adex_alltime():  # pragma: no cover
+    return get("adex_alltime")
 
 
 # REVIEW CACHE (TOO LARGE)

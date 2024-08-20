@@ -535,7 +535,11 @@ class SqlQuery(SqlDB):
                 "trade_volume_usd": 0,
                 "volumes": {},
             }
-            suffix = derive.suffix(resp["range_days"])
+            if start_time == 1:
+                suffix = "all_time"
+            else:
+                suffix = derive.suffix(resp["range_days"])
+            
             with Session(self.engine) as session:
                 q = session.query(
                     self.table.pair_std,
@@ -1618,6 +1622,7 @@ class SqlSource:
             return default.result(msg=e, loglevel="warning")
         return default.result(msg=msg, loglevel="sourced")
 
+        
     @timed
     def populate_pgsqldb(
         self,
@@ -1938,6 +1943,24 @@ class SqlSource:
                                 f"{type(mm2_data[i])} vs {type(defi_data[i])}"
                             )
 
+                taker_gui = defi_data["taker_gui"]
+                maker_gui = defi_data["maker_gui"]
+                taker_version = defi_data["taker_version"]
+                maker_version = defi_data["maker_version"]
+                
+                if "taker_gui" in mm2_data:
+                    logger.info("Using mm2 data for taker gui")
+                    taker_gui = mm2_data["taker_gui"]
+                if "maker_gui" in mm2_data:
+                    logger.info("Using mm2 data for maker gui")
+                    maker_gui = mm2_data["maker_gui"]
+                if "taker_version" in mm2_data:
+                    logger.info("Using mm2 data for taker version")
+                    taker_version = mm2_data["taker_version"]
+                if "maker_version" in mm2_data:
+                    logger.info("Using mm2 data for maker version")
+                    maker_version = mm2_data["maker_version"]
+                
                 data = DefiSwap(
                     uuid=mm2_data["uuid"],
                     taker_coin=mm2_data["taker_coin"],
@@ -1963,12 +1986,11 @@ class SqlSource:
                     price=max(mm2_data["price"], defi_data["price"]),
                     reverse_price=max(
                         mm2_data["reverse_price"], defi_data["reverse_price"]
-                    ),
-                    # Not in MM2 DB, keep existing value
-                    taker_gui=defi_data["taker_gui"],
-                    maker_gui=defi_data["maker_gui"],
-                    taker_version=defi_data["taker_version"],
-                    maker_version=defi_data["maker_version"],
+                    ),                    
+                    taker_gui=taker_gui,
+                    maker_gui=maker_gui,
+                    taker_version=taker_version,
+                    maker_version=maker_version,
                     # Extra columns
                     trade_type=defi_data["trade_type"],
                     pair=defi_data["pair"],

@@ -44,10 +44,22 @@ def create_swap_stats_table(cursor):
                 maker_coin_usd_price DECIMAL,
                 taker_coin_usd_price DECIMAL,
                 maker_pubkey VARCHAR(255) DEFAULT '',
-                taker_pubkey VARCHAR(255) DEFAULT ''
+                taker_pubkey VARCHAR(255) DEFAULT '',
+                maker_gui VARCHAR(255) DEFAULT '',
+                taker_gui VARCHAR(255) DEFAULT '',
+                maker_version VARCHAR(255) DEFAULT '',
+                taker_version VARCHAR(255) DEFAULT ''
             );
         """
     )
+    # Add new cols if not existing
+    try:
+        cursor.execute("ALTER TABLE stats_swaps ADD COLUMN taker_gui VARCHAR(255) DEFAULT '';")
+        cursor.execute("ALTER TABLE stats_swaps ADD COLUMN taker_version VARCHAR(255) DEFAULT '';")
+        cursor.execute("ALTER TABLE stats_swaps ADD COLUMN maker_gui VARCHAR(255) DEFAULT '';")
+        cursor.execute("ALTER TABLE stats_swaps ADD COLUMN maker_version VARCHAR(255) DEFAULT '';")
+    except:
+        pass
 
 
 if __name__ == "__main__":

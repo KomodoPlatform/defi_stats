@@ -27,16 +27,20 @@ class Files:
         self.cmc_assets = f"{folder}/cmc/assets.json"
 
         # Top Fives
+        self.adex_alltime = f"{folder}/generic/adex_alltime.json"
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
         self.adex_24hr = f"{folder}/generic/adex_24hr.json"
 
         # Foundational cache
         self.coin_volumes_24hr = f"{folder}/coins/volumes_24hr.json"
+        self.coin_volumes_alltime = f"{folder}/coins/volumes_alltime.json"
+        self.coin_swaps_alltime = f"{folder}/coins/swaps_alltime.json"
         self.pairs_last_traded = f"{folder}/pairs/last_traded.json"
         self.pairs_orderbook_extended = f"{folder}/pairs/orderbook_extended.json"
         self.pair_prices_24hr = f"{folder}/pairs/prices_24hr.json"
         self.pair_volumes_24hr = f"{folder}/pairs/volumes_24hr.json"
         self.pair_volumes_14d = f"{folder}/pairs/volumes_14d.json"
+        self.pair_volumes_alltime = f"{folder}/pairs/volumes_alltime.json"
 
         # REVIEW
         # self.generic_summary = f"{folder}/generic/summary.json"

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import time
+from datetime import datetime 
 from lib.dex_api import DexAPI
 from util.exceptions import CacheFilenameNotFound, CacheItemNotFound
 from util.files import Files
@@ -45,6 +47,7 @@ class Cache:  # pragma: no cover
             for i in [
                 "adex_24hr",
                 "adex_fortnite",
+                "adex_alltime",
                 "coins",
                 "coins_config",
                 "fixer_rates",
@@ -53,7 +56,9 @@ class Cache:  # pragma: no cover
                 "pairs_last_traded",
                 "pair_volumes_24hr",
                 "pair_volumes_14d",
+                "pair_volumes_alltime",
                 "coin_volumes_24hr",
+                "coin_volumes_alltime",
                 "pairs_orderbook_extended",
                 "prices_tickers_v1",
                 "prices_tickers_v2",
@@ -166,14 +171,17 @@ class CacheItem:
         expiry_limits = {
             "adex_24hr": 5,
             "adex_fortnite": 10,
+            "adex_alltime": 15,
             "coins": 1440,
             "coins_config": 1440,
+            "coin_volumes_alltime": 1440,
             "pairs_last_traded": 5,
             "gecko_source": 15,
             "markets_summary": 5,
             "fixer_rates": 15,
             "pair_volumes_24hr": 15,
             "pair_volumes_14d": 15,
+            "pair_volumes_alltime": 15,
             "coin_volumes_24hr": 15,
             "pairs_orderbook_extended": 15,
             "gecko_pairs": 5,
@@ -195,6 +203,39 @@ class CacheItem:
                     memcache.set_coins_config(data)
                 if self.name == "coins":
                     memcache.set_coins(data)
+                if self.name in ["prices_tickers_v1", "prices_tickers_v2"]:
+                    now_ts = int(time.time())
+                    now_str = datetime.utcfromtimestamp(now_ts).strftime('%Y-%m-%d %H:%M:%S')
+                    data.update({
+                        "DOC": {
+                            "ticker": "DOC",
+                            "last_price": "0.0000001",
+                            "last_updated": now_str,
+                            "last_updated_timestamp": now_ts,
+                            "volume24h": "1",
+                            "price_provider": "testcoin",
+                            "volume_provider": "testcoin",
+                            "sparkline_7d": None,
+                            "sparkline_provider": "testcoin",
+                            "change_24h": "0",
+                            "change_24h_provider": "testcoin"
+                        }
+                    })
+                    data.update({
+                        "MARTY": {
+                            "ticker": "MARTY",
+                            "last_price": "0.00000005",
+                            "last_updated": now_str,
+                            "last_updated_timestamp": now_ts,
+                            "volume24h": "1",
+                            "price_provider": "testcoin",
+                            "volume_provider": "testcoin",
+                            "sparkline_7d": None,
+                            "sparkline_provider": "testcoin",
+                            "change_24h": "0",
+                            "change_24h_provider": "testcoin"
+                        }
+                    })
             else:
                 # EXTERNAL SOURCE CACHE
                 if self.name == "cmc_assets_source":
@@ -227,12 +268,24 @@ class CacheItem:
                         coins_config=self.coins_config
                     ).adex_fortnite(refresh=True)
                     memcache.set_adex_fortnite(data)
+                    
+                if self.name == "adex_alltime":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_alltime(refresh=True)
+                    memcache.set_adex_alltime(data)
 
                 if self.name == "coin_volumes_24hr":
                     data = cache_calc.CacheCalc(
                         coins_config=self.coins_config
                     ).coin_volumes_24hr()
                     memcache.set_coin_volumes_24hr(data)
+
+                if self.name == "coin_volumes_alltime":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).coin_volumes_alltime()
+                    memcache.set_coin_volumes_alltime(data)
 
                 # PAIR Data
 
@@ -263,8 +316,14 @@ class CacheItem:
                 if self.name == "pair_volumes_14d":
                     data = cache_calc.CacheCalc(
                         coins_config=self.coins_config
-                    ).pair_volumes_14d()
+                    ).pair_volumes_timespan()
                     memcache.set_pair_volumes_14d(data)
+
+                if self.name == "pair_volumes_alltime":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).pair_volumes_timespan(start_time=1)
+                    memcache.set_pair_volumes_alltime(data)
 
                 # MARKETS
                 if self.name == "markets_summary":
@@ -345,6 +404,9 @@ def reset_cache_files():
     memcache.set_coin_volumes_24hr(
         CacheItem(name="coin_volumes_24hr", coins_config=coins_config).data
     )
+    memcache.set_coin_volumes_alltime(
+        CacheItem(name="coin_volumes_alltime", coins_config=coins_config).data
+    )
     memcache.set_pairs_last_traded(
         CacheItem(name="pairs_last_traded", coins_config=coins_config).data
     )
@@ -357,12 +419,18 @@ def reset_cache_files():
     memcache.set_pair_volumes_14d(
         CacheItem(name="pair_volumes_14d", coins_config=coins_config).data
     )
+    memcache.set_pair_volumes_alltime(
+        CacheItem(name="pair_volumes_alltime", coins_config=coins_config).data
+    )
     memcache.set_pairs_orderbook_extended(
         CacheItem(name="pairs_orderbook_extended", coins_config=coins_config).data
     )
     memcache.set_adex_24hr(CacheItem(name="adex_24hr", coins_config=coins_config).data)
     memcache.set_adex_fortnite(
         CacheItem(name="adex_fortnite", coins_config=coins_config).data
+    )
+    memcache.set_adex_alltime(
+        CacheItem(name="adex_alltime", coins_config=coins_config).data
     )
     memcache.set_tickers(CacheItem(name="tickers", coins_config=coins_config).data)
     memcache.set_markets_summary(

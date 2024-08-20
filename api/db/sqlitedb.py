@@ -179,6 +179,7 @@ class SqliteUpdate:  # pragma: no cover
 
     @timed
     def create_swap_stats_table(self):
+        # TODO: Create table block for stats_nodes
         try:
             self.db.sql_cursor.execute(
                 """
@@ -200,10 +201,23 @@ class SqliteUpdate:  # pragma: no cover
                     maker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
                     taker_coin_usd_price DECIMAL NOT NULL DEFAULT 0,
                     maker_pubkey VARCHAR(255) NOT NULL DEFAULT '',
-                    taker_pubkey VARCHAR(255) NOT NULL DEFAULT ''
+                    taker_pubkey VARCHAR(255) NOT NULL DEFAULT '',
+                    maker_gui VARCHAR(255) DEFAULT '',
+                    taker_gui VARCHAR(255) DEFAULT '',
+                    maker_version VARCHAR(255) DEFAULT '',
+                    taker_version VARCHAR(255) DEFAULT ''
                 );
                 """
             )
+            # Add new cols if not existing
+            try:
+                self.db.sql_cursor.execute("ALTER TABLE stats_swaps ADD COLUMN taker_gui VARCHAR(255) DEFAULT '';")
+                self.db.sql_cursor.execute("ALTER TABLE stats_swaps ADD COLUMN taker_version VARCHAR(255) DEFAULT '';")
+                self.db.sql_cursor.execute("ALTER TABLE stats_swaps ADD COLUMN maker_gui VARCHAR(255) DEFAULT '';")
+                self.db.sql_cursor.execute("ALTER TABLE stats_swaps ADD COLUMN maker_version VARCHAR(255) DEFAULT '';")
+            except:
+                pass
+
             msg = f"'stats_swaps' table created for {self.db.db_path}"
             return default.result(msg=msg, loglevel="muted")
         except sqlite3.OperationalError as e:  # pragma: no cover

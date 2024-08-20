@@ -71,6 +71,16 @@ def atomicdex_fortnight():
         logger.warning(msg)
         return {"error": msg}
 
+@router.get("/atomicdex_all")
+def atomicdex_all():
+    """Extra Summary Statistics over all history"""
+    try:
+        return CacheCalc().adex_alltime()
+    except Exception as e:  # pragma: no cover
+        msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_all]: {e}"
+        logger.warning(msg)
+        return {"error": msg}
+
 
 # TODO: Cache this
 @router.get(

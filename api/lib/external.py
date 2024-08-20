@@ -104,6 +104,20 @@ class CoinGeckoAPI:
                     error = f"{type(e)}: CoinGecko ID request/response mismatch [{coin_id}] [{e}]"
                     logger.warning(error)
             time.sleep(0.1)
+        # Adding fake prices to testcoins for testing purposes
+        
+        gecko_info.update({
+            "DOC": {
+                "usd_market_cap": 0.000001,
+                "usd_price": 0.0000001
+            }
+        })
+        gecko_info.update({
+            "MARTY": {
+                "usd_market_cap": 0.000002,
+                "usd_price": 0.00000005
+            }
+        })
         return gecko_info
 
 

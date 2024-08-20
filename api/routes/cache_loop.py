@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter
 from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE
@@ -163,6 +163,19 @@ def get_pair_volumes_14d():
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
+@router.on_event("startup")
+@repeat_every(seconds=900)
+@timed
+def get_pair_volumes_alltime():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="pair_volumes_alltime").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "pair_volumes_alltime refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+
 # LAST TRADE
 @router.on_event("startup")
 @repeat_every(seconds=300)
@@ -219,6 +232,20 @@ def coins():  # pragma: no cover
         return default.result(
             msg="Coins update loop complete!", loglevel="loop", ignore_until=5
         )
+
+
+# VOLUMES CACHE
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def get_coin_volumes_alltime():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="coin_volumes_alltime").save()
+        except Exception as e:
+            return default.result(msg=e, loglevel="warning")
+        msg = "coin_volumes_alltime refresh loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 
 @router.on_event("startup")
@@ -320,8 +347,9 @@ def populate_pgsqldb_loop():
     try:
         if memcache.get("testing") is None:
             # updates last 24 hours swaps
-            day = datetime.today().date()
-            db.SqlSource().import_swaps_for_day(day)
+            today = datetime.today().date()
+            db.SqlSource().import_swaps_for_day(today)
+            yesterday = today - timedelta(days=1)
     except Exception as e:
         return default.result(msg=e, loglevel="warning")
 
@@ -343,6 +371,18 @@ def import_dbs():
         msg += " Masters will be updated from cron."
         return default.result(msg=msg, loglevel="merge")
 
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
+def adex_alltime():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="adex_alltime").save()
+        except Exception as e:
+            logger.warning(default.result(msg=e, loglevel="warning"))
+        msg = "Adex alltime loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 @router.on_event("startup")
 @repeat_every(seconds=300)

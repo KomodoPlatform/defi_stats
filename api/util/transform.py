@@ -710,6 +710,33 @@ class Derive:
             return default.error(e, data=convert.format_10f(0))
         return convert.format_10f(0)
 
+    def top_coin_by_volume(self, vols):
+        coin_volumes = []
+        for decoin in vols["volumes"]:
+            if "ALL" in vols["volumes"][decoin]:
+                data = vols["volumes"][decoin]["ALL"]
+                coin_volumes.append({
+                    "coin": decoin,
+                    "maker_volume": data["maker_volume_usd"],
+                    "taker_volume": data["taker_volume_usd"],
+                    "volume": data["trade_volume_usd"]
+                })
+        return clean.decimal_dict_lists(sortdata.top_items(coin_volumes, "volume", length=25))
+
+    def top_coin_by_swap_counts(self, vols):
+        coin_swaps = []
+        for decoin in vols["volumes"]:
+            if "ALL" in vols["volumes"][decoin]:
+                data = vols["volumes"][decoin]["ALL"]
+                if data["trade_volume_usd"] > 1000:
+                    coin_swaps.append({
+                        "coin": decoin,
+                        f"trades": data[f"total_swaps"],
+                        f"maker_trades": data[f"maker_swaps"],
+                        f"taker_trades": data[f"taker_swaps"]
+                    })
+        return clean.decimal_dict_lists(sortdata.top_items(coin_swaps, f"trades", length=25))
+
     def top_pairs_by_volume(self, vols):
         pair_volumes = []
         for depair in vols["volumes"]:
@@ -727,6 +754,8 @@ class Derive:
                 data = vols["volumes"][depair]["ALL"]
                 # Filter out test coins
                 if data["trade_volume_usd"] > 0:
+                    # if suffix == "all_time":
+                    #    logger.calc(data)
                     pair_swap_counts.append(
                         {"pair": depair, f"trades_{suffix}": data[f"trades_{suffix}"]}
                     )

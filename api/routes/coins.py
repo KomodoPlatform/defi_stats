@@ -6,6 +6,7 @@ from util.logger import logger
 from models.generic import ErrorMessage, ApiIds
 from util.files import Files
 import util.memcache as memcache
+from util.transform import derive
 
 router = APIRouter()
 files = Files()
@@ -63,3 +64,27 @@ def raw():
 )
 def volumes_24hr():
     return memcache.get_coin_volumes_24hr()
+
+
+@router.get(
+    "/volumes_alltime",
+    description="",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def volumes_24hr():
+    return memcache.get_coin_volumes_alltime()
+
+
+@router.get(
+    "/top_coins",
+    description="Coins with highest swap counts and usd volumes",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def top_coins():
+    vols = memcache.get_coin_volumes_alltime()
+    return {
+        "top_swaps": derive.top_coin_by_swap_counts(vols),
+        "top_volumes": derive.top_coin_by_volume(vols)
+    }

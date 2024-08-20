@@ -31,6 +31,7 @@ class CacheCalc:
         pair_prices_24hr_cache=None,
         pairs_orderbook_extended_cache=None,
         pair_volumes_24hr_cache=None,
+        coin_volumes_alltime_cache=None
     ) -> None:
         self._priced_coins = None
         self._coins_obj = None
@@ -40,6 +41,7 @@ class CacheCalc:
         self._pairs_orderbook_extended_cache = pairs_orderbook_extended_cache
         self._pair_prices_24hr_cache = pair_prices_24hr_cache
         self._pair_volumes_24hr_cache = pair_volumes_24hr_cache
+        self._coin_volumes_alltime_cache = coin_volumes_alltime_cache
 
     @property
     def pg_query(self):
@@ -94,6 +96,37 @@ class CacheCalc:
             return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
             msg = f"coin_volumes_24hr failed! {e}"
+            logger.warning(msg)
+
+    @property
+    def coin_volumes_alltime_cache(self):
+        if self._coin_volumes_alltime_cache is None:
+            # logger.info("Getting _coin_volumes_alltime")
+            self._coin_volumes_alltime_cache = memcache.get_coin_volumes_alltime()
+        return self._coin_volumes_alltime_cache
+
+    @timed
+    def coin_volumes_alltime(self):
+        try:
+            now = cron.now_utc()
+            logger.info(now)
+            vols = self.pg_query.coin_trade_volumes(
+                start_time=1,
+                end_time=now,
+            )
+            logger.info(len(vols))
+            vols_usd = self.pg_query.coin_trade_vols_usd(vols)
+            logger.info(len(vols_usd))
+            for coin in vols_usd["volumes"]:
+                for variant in vols_usd["volumes"][coin]:
+                    vols_usd["volumes"][coin][variant] = clean.decimal_dicts(
+                        vols_usd["volumes"][coin][variant]
+                    )
+            vols_usd = clean.decimal_dicts(vols_usd)
+            msg = "coin_volumes_alltime complete!"
+            return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
+        except Exception as e:  # pragma: no cover
+            msg = f"coin_volumes_alltime failed! {e}"
             logger.warning(msg)
 
     @property
@@ -239,10 +272,13 @@ class CacheCalc:
             logger.warning(msg)
 
     @timed
-    def pair_volumes_14d(self):
+    def pair_volumes_timespan(self, start_time=None, end_time=None):
         try:
-            start_time = int(cron.now_utc()) - 86400 * 14
-            end_time = int(cron.now_utc())
+            # Defaults to 14 days
+            if start_time is None:
+                start_time = int(cron.now_utc()) - 86400 * 14
+            if end_time is None:
+                end_time = int(cron.now_utc())
             vols = self.pg_query.pair_trade_volumes(
                 start_time=start_time, end_time=end_time
             )
@@ -253,10 +289,10 @@ class CacheCalc:
                         vols_usd["volumes"][pair_str][variant]
                     )
             vols_usd = clean.decimal_dicts(vols_usd)
-            msg = "pair_volumes_14d complete!"
+            msg = "pair_volumes_timespan complete!"
             return default.result(vols_usd, msg, loglevel="loop", ignore_until=3)
         except Exception as e:  # pragma: no cover
-            msg = f"pair_volumes_14d failed! {e}"
+            msg = f"pair_volumes_timespan failed! {e}"
             logger.warning(msg)
 
     # TODO: Add props for the below
@@ -429,19 +465,22 @@ class CacheCalc:
                 books = self.pairs_orderbook_extended_cache
                 vols = self.pair_volumes_24hr_cache
                 if None not in [books, vols]:
+                    top_vol = derive.top_pairs_by_volume(vols)
+                    top_swaps = derive.top_pairs_by_swap_counts(
+                                vols, suffix="24hr"
+                            )
+                    top_liquidity = derive.top_pairs_by_liquidity(
+                                books
+                            )
                     data = {
                         "days": 1,
                         "swaps_count": vols["total_swaps"],
                         "swaps_volume": vols["trade_volume_usd"],
                         "current_liquidity": books["combined_liquidity_usd"],
                         "top_pairs": {
-                            "by_volume": derive.top_pairs_by_volume(vols),
-                            "by_swaps_count": derive.top_pairs_by_swap_counts(
-                                vols, suffix="24hr"
-                            ),
-                            "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
-                                books
-                            ),
+                            "by_volume": top_vol,
+                            "by_swaps_count": top_swaps,
+                            "by_current_liquidity_usd": top_liquidity,
                         },
                     }
                     data = clean.decimal_dicts(data)
@@ -455,27 +494,61 @@ class CacheCalc:
             data = memcache.get_adex_fortnite()
             if data is None or refresh:
                 books = self.pairs_orderbook_extended_cache
-                vols = self.pair_volumes_14d()
+                vols = self.pair_volumes_timespan()
                 if None not in [books, vols]:
+                    top_vol = derive.top_pairs_by_volume(vols)
+                    top_swaps = derive.top_pairs_by_swap_counts(
+                                vols, suffix="14d"
+                            )
+                    top_liquidity = derive.top_pairs_by_liquidity(
+                                books
+                            )
                     data = {
                         "days": 14,
                         "swaps_count": vols["total_swaps"],
                         "swaps_volume": vols["trade_volume_usd"],
                         "current_liquidity": books["combined_liquidity_usd"],
                         "top_pairs": {
-                            "by_volume": derive.top_pairs_by_volume(vols),
-                            "by_swaps_count": derive.top_pairs_by_swap_counts(
-                                vols, suffix="14d"
-                            ),
-                            "by_current_liquidity_usd": derive.top_pairs_by_liquidity(
-                                books
-                            ),
+                            "by_volume": top_vol,
+                            "by_swaps_count": top_swaps,
+                            "by_current_liquidity_usd": top_liquidity,
                         },
                     }
                     data = clean.decimal_dicts(data)
             return data
         except Exception as e:  # pragma: no cover
             logger.error(f"{type(e)} Error in [StatsAPI.adex_fortnite]: {e}")
+            return None
+
+    def adex_alltime(self, refresh=False):
+        try:
+            data = memcache.get_adex_alltime()
+            if data is None or refresh:
+                books = self.pairs_orderbook_extended_cache
+                vols = self.pair_volumes_timespan(start_time=1)
+                if None not in [books, vols]:
+                    top_vol = derive.top_pairs_by_volume(vols)
+                    top_liquidity = derive.top_pairs_by_liquidity(
+                                books
+                            )
+                    top_swaps = derive.top_pairs_by_swap_counts(
+                                vols, suffix="all_time"
+                            )
+                    data = {
+                        "days": "All",
+                        "swaps_count": vols["total_swaps"],
+                        "swaps_volume": vols["trade_volume_usd"],
+                        "current_liquidity": books["combined_liquidity_usd"],
+                        "top_pairs": {
+                            "by_volume": top_vol,
+                            "by_swaps_count": top_swaps,
+                            "by_current_liquidity_usd": top_liquidity,
+                        },
+                    }
+                    data = clean.decimal_dicts(data)
+            return data
+        except Exception as e:  # pragma: no cover
+            logger.error(f"{type(e)} Error in [StatsAPI.adex_alltime]: {e}")
             return None
 
     @timed
