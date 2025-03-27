@@ -1,8 +1,8 @@
 {
-    "last_updated": 1714705916,
+    "last_updated": 1741142702,
     "data": {
-        "start_time": 1714619516,
-        "end_time": 1714705916,
+        "start_time": 1741056302,
+        "end_time": 1741142702,
         "range_days": 1,
         "total_swaps": 8,
         "base_volume_usd": 1000401.91,
@@ -29,26 +29,6 @@
                     "dex_price": 1.0
                 }
             },
-            "KMD_DGB": {
-                "ALL": {
-                    "base_volume": 1.9,
-                    "quote_volume": 1500.0,
-                    "trades_24hr": 2,
-                    "base_volume_usd": 1.9,
-                    "quote_volume_usd": 15.0,
-                    "trade_volume_usd": 16.9,
-                    "dex_price": 789.4736842105264
-                },
-                "KMD-BEP20_DGB-segwit": {
-                    "base_volume": 1.9,
-                    "quote_volume": 1500.0,
-                    "trades_24hr": 2,
-                    "base_volume_usd": 1.9,
-                    "quote_volume_usd": 15.0,
-                    "trade_volume_usd": 16.9,
-                    "dex_price": 789.4736842105264
-                }
-            },
             "KMD_BTC": {
                 "ALL": {
                     "base_volume": 1000000.0,
@@ -69,6 +49,26 @@
                     "dex_price": 1e-06
                 }
             },
+            "KMD_DGB": {
+                "ALL": {
+                    "base_volume": 1.9,
+                    "quote_volume": 1500.0,
+                    "trades_24hr": 2,
+                    "base_volume_usd": 1.9,
+                    "quote_volume_usd": 15.0,
+                    "trade_volume_usd": 16.9,
+                    "dex_price": 789.4736842105264
+                },
+                "KMD_DGB": {
+                    "base_volume": 1.9,
+                    "quote_volume": 1500.0,
+                    "trades_24hr": 2,
+                    "base_volume_usd": 1.9,
+                    "quote_volume_usd": 15.0,
+                    "trade_volume_usd": 16.9,
+                    "dex_price": 789.4736842105264
+                }
+            },
             "KMD_LTC": {
                 "ALL": {
                     "base_volume": 400.0,
@@ -80,21 +80,12 @@
                     "dex_price": 0.01
                 },
                 "KMD_LTC": {
-                    "base_volume": 200.0,
-                    "quote_volume": 2.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 200.0,
-                    "quote_volume_usd": 200.0,
-                    "trade_volume_usd": 400.0,
-                    "dex_price": 0.01
-                },
-                "KMD_LTC-segwit": {
-                    "base_volume": 200.0,
-                    "quote_volume": 2.0,
-                    "trades_24hr": 2,
-                    "base_volume_usd": 200.0,
-                    "quote_volume_usd": 200.0,
-                    "trade_volume_usd": 400.0,
+                    "base_volume": 400.0,
+                    "quote_volume": 4.0,
+                    "trades_24hr": 3,
+                    "base_volume_usd": 400.0,
+                    "quote_volume_usd": 400.0,
+                    "trade_volume_usd": 800.0,
                     "dex_price": 0.01
                 }
             },

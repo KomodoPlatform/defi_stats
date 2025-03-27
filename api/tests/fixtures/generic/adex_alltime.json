@@ -1,9 +1,9 @@
 {
     "last_updated": 1741142747,
     "data": {
-        "days": 14,
-        "swaps_count": 11,
-        "swaps_volume": 3702117.91,
+        "days": "All",
+        "swaps_count": 14,
+        "swaps_volume": 3706218.15,
         "current_liquidity": 969822.0,
         "top_pairs": {
             "by_volume": [
@@ -17,37 +17,37 @@
                 },
                 {
                     "pair": "DGB_LTC",
-                    "volume": 1200.01
+                    "volume": 3300.01
+                },
+                {
+                    "pair": "LTC_DOGE",
+                    "volume": 2000.24
                 },
                 {
                     "pair": "KMD_LTC",
                     "volume": 800.0
-                },
-                {
-                    "pair": "KMD_DGB",
-                    "volume": 16.9
                 }
             ],
             "by_swaps_count": [
                 {
-                    "pair": "KMD_LTC",
-                    "trades_14d": 3
+                    "pair": "DGB_LTC",
+                    "trades_all_time": 3
                 },
                 {
-                    "pair": "DGB_LTC",
-                    "trades_14d": 2
+                    "pair": "KMD_LTC",
+                    "trades_all_time": 3
                 },
                 {
                     "pair": "KMD_BTC",
-                    "trades_14d": 2
+                    "trades_all_time": 2
                 },
                 {
                     "pair": "KMD_DGB",
-                    "trades_14d": 2
+                    "trades_all_time": 2
                 },
                 {
-                    "pair": "LTC_BTC",
-                    "trades_14d": 1
+                    "pair": "LTC_DOGE",
+                    "trades_all_time": 2
                 }
             ],
             "by_current_liquidity_usd": [

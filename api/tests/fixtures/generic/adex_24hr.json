@@ -1,5 +1,5 @@
 {
-    "last_updated": 1714705929,
+    "last_updated": 1741142747,
     "data": {
         "days": 1,
         "swaps_count": 8,
@@ -54,18 +54,6 @@
                 {
                     "pair": "KMD_LTC",
                     "liquidity": 969822.0
-                },
-                {
-                    "pair": "DGB_LTC",
-                    "liquidity": 0.0
-                },
-                {
-                    "pair": "KMD_BTC",
-                    "liquidity": 0.0
-                },
-                {
-                    "pair": "KMD_DGB",
-                    "liquidity": 0.0
                 }
             ]
         }
