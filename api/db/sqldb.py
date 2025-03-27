@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from datetime import time as dt_time
 from dotenv import load_dotenv
 from itertools import chain
-from sqlalchemy import Numeric, func
+from sqlalchemy import Numeric, func, text
 from sqlalchemy.sql.expression import bindparam
 from sqlmodel import Session, SQLModel, create_engine, text, update, select, or_, and_
 from typing import Dict
@@ -114,9 +114,9 @@ class SqlFilter:
         return q
 
     @timed
-    def pair(self, q, pair, deplatform=True):
+    def pair(self, q, pair, reduce=True):
         if pair is not None:
-            if deplatform:
+            if reduce:
                 pair = deplatform.pair(pair)
             q = q.filter(
                 or_(
@@ -143,11 +143,15 @@ class SqlFilter:
             if self.table == CipiSwap:
                 return []
             elif self.table != CipiSwapFailed:
+                if self.table.is_success == -1:
+                    return q
                 return q.filter(self.table.is_success == 0)
         if success_only:
             if self.table == CipiSwapFailed:
                 return []
             elif self.table != CipiSwap:
+                if self.table.is_success == -1:
+                    return q
                 return q.filter(self.table.is_success == 1)
         return q
 
@@ -210,7 +214,7 @@ class SqlUpdate(SqlDB):
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
     
     @timed
@@ -321,7 +325,7 @@ class SqlQuery(SqlDB):
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
 
     # TODO: Subclass 'volumes'
@@ -379,6 +383,7 @@ class SqlQuery(SqlDB):
                 data = [dict(i) for i in q.all()]
 
             for i in data:
+                # logger.calc(i)
                 ticker = i["ticker"]
                 variant = i["coin"]
                 num_swaps = int(i["num_swaps"])
@@ -460,11 +465,12 @@ class SqlQuery(SqlDB):
             resp.update(
                 {"total_swaps": int((total_maker_swaps + total_taker_swaps) / 2)}
             )
+            logger.info("coin_trade_volumes: {resp}")
             return default.result(
                 data=resp, msg="coin_trade_volumes complete", loglevel="debug"
             )
         except Exception as e:  # pragma: no cover
-            return default.result(msg=e, loglevel="warning")
+            return default.result(msg=e, loglevel="error")
 
     @timed
     def coin_trade_vols_usd(self, volumes: Dict) -> list:
@@ -944,18 +950,25 @@ class SqlQuery(SqlDB):
             else:
                 start_time = 1
                 end_time = int(cron.now_utc())
-
+            if end_time == 1741176652:
+                logger.info(f"Getting swaps for {start_time} to {end_time} | {coin} | {pair_str} |")
             if self.table.__tablename__ in ["swaps", "swaps_failed"]:
                 start_time = datetime.fromtimestamp(start_time, timezone.utc)
                 end_time = datetime.fromtimestamp(end_time, timezone.utc)
+            
             with Session(self.engine) as session:
                 q = select(self.table)
                 q = self.sqlfilter.timestamps(q, start_time, end_time)
-                q = self.sqlfilter.gui(q, gui)
-                q = self.sqlfilter.uuid(q, uuid)
-                q = self.sqlfilter.version(q, version)
-                q = self.sqlfilter.pubkey(q, pubkey)
-                q = self.sqlfilter.success(q, success_only, failed_only)
+                if gui is not None:
+                    q = self.sqlfilter.gui(q, gui)
+                if uuid is not None:
+                    q = self.sqlfilter.uuid(q, uuid)
+                if gui is not None:
+                    q = self.sqlfilter.version(q, version)
+                if version is not None:
+                    q = self.sqlfilter.pubkey(q, pubkey)
+                if end_time != 1741176652:
+                    q = self.sqlfilter.success(q, success_only, failed_only)
                 if self.table in [CipiSwap, CipiSwapFailed]:
                     q = q.order_by(self.table.started_at)
                 else:
@@ -963,6 +976,8 @@ class SqlQuery(SqlDB):
 
                 r = session.exec(q)
                 data = [dict(i) for i in r]
+                if end_time == 1741176652:
+                    logger.info(f"Got {len(data)} swaps for {start_time} to {end_time} | {coin} | {pair_str} |")
                 if coin is not None:
                     variants = derive.coin_variants(coin)
                     resp = {
@@ -1454,7 +1469,7 @@ class SqlSource:
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
 
     @timed
@@ -1476,7 +1491,9 @@ class SqlSource:
             cipi_swaps = self.normalise_swap_data(cipi_swaps)
             if len(cipi_swaps) > 0:
                 with Session(pgdb.engine) as session:
+                    # check_column_types(session, DefiSwap)
                     count = pgdb_query.get_count(start_time=1)
+                    logger.info(f"count: {count}")
                     cipi_swaps_data = {}
                     for i in cipi_swaps:
                         cipi_swaps_data.update({i["uuid"]: i})
@@ -1488,6 +1505,8 @@ class SqlSource:
 
                     updates = []
                     for each in overlapping_swaps:
+                        # logger.info(each.__dict__)
+                        
                         # Get dict row for existing swaps
                         cipi_data = self.cipi_to_defi_swap(
                             cipi_swaps_data[each.uuid], each.__dict__
@@ -1503,20 +1522,30 @@ class SqlSource:
                         updates.append(cipi_data)
                         # remove from processing queue
                         cipi_swaps_data.pop(each.uuid)
+                        # logger.calc(cipi_data)
 
-                    if len(updates) > 0:
+                    valid_updates = [d for d in updates if "_id" in d and d["_id"]]
+                    invalid_updates = [d for d in updates if "_id" not in d or not d["_id"]]
+ 
+
+                    if len(valid_updates) > 0:
+                        for d in valid_updates:
+                            if "_id" not in d or not d["_id"]:
+                                logger.warning("Missing primary key in update data:", d)
+                            d = validate.ensure_valid_pair(d, gecko_source=self.gecko_source)
                         # Update existing records
                         bind_values = {
                             i: bindparam(i)
-                            for i in updates[0].keys()
+                            for i in valid_updates[0].keys()
                             if i not in ["_id"]
                         }
                         stmt = (
                             update(DefiSwap)
                             .where(DefiSwap.id == bindparam("_id"))
                             .values(bind_values)
+                            .execution_options(synchronize_session=None)
                         )
-                        session.execute(stmt, updates)
+                        session.connection().execute(stmt, valid_updates)
 
                     # Add new records left in processing queue
                     for uuid in cipi_swaps_data.keys():
@@ -1526,12 +1555,12 @@ class SqlSource:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
                             del swap["id"]
-                        if uuid not in updates:
+                        if uuid not in valid_updates:
                             session.add(swap)
                     session.commit()
                     count_after = pgdb_query.get_count(start_time=1)
                     msg = f"{count_after - count} records added, "
-                    msg += f"{len(updates)} updated from Cipi database"
+                    msg += f"{len(valid_updates)} updated from Cipi database"
             else:
                 msg = "Zero Cipi swaps returned!"
 
@@ -1570,6 +1599,7 @@ class SqlSource:
                     )
 
                     updates = []
+                    overlapping_uuids = {each.uuid for each in overlapping_swaps}
                     for each in overlapping_swaps:
                         # Get dict row for existing swaps
                         mm2_data = self.mm2_to_defi_swap(
@@ -1589,6 +1619,8 @@ class SqlSource:
 
                     if len(updates) > 0:
                         for d in updates:
+                            if "_id" not in d or not d["_id"]:
+                                logger.warning("Missing primary key in update data:", d)
                             d = validate.ensure_valid_pair(d, gecko_source=self.gecko_source)
                         # Update existing records
                         bind_values = {
@@ -1600,8 +1632,9 @@ class SqlSource:
                             update(DefiSwap)
                             .where(DefiSwap.id == bindparam("_id"))
                             .values(bind_values)
+                            .execution_options(synchronize_session="none")
                         )
-                        session.execute(stmt, updates)
+                        session.connection().execute(stmt, updates)
 
                     # Add new records left in processing queue
                     for uuid in mm2_swaps_data.keys():
@@ -1610,7 +1643,7 @@ class SqlSource:
                             del swap["_sa_instance_state"]
                         if "id" in swap:
                             del swap["id"]
-                        if uuid not in updates:
+                        if uuid not in overlapping_uuids:
                             session.add(swap)
                     session.commit()
                     count_after = pgdb_query.get_count(start_time=1)
@@ -1669,7 +1702,9 @@ class SqlSource:
                         else:
                             i.update({"is_success": 0})
                     else:
-                        i.update({"is_success": -1})
+                        # Incoming cipi swaps dont have this, so we assume success until validated.
+                        # TODO: make this less fuzzy
+                        i.update({"is_success": 1})
 
                 for k, v in i.items():
                     if k in [
@@ -2046,6 +2081,21 @@ def get_tablename(table):
 @timed
 def get_columns(table: object):
     return sorted(list(table.__annotations__.keys()))
+
+
+
+def check_column_types(session, table=DefiSwap):
+    print(table)
+    query = text(f"SELECT column_name, data_type FROM information_schema.columns")
+    result = session.connection().execute(query)
+    column_types = {row['column_name']: row['data_type'] for row in result}
+    for row in result:
+        print(row)
+    print(f"Column types:")
+    for column, data_type in column_types.items():
+        print(f" - {column}: {data_type}")
+    
+    return column_types
 
 
 if __name__ == "__main__":
