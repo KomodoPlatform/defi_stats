@@ -4,42 +4,16 @@ from decimal import Decimal
 from sqlmodel import SQLModel, Field
 from util.enums import TradeType
 from sqlalchemy import UniqueConstraint
+from enum import Enum
+
+
+class CoinPlatform(str, Enum):
+    UTXO = "UTXO"
+    PLG20 = "PLG20"
 
 
 class DefiSwap(SQLModel, table=True):
     __tablename__ = "defi_swaps"
-    __slots__ = [
-        "pair",
-        "pair_std",
-        "pair_reverse",
-        "pair_std_reverse",
-        "pair",
-        "trade_type",
-        "is_success",
-        'taker_amount',
-        "taker_coin",
-        "taker_coin_ticker",
-        "taker_coin_platform",
-        "taker_gui",
-        "taker_pubkey",
-        'taker_version',
-        "taker_coin_usd_price",
-        "maker_amount",
-        "maker_coin",
-        "maker_coin_ticker",
-        'maker_coin_platform',
-        "maker_gui",
-        "maker_pubkey",
-        "maker_version",
-        "maker_coin_usd_price",
-        "price",
-        "reverse_price",
-        "started_at",
-        "finished_at",
-        "duration",
-        "validated",
-        "last_updated",
-    ]
     id: Optional[int] = Field(default=None, primary_key=True)
     uuid: str = Field(
         default="77777777-7777-7777-7777-777777777777", unique=True, nullable=False
@@ -78,7 +52,6 @@ class DefiSwap(SQLModel, table=True):
 
 class DefiSwapTest(SQLModel, table=True):
     __tablename__ = "defi_swaps_test"
-
     id: Optional[int] = Field(default=None, primary_key=True)
     uuid: str = Field(
         default="77777777-7777-7777-7777-777777777777", unique=True, nullable=False
@@ -114,6 +87,9 @@ class DefiSwapTest(SQLModel, table=True):
     validated: bool = False
     last_updated: int = 0
 
+    class Config:
+        use_slots = True
+
 
 class CipiSwap(SQLModel, table=True):
     __tablename__ = "swaps"
@@ -130,6 +106,9 @@ class CipiSwap(SQLModel, table=True):
     maker_gui: str = "unknown"
     maker_pubkey: str = "unknown"
     maker_version: str = "unknown"
+
+    class Config:
+        use_slots = True
 
 
 class CipiSwapFailed(SQLModel, table=True):
@@ -152,6 +131,9 @@ class CipiSwapFailed(SQLModel, table=True):
     maker_error_type: str = "unknown"
     maker_error_msg: str = "unknown"
 
+    class Config:
+        use_slots = True
+
 
 class StatsSwap(SQLModel, table=True):
     __tablename__ = "stats_swaps"
@@ -173,6 +155,9 @@ class StatsSwap(SQLModel, table=True):
     taker_pubkey: str = "unknown"
     maker_pubkey: str = "unknown"
 
+    class Config:
+        use_slots = True
+
 
 class SeednodeVersionStats(SQLModel, table=True):
     __tablename__ = "seednode_version_stats"
@@ -183,6 +168,9 @@ class SeednodeVersionStats(SQLModel, table=True):
     version: str = ""
     score: Decimal = 777.777777
     timestamp: int = 1777777777
+
+    class Config:
+        use_slots = True
 
     @classmethod
     def get_constraints(cls):
@@ -196,6 +184,9 @@ class Mm2StatsNodes(SQLModel, table=True):
     version: str = ""
     timestamp: int = 1777777777
     error: str = ""
+
+    class Config:
+        use_slots = True
 
     @classmethod
     def get_constraints(cls):
