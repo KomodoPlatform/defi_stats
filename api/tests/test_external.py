@@ -7,7 +7,6 @@ import pytest
 from tests.fixtures_external import (
     setup_gecko,
     setup_gecko_info,
-    setup_gecko_coin_ids,
 )
 from tests.fixtures_db import (
     setup_actual_db,
@@ -16,22 +15,21 @@ from tests.fixtures_db import (
 from util.logger import logger
 
 
-def test_get_gecko_coin_ids(setup_gecko):
+def test_get_coin_ids(setup_gecko):
     gecko = setup_gecko
-    r = gecko.get_gecko_coin_ids()
+    r = gecko.get_coin_ids()
     assert len(r) > 0
     assert "komodo" in r
 
 
-def test_get_gecko_info(setup_gecko):
+def test_get_template(setup_gecko):
     gecko = setup_gecko
-    r = gecko.get_gecko_info()
+    r = gecko.get_template()
     assert len(r["KMD"]) > 0
 
 
-def test_get_gecko_coins(setup_gecko, setup_gecko_info, setup_gecko_coin_ids):
+def test_get_gecko_coins(setup_gecko, setup_gecko_info):
     gecko = setup_gecko
-    coin_ids = setup_gecko_coin_ids
     coins_info = setup_gecko_info
-    r = gecko.get_gecko_coins(coins_info, coin_ids)
+    r = gecko.get_gecko_coins(coins_info)
     assert len(r["komodo"]) == 2
