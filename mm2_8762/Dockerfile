@@ -1,4 +1,4 @@
-FROM smk762/atomicdexapi:increase-mesh-capacity-latest
+FROM komodoofficial/komodo-defi-framework:main-latest
 
 LABEL maintainer="smk@komodoplatform.com"
 
