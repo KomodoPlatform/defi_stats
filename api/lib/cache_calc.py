@@ -71,7 +71,7 @@ class CacheCalc:
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
             logger.calc("sourcing gecko from upstream API")
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
 
     @property
@@ -185,11 +185,12 @@ class CacheCalc:
             ts = cron.now_utc() - pairs_days * 86400
             depairs = derive.pairs_traded_since(ts, self.pairs_last_traded_cache)
             traded_pairs = derive.pairs_traded_since(
-                ts, self.pairs_last_traded_cache, deplatformed=False
+                ts, self.pairs_last_traded_cache, reduced=False
             )
 
             data = []
             for depair in depairs:
+                depair = sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)
                 x = Pair(
                     pair_str=depair,
                     coins_config=self.coins_config,
@@ -201,28 +202,28 @@ class CacheCalc:
                 data.append(x)
             orderbook_data = {}
             liquidity_usd = 0
-            for depair_data in data:
-                depair = deplatform.pair(depair_data["ALL"]["pair"])
+            for book in data:
+                depair = deplatform.pair(book["ALL"]["pair"])
                 # Exclude if no activity
                 if depair not in orderbook_data:
                     if (
-                        Decimal(depair_data["ALL"]["liquidity_usd"]) > 0
-                        or Decimal(depair_data["ALL"]["trade_volume_usd"]) > 0
+                        Decimal(book["ALL"]["liquidity_usd"]) > 0
+                        or Decimal(book["ALL"]["trade_volume_usd"]) > 0
                     ):
                         orderbook_data.update({depair: {}})
                     else:
                         continue
-                for variant in depair_data:
-                    if depair_data[variant] is not None:
+                for variant in book:
+                    if book[variant] is not None:
                         # Exclude if no activity
                         if (
-                            Decimal(depair_data[variant]["liquidity_usd"]) > 0
-                            or Decimal(depair_data[variant]["trade_volume_usd"]) > 0
+                            Decimal(book[variant]["liquidity_usd"]) > 0
+                            or Decimal(book[variant]["trade_volume_usd"]) > 0
                         ):
                             orderbook_data[depair].update(
-                                {variant: clean.decimal_dicts(depair_data[variant])}
+                                {variant: clean.decimal_dicts(book[variant])}
                             )
-                liquidity_usd += Decimal(depair_data["ALL"]["liquidity_usd"])
+                liquidity_usd += Decimal(book["ALL"]["liquidity_usd"])
 
             vols_24hr = self.pair_volumes_24hr()
             if vols_24hr is not None:
