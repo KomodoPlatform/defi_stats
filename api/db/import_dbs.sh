@@ -34,10 +34,10 @@ if [ $NODE_TYPE = 'serve' ]; then
 else
     # Import raw source databases from their respective servers for processing on test.defi-stats.komodo.earth
     echo "Sourcing seed node source databases for processing"
-    rsync -avzP atomic@stats-api.atomicdex.io:/DB/43ec929fe30ee72be42c9162c56dde910a05e50d/MM2.db     /home/${username}/defi_stats/api/db/source/seed7_MM2.db
-    rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/seed2_MM2.db                            /home/${username}/defi_stats/api/db/source/seed2_MM2.db
-    rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/seed3_MM2.db                            /home/${username}/defi_stats/api/db/source/seed3_MM2.db
-    rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/viserion_MM2.db                         /home/${username}/defi_stats/api/db/source/viserion_MM2.db
-    rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/rhaegal_MM2.db                          /home/${username}/defi_stats/api/db/source/rhaegal_MM2.db
-    rsync -avzP atomic@stats-api.atomicdex.io:/home/atomic/DB/drogon_MM2.db                           /home/${username}/defi_stats/api/db/source/drogon_MM2.db
+    rsync -avzP atomic@168.119.236.246:/DB/43ec929fe30ee72be42c9162c56dde910a05e50d/MM2.db     /home/${username}/defi_stats/api/db/source/seed7_MM2.db
+    rsync -avzP atomic@168.119.236.246:/home/atomic/DB/seed2_MM2.db                            /home/${username}/defi_stats/api/db/source/seed2_MM2.db
+    rsync -avzP atomic@168.119.236.246:/home/atomic/DB/seed3_MM2.db                            /home/${username}/defi_stats/api/db/source/seed3_MM2.db
+    rsync -avzP atomic@168.119.236.246:/home/atomic/DB/viserion_MM2.db                         /home/${username}/defi_stats/api/db/source/viserion_MM2.db
+    rsync -avzP atomic@168.119.236.246:/home/atomic/DB/rhaegal_MM2.db                          /home/${username}/defi_stats/api/db/source/rhaegal_MM2.db
+    rsync -avzP atomic@168.119.236.246:/home/atomic/DB/drogon_MM2.db                           /home/${username}/defi_stats/api/db/source/drogon_MM2.db
 fi
