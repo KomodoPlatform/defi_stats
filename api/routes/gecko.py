@@ -63,9 +63,13 @@ def gecko_tickers():
             std_pair = sortdata.pair_by_market_cap(depair, gecko_source=gecko_source)
             if depair == std_pair:
                 resp["data"].append(data["data"][depair])
-            else:
+            elif invert.pair(depair) in data["data"]:
                 logger.warning(
                     f"Non standard {depair} exists in memcache.get_tickers(), should be {std_pair}"
+                )                
+            else:
+                logger.warning(
+                    f"{depair} not found in memcache.get_tickers()"
                 )
                 # TODO: This should be threaded to avoid blocking
                 # db_update.fix_swap_pair(depair, pgdb_query)
