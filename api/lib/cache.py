@@ -203,39 +203,6 @@ class CacheItem:
                     memcache.set_coins_config(data)
                 if self.name == "coins":
                     memcache.set_coins(data)
-                if self.name in ["prices_tickers_v1", "prices_tickers_v2"]:
-                    now_ts = int(time.time())
-                    now_str = datetime.utcfromtimestamp(now_ts).strftime('%Y-%m-%d %H:%M:%S')
-                    data.update({
-                        "DOC": {
-                            "ticker": "DOC",
-                            "last_price": "0.0000001",
-                            "last_updated": now_str,
-                            "last_updated_timestamp": now_ts,
-                            "volume24h": "1",
-                            "price_provider": "testcoin",
-                            "volume_provider": "testcoin",
-                            "sparkline_7d": None,
-                            "sparkline_provider": "testcoin",
-                            "change_24h": "0",
-                            "change_24h_provider": "testcoin"
-                        }
-                    })
-                    data.update({
-                        "MARTY": {
-                            "ticker": "MARTY",
-                            "last_price": "0.00000005",
-                            "last_updated": now_str,
-                            "last_updated_timestamp": now_ts,
-                            "volume24h": "1",
-                            "price_provider": "testcoin",
-                            "volume_provider": "testcoin",
-                            "sparkline_7d": None,
-                            "sparkline_provider": "testcoin",
-                            "change_24h": "0",
-                            "change_24h_provider": "testcoin"
-                        }
-                    })
             else:
                 # EXTERNAL SOURCE CACHE
                 if self.name == "cmc_assets_source":
