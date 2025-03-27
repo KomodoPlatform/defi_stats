@@ -218,3 +218,7 @@ This will place the external MM2.db copies into the `defi_stats/DB` folder, whic
  - https://data.chain.link/feed
  - this is how the eth_call looks like: https://github.com/cipig/mmtools/blob/master/mpm/mpm#L337 
  - the price is in sats and is a hex, so need to be "converted" before use: https://github.com/cipig/mmtools/blob/master/mpm/mpm#L2372-L2374
+
+#### Poetry version install
+
+curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.7.1 python3 -
