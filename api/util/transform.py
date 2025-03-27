@@ -430,14 +430,14 @@ class Derive:
 
 
     @timed
-    def base_quote(self, pair_str, reverse=False, deplatform=False):
+    def base_quote(self, pair_str, reverse=False, reduce=False):
         # TODO: This workaround fixes the issue
         # but need to find root cause to avoid
         # unexpected related issues.
         # Might be simplest to just repair the pre-standard 
         # pair tickers in the DB.
         try:
-            if deplatform:
+            if reduce:
                 pair_str = deplatform.pair(pair_str)
             if pair_str == "OLD_USDC-PLG20_USDC-PLG20":
                 pair_str = "USDC-PLG20_USDC-PLG20_OLD"
@@ -554,7 +554,7 @@ class Derive:
         try:
             if pair_str in pairs_last_traded_cache:
                 return pairs_last_traded_cache[pair_str]
-            reverse_pair = invert.pair(pair_str, deplatform=True)
+            reverse_pair = invert.pair(pair_str, reduce=True)
             if reverse_pair in pairs_last_traded_cache:
                 return pairs_last_traded_cache[reverse_pair]
         except Exception as e:  # pragma: no cover
@@ -639,8 +639,8 @@ class Derive:
             return [pair_str]
 
     @timed
-    def pairs_traded_since(self, ts, pairs_last_traded_cache, deplatformed=True):
-        if not deplatformed:
+    def pairs_traded_since(self, ts, pairs_last_traded_cache, reduced=True):
+        if not reduced:
             pairs = []
             for i in pairs_last_traded_cache:
                 for j in pairs_last_traded_cache[i]:
@@ -901,8 +901,8 @@ class Invert:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
 
-    def pair(self, pair_str, deplatform=False):
-        base, quote = derive.base_quote(pair_str, reverse=True, deplatform=deplatform)
+    def pair(self, pair_str, reduce=False):
+        base, quote = derive.base_quote(pair_str, reverse=True, reduce=reduce)
         return f"{base}_{quote}"
 
     def trade_type(self, trade_type):

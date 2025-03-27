@@ -128,7 +128,7 @@ class CacheItem:
             logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
 
     @property
@@ -253,7 +253,7 @@ class CacheItem:
                 if self.name == "gecko_source":
                     data = external.CoinGeckoAPI(
                         coins_config=self.coins_config
-                    ).get_gecko_source()
+                    ).get_source_data()
                     memcache.set_gecko_source(data)
 
                 # FOUNDATIONAL CACHE

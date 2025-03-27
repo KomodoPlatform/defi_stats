@@ -102,7 +102,7 @@ class Pair:  # pragma: no cover
             # logger.calc("sourcing gecko")
             self._gecko_source = memcache.get_gecko_source()
         if self._gecko_source is None:
-            self._gecko_source = gecko_api.get_gecko_source(from_file=True)
+            self._gecko_source = gecko_api.get_source_data(from_file=True)
         return self._gecko_source
 
     @property
@@ -360,7 +360,7 @@ class Pair:  # pragma: no cover
             if len(traded_pairs) == 0:
                 ts = cron.now_utc() - 30 * 86400
                 traded_pairs = derive.pairs_traded_since(
-                    ts, self.pairs_last_traded_cache, deplatformed=False
+                    ts, self.pairs_last_traded_cache, reduced=False
                 )
             pair_tpl = derive.base_quote(pair_str)
             if len(pair_tpl) != 2 or "error" in pair_tpl:
