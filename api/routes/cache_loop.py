@@ -205,7 +205,7 @@ def get_markets_summary():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=90)
+@repeat_every(seconds=45)
 @timed
 def prices_service():  # pragma: no cover
     if memcache.get("testing") is None:
