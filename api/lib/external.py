@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import requests
 import time
+#import backoff
+from typing import List, Dict
 from const import FIXER_API_KEY
 from util.files import Files
 from util.helper import get_chunks
@@ -10,17 +12,21 @@ from util.transform import template
 import util.memcache as memcache
 
 
+INVALID_IDS = {"na", "test-coin", ""}
+
 class CoinGeckoAPI:
-    def __init__(self, coins_config=None, **kwargs):
+    def __init__(self, coins_config=None, file_handler=None, **kwargs):
+        self.kwargs = kwargs
+        self.options = []
+        self.files = file_handler or Files()
+        self._coins_config = coins_config
+
         try:
-            self.kwargs = kwargs
-            self.options = []
             default.params(self, self.kwargs, self.options)
-            self.files = Files()
-            self._coins_config = coins_config
-            # logger.loop("Getting gecko_source for CoinGeckoAPI")
-        except Exception as e:  # pragma: no cover
-            logger.error({"error": f"{type(e)} Failed to init CoinGeckoAPI: {e}"})
+            self.coin_ids = self.get_coin_ids()
+            self.template = self.build_template()
+        except Exception as e:
+            logger.error(f"{type(e)} Failed to init CoinGeckoAPI: {e}")
 
     @property
     def coins_config(self):
@@ -28,96 +34,68 @@ class CoinGeckoAPI:
             self._coins_config = memcache.get_coins_config()
         return self._coins_config
 
-    def get_gecko_coin_ids(self) -> list:
-        coin_ids = list(
-            set(
-                [
-                    self.coins_config[i]["coingecko_id"]
-                    for i in self.coins_config
-                    if self.coins_config[i]["coingecko_id"]
-                    not in ["na", "test-coin", ""]
-                ]
-            )
-        )
-        coin_ids.sort()
-        return coin_ids
+    def get_coin_ids(self) -> List[str]:
+        coin_ids = {
+            cfg["coingecko_id"]
+            for cfg in self.coins_config.values()
+            if cfg["coingecko_id"] not in INVALID_IDS
+        }
+        return sorted(coin_ids)
 
-    def get_gecko_info(self):
-        coins_info = {}
-        for coin in self.coins_config:
-            native_coin = coin.split("-")[0]
-            coin_id = self.coins_config[coin]["coingecko_id"]
-            if coin_id not in ["na", "test-coin", ""]:
-                coins_info.update({coin: template.gecko_info(coin_id)})
-                if native_coin not in coins_info:
-                    coins_info.update({native_coin: template.gecko_info(coin_id)})
-        return coins_info
+    def build_template(self):
+        info = {}
+        for coin, cfg in self.coins_config.items():
+            coin_id = cfg["coingecko_id"]
+            if coin_id in INVALID_IDS:
+                continue
+            if coin not in info:
+                info[coin] = template.gecko_info(coin_id)
+                native_coin = coin.split("-")[0] if "-" in coin else coin
+            if native_coin not in info:
+                info[native_coin] = info[coin]
+        return info
 
-    def get_gecko_coins(self, gecko_info: dict, coin_ids: list):
-        gecko_coins = {}
-        for coin_id in coin_ids:
-            gecko_coins.update({coin_id: []})
-        for coin in gecko_info:
-            coin_id = gecko_info[coin]["coingecko_id"]
-            gecko_coins[coin_id].append(coin)
+    def map_gecko_coins(self, gecko_info: Dict[str, Dict]) -> Dict[str, List[str]]:
+        gecko_coins = {cid: [] for cid in self.coin_ids}
+        for coin, info in gecko_info.items():
+            coin_id = info.get("coingecko_id")
+            if coin_id in gecko_coins:
+                gecko_coins[coin_id].append(coin)
         return gecko_coins
 
-    def get_gecko_source(self, from_file=False):  # pragma: no cover
+    # @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=3)
+    def fetch_price_data(self, coin_id_chunk: List[str]) -> Dict:
+        params = f"ids={','.join(coin_id_chunk)}&vs_currencies=usd&include_market_cap=true"
+        url = f"https://api.coingecko.com/api/v3/simple/price?{params}"
+        try:
+            r = requests.get(url)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            logger.warning(f"Failed to fetch from URL: {url}, error: {e}")
+            return {}
+
+    def get_source_data(self, from_file=False):
         if memcache.get("testing") is not None or from_file:
-            return self.files.load_jsonfile(self.gecko_source)
+            return self.files.load_jsonfile(self.files.gecko_source)
+
+        gecko_info = self.build_template()
+        gecko_coins = self.map_gecko_coins(gecko_info)
         param_limit = 200
-        # TODO: we should cache the api ids
-        coin_ids = self.get_gecko_coin_ids()
-        gecko_info = self.get_gecko_info()
-        gecko_coins = self.get_gecko_coins(gecko_info, coin_ids)
-        coin_id_chunks = list(get_chunks(coin_ids, param_limit))
-        for chunk in coin_id_chunks:
-            chunk_ids = ",".join(chunk)
-            try:
-                params = f"ids={chunk_ids}&vs_currencies=usd&include_market_cap=true"
-                url = f"https://api.coingecko.com/api/v3/simple/price?{params}"
-                # logger.debug(f"Coingecko chunk url: {url}")
-                r = requests.get(url)
-                if r.status_code != 200:
-                    raise Exception(f"Invalid response: {r.status_code}")
-                gecko_source = r.json()
-            except Exception as e:
-                msg = f"Failed for url: {url}!"
-                return default.error(e, msg)
-            for coin_id in gecko_source:
-                try:
-                    coins = gecko_coins[coin_id]
-                    for coin in coins:
-                        if "usd" in gecko_source[coin_id]:
-                            gecko_info[coin].update(
-                                {"usd_price": gecko_source[coin_id]["usd"]}
-                            )
-                        if "usd_market_cap" in gecko_source[coin_id]:
-                            gecko_info[coin].update(
-                                {
-                                    "usd_market_cap": gecko_source[coin_id][
-                                        "usd_market_cap"
-                                    ]
-                                }
-                            )
-                except Exception as e:
-                    error = f"{type(e)}: CoinGecko ID request/response mismatch [{coin_id}] [{e}]"
-                    logger.warning(error)
+
+        for chunk in get_chunks(self.coin_ids, param_limit):
+            gecko_source = self.fetch_price_data(chunk)
+
+            for coin_id, values in gecko_source.items():
+                coins = gecko_coins.get(coin_id, [])
+                for coin in coins:
+                    if "usd" in values:
+                        gecko_info[coin]["usd_price"] = values["usd"]
+                    if "usd_market_cap" in values:
+                        gecko_info[coin]["usd_market_cap"] = values["usd_market_cap"]
             time.sleep(0.1)
-        # Adding fake prices to testcoins for testing purposes
-        
-        gecko_info.update({
-            "DOC": {
-                "usd_market_cap": 0.000001,
-                "usd_price": 0.0000001
-            }
-        })
-        gecko_info.update({
-            "MARTY": {
-                "usd_market_cap": 0.000002,
-                "usd_price": 0.00000005
-            }
-        })
+
+        self.files.save_json(self.files.gecko_source, gecko_info)
         return gecko_info
 
 
