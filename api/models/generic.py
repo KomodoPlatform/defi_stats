@@ -169,3 +169,36 @@ class PairTradeVolumes(BaseModel):
     quote_volume_usd: float = 777.777777
     trade_volume_usd: float = 777.777777
     volumes: Dict[str, Dict[str, PairTradeVolume]]
+
+
+class MonthlyPairStats(BaseModel):
+    pair: str
+    swap_count: int
+    volume: float
+
+
+class MonthlyPubkeyStats(BaseModel):
+    pubkey: str
+    swap_count: int
+    volume: float
+
+
+class MonthlyGuiStats(BaseModel):
+    gui: str
+    swap_count: int
+    pubkey_count: int
+
+
+class MonthlyStatsItem(BaseModel):
+    month: int  # 1-12
+    total_swaps: int
+    top_pairs: list[MonthlyPairStats]
+    unique_pubkeys: int
+    top_pubkeys: list[MonthlyPubkeyStats]
+    gui_stats: list[MonthlyGuiStats]
+    pubkey_gui_counts: dict  # {1: int, 2: int, 3: int, '3+': int}
+
+
+class MonthlyStatsResponse(BaseModel):
+    year: int
+    months: list[MonthlyStatsItem]
