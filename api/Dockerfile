@@ -18,6 +18,7 @@ RUN apt-get -qq -y update && \
         curl \
         nano \
         htop \
+        unzip \
         python3.10 \
         python3.10-dev \
         python3.10-distutils \
@@ -38,10 +39,19 @@ RUN apt-get -qq -y update && \
 #    rm -rf /var/lib/apt/lists/*
 
 RUN rm /usr/bin/python3 && ln -s /usr/bin/python3.10 /usr/bin/python3
-# Setup user and working directory
 
+# Setup user and working directory
 RUN chown -R komodian:notarygroup /home/komodian
 USER komodian
+
+# Download IP2Location LITE DB1.BIN and unzip it
+RUN mkdir -p /home/komodian/db
+WORKDIR /home/komodian/db
+RUN curl -o IP2LOCATION-LITE-DB1.BIN.ZIP https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP
+RUN unzip IP2LOCATION-LITE-DB1.BIN.ZIP
+RUN rm IP2LOCATION-LITE-DB1.BIN.ZIP
+
+# Install poetry and dependencies
 WORKDIR /home/komodian/api
 RUN mkdir /home/komodian/poetry
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
@@ -51,9 +61,8 @@ ENV POETRY_HOME="/home/komodian/poetry" \
     POETRY_NO_INTERACTION=1
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 ENV IN_DOCKER=True
-COPY ./poetry.lock ./pyproject.toml /home/komodian/api/
+COPY ./poetry.lock ./pyproject.toml ./README.md /home/komodian/api/
 RUN curl -sSL https://install.python-poetry.org | python
 RUN poetry self update
 RUN poetry env use /usr/bin/python3.10
-RUN poetry install
-
+RUN poetry install --no-root

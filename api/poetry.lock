@@ -494,6 +494,17 @@ files = [
 ]
 
 [[package]]
+name = "ip2location"
+version = "8.10.5"
+description = "This is an IP geolocation library that enables the user to find the country, region, city, latitude and longitude, ZIP code, time zone, ISP, domain name, area code, weather info, mobile info, elevation, usage type, address type and IAB category from an IP address. It supports both IPv4 and IPv6 lookup."
+optional = false
+python-versions = "*"
+files = [
+    {file = "IP2Location-8.10.5-py3-none-any.whl", hash = "sha256:eb7e2a54d168a2f082927ca71e166e5c767d48a6c04851e3230cddebc4d34c79"},
+    {file = "ip2location-8.10.5.tar.gz", hash = "sha256:e26bdd214be15a41030f4e7e6771df6ccbc75d743c8853933252369993a6368b"},
+]
+
+[[package]]
 name = "mccabe"
 version = "0.6.1"
 description = "McCabe checker, plugin for flake8"
@@ -1064,4 +1075,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "86eb7192211c5ea1864ccd889fbe60c6985eb530f13cf70d27cbbf4321a154bb"
+content-hash = "ceb26453901b64784717c948fc141c1202d7aa2429457c4d3a30f876ee1abfdd"
