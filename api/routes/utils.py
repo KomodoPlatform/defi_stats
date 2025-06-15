@@ -36,3 +36,26 @@ def bouncer(request: Request):
         return JSONResponse(status_code=400, content=err)
 
 
+
+
+@router.get(
+    "/blacklist",
+    description="Returns a blcacklist response for testing purposes.",
+    responses={406: {"model": ErrorMessage}},
+    status_code=200,
+)
+def blacklist(request: Request):
+    """
+    Returns a blacklist response for testing purposes.
+    """
+    try:
+        client_ip = get_client_ip(request)
+        location = get_client_location(client_ip)
+        logger.warning(f"Client IP: {client_ip} from {location} is restricted")
+        return JSONResponse(status_code=403, content={"error": "Verboten"})
+    except Exception as e:  # pragma: no cover
+        err = {"error": f"{e}"}
+        logger.warning(err)
+        return JSONResponse(status_code=400, content=err)
+
+
