@@ -2,7 +2,7 @@
 
 echo "Installing apt deps..."
 sudo apt update
-sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3
+sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3 libffi-dev
 
 echo "Setup Python 3.10..."
 sudo apt update && sudo apt upgrade -y
@@ -55,7 +55,7 @@ echo "GROUP_ID=${GROUP_ID}" >> mm2_8762/.env
 echo "username=${USER}" > username
 
 echo "Installing poetry..."
-python3.10 -m pip install --user --upgrade pip
+python3.10 -m pip install --user --upgrade pip cffi
 python3.10 -m pip install --user poetry
 
 LOCAL_BIN="$HOME/.local/bin"
@@ -72,6 +72,7 @@ fi
 hash -r
 
 poetry config virtualenvs.in-project true
+poetry config keyring.enabled false
 
 cd $(pwd)/api
 poetry update

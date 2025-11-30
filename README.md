@@ -22,8 +22,9 @@ Run the `setup.sh` script to install python3.10, docker, docker-compose, and poe
 #### Apt dependencies
 
     sudo apt update
-    sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3
+    sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3 libffi-dev
     # On Ubuntu 24.04+, python-dev was replaced by python-dev-is-python3.
+    # libffi-dev is required to build cffi (_cffi_backend) for packages such as cryptography/secretstorage.
 
 #### Install python3.10
 
@@ -36,6 +37,7 @@ Run the `setup.sh` script to install python3.10, docker, docker-compose, and poe
     Install [poetry](https://python-poetry.org/docs/) with `pipx install poetry`
     Add `~/.local/bin` to your PATH so poetry and other tools are available:
     `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`
+    Poetry tries to talk to the system keyring by default. On minimal servers without SecretStorage support, disable it with `poetry config keyring.enabled false`.
 
 
 #### Install Docker
