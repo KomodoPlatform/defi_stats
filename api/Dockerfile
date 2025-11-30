@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG PYTHON_VERSION_TAG=3.10
 ARG LINK_PYTHON_TO_PYTHON3=1
@@ -9,9 +9,6 @@ ARG GROUP_ID
 ARG USER_ID
 RUN addgroup --gid ${GROUP_ID} notarygroup
 RUN adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} komodian
-RUN apt update && apt install software-properties-common -y && add-apt-repository ppa:deadsnakes/ppa
-
-
 RUN apt-get -qq -y update && \
     DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
         gcc \
@@ -22,6 +19,7 @@ RUN apt-get -qq -y update && \
         python3.10 \
         python3.10-dev \
         python3.10-distutils \
+        python3.10-venv \
         build-essential \
         postgresql \
         postgresql-contrib \
