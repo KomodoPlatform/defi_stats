@@ -55,8 +55,22 @@ echo "GROUP_ID=${GROUP_ID}" >> mm2_8762/.env
 echo "username=${USER}" > username
 
 echo "Installing poetry..."
-python3.10 -m pip install --upgrade pip
-python3.10 -m pip install poetry
+python3.10 -m pip install --user --upgrade pip
+python3.10 -m pip install --user poetry
+
+LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "${LOCAL_BIN}"
+if [[ ":$PATH:" != *":${LOCAL_BIN}:"* ]]; then
+    export PATH="${LOCAL_BIN}:$PATH"
+fi
+if ! grep -qs "${LOCAL_BIN}" ~/.profile 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.profile
+fi
+if ! grep -qs "${LOCAL_BIN}" ~/.bashrc 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+fi
+hash -r
+
 poetry config virtualenvs.in-project true
 
 cd $(pwd)/api

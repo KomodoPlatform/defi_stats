@@ -34,6 +34,8 @@ Run the `setup.sh` script to install python3.10, docker, docker-compose, and poe
     Install pip `curl -sS https://bootstrap.pypa.io/get-pip.py | python3`
     Install pipx with `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
     Install [poetry](https://python-poetry.org/docs/) with `pipx install poetry`
+    Add `~/.local/bin` to your PATH so poetry and other tools are available:
+    `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`
 
 
 #### Install Docker
