@@ -61,11 +61,15 @@ GROUP_ID=1000
 
 - Get the latest coins file for each mm2 folder with `wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins`
 
+#### Bootstrap cache files
 
+The files inside `api/cache/coins/` are `.gitignore`'d. On a new server run `./scripts/bootstrap_coins_cache.sh` (pass `--force` to refresh) to download `coins.json` and `coins_config.json` before invoking `run_mm2.sh` or `docker compose`. The script respects the `COINS_CACHE_URL` and `COINS_CONFIG_URL` env vars if you need to point at a different data source.
 
 #### Database setup
 
     sudo systemctl stop postgresql.service  # this will run in docker, so we disable on host to avoid port conflicts
+
+    # Optionally, to run on host:
     # https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-18-04
     # sudo -u postgres createuser --interactive
     # sudo -u postgres createdb stats_swaps

@@ -16,6 +16,8 @@ echo "Getting coins..."
 wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins
 cp coins $(pwd)/mm2/coins
 cp coins $(pwd)/mm2_8762/coins
+echo "Bootstrapping API coin cache..."
+$(pwd)/scripts/bootstrap_coins_cache.sh --force
 
 echo "Setup mm2..."
 rpc_password="$(openssl rand -hex 20)-E"

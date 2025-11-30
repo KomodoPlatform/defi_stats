@@ -1,10 +1,20 @@
 #!/bin/bash
 
-stats_folder=/home/atomic/defi_stats/api
-cd $stats_folder
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+COINS_CACHE="${ROOT_DIR}/api/cache/coins/coins.json"
+BOOTSTRAP_SCRIPT="${ROOT_DIR}/scripts/bootstrap_coins_cache.sh"
+
+if [[ ! -f "${COINS_CACHE}" ]]; then
+    echo "api/cache/coins/coins.json not found, bootstrapping cache..."
+    "${BOOTSTRAP_SCRIPT}"
+fi
+
+cd "${ROOT_DIR}"
 /usr/bin/docker compose stop
-cat $stats_folder/cache/coins/coins.json | jq .data > $stats_folder/../mm2/coins
-cat $stats_folder/cache/coins/coins.json | jq .data > $stats_folder/../mm2_8762/coins
+cat "${COINS_CACHE}" | jq .data > "${ROOT_DIR}/mm2/coins"
+cat "${COINS_CACHE}" | jq .data > "${ROOT_DIR}/mm2_8762/coins"
 /usr/bin/docker compose build
 /usr/bin/docker compose up -d
 
