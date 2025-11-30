@@ -55,7 +55,7 @@ RUN mkdir /home/komodian/poetry
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
 RUN python3.10 -m pip install -U pip
 ENV POETRY_HOME="/home/komodian/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
     POETRY_NO_INTERACTION=1
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 ENV IN_DOCKER=True
