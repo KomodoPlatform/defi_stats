@@ -13,8 +13,8 @@ fi
 
 cd "${ROOT_DIR}"
 /usr/bin/docker compose stop
-cat "${COINS_CACHE}" | jq .data > "${ROOT_DIR}/mm2/coins"
-cat "${COINS_CACHE}" | jq .data > "${ROOT_DIR}/mm2_8762/coins"
+cat "${COINS_CACHE}" | jq > "${ROOT_DIR}/mm2/coins"
+cat "${COINS_CACHE}" | jq > "${ROOT_DIR}/mm2_8762/coins"
 /usr/bin/docker compose build
 /usr/bin/docker compose up -d
 
