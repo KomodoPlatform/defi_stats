@@ -2,16 +2,15 @@
 
 echo "Installing apt deps..."
 sudo apt update
-sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config
+sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3
 
 echo "Setup Python 3.10..."
 sudo apt update && sudo apt upgrade -y
 sudo apt install software-properties-common python3-apt jq -y
-sudo add-apt-repository ppa:deadsnakes/ppa
+sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.10 python3.10-distutils -y
-sudo ln -sf /usr/bin/python3.10 /usr/bin/python3
-curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+sudo apt install python3.10 python3.10-distutils python3.10-venv python3.10-dev -y
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
 
 echo "Getting coins..."
 wget https://raw.githubusercontent.com/KomodoPlatform/coins/master/coins
@@ -56,7 +55,8 @@ echo "GROUP_ID=${GROUP_ID}" >> mm2_8762/.env
 echo "username=${USER}" > username
 
 echo "Installing poetry..."
-pip install poetry
+python3.10 -m pip install --upgrade pip
+python3.10 -m pip install poetry
 poetry config virtualenvs.in-project true
 
 cd $(pwd)/api

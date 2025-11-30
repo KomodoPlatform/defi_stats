@@ -16,13 +16,14 @@ Data is also imported into more robust databases (mySQL, postgresSQL/Timescale &
 
 ### Install requirements
 
-Run the `setup.sh` script to install python3.10, docker, docker-compose, and poetry. The steps to do thsi manually are below for reference, but if the script returns no errors, you can skip ahead to the `Database setup` section.
+Run the `setup.sh` script to install python3.10, docker, docker-compose, and poetry. The steps to do this manually are below for reference, but if the script returns no errors, you can skip ahead to the `Database setup` section.
 
 
 #### Apt dependencies
 
     sudo apt update
-    sudo apt install postgresql postgresql-contrib build-essential python-dev python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config
+    sudo apt install postgresql postgresql-contrib build-essential python3-dev python3-psycopg2 libpq-dev libmysqlclient-dev default-libmysqlclient-dev pkg-config python-dev-is-python3
+    # On Ubuntu 24.04+, python-dev was replaced by python-dev-is-python3.
 
 #### Install python3.10
 
@@ -156,13 +157,6 @@ From the `api` folder:
 - To test a specific file: `poetry run pytest -vv tests/test_file.py`
 
 
-## Note
-Alternative APIs are hosted at:
-- https://stats-api.atomicdex.io/docs
-- https://nomics.komodo.earth:8080/api/v1/info
-- https://stats.testchain.xyz:8080/api/v1/summary
-
-These should be consolidated in this repo at some point. They are based on branches of https://github.com/KomodoPlatform/dexstats_sqlite_py
 
 ## Warning
 Some data is cached with memcache. if the size of this data grows too large, it might fail to enter the cache. It should be split into smaller parts. See https://github.com/memcached/memcached/wiki/ConfiguringServer for configuration.
