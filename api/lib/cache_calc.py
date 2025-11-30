@@ -489,6 +489,43 @@ class CacheCalc:
             logger.error(f"{type(e)} Error in [StatsAPI.adex_24hr]: {e}")
             return None
 
+
+    def adex_weekly(self, refresh=False):
+        try:
+            data = memcache.get_adex_weekly()
+            if data is None or refresh:
+                books = self.pairs_orderbook_extended_cache
+                start_time = int(cron.now_utc()) - 86400 * 7
+                end_time = int(cron.now_utc())  
+                vols = self.pair_volumes_timespan(
+                    start_time=start_time, end_time=end_time
+                )
+                if None not in [books, vols]:
+                    top_vol = derive.top_pairs_by_volume(vols)
+                    top_swaps = derive.top_pairs_by_swap_counts(
+                                vols, suffix="7d"
+                            )
+                    top_liquidity = derive.top_pairs_by_liquidity(
+                                books
+                            )
+                    data = {
+                        "days": 7,
+                        "swaps_count": vols["total_swaps"],
+                        "swaps_volume": vols["trade_volume_usd"],
+                        "current_liquidity": books["combined_liquidity_usd"],
+                        "top_pairs": {
+                            "by_volume": top_vol,
+                            "by_swaps_count": top_swaps,
+                            "by_current_liquidity_usd": top_liquidity,
+                        },
+                    }
+                    data = clean.decimal_dicts(data)
+            return data
+        except Exception as e:  # pragma: no cover
+            logger.error(f"{type(e)} Error in [StatsAPI.adex_weekly]: {e}")
+            return None
+
+
     def adex_fortnite(self, refresh=False):
         try:
             data = memcache.get_adex_fortnite()

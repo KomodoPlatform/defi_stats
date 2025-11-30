@@ -28,6 +28,7 @@ class Files:
 
         # Top Fives
         self.adex_alltime = f"{folder}/generic/adex_alltime.json"
+        self.adex_weekly = f"{folder}/generic/adex_weekly.json"
         self.adex_fortnite = f"{folder}/generic/adex_fortnite.json"
         self.adex_24hr = f"{folder}/generic/adex_24hr.json"
 

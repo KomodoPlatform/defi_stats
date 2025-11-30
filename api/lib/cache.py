@@ -47,6 +47,7 @@ class Cache:  # pragma: no cover
             for i in [
                 "adex_24hr",
                 "adex_fortnite",
+                "adex_weekly",
                 "adex_alltime",
                 "coins",
                 "coins_config",
@@ -170,6 +171,7 @@ class CacheItem:
     def cache_expiry(self):
         expiry_limits = {
             "adex_24hr": 5,
+            "adex_weekly": 5,
             "adex_fortnite": 10,
             "adex_alltime": 15,
             "coins": 1440,
@@ -229,6 +231,12 @@ class CacheItem:
                         coins_config=self.coins_config
                     ).adex_24hr(refresh=True)
                     memcache.set_adex_24hr(data)
+
+                if self.name == "adex_weekly":
+                    data = cache_calc.CacheCalc(
+                        coins_config=self.coins_config
+                    ).adex_weekly(refresh=True)
+                    memcache.set_adex_weekly(data)
 
                 if self.name == "adex_fortnite":
                     data = cache_calc.CacheCalc(
@@ -393,6 +401,9 @@ def reset_cache_files():
         CacheItem(name="pairs_orderbook_extended", coins_config=coins_config).data
     )
     memcache.set_adex_24hr(CacheItem(name="adex_24hr", coins_config=coins_config).data)
+    memcache.set_adex_weekly(
+        CacheItem(name="adex_weekly", coins_config=coins_config).data
+    )
     memcache.set_adex_fortnite(
         CacheItem(name="adex_fortnite", coins_config=coins_config).data
     )

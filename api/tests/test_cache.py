@@ -18,6 +18,7 @@ def test_cache():
         "stats_api_summary",
         "adex_24hr",
         "adex_fortnite",
+        "adex_weekly",
         "adex_alltime",
         "prices_tickers_v1",
         "prices_tickers_v2",

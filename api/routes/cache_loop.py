@@ -387,6 +387,18 @@ def adex_alltime():
 @router.on_event("startup")
 @repeat_every(seconds=300)
 @timed
+def adex_weekly():
+    if memcache.get("testing") is None:
+        try:
+            CacheItem(name="adex_weekly").save()
+        except Exception as e:
+            logger.warning(default.result(msg=e, loglevel="warning"))
+        msg = "Adex fortnight loop complete!"
+        return default.result(msg=msg, loglevel="loop", ignore_until=0)
+
+@router.on_event("startup")
+@repeat_every(seconds=300)
+@timed
 def adex_fortnite():
     if memcache.get("testing") is None:
         try:

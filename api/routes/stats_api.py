@@ -61,6 +61,17 @@ def atomicdex_24hr():
         return {"error": msg}
 
 
+@router.get("/atomicdex_weekly")
+def atomicdex_weekly():
+    """Extra Summary Statistics over last 7 days"""
+    try:
+        return CacheCalc().adex_weekly()
+    except Exception as e:  # pragma: no cover
+        msg = f"{type(e)} Error in [/api/v3/stats-api/atomicdex_weekly]: {e}"
+        logger.warning(msg)
+        return {"error": msg}
+
+
 @router.get("/atomicdex_fortnight")
 def atomicdex_fortnight():
     """Extra Summary Statistics over last 2 weeks"""

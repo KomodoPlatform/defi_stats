@@ -261,6 +261,12 @@ def get_adex_24hr():  # pragma: no cover
     return get("adex_24hr")
 
 
+def set_adex_weekly(data):  # pragma: no cover
+    update("adex_weekly", data, 3600)
+
+def get_adex_weekly():  # pragma: no cover
+    return get("adex_weekly")
+
 def set_adex_fortnite(data):  # pragma: no cover
     update("adex_fortnite", data, 3600)
 
