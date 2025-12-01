@@ -172,3 +172,4 @@ cython_debug/
 
 api/coin_compare.csv
 docker-data/
+backups/postgres/*.dump

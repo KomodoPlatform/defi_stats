@@ -146,6 +146,21 @@ Finally, we can build the containers.
     docker compose build
     docker compose up
 
+## Postgres backups and restores
+
+- Make sure the stack is up (`docker compose up -d`) so the `pgsqldb` service is running.
+- Create a dump that contains every table in the configured database:
+
+        ./scripts/pg_backup.sh
+
+  A timestamped `.dump` file is written to `backups/postgres/`. Use `-o` to change the output directory, `-e` to point at a different `.env`, or `-c` if you renamed the database service.
+
+- Transfer the dump to the target host (for example with `scp`) and run the restore once the new stack is up:
+
+        ./scripts/pg_restore.sh -f /path/to/backup.dump
+
+  The script loads credentials from `api/.env`, pipes the dump into `pg_restore`, and replaces the existing schema (`--clean --if-exists`). Use `-p` to run the docker compose command from another directory, or `-c` to target a different service name.
+
 
 # Sourcing data
 
