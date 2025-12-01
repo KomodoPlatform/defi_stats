@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 from functools import cached_property
+from threading import Lock
 from decimal import Decimal
 from typing import Dict
 import requests
 import threading
-from const import MM2_RPC_PORTS, MM2_RPC_HOSTS, API_ROOT_PATH, DEXAPI_USERPASS
+from const import (
+    MM2_RPC_PORTS,
+    MM2_RPC_HOSTS,
+    API_ROOT_PATH,
+    DEXAPI_USERPASS,
+    ORDERBOOK_CACHE_MIN_TRADES,
+    ORDERBOOK_CACHE_LOCK_TTL,
+    ORDERBOOK_CACHE_WAIT_ATTEMPTS,
+    ORDERBOOK_CACHE_WAIT_INTERVAL,
+)
 from lib.cache_query import cache_query
 from util.cron import cron
 from util.files import Files
@@ -13,6 +23,31 @@ from util.transform import sortdata, clean, invert, derive, template, convert, m
 import util.defaults as default
 import util.memcache as memcache
 import util.validate as validate
+
+
+_ORDERBOOK_CACHE_STATS = {
+    "processed": 0,
+    "skipped": 0,
+    "total": 1,
+    "pointer": 0,
+}
+_ORDERBOOK_CACHE_STATS_LOCK = Lock()
+
+
+def _record_orderbook_cache_result(pair_str: str, cached: bool):
+    with _ORDERBOOK_CACHE_STATS_LOCK:
+        _ORDERBOOK_CACHE_STATS["processed"] += 1
+        if not cached:
+            _ORDERBOOK_CACHE_STATS["skipped"] += 1
+        processed = _ORDERBOOK_CACHE_STATS["processed"]
+        skipped = _ORDERBOOK_CACHE_STATS["skipped"]
+        total = max(_ORDERBOOK_CACHE_STATS.get("total", 1), 1)
+        percent = (processed / total) * 100
+        pointer = _ORDERBOOK_CACHE_STATS.get("pointer", 0)
+    logger.loop(
+        f"[orderbook-cache] idx={processed}/{total} ({percent:.1f}%) "
+        f"pointer={pointer} skipped={skipped} last_pair={pair_str} cached={cached}"
+    )
 
 
 class DexAPI:
@@ -44,52 +79,6 @@ class DexAPI:
     def version(self):
         return self.api({"method": "version"})
 
-    def start_seednode_stats(self):
-        params = {
-            "mmrpc": "2.0",
-            "method": "start_version_stat_collection",
-            "params": {"interval": 600},
-        }
-        resp = self.api(params)
-        return default.result(
-            data=resp, msg="Started seednode stats collection", loglevel="dexrpc"
-        )
-
-    @timed
-    def add_seednode_for_stats(self, notary: str, domain: str, peer_id: str):
-        params = {
-            "mmrpc": "2.0",
-            "method": "add_node_to_version_stat",
-            "params": {"name": notary, "address": domain, "peer_id": peer_id},
-        }
-        resp = self.api(params)
-        return default.result(
-            data=resp,
-            msg=f"Registered {notary} seednode for stats collection",
-            loglevel="dexrpc",
-        )
-
-    def remove_seednode_from_stats(self, notary):
-        params = {
-            "mmrpc": "2.0",
-            "method": "remove_node_from_version_stat",
-            "params": {"name": notary},
-        }
-        resp = self.api(params)
-        return default.result(
-            data=resp, msg=f"Removed {notary} stats collection", loglevel="dexrpc"
-        )
-
-    def stop_seednode_stats(self):
-        params = {
-            "mmrpc": "2.0",
-            "method": "stop_version_stat_collection",
-            "params": {"interval": 600},
-        }
-        resp = self.api(params)
-        return default.result(
-            data=resp, msg="Stopped seednode stats collection", loglevel="dexrpc"
-        )
 
     # tuple, string, string -> list
     # returning orderbook for given trading pair
@@ -208,22 +197,49 @@ def get_orderbook(
             return None
 
         # Use variant cache if available
+        lock_acquired = False
         cached = memcache.get(variant_cache_name)
         if cached is not None:
             data = cached
             msg = f"Returning orderbook for {pair_str} from cache"
             loglevel = "cached"
         else:
-            data = DexAPI().orderbook_rpc(base, quote)
-            data = orderbook_extras(
-                pair_str=pair_str,
-                data=data,
-                gecko_source=gecko_source,
-                pair_prices_24hr_cache=pair_prices_24hr_cache,
+            lock_acquired = memcache.acquire_lock(
+                variant_cache_name, ttl=ORDERBOOK_CACHE_LOCK_TTL
             )
-            data = clean.decimal_dicts(data)
-            memcache.update(variant_cache_name, data, 900)
-            msg = f"Updated orderbook cache for {pair_str}"
+            if not lock_acquired:
+                waited = memcache.wait_for_value(
+                    variant_cache_name,
+                    attempts=ORDERBOOK_CACHE_WAIT_ATTEMPTS,
+                    interval=ORDERBOOK_CACHE_WAIT_INTERVAL,
+                )
+                if waited is not None:
+                    data = waited
+                    msg = (
+                        f"Returning orderbook for {pair_str} after concurrent refresh"
+                    )
+                    loglevel = "cached"
+                    return default.result(
+                        data=data,
+                        ignore_until=ignore_until,
+                        msg=msg,
+                        loglevel=loglevel,
+                    )
+            try:
+                data = DexAPI().orderbook_rpc(base, quote)
+                data = orderbook_extras(
+                    pair_str=pair_str,
+                    data=data,
+                    gecko_source=gecko_source,
+                    pair_prices_24hr_cache=pair_prices_24hr_cache,
+                )
+                data = clean.decimal_dicts(data)
+                memcache.update(variant_cache_name, data, 900)
+                msg = f"Updated orderbook cache for {pair_str}"
+                _record_orderbook_cache_result(pair_str, cached=True)
+            finally:
+                if lock_acquired:
+                    memcache.release_lock(variant_cache_name)
     except Exception as e:  # pragma: no cover
         data = template.orderbook_extended(pair_str=pair_str)
         data = orderbook_extras(
@@ -240,6 +256,7 @@ def get_orderbook(
         msg=msg,
         loglevel=loglevel,
     )
+
 
 
 @timed

@@ -66,7 +66,7 @@ services:
     restart: always
     depends_on:
       - pgsqldb
-    command: ["memcached", "-I", "40m", "-m", "100m"]
+    command: ["memcached", "-I", "100m", "-m", "500m"]
     ulimits:
       nproc: 65535
       nofile:

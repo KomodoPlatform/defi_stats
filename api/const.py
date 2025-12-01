@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+from decimal import Decimal
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from dotenv import load_dotenv
 
@@ -142,5 +143,13 @@ compare_fields = [
 MARKETS_PAIRS_DAYS = 30
 GENERIC_PAIRS_DAYS = 30
 
-MEMCACHE_LIMIT = 250 * 1024 * 1024  # 250 MB
+MEMCACHE_LIMIT = 500 * 1024 * 1024  # 500 MB
 DEXAPI_USERPASS = os.getenv("DEXAPI_USERPASS")
+
+ORDERBOOK_CACHE_MIN_TRADES = int(os.getenv("ORDERBOOK_CACHE_MIN_TRADES", "1"))
+ORDERBOOK_CACHE_LOCK_TTL = int(os.getenv("ORDERBOOK_CACHE_LOCK_TTL", "30"))
+ORDERBOOK_CACHE_WAIT_ATTEMPTS = int(os.getenv("ORDERBOOK_CACHE_WAIT_ATTEMPTS", "5"))
+ORDERBOOK_CACHE_WAIT_INTERVAL = float(os.getenv("ORDERBOOK_CACHE_WAIT_INTERVAL", "0.2"))
+
+ORDERBOOK_FETCH_BATCH_SIZE = int(os.getenv("ORDERBOOK_FETCH_BATCH_SIZE", "100"))
+ORDERBOOK_FETCH_LOOP_SLEEP = float(os.getenv("ORDERBOOK_FETCH_LOOP_SLEEP", "0.3"))

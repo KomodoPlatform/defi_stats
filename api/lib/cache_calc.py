@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from decimal import Decimal
 from lib.coins import Coins
 from lib.cmc import CmcAPI
@@ -20,6 +21,15 @@ import lib.prices
 import util.defaults as default
 import util.memcache as memcache
 from lib.external import gecko_api
+from const import (
+    ORDERBOOK_FETCH_BATCH_SIZE,
+    ORDERBOOK_FETCH_LOOP_SLEEP,
+)
+
+
+ORDERBOOK_QUEUE_POINTER_KEY = "orderbook_fetch_queue_idx"
+ORDERBOOK_BATCH_LOCK_KEY = "orderbook_fetch_in_progress"
+ORDERBOOK_BATCH_LOCK_TTL = 300
 
 
 class CacheCalc:
@@ -181,25 +191,97 @@ class CacheCalc:
     @timed
     def pairs_orderbook_extended(self, pairs_days: int = 30, refresh: bool = False):
         try:
+            if not self._acquire_batch_lock():
+                logger.loop("[orderbook-batch] skipped: batch already running")
+                return default.result(
+                    {
+                        "pairs_count": 0,
+                        "swaps_24hr": 0,
+                        "volume_usd_24hr": 0,
+                        "combined_liquidity_usd": 0,
+                        "orderbooks": {},
+                        "pointer_start": None,
+                        "pointer_next": None,
+                        "pairs": [],
+                    },
+                    msg="Batch in progress, skipping duplicate run",
+                    loglevel="loop",
+                    ignore_until=0,
+                )
             # Filter out pairs older than requested time
             ts = cron.now_utc() - pairs_days * 86400
             depairs = derive.pairs_traded_since(ts, self.pairs_last_traded_cache)
             traded_pairs = derive.pairs_traded_since(
                 ts, self.pairs_last_traded_cache, reduced=False
             )
+            volumes_cache = self.pair_volumes_24hr_cache or {}
+            volumes_map = volumes_cache.get("volumes") or {}
+
+            eligible_pairs = self._build_sorted_eligible_pairs(depairs, volumes_map)
+
+            if len(eligible_pairs) == 0:
+                msg = (
+                    "pairs_orderbook_extended skipped: no pairs traded "
+                    f"in the last {pairs_days} days"
+                )
+                return default.result(
+                    {
+                        "pairs_count": 0,
+                        "swaps_24hr": 0,
+                        "volume_usd_24hr": 0,
+                        "combined_liquidity_usd": 0,
+                        "orderbooks": {},
+                    },
+                    msg=msg,
+                    loglevel="loop",
+                    ignore_until=0,
+                )
+
+            total_pairs = len(eligible_pairs)
+            batch_pairs, pointer_idx = self._select_pair_batch(eligible_pairs)
+            logger.loop(
+                f"[orderbook-batch-pointer] start_idx={pointer_idx['start']} next_idx={pointer_idx['next']}"
+            )
+            logger.loop(f"[orderbook-batch-detail] pairs={batch_pairs}")
+            from lib import dex_api  # local import to avoid circular dependency
+
+            with dex_api._ORDERBOOK_CACHE_STATS_LOCK:  # pylint: disable=protected-access
+                dex_api._ORDERBOOK_CACHE_STATS["processed"] = 0
+                dex_api._ORDERBOOK_CACHE_STATS["skipped"] = 0
+                dex_api._ORDERBOOK_CACHE_STATS["total"] = max(total_pairs, 1)
+                dex_api._ORDERBOOK_CACHE_STATS["pointer"] = pointer_idx["start"]
+            if len(batch_pairs) == 0:
+                msg = "pairs_orderbook_extended skipped: batch selection returned zero pairs"
+                return default.result(
+                    {
+                        "pairs_count": 0,
+                        "swaps_24hr": 0,
+                        "volume_usd_24hr": 0,
+                        "combined_liquidity_usd": 0,
+                        "orderbooks": {},
+                    },
+                    msg=msg,
+                    loglevel="loop",
+                    ignore_until=0,
+                )
 
             data = []
-            for depair in depairs:
-                depair = sortdata.pair_by_market_cap(depair, gecko_source=self.gecko_source)
+            processed = 0
+            batch_start = time.perf_counter()
+            for depair in batch_pairs:
                 x = Pair(
                     pair_str=depair,
                     coins_config=self.coins_config,
                     gecko_source=self.gecko_source,
                     pair_prices_24hr_cache=self.pair_prices_24hr_cache,
                 ).orderbook(
-                    depair, depth=100, traded_pairs=traded_pairs, refresh=refresh
+                    depair, depth=100, traded_pairs=batch_pairs, refresh=refresh
                 )
                 data.append(x)
+                processed += 1
+                if ORDERBOOK_FETCH_LOOP_SLEEP > 0:
+                    time.sleep(ORDERBOOK_FETCH_LOOP_SLEEP)
+            batch_duration = time.perf_counter() - batch_start
             orderbook_data = {}
             liquidity_usd = 0
             for book in data:
@@ -240,12 +322,24 @@ class CacheCalc:
                 }
             )
 
-            msg = f"pairs_orderbook_extended complete! {len(traded_pairs)} pairs traded"
-            msg += f" in last {pairs_days} days"
+            msg = (
+                f"pairs_orderbook_extended processed {processed}/{len(eligible_pairs)} "
+                f"eligible pairs (from {len(traded_pairs)} traded in last {pairs_days}d) "
+                f"in {batch_duration:.2f}s"
+            )
+            avg_time = batch_duration / processed if processed else 0
+            logger.loop(
+                f"[orderbook-batch] size={processed} duration={batch_duration:.2f}s "
+                f"avg_per_pair={avg_time:.2f}s"
+            )
             return default.result(resp, msg, loglevel="calc", ignore_until=3)
         except Exception as e:  # pragma: no cover
             msg = "pairs_orderbook_extended failed!"
             return default.error(e, msg)
+        finally:
+            # Some time to let KDF breathe before the next batch
+            time.sleep(5)
+            self._release_batch_lock()
 
     @property
     def pair_volumes_24hr_cache(self):
@@ -296,6 +390,69 @@ class CacheCalc:
             logger.warning(msg)
 
     # TODO: Add props for the below
+
+    def _pair_activity_score(self, depair: str, volumes_map) -> Decimal:
+        if not volumes_map:
+            return Decimal("0")
+        pair_data = volumes_map.get(depair) or volumes_map.get(invert.pair(depair))
+        if not pair_data:
+            return Decimal("0")
+        best = Decimal("0")
+        for variant in pair_data.values():
+            try:
+                trade_usd = Decimal(str(variant.get("trade_volume_usd", 0) or 0))
+            except Exception:
+                trade_usd = Decimal(0)
+            if trade_usd > best:
+                best = trade_usd
+        return best
+
+    def _build_sorted_eligible_pairs(self, depairs, volumes_map):
+        ranked = []
+        for depair in depairs:
+            sorted_pair = sortdata.pair_by_market_cap(
+                depair, gecko_source=self.gecko_source
+            )
+            score = self._pair_activity_score(sorted_pair, volumes_map)
+            ranked.append((sorted_pair, score))
+        ranked.sort(key=lambda item: item[1], reverse=True)
+        return [pair for pair, _ in ranked]
+
+    def _select_pair_batch(self, pairs):
+        if not pairs:
+            return ([], {"start": 0, "next": 0})
+        pointer = memcache.get(ORDERBOOK_QUEUE_POINTER_KEY)
+        try:
+            pointer = int(pointer)
+        except (TypeError, ValueError):
+            pointer = 0
+        pointer = pointer % len(pairs)
+        batch = []
+        idx = pointer
+        processed = 0
+        batch_size = min(ORDERBOOK_FETCH_BATCH_SIZE, len(pairs))
+        while processed < batch_size:
+            batch.append(pairs[idx])
+            idx = (idx + 1) % len(pairs)
+            processed += 1
+            if idx == pointer:
+                break
+        memcache.update(ORDERBOOK_QUEUE_POINTER_KEY, idx, 3600)
+        return batch, {"start": pointer, "next": idx}
+
+    def _acquire_batch_lock(self):
+        try:
+            return memcache.MEMCACHE.add(
+                ORDERBOOK_BATCH_LOCK_KEY, True, ORDERBOOK_BATCH_LOCK_TTL
+            )
+        except Exception:
+            return False
+
+    def _release_batch_lock(self):
+        try:
+            memcache.MEMCACHE.delete(ORDERBOOK_BATCH_LOCK_KEY)
+        except Exception:
+            pass
 
     @timed
     def markets_summary(self):

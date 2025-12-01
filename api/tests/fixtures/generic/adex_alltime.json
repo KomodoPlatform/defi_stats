@@ -1,10 +1,10 @@
 {
-    "last_updated": 1741142747,
+    "last_updated": 1764567027,
     "data": {
         "days": "All",
         "swaps_count": 14,
         "swaps_volume": 3706218.15,
-        "current_liquidity": 969822.0,
+        "current_liquidity": 0,
         "top_pairs": {
             "by_volume": [
                 {
@@ -50,12 +50,7 @@
                     "trades_all_time": 2
                 }
             ],
-            "by_current_liquidity_usd": [
-                {
-                    "pair": "KMD_LTC",
-                    "liquidity": 969822.0
-                }
-            ]
+            "by_current_liquidity_usd": []
         }
     }
 }

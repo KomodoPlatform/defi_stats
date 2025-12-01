@@ -1,114 +1,13 @@
 {
-    "last_updated": 1741142702,
+    "last_updated": 1764567027,
     "data": {
-        "start_time": 1741056302,
-        "end_time": 1741142702,
+        "start_time": 1764480627,
+        "end_time": 1764567027,
         "range_days": 1,
-        "total_swaps": 8,
-        "base_volume_usd": 1000401.91,
-        "quote_volume_usd": 100516.0,
-        "trade_volume_usd": 1100917.91,
-        "volumes": {
-            "DGB_LTC": {
-                "ALL": {
-                    "base_volume": 1.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 0.01,
-                    "quote_volume_usd": 100.0,
-                    "trade_volume_usd": 100.01,
-                    "dex_price": 1.0
-                },
-                "DGB_LTC": {
-                    "base_volume": 1.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 0.01,
-                    "quote_volume_usd": 100.0,
-                    "trade_volume_usd": 100.01,
-                    "dex_price": 1.0
-                }
-            },
-            "KMD_BTC": {
-                "ALL": {
-                    "base_volume": 1000000.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 1000000.0,
-                    "quote_volume_usd": 100000.0,
-                    "trade_volume_usd": 1100000.0,
-                    "dex_price": 1e-06
-                },
-                "KMD_BTC": {
-                    "base_volume": 1000000.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 1000000.0,
-                    "quote_volume_usd": 100000.0,
-                    "trade_volume_usd": 1100000.0,
-                    "dex_price": 1e-06
-                }
-            },
-            "KMD_DGB": {
-                "ALL": {
-                    "base_volume": 1.9,
-                    "quote_volume": 1500.0,
-                    "trades_24hr": 2,
-                    "base_volume_usd": 1.9,
-                    "quote_volume_usd": 15.0,
-                    "trade_volume_usd": 16.9,
-                    "dex_price": 789.4736842105264
-                },
-                "KMD_DGB": {
-                    "base_volume": 1.9,
-                    "quote_volume": 1500.0,
-                    "trades_24hr": 2,
-                    "base_volume_usd": 1.9,
-                    "quote_volume_usd": 15.0,
-                    "trade_volume_usd": 16.9,
-                    "dex_price": 789.4736842105264
-                }
-            },
-            "KMD_LTC": {
-                "ALL": {
-                    "base_volume": 400.0,
-                    "quote_volume": 4.0,
-                    "trades_24hr": 3,
-                    "base_volume_usd": 400.0,
-                    "quote_volume_usd": 400.0,
-                    "trade_volume_usd": 800.0,
-                    "dex_price": 0.01
-                },
-                "KMD_LTC": {
-                    "base_volume": 400.0,
-                    "quote_volume": 4.0,
-                    "trades_24hr": 3,
-                    "base_volume_usd": 400.0,
-                    "quote_volume_usd": 400.0,
-                    "trade_volume_usd": 800.0,
-                    "dex_price": 0.01
-                }
-            },
-            "MORTY_KMD": {
-                "ALL": {
-                    "base_volume": 1.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 0.0,
-                    "quote_volume_usd": 1.0,
-                    "trade_volume_usd": 1.0,
-                    "dex_price": 1.0
-                },
-                "MORTY_KMD": {
-                    "base_volume": 1.0,
-                    "quote_volume": 1.0,
-                    "trades_24hr": 1,
-                    "base_volume_usd": 0.0,
-                    "quote_volume_usd": 1.0,
-                    "trade_volume_usd": 1.0,
-                    "dex_price": 1.0
-                }
-            }
-        }
+        "total_swaps": 0,
+        "base_volume_usd": 0,
+        "quote_volume_usd": 0,
+        "trade_volume_usd": 0,
+        "volumes": {}
     }
 }

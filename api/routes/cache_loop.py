@@ -6,7 +6,6 @@ from fastapi_utils.tasks import repeat_every
 from const import NODE_TYPE
 import db.sqldb as db
 import db.sqlitedb_merge as old_db_merge
-from lib.seednodes import seednode
 import util.defaults as default
 import util.memcache as memcache
 from lib.cache import Cache, CacheItem, reset_cache_files
@@ -18,40 +17,7 @@ from util.logger import logger, timed
 router = APIRouter()
 
 
-@router.on_event("startup")
-@timed
-def start_seednode_stats():  # pragma: no cover
-    """Tells mm2 to store seednode stats in MM2.db"""
-    try:
-        dex = DexAPI()
-        for i in range(5):
-            try:
-                logger.calc(dex.version)
-            except Exception:
-                time.sleep(1)
-                pass
 
-        seednode.register_notaries()
-        stats = dex.start_seednode_stats()
-        return default.result(
-            data=stats, msg="Started seednode stats", loglevel="dexrpc"
-        )
-    except Exception as e:
-        return default.result(msg=e, loglevel="warning")
-
-
-@router.on_event("startup")
-@repeat_every(seconds=900)
-@timed
-def import_seed_stats():  # pragma: no cover
-    """Imports seednode stats from MM2.db into PgSQL"""
-    try:
-        start_time = int(cron.now_utc()) - 86400
-        end_time = int(cron.now_utc())
-        seednode.get_seednode_stats(start_time, end_time)
-        return default.result(msg="Imported latest seednode stats", loglevel="query")
-    except Exception as e:
-        return default.result(msg=e, loglevel="warning")
 
 
 @router.on_event("startup")
@@ -96,7 +62,7 @@ def update_pairs_orderbook_extended():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=360)
 @timed
 def refresh_pairs_orderbook_extended():
     if memcache.get("testing") is None:
@@ -111,7 +77,7 @@ def refresh_pairs_orderbook_extended():
 
 # PRICES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=420)
 @timed
 def refresh_prices_24hr():
     if memcache.get("testing") is None:
@@ -125,7 +91,7 @@ def refresh_prices_24hr():
 
 # VOLUMES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=390)
 @timed
 def get_coin_volumes_24hr():
     if memcache.get("testing") is None:
@@ -138,7 +104,7 @@ def get_coin_volumes_24hr():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=450)
 @timed
 def get_pair_volumes_24hr():
     if memcache.get("testing") is None:
@@ -151,7 +117,7 @@ def get_pair_volumes_24hr():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=900)
+@repeat_every(seconds=1200)
 @timed
 def get_pair_volumes_14d():
     if memcache.get("testing") is None:
@@ -164,7 +130,7 @@ def get_pair_volumes_14d():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=900)
+@repeat_every(seconds=1800)
 @timed
 def get_pair_volumes_alltime():
     if memcache.get("testing") is None:
@@ -178,7 +144,7 @@ def get_pair_volumes_alltime():
 
 # LAST TRADE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=380)
 @timed
 def pairs_last_traded():
     if memcache.get("testing") is None:
@@ -192,7 +158,7 @@ def pairs_last_traded():
 
 # MARKETS CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=480)
 @timed
 def get_markets_summary():
     if memcache.get("testing") is None:
@@ -205,7 +171,7 @@ def get_markets_summary():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=45)
+@repeat_every(seconds=240)
 @timed
 def prices_service():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -236,7 +202,7 @@ def coins():  # pragma: no cover
 
 # VOLUMES CACHE
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=330)
 @timed
 def get_coin_volumes_alltime():
     if memcache.get("testing") is None:
@@ -249,7 +215,7 @@ def get_coin_volumes_alltime():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=450)
+@repeat_every(seconds=540)
 @timed
 def gecko_data():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -262,7 +228,7 @@ def gecko_data():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=360)
 @timed
 def gecko_pairs():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -275,7 +241,7 @@ def gecko_pairs():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=370)
 @timed
 def stats_api_summary():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -288,7 +254,7 @@ def stats_api_summary():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=375)
 @timed
 def cmc_summary():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -301,7 +267,7 @@ def cmc_summary():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=90)
 @timed
 def cmc_assets_source():  # pragma: no cover
     if memcache.get("cmc_assets_source") is None:
@@ -314,7 +280,7 @@ def cmc_assets_source():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=75)
 @timed
 def cmc_assets():  # pragma: no cover
     if memcache.get("cmc_assets") is None:
@@ -327,7 +293,7 @@ def cmc_assets():  # pragma: no cover
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=320)
 @timed
 def fixer_rates():  # pragma: no cover
     if memcache.get("testing") is None:
@@ -341,7 +307,7 @@ def fixer_rates():  # pragma: no cover
 
 # DATABASE SYNC
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=310)
 @timed
 def populate_pgsqldb_loop():
     try:
@@ -355,7 +321,7 @@ def populate_pgsqldb_loop():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=350)
 @timed
 def import_dbs():
     if memcache.get("testing") is None:
@@ -373,7 +339,7 @@ def import_dbs():
 
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=320)
 @timed
 def adex_alltime():
     if memcache.get("testing") is None:
@@ -385,7 +351,7 @@ def adex_alltime():
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=600)
 @timed
 def adex_weekly():
     if memcache.get("testing") is None:
@@ -397,7 +363,7 @@ def adex_weekly():
         return default.result(msg=msg, loglevel="loop", ignore_until=0)
 
 @router.on_event("startup")
-@repeat_every(seconds=300)
+@repeat_every(seconds=900)
 @timed
 def adex_fortnite():
     if memcache.get("testing") is None:
@@ -424,7 +390,7 @@ def adex_24hr():
 
 # TICKERS
 @router.on_event("startup")
-@repeat_every(seconds=120)
+@repeat_every(seconds=210)
 @timed
 def pair_tickers():
     if memcache.get("testing") is None:
@@ -438,7 +404,7 @@ def pair_tickers():
 
 # fix_swap_pairs
 @router.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=75)
 @timed
 def fix_swap_pairs():
     reset_cache_files()

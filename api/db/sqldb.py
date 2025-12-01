@@ -29,7 +29,6 @@ from db.schema import (
     StatsSwap,
     CipiSwap,
     CipiSwapFailed,
-    SeednodeVersionStats,
     Mm2StatsNodes,
 )
 from util.exceptions import InvalidParamCombination
@@ -161,7 +160,7 @@ class SqlFilter:
 
     @timed
     def since(self, q, start_time):
-        if self.table in [Mm2StatsNodes, SeednodeVersionStats]:
+        if self.table in [Mm2StatsNodes]:
             q = q.filter(self.table.timestamp > start_time)
         elif self.table in [CipiSwap, CipiSwapFailed]:
             q = q.filter(self.table.started_at > start_time)
@@ -171,7 +170,7 @@ class SqlFilter:
 
     @timed
     def timestamps(self, q, start_time, end_time):
-        if self.table in [Mm2StatsNodes, SeednodeVersionStats]:
+        if self.table in [Mm2StatsNodes]:
             q = q.filter(
                 self.table.timestamp > start_time, self.table.timestamp < end_time
             )
@@ -1026,109 +1025,6 @@ class SqlQuery(SqlDB):
                     return {"error": f"swap uuid {uuid} not found"}
                 else:
                     return data[0]
-        except Exception as e:  # pragma: no cover
-            return default.result(msg=e, loglevel="warning")
-
-    @timed
-    def get_seednode_stats(self, start_time=0, end_time=0):
-        try:
-
-            if start_time == 0:
-                start_time = int(cron.now_utc()) - 86400
-            if end_time == 0:
-                end_time = int(cron.now_utc())
-
-            with Session(self.engine) as session:
-                cols = [
-                    self.table.name.label("notary"),
-                    self.table.version.label("version"),
-                    self.table.timestamp.label("timestamp"),
-                    self.table.error.label("error"),
-                ]
-                q = session.query(*cols)
-                q = self.sqlfilter.timestamps(
-                    q, start_time=start_time, end_time=end_time
-                )
-                data = [dict(i) for i in session.exec(q)]
-                return default.result(
-                    data=data, msg="Got seednode version stats", loglevel="query"
-                )
-        except Exception as e:  # pragma: no cover
-            return default.result(msg=e, loglevel="warning")
-
-    @timed
-    def get_latest_seednode_data(self):
-        try:
-            with Session(self.engine) as session:
-                subquery = (
-                    session.exec(
-                        self.table.name,
-                        func.max(self.table.timestamp).label("max_timestamp"),
-                    )
-                    .group_by(self.table.name)
-                    .subquery()
-                )
-
-                cols = [
-                    self.table.name.label("notary"),
-                    self.table.version,
-                    self.table.timestamp,
-                    self.table.error,
-                ]
-                result = session.exec(*cols).join(
-                    subquery,
-                    and_(
-                        self.table.name == subquery.c.name,
-                        self.table.timestamp == subquery.c.max_timestamp,
-                    ),
-                )
-                data = [dict(row) for row in result.all()]
-                return default.result(
-                    data=data, msg="Got latest seednode version stats", loglevel="query"
-                )
-        except Exception as e:  # pragma: no cover
-            return default.result(msg=e, loglevel="warning")
-
-    @timed
-    def get_seednode_stats_by_hour(self, start_time=0, end_time=0):
-        if start_time == 0:
-            start_time = int(cron.now_utc()) - 86400
-        if end_time == 0:
-            end_time = int(cron.now_utc())
-        try:
-            with Session(self.engine) as session:
-                # Subquery to get distinct name and hour
-                subquery = (
-                    session.exec(
-                        self.table.c.name,
-                        func.strftime(
-                            "%Y-%m-%d %H:00:00", self.table.c.timestamp
-                        ).label("hour"),
-                    )
-                    .group_by(
-                        self.table.c.name,
-                        func.strftime("%Y-%m-%d %H:00:00", self.table.c.timestamp),
-                    )
-                    .subquery()
-                )
-
-                # Query to get all columns for each name, grouped by hour
-                query = (
-                    session.exec(self.table)
-                    .join(
-                        subquery,
-                        (self.table.c.name == subquery.c.name)
-                        & (
-                            func.strftime("%Y-%m-%d %H:00:00", self.table.c.timestamp)
-                            == subquery.c.hour
-                        ),
-                    )
-                    .order_by(self.table.c.name, self.table.c.timestamp)
-                )
-
-                # Execute the query
-                results = query.all()
-                return results
         except Exception as e:  # pragma: no cover
             return default.result(msg=e, loglevel="warning")
 

@@ -1,9 +1,9 @@
 {
-    "last_updated": 1741142702,
+    "last_updated": 1764567027,
     "data": {
         "start_time": 1,
-        "end_time": 1741142702,
-        "range_days": 20152,
+        "end_time": 1764567027,
+        "range_days": 20423,
         "total_swaps": 14,
         "base_volume_usd": 3005501.91,
         "quote_volume_usd": 700716.24,

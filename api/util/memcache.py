@@ -43,8 +43,8 @@ except Exception as e:  # pragma: no cover
     MEMCACHE = PooledClient(
         ("localhost", 11211),
         serde=JsonSerde(),
-        timeout=10,
-        max_pool_size=50,
+        timeout=15,
+        max_pool_size=200,
         ignore_exc=True,
     )
     logger.info("Connected to memcached on localhost")
@@ -53,6 +53,7 @@ except Exception as e:  # pragma: no cover
 
 MEMCACHE.cache_memlimit = MEMCACHE_LIMIT
 
+LOCK_PREFIX = "lock:"
 
 def stats():  # pragma: no cover
     return MEMCACHE.stats()
@@ -96,6 +97,31 @@ def update(key, value, expiry):
         logger.warning(f"Failed to cache {key}! {e}")
         logger.warning(f"Failed to cache {str(value)[:100]}!")
     return default.result(data=key, msg=msg, loglevel="warning", ignore_until=0)
+
+
+def acquire_lock(key: str, ttl: int = 30) -> bool:
+    lock_key = f"{LOCK_PREFIX}{key}"
+    try:
+        return MEMCACHE.add(lock_key, True, ttl)
+    except Exception:
+        return False
+
+
+def release_lock(key: str):
+    lock_key = f"{LOCK_PREFIX}{key}"
+    try:
+        MEMCACHE.delete(lock_key)
+    except Exception:
+        pass
+
+
+def wait_for_value(key: str, attempts: int = 5, interval: float = 0.2):
+    for _ in range(attempts):
+        cached = get(key)
+        if cached is not None:
+            return cached
+        time.sleep(interval)
+    return None
 
 
 # EXTERNAL SOURCES CACHE

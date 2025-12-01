@@ -159,23 +159,6 @@ class StatsSwap(SQLModel, table=True):
         use_slots = True
 
 
-class SeednodeVersionStats(SQLModel, table=True):
-    __tablename__ = "seednode_version_stats"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = ""
-    error: str = ""
-    season: str = ""
-    version: str = ""
-    score: Decimal = 777.777777
-    timestamp: int = 1777777777
-
-    class Config:
-        use_slots = True
-
-    @classmethod
-    def get_constraints(cls):
-        return [UniqueConstraint(cls.name, cls.timestamp)]
-
 
 class Mm2StatsNodes(SQLModel, table=True):
     __tablename__ = "stats_nodes"
