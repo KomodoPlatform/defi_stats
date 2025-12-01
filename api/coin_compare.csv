@@ -1,19 +1,46 @@
 Coins Repo Ticker,Base Ticker,CMC Name,Coins Repo Name,Coins Repo Fname
-BTT-BEP20,BTT,BitTorrent (New),BitTorrent (OLD),BitTorrent (OLD)
-BTT-BEP20,BTT,Bitteam token,BitTorrent (OLD),BitTorrent (OLD)
+BABYDOGE-BEP20,BABYDOGE,BABYDOGE,Baby Doge Coin,Baby Doge Coin
+BEST-ERC20,BEST,Bestcoin,Bitpanda Ecosystem,Bitpanda Ecosystem
+BEST-ERC20,BEST,Best Wallet,Bitpanda Ecosystem,Bitpanda Ecosystem
+BTT-BEP20,BTT,BitTorrent [New],BitTorrent (OLD),BitTorrent (OLD)
+BTX-BEP20,BTX,Batonex Token,BitCore,BitCore
+BTX-BEP20,BTX,Bitradex Token,BitCore,BitCore
+BUSD-AVX20,BUSD,BUSD,Binance USD,Binance USD
+BUSD-MVR20,BUSD,BUSD,Binance USD,Binance USD
+BUSD-ERC20,BUSD,BUSD,Binance USD,Binance USD
+BUSD-BEP20,BUSD,BUSD,Binance USD,Binance USD
+BUSD-PLG20,BUSD,BUSD,Binance USD,Binance USD
 CRO-ERC20,CRO,Cronos,Crypto.com,Crypto.com
+CRO-ERC20,CRO,CRO Trump AI,Crypto.com,Crypto.com
 CRO-KRC20,CRO,Cronos,Crypto.com,Crypto.com
+CRO-KRC20,CRO,CRO Trump AI,Crypto.com,Crypto.com
 CRO-PLG20,CRO,Cronos,Crypto.com,Crypto.com
-CRT-QRC20,CRT,Carrot,CRT Token,CRT Token
+CRO-PLG20,CRO,CRO Trump AI,Crypto.com,Crypto.com
 CRT-QRC20,CRT,Cantina Royale,CRT Token,CRT Token
+CST-BEP20,CST,Crypto Sustainable Token,Crypto Swap Token,Crypto Swap Token
+DDD-ERC20,DDD,Dot Dot Finance,Scry.info,Scry.info
 EGLD-BEP20,EGLD,MultiversX,Elrond,Elrond
+EVR,EVR,Evrmore,Evrmore Coin,Evrmore Coin
+FET-ERC20,FET,Artificial Superintelligence Alliance,Fetch.ai,Fetch.ai
+FET-BEP20,FET,Artificial Superintelligence Alliance,Fetch.ai,Fetch.ai
+FET-PLG20,FET,Artificial Superintelligence Alliance,Fetch.ai,Fetch.ai
 FRC,FRC,Freicoin,FairCoin,FairCoin
 GMT-BEP20,GMT,GMT,STEPN,STEPN
 GMT-PLG20,GMT,GMT,STEPN,STEPN
+GURU-BEP20,GURU,Guru Network,MobilityGuru,MobilityGuru
 JUSD-PLG20,JUSD,JUSD Stable Token,Jarvis United States Dollar,Jarvis United States Dollar
+KOIN,KOIN,Koinos,Koinon,Koinon
+MINDS-ERC20,MINDS,Mindscraft,Minds,Minds
+NAV,NAV,Navio,Navcoin,Navcoin
+NAV-BEP20,NAV,Navio,Navcoin,Navcoin
+OC-QRC20,OC,Oxchange Finance,OceanChain,OceanChain
+QBT-QRC20,QBT,Qubit,Qbao,Qbao
 QI-QRC20,QI,QiSwap,Qi Swap,Qi Swap
 QI-QRC20,QI,BENQI,Qi Swap,Qi Swap
 QI-QRC20,QI,QiDao,Qi Swap,Qi Swap
+REV-ERC20,REV,Revolution,Revain,Revain
+SHR-ERC20,SHR,ShareToken,Share,Share
+SHR-BEP20,SHR,ShareToken,Share,Share
 SWAP-BEP20,SWAP,TrustSwap,SafeSwap,SafeSwap
-TTT-SLP,TTT,TabTrader Token,Trinity Trust Token,Trinity Trust Token
-ZINU-BEP20,ZINU,Zombie Inu(New),Zombie Inu,Zombie Inu
+THC-BEP20,THC,Transhuman Coin,HempCoin,HempCoin
+VRSC,VRSC,Verus,Verus Coin,Verus Coin
