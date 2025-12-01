@@ -42,13 +42,6 @@ RUN rm /usr/bin/python3 && ln -s /usr/bin/python3.10 /usr/bin/python3
 RUN chown -R komodian:notarygroup /home/komodian
 USER komodian
 
-# Download IP2Location LITE DB1.BIN and unzip it
-RUN mkdir -p /home/komodian/db
-WORKDIR /home/komodian/db
-RUN curl -o IP2LOCATION-LITE-DB1.BIN.ZIP https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.BIN.ZIP
-RUN unzip IP2LOCATION-LITE-DB1.BIN.ZIP
-RUN rm IP2LOCATION-LITE-DB1.BIN.ZIP
-
 # Install poetry and dependencies
 WORKDIR /home/komodian/api
 RUN mkdir /home/komodian/poetry

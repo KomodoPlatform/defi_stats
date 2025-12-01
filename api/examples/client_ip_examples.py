@@ -5,7 +5,7 @@ Examples of how to get client IP addresses in FastAPI routes
 
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import JSONResponse
-from util.client_ip import get_client_ip, get_client_location
+from util.client_ip import get_client_ip
 
 # Example router (not included in main app)
 examples_router = APIRouter()
@@ -37,20 +37,15 @@ def example_ip_logic(request: Request):
     """Example with IP-based business logic"""
     client_ip = get_client_ip(request)
     
-    # Get location info
-    location = get_client_location(client_ip)
-    
-    # Example business logic based on IP/location
-    if location and location.get("country_short") in ["US", "CA"]:
-        message = "Welcome North American user!"
-    elif location:
-        message = f"Welcome user from {location.get('country_long', 'unknown')}!"
+    # Example business logic: simple allow/block list
+    blocked_ips = {"10.0.0.1", "192.168.1.100"}
+    if client_ip in blocked_ips:
+        message = "Access denied for this IP."
     else:
-        message = "Welcome! (Location unknown)"
+        message = "Access granted."
     
     return {
         "client_ip": client_ip,
-        "location": location,
         "message": message
     }
 

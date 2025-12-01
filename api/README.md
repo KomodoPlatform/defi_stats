@@ -206,5 +206,3 @@ server {
 
 # Update db and generalisation progress
 - [] generic pairs => [markets, gecko, xyz]
-
-This repo uses the IP2Location LITE database for <a href="https://lite.ip2location.com">IP geolocation</a>.

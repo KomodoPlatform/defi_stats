@@ -30,7 +30,6 @@ from routes import (
     stats_api,
     new_db,
     stats_xyz,
-    utils,
 )
 from lib.cache import Cache, CacheItem
 from models.generic import ErrorMessage, HealthCheck
@@ -165,14 +164,6 @@ app.include_router(
     cmc.router,
     prefix="/api/v3/cmc",
     tags=["Coin Market Cap"],
-    dependencies=[],
-    responses={418: {"description": "I'm a teapot"}},
-)
-
-app.include_router(
-    utils.router,
-    prefix="/api/v3/utils",
-    tags=["Utils"],
     dependencies=[],
     responses={418: {"description": "I'm a teapot"}},
 )
