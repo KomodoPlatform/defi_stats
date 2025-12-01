@@ -78,7 +78,8 @@ services:
     image: postgres:12.17
     restart: always
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - /home/tech/defi_stats/docker-data/pgsqldb:/var/lib/postgresql/data
+      - ./api/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     env_file:
       - ./api/.env
     depends_on:
@@ -96,5 +97,3 @@ services:
         soft: 65535
         hard: 65535
 
-volumes:
-  pg_data:

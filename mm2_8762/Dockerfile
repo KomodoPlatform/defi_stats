@@ -1,4 +1,4 @@
-FROM komodoofficial/komodo-defi-framework:main-latest
+FROM komodoofficial/komodo-defi-framework:dev-latest
 
 LABEL maintainer="smk@komodoplatform.com"
 
@@ -6,8 +6,9 @@ LABEL maintainer="smk@komodoplatform.com"
 ARG DEBIAN_FRONTEND=noninteractive 
 ARG GROUP_ID
 ARG USER_ID
-RUN addgroup --gid ${GROUP_ID} notarygroup
-RUN adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} komodian
+RUN apt-get update && apt-get install -y --no-install-recommends adduser \
+&& addgroup --gid ${GROUP_ID} notarygroup \
+&& adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} komodian
 
 WORKDIR /home/komodian/mm2
 

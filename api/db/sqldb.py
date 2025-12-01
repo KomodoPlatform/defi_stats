@@ -20,6 +20,7 @@ from const import (
     POSTGRES_USERNAME,
     POSTGRES_PASSWORD,
     POSTGRES_PORT,
+    POSTGRES_DATABASE,
     MM2_DB_PATH_ALL,
 )
 from db.schema import (
@@ -56,6 +57,7 @@ class SqlDB:
             self.user = POSTGRES_USERNAME
             self.password = POSTGRES_PASSWORD
             self.port = POSTGRES_PORT
+            self.database = POSTGRES_DATABASE or self.user
             # TODO: use arg/kwarg
             if self.table is None:
                 if os.getenv("IS_TESTING") == "True" == "True":
@@ -65,6 +67,8 @@ class SqlDB:
             self.db_url = (
                 f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}"
             )
+            if self.database:
+                self.db_url += f"/{self.database}"
         elif self.db_type == "sqlite":
             if self.db_path is not None:
                 if self.table is None:
